@@ -292,7 +292,7 @@ Deno.serve(async (req) => {
 
         websiteContent = stripped.length > 100
           ? `[HTTP ${siteRes.status}] ${stripped}`
-          : `Website returned HTTP ${siteRes.status} with minimal content — may be bot-protected.`;
+          : `Website returned HTTP ${siteRes.status} but minimal text could be extracted — the site is likely JavaScript-rendered (React/Next.js/Vue SPA). This is normal for modern websites and is NOT a red flag. Use the domain name, email domain, company name, and other application details to assess business legitimacy instead.`;
 
         console.log(`Website fetch: ${siteUrl} → HTTP ${siteRes.status}, ${stripped.length} chars`);
       } catch (fetchErr) {

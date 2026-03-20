@@ -3719,10 +3719,30 @@
       refreshDashboard();
       refreshResearchList();
       console.log('Supabase: loaded', liveResearch.length, 'reports,', liveStock.length, 'stock items');
+
+      // Pre-load pending enquiry count for admin badge
+      if (currentUserIsAdmin) refreshEnqBadge();
     } catch(err) {
       console.warn('Supabase load failed, using fallback data:', err);
       useFallbackData();
     }
+  }
+
+  async function refreshEnqBadge() {
+    try {
+      const res = await fetch(
+        SUPABASE_URL + '/rest/v1/pending_enquiries?status=eq.pending&select=id',
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      const count = Array.isArray(data) ? data.length : 0;
+      const badge = document.getElementById('enquiries-badge');
+      if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'inline-block' : 'none';
+      }
+    } catch (_) {}
   }
 
   // Build region map from live data so state-clicks work
