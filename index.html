@@ -4154,6 +4154,7 @@
     document.getElementById('screen-portal').classList.add('active');
     loadSupabaseData();
     setTimeout(initLeafletMap, 150);
+    if (currentUserIsAdmin) refreshEnqBadge();
   }
 
   async function doLogin() {
