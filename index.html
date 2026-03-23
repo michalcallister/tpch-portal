@@ -4109,6 +4109,7 @@
   }
 
   let currentUserIsAdmin  = false;
+  let currentUserRole     = 'admin'; // 'admin' | 'super_admin'
   let currentPartnerRecord = null;  // { role, partner_id, full_name, company_name, logo_url, ... }
   let currentAuthToken    = null;
 
@@ -4176,7 +4177,7 @@
       loginBtn.textContent = 'Signing in…';
       try {
         const teamRes = await fetch(
-          SUPABASE_URL + '/rest/v1/tpch_team?email=eq.' + encodeURIComponent(email) + '&select=password,full_name&limit=1',
+          SUPABASE_URL + '/rest/v1/tpch_team?email=eq.' + encodeURIComponent(email) + '&select=password,full_name,role&limit=1',
           { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
         );
         const [member] = await teamRes.json();
@@ -4187,11 +4188,13 @@
           }
         }
         currentUserIsAdmin = true;
+        currentUserRole = member?.role || 'admin';
         currentPartnerRecord = null;
         applyNavForRole(true, false);
         const displayName = member?.full_name || email.split('@')[0];
         const initials = displayName.slice(0,2).toUpperCase();
-        applyUserCard(displayName, 'Admin · TPCH', initials);
+        const roleLabel = currentUserRole === 'super_admin' ? 'Super Admin · TPCH' : 'Admin · TPCH';
+        applyUserCard(displayName, roleLabel, initials);
         enterPortal();
       } finally {
         loginBtn.disabled = false;
@@ -4874,6 +4877,9 @@
     const actionBtns = t.status === 'active'
       ? `<button class="tm-btn tm-btn-deactivate" onclick="setTmStatus('${t.id}','inactive')">⊘ Deactivate</button>`
       : `<button class="tm-btn tm-btn-activate" onclick="setTmStatus('${t.id}','active')">✓ Activate</button>`;
+    const deleteBtn = (currentUserRole === 'super_admin' && t.role !== 'super_admin')
+      ? `<button class="tm-btn tm-btn-deactivate" style="margin-top:12px;width:100%;background:rgba(180,40,40,0.15);border-color:rgba(180,40,40,0.4);color:#c94c4c;" onclick="deleteTmMember('${t.id}','${(t.full_name||'').replace(/'/g,"\\'")}')">✕ Delete Member</button>`
+      : '';
 
     detail.innerHTML = `
       <div class="tm-detail-scroll">
@@ -4896,7 +4902,7 @@
         <div class="tm-fields-grid">
           <div><div class="tm-field-label">Full Name</div><div class="tm-field-value">${t.full_name}</div></div>
           <div><div class="tm-field-label">Email</div><div class="tm-field-value">${t.email}</div></div>
-          <div><div class="tm-field-label">Role</div><div class="tm-field-value" style="text-transform:capitalize;">${t.role || 'Admin'}</div></div>
+          <div><div class="tm-field-label">Role</div><div class="tm-field-value" style="text-transform:capitalize;">${(t.role||'admin').replace('_',' ')}</div></div>
           <div><div class="tm-field-label">Status</div><div class="tm-field-value" style="text-transform:capitalize;">${t.status}</div></div>
           <div><div class="tm-field-label">Password</div><div class="tm-field-value">${t.password ? '••••••••' : '<span style="color:var(--gold);font-size:12px;">Not set — cannot log in</span>'}</div></div>
         </div>
@@ -4910,6 +4916,8 @@
         <div style="margin-top:12px;">
           <button class="tm-btn tm-btn-save" onclick="setTmPassword('${t.id}')">✓ Save Password</button>
         </div>
+
+        ${deleteBtn}
       </div>`;
   }
 
@@ -4939,9 +4947,11 @@
           <div><div class="tm-field-label">Full Name</div><input class="tm-edit-input" id="tm-ed-full_name" value="${(t.full_name||'').replace(/"/g,'&quot;')}"></div>
           <div><div class="tm-field-label">Email</div><input class="tm-edit-input" id="tm-ed-email" value="${(t.email||'').replace(/"/g,'&quot;')}"></div>
           <div style="grid-column:1/-1"><div class="tm-field-label">Role</div>
-            <select class="tm-edit-select" id="tm-ed-role">
-              <option value="admin"${t.role==='admin'?' selected':''}>Admin</option>
+            <select class="tm-edit-select" id="tm-ed-role" ${currentUserRole !== 'super_admin' ? 'disabled' : ''}>
+              <option value="admin"${(t.role||'admin')==='admin'?' selected':''}>Admin</option>
+              <option value="super_admin"${t.role==='super_admin'?' selected':''}>Super Admin</option>
             </select>
+            ${currentUserRole !== 'super_admin' ? '<div style="font-size:11px;color:var(--grey-mid);margin-top:4px;">Only super admins can change roles.</div>' : ''}
           </div>
         </div>
         <div class="tm-form-error" id="tm-edit-error"></div>
@@ -5014,6 +5024,7 @@
           <div style="grid-column:1/-1"><div class="tm-field-label">Role</div>
             <select class="tm-edit-select" id="tm-new-role">
               <option value="admin">Admin</option>
+              ${currentUserRole === 'super_admin' ? '<option value="super_admin">Super Admin</option>' : ''}
             </select>
           </div>
         </div>
@@ -5056,6 +5067,22 @@
     currentTmId = newMember.id;
     renderTmList();
     showTmDetail(newMember.id);
+  }
+
+  async function deleteTmMember(id, name) {
+    if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
+    const res = await fetch(SUPABASE_URL + '/rest/v1/tpch_team?id=eq.' + id, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+    });
+    if (res.ok) {
+      allTeam = allTeam.filter(x => x.id !== id);
+      adminEmails = allTeam.filter(x => x.status === 'active').map(x => x.email.toLowerCase());
+      updateTmStats();
+      showTmEmpty();
+    } else {
+      alert('Could not delete member. Please try again.');
+    }
   }
 
   async function setTmPassword(id) {
