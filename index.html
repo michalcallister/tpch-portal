@@ -4169,14 +4169,34 @@
       return;
     }
 
-    // ── Path 1: TPCH team (email-only check, no password required) ──
+    // ── Path 1: TPCH team ──
     if (adminEmails.includes(email)) {
-      currentUserIsAdmin = true;
-      currentPartnerRecord = null;
-      applyNavForRole(true, false);
-      const initials = email.split('@')[0].slice(0,2).toUpperCase();
-      applyUserCard(email.split('@')[0], 'Admin · TPCH', initials);
-      enterPortal();
+      const loginBtn = document.querySelector('.btn-login');
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Signing in…';
+      try {
+        const teamRes = await fetch(
+          SUPABASE_URL + '/rest/v1/tpch_team?email=eq.' + encodeURIComponent(email) + '&select=password,full_name&limit=1',
+          { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+        );
+        const [member] = await teamRes.json();
+        if (member?.password) {
+          if (!pass || member.password !== pass) {
+            showLoginError('Invalid password.');
+            return;
+          }
+        }
+        currentUserIsAdmin = true;
+        currentPartnerRecord = null;
+        applyNavForRole(true, false);
+        const displayName = member?.full_name || email.split('@')[0];
+        const initials = displayName.slice(0,2).toUpperCase();
+        applyUserCard(displayName, 'Admin · TPCH', initials);
+        enterPortal();
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Access Portal →';
+      }
       return;
     }
 
@@ -4426,6 +4446,11 @@
         status, reviewed_by: 'admin', reviewed_at: new Date().toISOString()
       })
     });
+    if (!res.ok) {
+      const errText = await res.text();
+      alert('Failed to update enquiry status.\n\n' + errText);
+      return;
+    }
     if (res.ok) {
       const enq = allEnquiries.find(e => e.id === id);
       if (enq) { enq.status = status; enq.reviewed_by = 'admin'; }
@@ -4873,6 +4898,17 @@
           <div><div class="tm-field-label">Email</div><div class="tm-field-value">${t.email}</div></div>
           <div><div class="tm-field-label">Role</div><div class="tm-field-value" style="text-transform:capitalize;">${t.role || 'Admin'}</div></div>
           <div><div class="tm-field-label">Status</div><div class="tm-field-value" style="text-transform:capitalize;">${t.status}</div></div>
+          <div><div class="tm-field-label">Password</div><div class="tm-field-value">${t.password ? '••••••••' : '<span style="color:var(--gold);font-size:12px;">Not set — cannot log in</span>'}</div></div>
+        </div>
+
+        <div class="tm-section-title" style="margin-top:24px;">Set / Change Password</div>
+        <div class="tm-fields-grid">
+          <div><div class="tm-field-label">New Password</div><input class="tm-edit-input" id="tm-pw-new" type="password" placeholder="Enter new password"></div>
+          <div><div class="tm-field-label">Confirm Password</div><input class="tm-edit-input" id="tm-pw-confirm" type="password" placeholder="Confirm new password"></div>
+        </div>
+        <div class="tm-form-error" id="tm-pw-error"></div>
+        <div style="margin-top:12px;">
+          <button class="tm-btn tm-btn-save" onclick="setTmPassword('${t.id}')">✓ Save Password</button>
         </div>
       </div>`;
   }
@@ -4974,6 +5010,7 @@
         <div class="tm-fields-grid">
           <div><div class="tm-field-label">Full Name</div><input class="tm-edit-input" id="tm-new-full_name" placeholder="e.g. Jane Smith"></div>
           <div><div class="tm-field-label">Email</div><input class="tm-edit-input" id="tm-new-email" placeholder="e.g. jane@tpch.com.au"></div>
+          <div><div class="tm-field-label">Password</div><input class="tm-edit-input" id="tm-new-password" type="password" placeholder="Set a login password"></div>
           <div style="grid-column:1/-1"><div class="tm-field-label">Role</div>
             <select class="tm-edit-select" id="tm-new-role">
               <option value="admin">Admin</option>
@@ -4997,16 +5034,18 @@
   async function addTeamMember() {
     const full_name = document.getElementById('tm-new-full_name')?.value.trim();
     const email     = document.getElementById('tm-new-email')?.value.trim().toLowerCase();
+    const password  = document.getElementById('tm-new-password')?.value || null;
     const role      = document.getElementById('tm-new-role')?.value || 'admin';
     const errEl     = document.getElementById('tm-add-error');
     if (!full_name || !email) { errEl.textContent = 'Name and email are required.'; return; }
+    if (!password) { errEl.textContent = 'A password is required.'; return; }
     const res = await fetch(SUPABASE_URL + '/rest/v1/tpch_team', {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
         'Content-Type': 'application/json', 'Prefer': 'return=representation'
       },
-      body: JSON.stringify({ full_name, email, role, status: 'active' })
+      body: JSON.stringify({ full_name, email, password, role, status: 'active' })
     });
     if (res.status === 409) { errEl.textContent = 'A team member with that email already exists.'; return; }
     if (!res.ok) { errEl.textContent = 'Could not add member. Please try again.'; return; }
@@ -5017,6 +5056,29 @@
     currentTmId = newMember.id;
     renderTmList();
     showTmDetail(newMember.id);
+  }
+
+  async function setTmPassword(id) {
+    const newPw  = document.getElementById('tm-pw-new')?.value;
+    const confirm = document.getElementById('tm-pw-confirm')?.value;
+    const errEl  = document.getElementById('tm-pw-error');
+    if (!newPw) { errEl.textContent = 'Please enter a password.'; return; }
+    if (newPw !== confirm) { errEl.textContent = 'Passwords do not match.'; return; }
+    if (newPw.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+    const res = await fetch(SUPABASE_URL + '/rest/v1/tpch_team?id=eq.' + id, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ password: newPw, updated_at: new Date().toISOString() })
+    });
+    if (res.ok) {
+      const t = allTeam.find(x => x.id === id);
+      if (t) t.password = newPw;
+      errEl.style.color = 'var(--green, #4CAF7A)';
+      errEl.textContent = 'Password saved.';
+      setTimeout(() => { errEl.textContent = ''; errEl.style.color = ''; showTmDetail(id); }, 1500);
+    } else {
+      errEl.textContent = 'Failed to save password. Please try again.';
+    }
   }
 
   // ─── ENQUIRY FORM ─────────────────────────────────────

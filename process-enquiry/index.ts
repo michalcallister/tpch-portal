@@ -377,6 +377,9 @@ Please assess this applicant across the following areas. Be concise, specific, a
 Format your response clearly with these 8 numbered sections. Be professional and direct.`;
 
     // 3. Call Claude API
+    console.log('Calling Claude API...');
+    if (!CLAUDE_KEY) console.error('CLAUDE_API_KEY secret is not set!');
+
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -385,15 +388,20 @@ Format your response clearly with these 8 numbered sections. Be professional and
         'content-type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1500,
         messages: [{ role: 'user', content: prompt }]
       })
     });
 
-    if (!claudeRes.ok) throw new Error('Claude API error: ' + await claudeRes.text());
+    if (!claudeRes.ok) {
+      const errText = await claudeRes.text();
+      console.error('Claude API error:', claudeRes.status, errText);
+      throw new Error('Claude API error: ' + errText);
+    }
     const claudeData = await claudeRes.json();
     const aiReport   = claudeData.content?.[0]?.text ?? 'AI assessment unavailable.';
+    console.log('Claude API response received, length:', aiReport.length);
 
     // Extract recommendation from report
     let aiRecommendation = 'review_further';
@@ -405,11 +413,14 @@ Format your response clearly with these 8 numbered sections. Be professional and
     }
 
     // 4. Save AI report back to the enquiry record
+    console.log('Saving AI report to DB for enquiry:', record.id);
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-    await supabase
+    const { error: updateError } = await supabase
       .from('pending_enquiries')
       .update({ ai_report: aiReport, ai_recommendation: aiRecommendation })
       .eq('id', record.id);
+    if (updateError) console.error('DB update error:', updateError);
+    else console.log('AI report saved successfully');
 
     // 5. Build recommendation badge for email
     const badgeColour = aiRecommendation === 'approve'
