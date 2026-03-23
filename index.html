@@ -1991,6 +1991,7 @@
         <button class="notif-bell partner-only" id="notif-bell-btn" onclick="toggleNotifPanel()" title="Notifications">
           🔔<span class="notif-badge" id="notif-badge" style="display:none">0</span>
         </button>
+        <button class="admin-only btn-logout" id="btn-change-pw" onclick="showAdminChangePwModal()" title="Change password" style="display:none;font-size:15px;">🔑</button>
         <button class="btn-logout" onclick="doLogout()" title="Sign out">⏻</button>
       </div>
     </div>
@@ -3623,6 +3624,27 @@
   </div>
 </div>
 
+<!-- Admin Change Password Modal -->
+<div id="admin-pw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1200;align-items:center;justify-content:center;" onclick="closeAdminChangePwModal()">
+  <div style="background:#1A1A16;border:1px solid rgba(201,168,76,0.25);padding:36px;width:380px;max-width:90vw;" onclick="event.stopPropagation()">
+    <div style="font-size:16px;font-weight:700;color:#F8F6F0;margin-bottom:4px;">Change Password</div>
+    <div style="font-size:12px;color:#8A8A80;margin-bottom:24px;">Update your admin login password</div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;color:#9A8A6A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">New Password</div>
+      <input id="admin-pw-new" type="password" placeholder="Enter new password" style="width:100%;background:#0F0F0C;border:1px solid rgba(201,168,76,0.2);color:#F8F6F0;padding:10px 12px;font-size:13px;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;color:#9A8A6A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Confirm Password</div>
+      <input id="admin-pw-confirm" type="password" placeholder="Confirm new password" style="width:100%;background:#0F0F0C;border:1px solid rgba(201,168,76,0.2);color:#F8F6F0;padding:10px 12px;font-size:13px;box-sizing:border-box;">
+    </div>
+    <div id="admin-pw-error" style="font-size:12px;color:#c94c4c;margin-bottom:12px;min-height:16px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="submitAdminPasswordChange()" style="flex:1;background:#C9A84C;color:#0A0A08;border:none;padding:11px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Save Password</button>
+      <button onclick="closeAdminChangePwModal()" style="flex:1;background:transparent;color:#9A8A6A;border:1px solid rgba(201,168,76,0.2);padding:11px;font-size:12px;cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Description Editor Modal -->
 <div id="floor-plan-lightbox" onclick="closeFloorPlanLightbox()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:1100;align-items:center;justify-content:center;cursor:zoom-out;">
   <img id="floor-plan-lightbox-img" src="" alt="Floor Plan" style="max-width:90vw;max-height:90vh;object-fit:contain;box-shadow:0 0 60px rgba(0,0,0,0.8);">
@@ -4130,6 +4152,8 @@
     // Notification bell (partner only)
     const bellBtn = document.getElementById('notif-bell-btn');
     if (bellBtn) bellBtn.style.display = isPartner ? 'inline-block' : 'none';
+    const changePwBtn = document.getElementById('btn-change-pw');
+    if (changePwBtn) changePwBtn.style.display = isAdmin ? 'inline-flex' : 'none';
     // Topbar company name (partner only)
     const topbarCompany = document.getElementById('topbar-company');
     if (topbarCompany) topbarCompany.style.display = isPartner ? 'block' : 'none';
@@ -4911,6 +4935,7 @@
           <div><div class="tm-field-label">Password</div><div class="tm-field-value">${t.password ? '••••••••' : '<span style="color:var(--gold);font-size:12px;">Not set — cannot log in</span>'}</div></div>
         </div>
 
+        ${(isSuperAdmin || t.email === currentAdminEmail) ? `
         <div class="tm-section-title" style="margin-top:24px;">Set / Change Password</div>
         <div class="tm-fields-grid">
           <div><div class="tm-field-label">New Password</div><input class="tm-edit-input" id="tm-pw-new" type="password" placeholder="Enter new password"></div>
@@ -4919,7 +4944,7 @@
         <div class="tm-form-error" id="tm-pw-error"></div>
         <div style="margin-top:12px;">
           <button class="tm-btn tm-btn-save" onclick="setTmPassword('${t.id}')">✓ Save Password</button>
-        </div>
+        </div>` : ''}
 
         ${deleteBtn}
       </div>`;
@@ -5073,6 +5098,46 @@
     currentTmId = newMember.id;
     renderTmList();
     showTmDetail(newMember.id);
+  }
+
+  function showAdminChangePwModal() {
+    document.getElementById('admin-pw-new').value = '';
+    document.getElementById('admin-pw-confirm').value = '';
+    document.getElementById('admin-pw-error').textContent = '';
+    document.getElementById('admin-pw-modal').style.display = 'flex';
+    setTimeout(() => document.getElementById('admin-pw-new').focus(), 50);
+  }
+
+  function closeAdminChangePwModal() {
+    document.getElementById('admin-pw-modal').style.display = 'none';
+  }
+
+  async function submitAdminPasswordChange() {
+    const newPw   = document.getElementById('admin-pw-new').value;
+    const confirm = document.getElementById('admin-pw-confirm').value;
+    const errEl   = document.getElementById('admin-pw-error');
+    errEl.style.color = '#c94c4c';
+    if (!newPw) { errEl.textContent = 'Please enter a new password.'; return; }
+    if (newPw.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+    if (newPw !== confirm) { errEl.textContent = 'Passwords do not match.'; return; }
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/tpch_team?email=eq.' + encodeURIComponent(currentAdminEmail),
+      {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ password: newPw, updated_at: new Date().toISOString() })
+      }
+    );
+    if (res.ok) {
+      // Update local cache
+      const me = allTeam.find(x => x.email === currentAdminEmail);
+      if (me) me.password = newPw;
+      errEl.style.color = '#4CAF7A';
+      errEl.textContent = 'Password updated successfully.';
+      setTimeout(() => closeAdminChangePwModal(), 1500);
+    } else {
+      errEl.textContent = 'Failed to update password. Please try again.';
+    }
   }
 
   async function deleteTmMember(id, name) {
