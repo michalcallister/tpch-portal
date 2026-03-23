@@ -4110,6 +4110,7 @@
 
   let currentUserIsAdmin  = false;
   let currentUserRole     = 'admin'; // 'admin' | 'super_admin'
+  let currentAdminEmail   = null;
   let currentPartnerRecord = null;  // { role, partner_id, full_name, company_name, logo_url, ... }
   let currentAuthToken    = null;
 
@@ -4189,6 +4190,7 @@
         }
         currentUserIsAdmin = true;
         currentUserRole = member?.role || 'admin';
+        currentAdminEmail = email;
         currentPartnerRecord = null;
         applyNavForRole(true, false);
         const displayName = member?.full_name || email.split('@')[0];
@@ -4877,7 +4879,9 @@
     const actionBtns = t.status === 'active'
       ? `<button class="tm-btn tm-btn-deactivate" onclick="setTmStatus('${t.id}','inactive')">⊘ Deactivate</button>`
       : `<button class="tm-btn tm-btn-activate" onclick="setTmStatus('${t.id}','active')">✓ Activate</button>`;
-    const deleteBtn = (currentUserRole === 'super_admin' && t.role !== 'super_admin')
+    const myRecord = allTeam.find(x => x.email === currentAdminEmail);
+    const isSuperAdmin = currentUserRole === 'super_admin' || myRecord?.role === 'super_admin';
+    const deleteBtn = (isSuperAdmin && t.role !== 'super_admin')
       ? `<button class="tm-btn tm-btn-deactivate" style="margin-top:12px;width:100%;background:rgba(180,40,40,0.15);border-color:rgba(180,40,40,0.4);color:#c94c4c;" onclick="deleteTmMember('${t.id}','${(t.full_name||'').replace(/'/g,"\\'")}')">✕ Delete Member</button>`
       : '';
 
@@ -4924,6 +4928,8 @@
   function editTmDetail(id) {
     const t = allTeam.find(x => x.id === id);
     if (!t) return;
+    const myRecord = allTeam.find(x => x.email === currentAdminEmail);
+    const isSuperAdmin = currentUserRole === 'super_admin' || myRecord?.role === 'super_admin';
     const detail = document.getElementById('tm-detail');
     const joined = new Date(t.joined_at).toLocaleDateString('en-AU', {day:'numeric', month:'long', year:'numeric'});
     detail.innerHTML = `
@@ -4947,11 +4953,11 @@
           <div><div class="tm-field-label">Full Name</div><input class="tm-edit-input" id="tm-ed-full_name" value="${(t.full_name||'').replace(/"/g,'&quot;')}"></div>
           <div><div class="tm-field-label">Email</div><input class="tm-edit-input" id="tm-ed-email" value="${(t.email||'').replace(/"/g,'&quot;')}"></div>
           <div style="grid-column:1/-1"><div class="tm-field-label">Role</div>
-            <select class="tm-edit-select" id="tm-ed-role" ${currentUserRole !== 'super_admin' ? 'disabled' : ''}>
+            <select class="tm-edit-select" id="tm-ed-role" ${!isSuperAdmin ? 'disabled' : ''}>
               <option value="admin"${(t.role||'admin')==='admin'?' selected':''}>Admin</option>
               <option value="super_admin"${t.role==='super_admin'?' selected':''}>Super Admin</option>
             </select>
-            ${currentUserRole !== 'super_admin' ? '<div style="font-size:11px;color:var(--grey-mid);margin-top:4px;">Only super admins can change roles.</div>' : ''}
+            ${!isSuperAdmin ? '<div style="font-size:11px;color:var(--grey-mid);margin-top:4px;">Only super admins can change roles.</div>' : ''}
           </div>
         </div>
         <div class="tm-form-error" id="tm-edit-error"></div>
