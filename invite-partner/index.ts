@@ -123,7 +123,86 @@ Deno.serve(async (req) => {
       return json({ success: true, staff_id: staff.id })
     }
 
-    return json({ error: 'type must be "partner" or "staff"' }, 400)
+    // ── Resend invite (admin → existing approved partner) ─────────
+    if (type === 'resend') {
+      const { email, full_name, company_name } = body
+
+      if (!email) return json({ error: 'email is required' }, 400)
+
+      const resendKey = Deno.env.get('RESEND_API_KEY') || ''
+      const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@tpch.com.au'
+      const firstName = full_name?.split(' ')[0] || full_name || 'there'
+
+      // Generate a fresh invite/recovery link
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: 'invite',
+        email,
+        options: {
+          redirectTo: portalUrl,
+          data: { full_name, company_name },
+        },
+      })
+
+      if (linkError) return json({ error: linkError.message }, 500)
+
+      const inviteLink = linkData?.properties?.action_link ?? portalUrl
+
+      // Send branded welcome email via Resend
+      const welcomeHtml = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F4F4F0;font-family:'Arial',sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background:#F4F4F0;">
+    <div style="background:#0A0A08;padding:28px 36px;text-align:center;">
+      <div style="display:inline-flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;background:#C9A84C;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0A0A08;">TC</div>
+        <div style="text-align:left;">
+          <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F8F6F0;">The Property Clearing House</div>
+          <div style="font-size:10px;color:#C9A84C;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">Partner Network</div>
+        </div>
+      </div>
+    </div>
+    <div style="height:3px;background:linear-gradient(90deg,#C9A84C,#E8D08A,#C9A84C);"></div>
+    <div style="background:#ffffff;padding:44px 44px 36px;">
+      <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1A1A16;line-height:1.3;">Your portal access link, ${firstName}.</p>
+      <p style="margin:0 0 28px;font-size:14px;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;">New access link — ${company_name || 'TPCH Partner Network'}</p>
+      <p style="margin:0 0 20px;font-size:15px;color:#3A3A35;line-height:1.7;">A new access link has been generated for your account. Click the button below to set your password and access the TPCH Partner Portal.</p>
+      <p style="margin:0 0 32px;font-size:15px;color:#3A3A35;line-height:1.7;">This link is valid for <strong style="color:#1A1A16;">24 hours</strong>. If it expires, please contact us and we will send a new one.</p>
+      <div style="text-align:center;margin:0 0 36px;">
+        <a href="${inviteLink}" style="display:inline-block;background:#C9A84C;color:#0A0A08;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:16px 40px;">
+          Set Password &amp; Access Portal →
+        </a>
+      </div>
+      <p style="margin:0 0 8px;font-size:14px;color:#3A3A35;line-height:1.7;">If you have any questions, reach out to us at <a href="mailto:${adminEmail}" style="color:#C9A84C;text-decoration:none;">${adminEmail}</a>.</p>
+      <p style="margin:0;font-size:14px;color:#3A3A35;line-height:1.7;">We look forward to working with you.</p>
+      <p style="margin:16px 0 0;font-size:14px;color:#1A1A16;font-weight:600;">The TPCH Team</p>
+    </div>
+    <div style="background:#0A0A08;padding:24px 36px;text-align:center;">
+      <p style="margin:0 0 6px;font-size:11px;color:#5A5A52;">The Property Clearing House · <a href="https://tpch.com.au" style="color:#C9A84C;text-decoration:none;">tpch.com.au</a></p>
+      <p style="margin:0;font-size:10px;color:#3A3A35;">You're receiving this email because an admin resent your portal access link.</p>
+    </div>
+  </div>
+</body>
+</html>`
+
+      if (resendKey) {
+        const emailRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'TPCH Partner Network <noreply@tpch.com.au>',
+            to: [email],
+            subject: `Your TPCH Partner Portal access link`,
+            html: welcomeHtml,
+          }),
+        })
+        if (!emailRes.ok) console.error('Resend error:', await emailRes.text())
+      }
+
+      return json({ success: true })
+    }
+
+    return json({ error: 'type must be "partner", "staff", or "resend"' }, 400)
 
   } catch (err: any) {
     console.error('invite-partner error:', err)

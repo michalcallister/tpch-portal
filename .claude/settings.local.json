@@ -6,7 +6,9 @@
       "Bash(curl -s -X POST https://api.monday.com/v2 -H \"Content-Type: application/json\" -H \"Authorization: eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjI1ODAzODE5NSwiYWFpIjoxMSwidWlkIjozMTA2NjA0NCwiaWFkIjoiMjAyMy0wNS0yM1QwMjozMjozMC4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MTIzOTI1MjUsInJnbiI6InVzZTEifQ.PeIV0c47TOpI1xbf5kS9B7mIVrG8UpGpYsryOLa3PYk\" -d '{\"\"query\"\":\"\"{ boards\\(ids:[6070412774]\\) { name columns { id title type } } }\"\"}')",
       "Bash(curl -s -X POST https://api.monday.com/v2 -H \"Content-Type: application/json\" -H \"Authorization: eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjI1ODAzODE5NSwiYWFpIjoxMSwidWlkIjozMTA2NjA0NCwiaWFkIjoiMjAyMy0wNS0yM1QwMjozMjozMC4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MTIzOTI1MjUsInJnbiI6InVzZTEifQ.PeIV0c47TOpI1xbf5kS9B7mIVrG8UpGpYsryOLa3PYk\" -d \"{\"\"query\"\":\"\"{ boards\\(ids:[6070412774]\\) { name columns { id title type } } }\"\"}\")",
       "Bash(python -m json.tool)",
-      "Bash(python -c \"import sys,json; cols=json.load\\(sys.stdin\\)[''data''][''boards''][0][''columns'']; [print\\(c[''id''], c[''type''], c[''title'']\\) for c in cols if ''comm'' in c[''title''].lower\\(\\) or ''channel'' in c[''title''].lower\\(\\)]\")"
+      "Bash(python -c \"import sys,json; cols=json.load\\(sys.stdin\\)[''data''][''boards''][0][''columns'']; [print\\(c[''id''], c[''type''], c[''title'']\\) for c in cols if ''comm'' in c[''title''].lower\\(\\) or ''channel'' in c[''title''].lower\\(\\)]\")",
+      "Bash(supabase functions:*)",
+      "Bash(npx supabase:*)"
     ]
   }
 }
