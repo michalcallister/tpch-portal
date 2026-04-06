@@ -83,6 +83,7 @@ BEGIN
         -- channel_comm_flat is the explicit channel-only $ amount;
         -- fall back to computing from channel_comm_pct × total_contract
         'channel_commission',       COALESCE(
+                                      s.channel_commission,
                                       s.channel_comm_flat,
                                       CASE
                                         WHEN s.channel_comm_pct IS NOT NULL AND s.total_contract IS NOT NULL

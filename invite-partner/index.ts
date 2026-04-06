@@ -133,17 +133,27 @@ Deno.serve(async (req) => {
       const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@tpch.com.au'
       const firstName = full_name?.split(' ')[0] || full_name || 'there'
 
-      // Generate a fresh invite/recovery link
-      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+      // Try invite first; if user already exists fall back to recovery (password reset)
+      let linkData: any = null
+      let { data: inviteData, error: inviteError } = await supabase.auth.admin.generateLink({
         type: 'invite',
         email,
-        options: {
-          redirectTo: portalUrl,
-          data: { full_name, company_name },
-        },
+        options: { redirectTo: portalUrl, data: { full_name, company_name } },
       })
 
-      if (linkError) return json({ error: linkError.message }, 500)
+      if (inviteError && inviteError.message.toLowerCase().includes('already')) {
+        const { data: recoveryData, error: recoveryError } = await supabase.auth.admin.generateLink({
+          type: 'recovery',
+          email,
+          options: { redirectTo: portalUrl },
+        })
+        if (recoveryError) return json({ error: recoveryError.message }, 500)
+        linkData = recoveryData
+      } else if (inviteError) {
+        return json({ error: inviteError.message }, 500)
+      } else {
+        linkData = inviteData
+      }
 
       const inviteLink = linkData?.properties?.action_link ?? portalUrl
 

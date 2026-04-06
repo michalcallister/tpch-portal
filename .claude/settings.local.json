@@ -8,7 +8,8 @@
       "Bash(python -m json.tool)",
       "Bash(python -c \"import sys,json; cols=json.load\\(sys.stdin\\)[''data''][''boards''][0][''columns'']; [print\\(c[''id''], c[''type''], c[''title'']\\) for c in cols if ''comm'' in c[''title''].lower\\(\\) or ''channel'' in c[''title''].lower\\(\\)]\")",
       "Bash(supabase functions:*)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(grep -v \"CSS\\\\|css\\\\|//\")"
     ]
   }
 }

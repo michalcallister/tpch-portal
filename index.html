@@ -3342,9 +3342,9 @@
         <table class="dlp-table">
           <thead>
             <tr>
+              <th class="dlp-th-sort" onclick="dlpSortBy('stage')">Stage <span class="dlp-si" id="si-stage">⇅</span></th>
               <th class="dlp-th-sort" onclick="dlpSortBy('property')">Property <span class="dlp-si" id="si-property">⇅</span></th>
               <th class="dlp-th-sort" onclick="dlpSortBy('client_name')">Client <span class="dlp-si" id="si-client_name">⇅</span></th>
-              <th class="dlp-th-sort" onclick="dlpSortBy('stage')">Stage <span class="dlp-si" id="si-stage">⇅</span></th>
               <th class="dlp-th-sort" onclick="dlpSortBy('cos_executed_date')">COS Executed <span class="dlp-si" id="si-cos_executed_date">⇅</span></th>
               <th class="dlp-th-sort" onclick="dlpSortBy('expected_approval_date')">Exp. Approval <span class="dlp-si" id="si-expected_approval_date">⇅</span></th>
               <th class="dlp-th-sort" onclick="dlpSortBy('expected_settlement_date')">Exp. Settlement <span class="dlp-si" id="si-expected_settlement_date">⇅</span></th>
@@ -6812,9 +6812,9 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
       const settlCls  = isUpcoming(d.expected_settlement_date) ? ' upcoming' : '';
       const approvCls = isUpcoming(d.expected_approval_date) ? ' upcoming' : '';
       return `<tr>
+        <td>${badge}</td>
         <td class="dlp-property">${escHtml(d.property_name || '—')}</td>
         <td class="dlp-client">${escHtml(d.client_name || '—')}</td>
-        <td>${badge}</td>
         <td class="dlp-date">${fmtDealDate(d.cos_executed_date)}</td>
         <td class="dlp-date${approvCls}">${fmtDealDate(d.expected_approval_date)}</td>
         <td class="dlp-date${settlCls}">${fmtDealDate(d.expected_settlement_date)}</td>

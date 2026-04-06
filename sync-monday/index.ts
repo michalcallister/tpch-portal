@@ -110,6 +110,7 @@ const STOCK_COLS = {
   channelCommission:  'formula36',
   channelCommPct:     'numeric_mm14v4wc',  // Channel Commission %
   channelCommFlat:    'numeric_mm14m2g5',  // Channel Commission $
+  incentivePct:       'numeric_mm1cef3w',  // Incentive %
   tpchCommission:     'numbers69',
   unconditional:      'dup__of_1st_build_commission',
   settlement:         'numbers04',
@@ -489,6 +490,7 @@ function mapStock(item: any, projectNameMap: Record<string, string>, projectData
     channel_commission:     channelComm,
     channel_comm_pct:       getNum(item, STOCK_COLS.channelCommPct),
     channel_comm_flat:      getNum(item, STOCK_COLS.channelCommFlat),
+    incentive_pct:          getNum(item, STOCK_COLS.incentivePct),
     tpch_commission:        getNum(item, STOCK_COLS.tpchCommission),
     unconditional_comm:     getNum(item, STOCK_COLS.unconditional),
     settlement_comm:        getNum(item, STOCK_COLS.settlement),
