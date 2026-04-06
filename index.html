@@ -1942,7 +1942,7 @@
       <span class="nav-icon">◈</span> Dashboard
     </div>
     <div class="nav-item" onclick="showPage('reports', this)">
-      <span class="nav-icon">▤</span> All Research
+      <span class="nav-icon">▤</span> Research
     </div>
     <div class="nav-item" onclick="showPage('stock', this)">
       <span class="nav-icon">◈</span> Stock
@@ -4164,6 +4164,39 @@
     sessionStorage.removeItem('tpch_session');
   }
 
+  function saveSortPrefs() {
+    localStorage.setItem('tpch_sort_prefs', JSON.stringify({ dlpSort, stkAllSort, stkProjSort }));
+  }
+
+  function restoreSortPrefs() {
+    const raw = localStorage.getItem('tpch_sort_prefs');
+    if (!raw) return;
+    try {
+      const prefs = JSON.parse(raw);
+      if (prefs.dlpSort)     dlpSort     = prefs.dlpSort;
+      if (prefs.stkAllSort)  stkAllSort  = prefs.stkAllSort;
+      if (prefs.stkProjSort) stkProjSort = prefs.stkProjSort;
+    } catch(e) {}
+  }
+
+  function applySortIndicators() {
+    // Deals
+    ['property','client_name','stage','cos_executed_date','expected_approval_date','expected_settlement_date','channel_commission'].forEach(c => {
+      const el = document.getElementById('si-' + c);
+      if (el) el.textContent = c === dlpSort.col ? (dlpSort.dir === 'asc' ? '▲' : '▼') : '⇅';
+    });
+    // All stock
+    ['lot','project','location','availability','type','bedrooms','size','price','rate','comm'].forEach(c => {
+      const el = document.getElementById('sas-' + c);
+      if (el) el.textContent = c === stkAllSort.col ? (stkAllSort.dir === 'asc' ? '↑' : '↓') : '⇅';
+    });
+    // Project stock
+    ['lot','type','bedrooms','size','price','rent','rate','availability','comm'].forEach(c => {
+      const el = document.getElementById('sps-' + c);
+      if (el) el.textContent = c === stkProjSort.col ? (stkProjSort.dir === 'asc' ? '↑' : '↓') : '⇅';
+    });
+  }
+
   async function restoreSession() {
     const raw = sessionStorage.getItem('tpch_session');
     if (!raw) return false;
@@ -4186,6 +4219,7 @@
         const roleLabel    = currentUserRole === 'super_admin' ? 'Super Admin · TPCH' : 'Admin · TPCH';
         applyNavForRole(true, false);
         applyUserCard(displayName, roleLabel, initials);
+        restoreSortPrefs();
         enterPortal();
         return true;
       } else if (s.type === 'partner' && s.authToken) {
@@ -4200,6 +4234,7 @@
           : 'Partner · ' + record.company_name;
         applyNavForRole(false, true);
         applyUserCard(displayName, roleLabel, initials);
+        restoreSortPrefs();
         enterPortal();
         loadNotifications();
         loadPartnerDashboard();
@@ -4297,6 +4332,7 @@
         const initials = displayName.slice(0,2).toUpperCase();
         const roleLabel = currentUserRole === 'super_admin' ? 'Super Admin · TPCH' : 'Admin · TPCH';
         applyUserCard(displayName, roleLabel, initials);
+        restoreSortPrefs();
         saveSession();
         enterPortal();
       } finally {
@@ -4362,6 +4398,7 @@
         ? (record.job_role || 'Staff') + ' · ' + record.company_name
         : 'Partner · ' + record.company_name;
       applyUserCard(displayName, roleLabel, initials);
+      restoreSortPrefs();
       saveSession();
       enterPortal();
       loadNotifications();
@@ -6841,12 +6878,11 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
       dealBadge.style.display = dealBadgeCount > 0 ? 'inline-flex' : 'none';
     }
 
-    // Reset filter/sort and render
+    // Reset filter and render (sort preserved from session prefs)
     dlpFilter = 'all';
-    dlpSort = { col: null, dir: 'asc' };
     document.querySelectorAll('.dlp-fpill').forEach((p, i) => p.classList.toggle('active', i === 0));
-    document.querySelectorAll('.dlp-si').forEach(el => el.textContent = '⇅');
     renderDealsTable();
+    applySortIndicators();
   }
 
   function renderDealsTable() {
@@ -6919,6 +6955,7 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
       const el = document.getElementById('si-' + c);
       if (el) el.textContent = c === col ? (dlpSort.dir === 'asc' ? '▲' : '▼') : '⇅';
     });
+    saveSortPrefs();
     renderDealsTable();
   }
 
@@ -7506,6 +7543,7 @@ function stkAllSortBy(col) {
   document.querySelectorAll('[id^="sas-"]').forEach(el => el.textContent = '⇅');
   const el = document.getElementById('sas-' + col);
   if (el) el.textContent = stkAllSort.dir === 'asc' ? '↑' : '↓';
+  saveSortPrefs();
   renderAllStockTable();
 }
 
@@ -7515,6 +7553,7 @@ function stkProjSortBy(col) {
   document.querySelectorAll('[id^="sps-"]').forEach(el => el.textContent = '⇅');
   const el = document.getElementById('sps-' + col);
   if (el) el.textContent = stkProjSort.dir === 'asc' ? '↑' : '↓';
+  saveSortPrefs();
   renderStockTable();
 }
 
