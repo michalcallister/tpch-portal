@@ -4148,6 +4148,70 @@
   let currentPartnerRecord = null;  // { role, partner_id, full_name, company_name, logo_url, ... }
   let currentAuthToken    = null;
 
+  function saveSession() {
+    if (currentUserIsAdmin) {
+      sessionStorage.setItem('tpch_session', JSON.stringify({
+        type: 'admin', email: currentAdminEmail, role: currentUserRole,
+      }));
+    } else if (currentPartnerRecord) {
+      sessionStorage.setItem('tpch_session', JSON.stringify({
+        type: 'partner', authToken: currentAuthToken, partnerRecord: currentPartnerRecord,
+      }));
+    }
+  }
+
+  function clearSession() {
+    sessionStorage.removeItem('tpch_session');
+  }
+
+  async function restoreSession() {
+    const raw = sessionStorage.getItem('tpch_session');
+    if (!raw) return false;
+    try {
+      const s = JSON.parse(raw);
+      if (s.type === 'admin') {
+        // Re-fetch the team member to get fresh name/role
+        const res = await fetch(
+          SUPABASE_URL + '/rest/v1/tpch_team?email=eq.' + encodeURIComponent(s.email) + '&select=password,full_name,role&limit=1',
+          { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+        );
+        const [member] = await res.json();
+        if (!member) { clearSession(); return false; }
+        currentUserIsAdmin = true;
+        currentUserRole    = member.role || 'admin';
+        currentAdminEmail  = s.email;
+        currentPartnerRecord = null;
+        const displayName  = member.full_name || s.email.split('@')[0];
+        const initials     = displayName.slice(0,2).toUpperCase();
+        const roleLabel    = currentUserRole === 'super_admin' ? 'Super Admin · TPCH' : 'Admin · TPCH';
+        applyNavForRole(true, false);
+        applyUserCard(displayName, roleLabel, initials);
+        enterPortal();
+        return true;
+      } else if (s.type === 'partner' && s.authToken) {
+        currentAuthToken     = s.authToken;
+        currentPartnerRecord = s.partnerRecord;
+        currentUserIsAdmin   = false;
+        const record         = s.partnerRecord;
+        const displayName    = record.full_name || record.email?.split('@')[0] || '';
+        const initials       = displayName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+        const roleLabel      = record.role === 'staff'
+          ? (record.job_role || 'Staff') + ' · ' + record.company_name
+          : 'Partner · ' + record.company_name;
+        applyNavForRole(false, true);
+        applyUserCard(displayName, roleLabel, initials);
+        enterPortal();
+        loadNotifications();
+        loadPartnerDashboard();
+        loadDeals();
+        loadMyReservations();
+        return true;
+      }
+    } catch(e) { /* bad session data */ }
+    clearSession();
+    return false;
+  }
+
   function applyNavForRole(isAdmin, isPartner) {
     // Admin items
     document.getElementById('nav-agent').classList.toggle('visible', isAdmin);
@@ -4233,6 +4297,7 @@
         const initials = displayName.slice(0,2).toUpperCase();
         const roleLabel = currentUserRole === 'super_admin' ? 'Super Admin · TPCH' : 'Admin · TPCH';
         applyUserCard(displayName, roleLabel, initials);
+        saveSession();
         enterPortal();
       } finally {
         loginBtn.disabled = false;
@@ -4297,6 +4362,7 @@
         ? (record.job_role || 'Staff') + ' · ' + record.company_name
         : 'Partner · ' + record.company_name;
       applyUserCard(displayName, roleLabel, initials);
+      saveSession();
       enterPortal();
       loadNotifications();
       loadPartnerDashboard();
@@ -5410,6 +5476,7 @@
     currentAuthToken     = null;
     currentPartnerRecord = null;
     currentUserIsAdmin   = false;
+    clearSession();
     partnerNotifications = [];
     partnerDeals = [];
     const db = document.getElementById('nav-deals-badge'); if (db) db.style.display = 'none';
@@ -5434,6 +5501,7 @@
     document.getElementById('forgot-email').addEventListener('keydown', e => { if (e.key==='Enter') sendPasswordReset(); });
     initTeamAuth(); // load admin emails from tpch_team before first login attempt
     checkAuthRedirect(); // handle invite/recovery links
+    restoreSession();    // re-enter portal if session exists from before refresh
   });
 
   // ─── PARTNER SETTINGS ─────────────────────────────────
