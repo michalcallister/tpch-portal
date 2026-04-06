@@ -2867,7 +2867,16 @@
             <div id="stk-stock-table-wrap" style="display:none;padding:0 24px 24px;">
               <table class="stk-all-stock-table">
                 <thead><tr>
-                  <th>Lot</th><th>Project</th><th>Location</th><th>Status</th><th>Type</th><th>Bed·Bath·Car</th><th>Size</th><th>Price</th><th>Rate/m²</th><th>Comm</th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('lot')">Lot <span class="dlp-si" id="sas-lot">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('project')">Project <span class="dlp-si" id="sas-project">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('location')">Location <span class="dlp-si" id="sas-location">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('availability')">Status <span class="dlp-si" id="sas-availability">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('type')">Type <span class="dlp-si" id="sas-type">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('bedrooms')">Bed·Bath·Car <span class="dlp-si" id="sas-bedrooms">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('size')">Size <span class="dlp-si" id="sas-size">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('price')">Price <span class="dlp-si" id="sas-price">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('rate')">Rate/m² <span class="dlp-si" id="sas-rate">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('comm')">Comm <span class="dlp-si" id="sas-comm">⇅</span></th>
                 </tr></thead>
                 <tbody id="stk-all-stock-tbody"></tbody>
               </table>
@@ -2977,15 +2986,15 @@
           <table class="stk-stock-table">
             <thead>
               <tr>
-                <th>Lot</th>
-                <th>Type</th>
-                <th>Bed · Bath · Car</th>
-                <th>Size</th>
-                <th>Price</th>
-                <th>Rent/wk</th>
-                <th>Rate/m²</th>
-                <th>Status</th>
-                <th>Your Comm</th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('lot')">Lot <span class="dlp-si" id="sps-lot">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('type')">Type <span class="dlp-si" id="sps-type">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('bedrooms')">Bed · Bath · Car <span class="dlp-si" id="sps-bedrooms">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('size')">Size <span class="dlp-si" id="sps-size">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('price')">Price <span class="dlp-si" id="sps-price">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('rent')">Rent/wk <span class="dlp-si" id="sps-rent">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('rate')">Rate/m² <span class="dlp-si" id="sps-rate">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('availability')">Status <span class="dlp-si" id="sps-availability">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('comm')">Your Comm <span class="dlp-si" id="sps-comm">⇅</span></th>
               </tr>
             </thead>
             <tbody id="spj-stock-tbody">
@@ -7389,6 +7398,8 @@ let stkFilter = {
 const STAMP_DUTY_RATES = { NSW:0.04, VIC:0.055, QLD:0.038, WA:0.045, SA:0.05, TAS:0.037, ACT:0.037, NT:0.062 };
 let lotFilter = { beds: 'any', avail: 'all' };
 let currentStkView = 'grid';
+let stkAllSort = { col: null, dir: 'asc' };
+let stkProjSort = { col: null, dir: 'asc' };
 
 // ── Helpers ──────────────────────────────────────────────
 function fmtCurrency(n) {
@@ -7414,6 +7425,58 @@ function fmtComm(s) {
   if (s.channel_commission) return fmtCurrency(s.channel_commission);
   return '—';
 }
+function commSortVal(s) {
+  if (s.channel_comm_flat && s.channel_comm_pct) return s.channel_comm_flat;
+  if (s.channel_comm_flat) return s.channel_comm_flat;
+  if (s.channel_comm_pct && s.total_contract) return Math.round(s.total_contract * s.channel_comm_pct / 100);
+  return s.channel_commission ?? -1;
+}
+
+function stkAllSortBy(col) {
+  if (stkAllSort.col === col) stkAllSort.dir = stkAllSort.dir === 'asc' ? 'desc' : 'asc';
+  else { stkAllSort.col = col; stkAllSort.dir = 'asc'; }
+  document.querySelectorAll('[id^="sas-"]').forEach(el => el.textContent = '⇅');
+  const el = document.getElementById('sas-' + col);
+  if (el) el.textContent = stkAllSort.dir === 'asc' ? '↑' : '↓';
+  renderAllStockTable();
+}
+
+function stkProjSortBy(col) {
+  if (stkProjSort.col === col) stkProjSort.dir = stkProjSort.dir === 'asc' ? 'desc' : 'asc';
+  else { stkProjSort.col = col; stkProjSort.dir = 'asc'; }
+  document.querySelectorAll('[id^="sps-"]').forEach(el => el.textContent = '⇅');
+  const el = document.getElementById('sps-' + col);
+  if (el) el.textContent = stkProjSort.dir === 'asc' ? '↑' : '↓';
+  renderStockTable();
+}
+
+function stkSortVal(s, col) {
+  switch(col) {
+    case 'lot':          return (s.lot_number || s.name || '').toLowerCase();
+    case 'project':      return (s.project_name || '').toLowerCase();
+    case 'location':     return ([s._suburb, s._state].filter(Boolean).join(' ')).toLowerCase();
+    case 'availability': return (s.availability || '').toLowerCase();
+    case 'type':         return (s.property_type || s.development_type || '').toLowerCase();
+    case 'bedrooms':     return s.bedrooms ?? -1;
+    case 'size':         return s.build_total_sqm || s.build_internal_sqm ?? -1;
+    case 'price':        return s.total_contract ?? -1;
+    case 'rent':         return s.rent_per_week ?? -1;
+    case 'rate':         return s.rate_per_sqm ?? -1;
+    case 'comm':         return commSortVal(s);
+    default:             return 0;
+  }
+}
+
+function applyStockSort(arr, sort) {
+  if (!sort.col) return arr;
+  return [...arr].sort((a, b) => {
+    const av = stkSortVal(a, sort.col), bv = stkSortVal(b, sort.col);
+    if (av < bv) return sort.dir === 'asc' ? -1 : 1;
+    if (av > bv) return sort.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
 function fmtProjComm(p) {
   if (p._maxCommFlat && p._maxCommPct) return fmtCurrencyShort(p._maxCommFlat) + ' (' + p._maxCommPct + '%)';
   if (p._maxCommFlat) return fmtCurrencyShort(p._maxCommFlat);
@@ -7577,7 +7640,8 @@ function renderAllStockTable() {
     return;
   }
 
-  document.getElementById('stk-all-stock-tbody').innerHTML = filtered.map(s => `
+  const sorted = applyStockSort(filtered, stkAllSort);
+  document.getElementById('stk-all-stock-tbody').innerHTML = sorted.map(s => `
     <tr onclick="showStockListing('${s.id}')">
       <td>${s.lot_number || s.name || '—'}</td>
       <td>${s.project_name || '—'}</td>
@@ -7864,7 +7928,8 @@ function renderStockTable() {
     return;
   }
 
-  document.getElementById('spj-stock-tbody').innerHTML = filtered.map(s => {
+  const sorted = applyStockSort(filtered, stkProjSort);
+  document.getElementById('spj-stock-tbody').innerHTML = sorted.map(s => {
     const availClass = stkAvailBadgeClass(s.availability);
     return `<tr onclick="showStockListing('${s.id}')">
       <td>${s.lot_number || s.name || '—'}</td>
