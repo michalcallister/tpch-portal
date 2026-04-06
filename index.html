@@ -7458,7 +7458,7 @@ function stkSortVal(s, col) {
     case 'availability': return (s.availability || '').toLowerCase();
     case 'type':         return (s.property_type || s.development_type || '').toLowerCase();
     case 'bedrooms':     return s.bedrooms ?? -1;
-    case 'size':         return s.build_total_sqm || s.build_internal_sqm ?? -1;
+    case 'size':         return (s.build_total_sqm || s.build_internal_sqm) ?? -1;
     case 'price':        return s.total_contract ?? -1;
     case 'rent':         return s.rent_per_week ?? -1;
     case 'rate':         return s.rate_per_sqm ?? -1;
