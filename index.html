@@ -7991,7 +7991,7 @@ function renderAnalysis() {
 // ── Lot detail ────────────────────────────────────────────
 function showStockListing(id) {
   currentStockId = id;
-  const s = allStockItems.find(x => x.id === id);
+  const s = allStockItems.find(x => x.id === id) || allAvailableStock.find(x => x.id === id);
   if (!s) return;
 
   // Header
