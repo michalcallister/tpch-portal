@@ -9,7 +9,15 @@
       "Bash(python -c \"import sys,json; cols=json.load\\(sys.stdin\\)[''data''][''boards''][0][''columns'']; [print\\(c[''id''], c[''type''], c[''title'']\\) for c in cols if ''comm'' in c[''title''].lower\\(\\) or ''channel'' in c[''title''].lower\\(\\)]\")",
       "Bash(supabase functions:*)",
       "Bash(npx supabase:*)",
-      "Bash(grep -v \"CSS\\\\|css\\\\|//\")"
+      "Bash(grep -v \"CSS\\\\|css\\\\|//\")",
+      "Bash(claude plugin:*)",
+      "Bash(where claude:*)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npx uipro-cli:*)",
+      "Bash(python skills/ui-ux-pro-max/scripts/search.py \"property investment research portal dark luxury sophisticated fintech channel partner\" --design-system -p \"TPCH\")",
+      "Bash(py --version)"
     ]
   }
 }
