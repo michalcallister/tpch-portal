@@ -3,959 +3,617 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Property Clearing House — Research Intelligence for Channel Partners</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>The Property Clearing House</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --gold: #C9A84C;
-    --gold-light: #E8C96A;
-    --gold-pale: #F5E8C0;
-    --gold-dim: rgba(201,168,76,0.12);
-    --gold-border: rgba(201,168,76,0.25);
-    --gold-glow: rgba(201,168,76,0.06);
-    --black: #0A0A08;
-    --black-soft: #111110;
-    --black-card: #161614;
-    --black-hover: #1C1C1A;
-    --grey: #3A3A35;
-    --grey-mid: #5A5A52;
-    --grey-light: #9A9A8A;
-    --grey-pale: #D4D4C8;
-    --white: #F8F6F0;
-    --red: #C94C4C;
-    --green: #4CAF7A;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--black);
-    color: var(--white);
-    overflow-x: hidden;
-  }
-
-  /* ─── GRID TEXTURE ─────────────────────────────────── */
-  .grid-texture {
-    position: absolute; inset: 0; pointer-events: none;
-    background-image:
-      linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
-    background-size: 72px 72px;
-  }
-
-  /* ─── NAV ───────────────────────────────────────────── */
-  nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 48px;
-    height: 64px;
-    background: rgba(10,10,8,0.92);
-    border-bottom: 1px solid var(--gold-border);
-    backdrop-filter: blur(12px);
-  }
-
-  .nav-logo {
-    display: flex; align-items: center; gap: 12px;
-    text-decoration: none;
-  }
-
-  .nav-mark {
-    width: 36px; height: 36px;
-    background: var(--gold);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 16px; font-weight: 700;
-    color: var(--black);
-    flex-shrink: 0;
-  }
-
-  .nav-brand {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 16px; font-weight: 600;
-    color: var(--white); letter-spacing: 0.3px;
-    line-height: 1.2;
-  }
-
-  .nav-brand span {
-    display: block; font-size: 9px;
-    font-family: 'DM Sans', sans-serif; font-weight: 400;
-    color: var(--grey-light); letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  .nav-links {
-    display: flex; align-items: center; gap: 36px;
-    list-style: none;
-  }
-
-  .nav-links a {
-    font-size: 12px; color: var(--grey-light);
-    text-decoration: none; letter-spacing: 0.5px;
-    transition: color 0.2s;
-  }
-
-  .nav-links a:hover { color: var(--white); }
-
-  .nav-cta {
-    padding: 9px 22px;
-    background: var(--gold);
-    color: var(--black) !important;
-    font-size: 12px !important; font-weight: 600 !important;
-    letter-spacing: 1px !important; text-transform: uppercase;
-    transition: background 0.2s !important;
-  }
-
-  .nav-cta:hover { background: var(--gold-light) !important; color: var(--black) !important; }
-
-  /* ─── HERO ──────────────────────────────────────────── */
-  #hero {
-    min-height: 100vh;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    position: relative; overflow: hidden;
-    padding: 120px 48px 80px;
-    text-align: center;
-  }
-
-  .hero-glow {
-    position: absolute; pointer-events: none;
-    border-radius: 50%;
-  }
-
-  .hero-glow-1 {
-    width: 800px; height: 600px;
-    background: radial-gradient(ellipse, rgba(201,168,76,0.10) 0%, transparent 70%);
-    top: -100px; left: -200px;
-  }
-
-  .hero-glow-2 {
-    width: 600px; height: 500px;
-    background: radial-gradient(ellipse, rgba(201,168,76,0.06) 0%, transparent 70%);
-    bottom: 0; right: -100px;
-  }
-
-  .hero-eyebrow {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 10px; color: var(--gold);
-    letter-spacing: 3px; text-transform: uppercase;
-    margin-bottom: 32px;
-    padding: 6px 16px;
-    border: 1px solid var(--gold-border);
-    position: relative; z-index: 1;
-  }
-
-  .hero-eyebrow-dot {
-    width: 5px; height: 5px;
-    background: var(--gold);
-    border-radius: 50%;
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-
-  .hero-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(48px, 6vw, 88px);
-    font-weight: 500; line-height: 1.05;
-    color: var(--white);
-    max-width: 900px;
-    margin: 0 auto 28px;
-    position: relative; z-index: 1;
-  }
-
-  .hero-title em {
-    font-style: italic; color: var(--gold);
-  }
-
-  .hero-sub {
-    font-size: 16px; color: var(--grey-light);
-    max-width: 560px; margin: 0 auto 52px;
-    line-height: 1.75; font-weight: 300;
-    position: relative; z-index: 1;
-  }
-
-  .hero-actions {
-    display: flex; align-items: center; gap: 16px;
-    justify-content: center;
-    position: relative; z-index: 1;
-  }
-
-  .btn-primary {
-    padding: 15px 36px;
-    background: var(--gold);
-    color: var(--black);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px; font-weight: 600;
-    letter-spacing: 1.5px; text-transform: uppercase;
-    text-decoration: none;
-    transition: background 0.2s, transform 0.1s;
-    cursor: pointer; border: none; display: inline-block;
-  }
-
-  .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
-
-  .btn-secondary {
-    padding: 14px 36px;
-    background: transparent;
-    border: 1px solid var(--gold-border);
-    color: var(--grey-pale);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px; font-weight: 500;
-    letter-spacing: 1px; text-transform: uppercase;
-    text-decoration: none;
-    transition: all 0.2s;
-    cursor: pointer; display: inline-block;
-  }
-
-  .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
-
-  /* ─── HERO DATA STRIP ─────────────────────────────── */
-  .hero-strip {
-    display: flex; align-items: center; justify-content: center;
-    gap: 0;
-    margin-top: 72px;
-    border-top: 1px solid var(--gold-border);
-    border-bottom: 1px solid var(--gold-border);
-    width: 100%; max-width: 900px;
-    position: relative; z-index: 1;
-  }
-
-  .strip-stat {
-    flex: 1; padding: 24px 32px;
-    text-align: center;
-    border-right: 1px solid var(--gold-border);
-  }
-
-  .strip-stat:last-child { border-right: none; }
-
-  .strip-num {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 34px; font-weight: 500;
-    color: var(--gold); line-height: 1;
-    margin-bottom: 4px;
-  }
-
-  .strip-label {
-    font-size: 10px; color: var(--grey-mid);
-    letter-spacing: 1.5px; text-transform: uppercase;
-    font-weight: 500;
-  }
-
-  /* ─── SECTIONS ─────────────────────────────────────── */
-  section {
-    position: relative; overflow: hidden;
-  }
-
-  .section-inner {
-    max-width: 1200px; margin: 0 auto;
-    padding: 100px 48px;
-  }
-
-  .section-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px; color: var(--gold);
-    letter-spacing: 3px; text-transform: uppercase;
-    margin-bottom: 20px;
-    display: flex; align-items: center; gap: 12px;
-  }
-
-  .section-label::before {
-    content: ''; display: block;
-    width: 24px; height: 1px;
-    background: var(--gold);
-  }
-
-  .section-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(36px, 4vw, 56px);
-    font-weight: 500; line-height: 1.1;
-    color: var(--white); margin-bottom: 20px;
-  }
-
-  .section-title em { font-style: italic; color: var(--gold); }
-
-  .section-body {
-    font-size: 15px; color: var(--grey-light);
-    line-height: 1.8; max-width: 580px;
-  }
-
-  /* ─── FEATURE GRID ─────────────────────────────────── */
-  #features { background: var(--black-soft); }
-
-  .feat-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1px;
-    background: var(--gold-border);
-    border: 1px solid var(--gold-border);
-    margin-top: 64px;
-  }
-
-  .feat-card {
-    background: var(--black-card);
-    padding: 44px 40px;
-    transition: background 0.2s;
-  }
-
-  .feat-card:hover { background: var(--black-hover); }
-
-  .feat-icon {
-    font-family: 'DM Mono', monospace;
-    font-size: 22px; color: var(--gold);
-    margin-bottom: 24px; display: block;
-  }
-
-  .feat-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 26px; font-weight: 500;
-    color: var(--white); margin-bottom: 14px;
-    line-height: 1.2;
-  }
-
-  .feat-body {
-    font-size: 14px; color: var(--grey-light);
-    line-height: 1.75;
-  }
-
-  .feat-tags {
-    display: flex; flex-wrap: wrap; gap: 6px;
-    margin-top: 20px;
-  }
-
-  .feat-tag {
-    font-size: 10px; color: var(--gold);
-    border: 1px solid var(--gold-border);
-    padding: 3px 10px;
-    font-family: 'DM Mono', monospace;
-    letter-spacing: 0.5px;
-  }
-
-  /* ─── RESEARCH ENGINE ──────────────────────────────── */
-  #engine { background: var(--black); }
-
-  .engine-layout {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 80px; align-items: center;
-    margin-top: 64px;
-  }
-
-  .engine-terminal {
-    background: var(--black-card);
-    border: 1px solid var(--gold-border);
-    overflow: hidden;
-  }
-
-  .terminal-bar {
-    display: flex; align-items: center; gap: 8px;
-    padding: 12px 16px;
-    background: var(--black-soft);
-    border-bottom: 1px solid var(--gold-border);
-  }
-
-  .terminal-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-  }
-
-  .td-red { background: #C94C4C; }
-  .td-amber { background: #C9A84C; }
-  .td-green { background: #4CAF7A; }
-
-  .terminal-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px; color: var(--grey-mid);
-    letter-spacing: 1px; margin-left: 8px;
-  }
-
-  .terminal-body {
-    padding: 24px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px; line-height: 1.8;
-  }
-
-  .t-line { display: flex; gap: 12px; margin-bottom: 4px; }
-
-  .t-prompt { color: var(--gold); flex-shrink: 0; }
-  .t-cmd { color: var(--grey-pale); }
-  .t-out { color: var(--grey-mid); padding-left: 16px; }
-  .t-val { color: var(--green); }
-  .t-source { color: var(--gold); opacity: 0.7; font-size: 10px; }
-  .t-blank { height: 8px; }
-
-  .sources-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 12px; margin-top: 32px;
-  }
-
-  .source-chip {
-    display: flex; align-items: flex-start; gap: 12px;
-    padding: 14px 16px;
-    background: var(--black-card);
-    border: 1px solid var(--gold-border);
-    transition: border-color 0.2s;
-  }
-
-  .source-chip:hover { border-color: var(--gold); }
-
-  .source-chip-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--gold); flex-shrink: 0; margin-top: 5px;
-  }
-
-  .source-chip-name {
-    font-size: 12px; color: var(--white); font-weight: 500;
-    margin-bottom: 2px;
-  }
-
-  .source-chip-sub {
-    font-size: 10px; color: var(--grey-mid); line-height: 1.4;
-  }
-
-  /* ─── MARKETS ──────────────────────────────────────── */
-  #markets { background: var(--black-soft); }
-
-  .markets-intro {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 80px; align-items: start;
-    margin-bottom: 56px;
-  }
-
-  .markets-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 1px; background: var(--gold-border);
-    border: 1px solid var(--gold-border);
-  }
-
-  .market-card {
-    background: var(--black-card);
-    padding: 32px 24px;
-    text-align: center;
-    transition: background 0.2s;
-    cursor: default;
-  }
-
-  .market-card:hover { background: var(--black-hover); }
-
-  .market-state {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 36px; font-weight: 300;
-    color: var(--gold); margin-bottom: 8px;
-  }
-
-  .market-name {
-    font-size: 10px; color: var(--grey-light);
-    letter-spacing: 1.5px; text-transform: uppercase;
-    margin-bottom: 16px;
-  }
-
-  .market-stat {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px; color: var(--grey-pale);
-    margin-bottom: 3px;
-  }
-
-  .market-stat span { color: var(--gold); }
-
-  /* ─── PARTNER BENEFITS ─────────────────────────────── */
-  #partners { background: var(--black); }
-
-  .partner-layout {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 80px; align-items: center;
-  }
-
-  .partner-list {
-    list-style: none; margin-top: 40px;
-  }
-
-  .partner-list li {
-    display: flex; align-items: flex-start; gap: 16px;
-    padding: 20px 0;
-    border-bottom: 1px solid rgba(201,168,76,0.12);
-  }
-
-  .partner-list li:first-child { border-top: 1px solid rgba(201,168,76,0.12); }
-
-  .partner-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px; color: var(--gold);
-    letter-spacing: 1px; flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  .partner-li-title {
-    font-size: 15px; font-weight: 500;
-    color: var(--white); margin-bottom: 4px;
-  }
-
-  .partner-li-body {
-    font-size: 13px; color: var(--grey-light);
-    line-height: 1.6;
-  }
-
-  .partner-visual {
-    background: var(--black-card);
-    border: 1px solid var(--gold-border);
-    padding: 40px;
-    position: relative; overflow: hidden;
-  }
-
-  .partner-visual::before {
-    content: '';
-    position: absolute; inset: 0;
-    background:
-      radial-gradient(ellipse 80% 60% at 80% 20%, rgba(201,168,76,0.08) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .pv-tag {
-    font-family: 'DM Mono', monospace;
-    font-size: 9px; color: var(--gold);
-    letter-spacing: 2px; text-transform: uppercase;
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--gold-border);
-  }
-
-  .pv-stat-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 14px 0;
-    border-bottom: 1px solid rgba(201,168,76,0.08);
-  }
-
-  .pv-stat-row:last-child { border-bottom: none; }
-
-  .pv-key {
-    font-size: 12px; color: var(--grey-light);
-  }
-
-  .pv-val {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px; font-weight: 500;
-    color: var(--gold);
-  }
-
-  .pv-val.green { color: var(--green); }
-  .pv-val.white { color: var(--white); font-size: 16px; }
-
-  /* ─── HOW IT WORKS ─────────────────────────────────── */
-  #process { background: var(--black-soft); }
-
-  .process-steps {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 1px; background: var(--gold-border);
-    border: 1px solid var(--gold-border);
-    margin-top: 64px;
-  }
-
-  .process-step {
-    background: var(--black-card);
-    padding: 40px 32px;
-    position: relative;
-  }
-
-  .process-num {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 56px; font-weight: 300;
-    color: var(--gold-border); line-height: 1;
-    margin-bottom: 20px;
-  }
-
-  .process-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px; font-weight: 500;
-    color: var(--white); margin-bottom: 12px;
-  }
-
-  .process-body {
-    font-size: 13px; color: var(--grey-light);
-    line-height: 1.7;
-  }
-
-  /* ─── CTA ───────────────────────────────────────────── */
-  #cta { background: var(--black); }
-
-  .cta-inner {
-    max-width: 1200px; margin: 0 auto;
-    padding: 100px 48px;
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 80px; align-items: center;
-  }
-
-  .cta-form {
-    background: var(--black-card);
-    border: 1px solid var(--gold-border);
-    padding: 44px;
-    position: relative; overflow: hidden;
-  }
-
-  .cta-form::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0;
-    height: 2px; background: var(--gold);
-  }
-
-  .cta-form-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 28px; font-weight: 500;
-    color: var(--white); margin-bottom: 8px;
-  }
-
-  .cta-form-sub {
-    font-size: 13px; color: var(--grey-light);
-    margin-bottom: 32px; line-height: 1.6;
-  }
-
-  .form-row { margin-bottom: 16px; }
-
-  .form-label {
-    display: block; font-size: 10px;
-    text-transform: uppercase; letter-spacing: 1.5px;
-    color: var(--grey-light); margin-bottom: 8px;
-    font-weight: 500;
-  }
-
-  .form-input, .form-select {
-    width: 100%; padding: 13px 16px;
-    background: var(--black-soft);
-    border: 1px solid var(--grey);
-    color: var(--white);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px; outline: none;
-    transition: border-color 0.2s;
-    -webkit-appearance: none;
-  }
-
-  .form-input:focus, .form-select:focus { border-color: var(--gold); }
-  .form-input::placeholder { color: var(--grey-mid); }
-
-  .form-select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235A5A52'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 14px center;
-    cursor: pointer;
-  }
-
-  .form-select option { background: var(--black-card); }
-
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-  .btn-form {
-    width: 100%; padding: 15px;
-    background: var(--gold);
-    color: var(--black);
-    border: none; cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px; font-weight: 600;
-    letter-spacing: 1.5px; text-transform: uppercase;
-    transition: background 0.2s, transform 0.1s;
-    margin-top: 8px;
-  }
-
-  .btn-form:hover { background: var(--gold-light); transform: translateY(-1px); }
-
-  .form-note {
-    font-size: 11px; color: var(--grey-mid);
-    text-align: center; margin-top: 14px; line-height: 1.5;
-  }
-
-  .form-note a { color: var(--gold); text-decoration: none; }
-
-  /* ─── FOOTER ────────────────────────────────────────── */
-  footer {
-    background: var(--black-soft);
-    border-top: 1px solid var(--gold-border);
-    padding: 56px 48px 36px;
-  }
-
-  .footer-inner {
-    max-width: 1200px; margin: 0 auto;
-  }
-
-  .footer-top {
-    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
-    gap: 64px; margin-bottom: 56px;
-  }
-
-  .footer-brand-name {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 16px; font-weight: 600; color: var(--white);
-    margin-top: 14px; margin-bottom: 8px;
-  }
-
-  .footer-brand-desc {
-    font-size: 13px; color: var(--grey-mid);
-    line-height: 1.7; max-width: 280px;
-  }
-
-  .footer-col-title {
-    font-size: 10px; font-weight: 600;
-    letter-spacing: 2px; text-transform: uppercase;
-    color: var(--grey-light); margin-bottom: 20px;
-  }
-
-  .footer-links { list-style: none; }
-
-  .footer-links li { margin-bottom: 10px; }
-
-  .footer-links a {
-    font-size: 13px; color: var(--grey-mid);
-    text-decoration: none; transition: color 0.2s;
-  }
-
-  .footer-links a:hover { color: var(--gold); }
-
-  .footer-bottom {
-    display: flex; align-items: center; justify-content: space-between;
-    padding-top: 32px; border-top: 1px solid rgba(201,168,76,0.1);
-    font-size: 11px; color: var(--grey-mid);
-  }
-
-  .footer-bottom a { color: var(--grey-mid); text-decoration: none; }
-  .footer-bottom a:hover { color: var(--gold); }
-
-  /* ─── TICKER ────────────────────────────────────────── */
-  .ticker-wrap {
-    background: var(--black-soft);
-    border-top: 1px solid var(--gold-border);
-    border-bottom: 1px solid var(--gold-border);
-    overflow: hidden; height: 40px;
-    display: flex; align-items: center;
-  }
-
-  .ticker-track {
-    display: flex; align-items: center; gap: 0;
-    animation: ticker 40s linear infinite;
-    white-space: nowrap;
-  }
-
-  @keyframes ticker {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
-
-  .ticker-item {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px; letter-spacing: 1px;
-    padding: 0 32px;
-    border-right: 1px solid var(--gold-border);
-    display: flex; align-items: center; gap: 8px;
-    height: 40px; flex-shrink: 0;
-  }
-
-  .ticker-key { color: var(--grey-mid); }
-  .ticker-val { color: var(--gold); }
-  .ticker-up { color: var(--green); }
-  .ticker-dn { color: var(--red); }
-
-  /* ─── DIVIDER ───────────────────────────────────────── */
-  .divider-mark {
-    text-align: center; padding: 24px;
-    font-family: 'DM Mono', monospace;
-    font-size: 16px; color: var(--gold-border);
-  }
-
-  /* ─── SCROLL REVEAL ─────────────────────────────────── */
-  .reveal {
-    opacity: 0; transform: translateY(32px);
-    transition: opacity 0.7s ease, transform 0.7s ease;
-  }
-  .reveal.in { opacity: 1; transform: translateY(0); }
-
-  /* ─── RESPONSIVE ────────────────────────────────────── */
-  @media (max-width: 1024px) {
-    nav { padding: 0 24px; }
-    .nav-links { gap: 20px; }
-    .section-inner { padding: 80px 24px; }
-    .hero-strip { max-width: 100%; }
-    .feat-grid, .engine-layout, .partner-layout, .markets-intro,
-    .process-steps, .cta-inner, .footer-top {
-      grid-template-columns: 1fr;
-      gap: 40px;
-    }
-    .markets-grid { grid-template-columns: repeat(3, 1fr); }
-    .process-steps { grid-template-columns: 1fr 1fr; }
-    .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
-  }
-
-  @media (max-width: 640px) {
-    nav { padding: 0 16px; }
-    .nav-links { display: none; }
-    .section-inner { padding: 60px 16px; }
-    #hero { padding: 100px 16px 60px; }
-    .hero-strip { flex-direction: column; }
-    .strip-stat { border-right: none; border-bottom: 1px solid var(--gold-border); }
-    .strip-stat:last-child { border-bottom: none; }
-    .hero-actions { flex-direction: column; width: 100%; }
-    .btn-primary, .btn-secondary { width: 100%; text-align: center; }
-    .markets-grid { grid-template-columns: 1fr 1fr; }
-    .process-steps { grid-template-columns: 1fr; }
-    .sources-grid { grid-template-columns: 1fr; }
-    .form-grid { grid-template-columns: 1fr; }
-    .footer-top { grid-template-columns: 1fr; }
-    .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
-    .cta-inner { padding: 60px 16px; }
-    footer { padding: 40px 16px 24px; }
-  }
+
+:root {
+  --navy:      #080F1A;
+  --navy-mid:  #0F1B2D;
+  --navy-card: #152238;
+  --navy-lift: #1A2D47;
+  --gold:      #C8A951;
+  --gold-lt:   #E8D48B;
+  --gold-line: rgba(200,169,81,0.22);
+  --gold-dim:  rgba(200,169,81,0.10);
+  --teal:      #14A3A8;
+  --teal-dim:  rgba(20,163,168,0.12);
+  --text:      #F5F3EE;
+  --muted:     #98A5B3;
+  --faint:     #5A6878;
+  --serif: 'Playfair Display', Georgia, serif;
+  --sans:  'Outfit', system-ui, sans-serif;
+  --mono:  'DM Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body { font-family: var(--sans); background: var(--navy); color: var(--text); overflow-x: hidden; }
+
+/* ── NAV ──────────────────────────────────────────── */
+nav {
+  position: fixed; inset-block-start: 0; inset-inline: 0;
+  z-index: 50;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding-inline: clamp(24px, 4vw, 64px);
+  /* starts transparent, JS adds scrolled class */
+  transition: background 0.3s ease, border-color 0.3s ease;
+  border-bottom: 1px solid transparent;
+}
+
+nav.scrolled {
+  background: rgba(8,15,26,0.97);
+  border-bottom-color: var(--gold-line);
+  backdrop-filter: blur(16px);
+}
+
+.nav-logo {
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none; flex-shrink: 0;
+}
+
+.nav-rule { width: 1px; height: 26px; background: var(--gold-line); }
+
+.nav-brand-name {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase; color: var(--text);
+}
+.nav-brand-tag {
+  font-family: var(--serif); font-style: italic;
+  font-size: 10px; color: var(--gold); margin-top: 1px;
+}
+
+.nav-links {
+  display: flex; align-items: center; gap: 32px; list-style: none;
+}
+.nav-links a {
+  font-size: 11px; font-weight: 400; color: rgba(245,243,238,0.65);
+  text-decoration: none; letter-spacing: 0.5px;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+
+.nav-cta {
+  padding: 9px 22px !important;
+  background: var(--gold) !important; color: var(--navy) !important;
+  font-size: 10px !important; font-weight: 700 !important;
+  letter-spacing: 2px !important; text-transform: uppercase;
+  transition: background 0.2s !important;
+}
+.nav-cta:hover { background: var(--gold-lt) !important; }
+
+/* ── HERO — full viewport, image-led ─────────────── */
+#hero {
+  position: relative;
+  height: 100vh; min-height: 600px;
+  display: flex; align-items: flex-end;
+  overflow: hidden;
+}
+
+.hero-img {
+  position: absolute; inset: 0;
+  background: url('hero-bg.jpg') center center / cover no-repeat;
+  /* slight zoom on image to keep eye centred */
+  background-position: 55% center;
+}
+
+/* Dark vignette — heavier at bottom so text pops */
+.hero-img::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to top,  rgba(8,15,26,0.96) 0%, rgba(8,15,26,0.55) 30%, transparent 60%),
+    linear-gradient(to bottom, rgba(8,15,26,0.40) 0%, transparent 20%),
+    linear-gradient(to right, rgba(8,15,26,0.15) 0%, transparent 50%);
+}
+
+.hero-content {
+  position: relative; z-index: 2;
+  width: 100%;
+  padding: clamp(40px,6vw,80px) clamp(24px,5vw,80px) clamp(56px,7vw,96px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Eyebrow */
+.hero-label {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 9px; color: var(--gold);
+  letter-spacing: 3.5px; text-transform: uppercase;
+  margin-bottom: 28px;
+}
+.hero-label-dot {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--gold);
+  animation: pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+/* Tagline — THE statement */
+.hero-tagline {
+  font-family: var(--serif);
+  font-size: clamp(42px, 6vw, 92px);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.5px;
+  color: var(--text);
+  margin-bottom: 32px;
+}
+
+.hero-tagline span {
+  color: var(--gold);
+  font-style: italic;
+}
+
+/* Sub — one sentence max */
+.hero-sub {
+  font-size: clamp(14px, 1.4vw, 17px);
+  font-weight: 300;
+  color: rgba(200,208,220,0.75);
+  line-height: 1.7;
+  max-width: 48ch;
+  margin-bottom: 40px;
+}
+
+.hero-actions {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  margin-bottom: 56px;
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 12px 30px;
+  font-family: var(--sans); font-size: 10px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase; text-decoration: none;
+  border: none; cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.15s;
+}
+.btn-gold { background: var(--gold); color: var(--navy); }
+.btn-gold:hover { background: var(--gold-lt); transform: translateY(-1px); }
+.btn-ghost { background: transparent; border: 1px solid rgba(200,169,81,0.35); color: rgba(245,243,238,0.75); }
+.btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Stats strip at bottom of hero */
+.hero-stats {
+  display: flex; gap: 0;
+  border-top: 1px solid rgba(200,169,81,0.2);
+  padding-top: 28px; width: 100%; max-width: 560px;
+}
+.hero-stat { flex: 1; padding-right: 32px; }
+.stat-num {
+  font-family: var(--serif); font-size: 30px; font-weight: 500;
+  color: var(--gold); line-height: 1; margin-bottom: 3px;
+}
+.stat-label {
+  font-family: var(--mono); font-size: 8px; font-weight: 500;
+  letter-spacing: 1.8px; text-transform: uppercase; color: var(--faint);
+}
+
+/* ── TICKER ───────────────────────────────────────── */
+.ticker-wrap {
+  background: var(--navy-lift); height: 38px; overflow: hidden;
+  border-top: 1px solid var(--gold-line); border-bottom: 1px solid var(--gold-line);
+  display: flex; align-items: center;
+}
+.ticker-track {
+  display: flex; align-items: center; white-space: nowrap;
+  animation: ticker 52s linear infinite;
+}
+@keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.ti {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding-inline: 28px; height: 38px;
+  border-right: 1px solid var(--gold-line);
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.5px;
+}
+.ti-k { color: var(--faint); }
+.ti-v { color: var(--gold); }
+.ti-u { color: var(--teal); }
+
+/* ── SHARED SECTION ───────────────────────────────── */
+.section { padding-block: 96px; }
+.wrap { max-width: 1240px; margin-inline: auto; padding-inline: clamp(24px,4vw,64px); }
+
+.label {
+  display: flex; align-items: center; gap: 14px;
+  font-family: var(--mono); font-size: 9px; color: var(--gold);
+  letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px;
+}
+.label::before { content:''; width:24px; height:1px; background:var(--gold); flex-shrink:0; }
+
+.h2 {
+  font-family: var(--serif); font-size: clamp(32px,3.5vw,50px);
+  font-weight: 500; line-height: 1.08; color: var(--text); margin-bottom: 20px;
+}
+.h2 em { font-style: italic; color: var(--gold); }
+
+.body-text {
+  font-size: 15px; font-weight: 300; line-height: 1.85;
+  color: var(--muted); max-width: 52ch;
+}
+
+/* ── THREE PILLARS ────────────────────────────────── */
+#pillars { background: var(--navy); }
+
+.pillars-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  border: 1px solid var(--gold-line); margin-top: 56px;
+}
+
+.pillar {
+  border-right: 1px solid var(--gold-line);
+  transition: background 0.22s;
+}
+.pillar:last-child { border-right: none; }
+.pillar:hover { background: var(--navy-card); }
+
+/* Top accent on hover */
+.pillar-inner {
+  padding: 44px 40px 48px;
+  border-top: 2px solid transparent;
+  transition: border-color 0.22s;
+  height: 100%;
+}
+.pillar:hover .pillar-inner { border-top-color: var(--gold); }
+
+.pillar-icon {
+  width: 40px; height: 40px;
+  border: 1px solid var(--gold-line);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 28px;
+}
+
+.pillar-title {
+  font-family: var(--serif); font-size: 22px; font-weight: 500;
+  color: var(--text); margin-bottom: 14px; line-height: 1.2;
+}
+
+.pillar-body {
+  font-size: 13px; font-weight: 300; line-height: 1.8;
+  color: var(--muted); margin-bottom: 28px;
+}
+
+.pillar-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 700; letter-spacing: 1.8px;
+  text-transform: uppercase; color: var(--gold); text-decoration: none;
+  transition: gap 0.18s;
+}
+.pillar-link:hover { gap: 12px; }
+
+/* ── RESEARCH ENGINE — terminal ───────────────────── */
+#engine { background: rgba(4,10,18,1); }
+
+.engine-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 72px; align-items: center;
+}
+
+.terminal {
+  background: var(--navy); border: 1px solid var(--gold-line);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+.t-bar {
+  display: flex; align-items: center; gap: 7px;
+  padding: 11px 16px; background: var(--navy-card);
+  border-bottom: 1px solid var(--gold-line);
+}
+.t-dot { width: 9px; height: 9px; border-radius: 50%; }
+.td-r{background:#C0392B} .td-g{background:var(--gold)} .td-t{background:var(--teal)}
+.t-title { font-family: var(--mono); font-size: 9px; color: var(--faint); letter-spacing: 0.8px; margin-left: 4px; }
+.t-body { padding: 20px 18px; font-family: var(--mono); font-size: 11px; line-height: 1.95; }
+.tl { display: flex; gap: 8px; }
+.tp { color: var(--gold); flex-shrink: 0; }
+.tc { color: var(--text); }
+.to { color: var(--faint); padding-left: 12px; }
+.tv { color: var(--teal); }
+.ts { color: var(--gold); opacity: 0.45; font-size: 9px; }
+.tb { height: 5px; }
+
+.sources-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 32px; }
+.source-chip {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 14px; background: var(--navy-card); border: 1px solid var(--gold-line);
+  transition: border-color 0.18s, background 0.18s; cursor: default;
+}
+.source-chip:hover { border-color: var(--gold); background: var(--navy-lift); }
+.sc-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink:0; margin-top:5px; }
+.sc-name { font-size: 11px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.sc-sub  { font-size: 9px; color: var(--faint); line-height: 1.4; }
+
+/* ── MARKETS ──────────────────────────────────────── */
+#markets { background: var(--navy-mid); }
+
+.markets-grid {
+  display: grid; grid-template-columns: repeat(5,1fr);
+  border: 1px solid var(--gold-line); margin-top: 56px;
+}
+.market-card {
+  border-right: 1px solid var(--gold-line);
+  transition: background 0.22s; cursor: default;
+}
+.market-card:last-child { border-right: none; }
+.market-card:hover { background: var(--navy-lift); }
+
+.mc-head { padding: 24px 22px 18px; border-bottom: 1px solid var(--gold-line); }
+.mc-state { font-family: var(--serif); font-size: 34px; font-weight: 400; color: var(--gold); line-height: 1; margin-bottom: 3px; }
+.mc-name  { font-family: var(--mono); font-size: 8px; color: var(--faint); letter-spacing: 1.5px; text-transform: uppercase; }
+
+.mc-body { padding: 16px 22px 20px; }
+.mc-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0; border-bottom: 1px solid rgba(200,169,81,0.05);
+}
+.mc-row:last-of-type { border-bottom: none; }
+.mc-k { font-size: 10px; color: var(--faint); }
+.mc-v { font-family: var(--mono); font-size: 10px; color: var(--gold); }
+
+.mc-badge {
+  display: inline-flex; align-items: center; margin-top: 12px;
+  font-size: 8px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 9px;
+}
+.badge-buy   { background:rgba(20,163,168,0.12); color:var(--teal);  border:1px solid rgba(20,163,168,0.22); }
+.badge-watch { background:var(--gold-dim);        color:var(--gold);  border:1px solid var(--gold-line); }
+.badge-pend  { background:rgba(90,104,120,0.10); color:var(--faint); border:1px solid rgba(90,104,120,0.2); }
+
+/* ── PARTNER BENEFITS ─────────────────────────────── */
+#partners { background: var(--navy); }
+
+.partners-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+
+.partner-list { list-style: none; margin-top: 40px; }
+.partner-item { display: flex; gap: 20px; align-items: flex-start; padding-block: 22px; border-bottom: 1px solid rgba(200,169,81,0.08); }
+.partner-item:first-child { border-top: 1px solid rgba(200,169,81,0.08); }
+.pi-num { font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 1px; flex-shrink: 0; margin-top: 3px; }
+.pi-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.pi-body  { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.7; }
+
+/* Property sample card */
+.prop-card { background: var(--navy-card); border: 1px solid var(--gold-line); box-shadow: 0 20px 52px rgba(0,0,0,0.35); }
+.prop-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 24px; background: var(--navy-lift); border-bottom: 2px solid var(--gold);
+}
+.ph-label { font-family: var(--mono); font-size: 8px; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+.ph-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.prop-rows { padding: 4px 0; }
+.prop-row  { display: flex; justify-content: space-between; align-items: center; padding: 11px 24px; border-bottom: 1px solid rgba(200,169,81,0.05); }
+.prop-row:last-child { border-bottom: none; }
+.pk { font-size: 11px; color: var(--muted); }
+.pv { font-family: var(--serif); font-size: 18px; font-weight: 500; color: var(--gold); }
+.pv.teal  { color: var(--teal); }
+.pv.plain { font-family: var(--mono); font-size: 12px; color: var(--text); }
+
+/* ── CTA ──────────────────────────────────────────── */
+#cta { background: rgba(4,10,18,1); }
+
+.cta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+
+.form-card { background: var(--navy-card); border: 1px solid var(--gold-line); }
+.form-head { padding: 24px 36px; background: var(--navy-lift); border-bottom: 2px solid var(--gold); }
+.form-title { font-family: var(--serif); font-size: 22px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+.form-sub   { font-size: 12px; color: var(--muted); }
+.form-body  { padding: 28px 36px; }
+.form-row   { margin-bottom: 14px; }
+.form-label { display: block; font-size: 9px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--faint); margin-bottom: 7px; }
+.form-input, .form-select {
+  width: 100%; min-height: 44px; padding: 11px 14px;
+  background: var(--navy); border: 1px solid rgba(200,169,81,0.15);
+  color: var(--text); font-family: var(--sans); font-size: 13px;
+  outline: none; transition: border-color 0.18s; -webkit-appearance: none;
+}
+.form-input:focus, .form-select:focus { border-color: var(--gold); }
+.form-input::placeholder { color: var(--faint); }
+.form-select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235A6878'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+}
+.form-select option { background: var(--navy-card); }
+.form-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-submit {
+  width: 100%; min-height: 48px; padding: 14px;
+  background: var(--gold); color: var(--navy); border: none; cursor: pointer;
+  font-family: var(--sans); font-size: 10px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  transition: background 0.18s, transform 0.15s; margin-top: 4px;
+}
+.form-submit:hover { background: var(--gold-lt); transform: translateY(-1px); }
+.form-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.form-note { font-size: 10px; color: var(--faint); text-align: center; margin-top: 12px; line-height: 1.5; }
+.form-note a { color: var(--gold); text-decoration: none; }
+
+/* ── FOOTER ───────────────────────────────────────── */
+footer {
+  background: var(--navy); border-top: 1px solid var(--gold-line);
+  padding-block: 52px 32px;
+}
+.footer-grid {
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px; padding-bottom: 48px; border-bottom: 1px solid var(--gold-line); margin-bottom: 28px;
+}
+.footer-tagline { font-family: var(--serif); font-style: italic; font-size: 12px; color: var(--gold); margin: 6px 0 14px; }
+.footer-desc { font-size: 12px; font-weight: 300; color: var(--faint); line-height: 1.8; max-width: 30ch; }
+.footer-col-title { font-family: var(--mono); font-size: 8px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+.footer-links { list-style: none; }
+.footer-links li { margin-bottom: 8px; }
+.footer-links a { font-size: 12px; font-weight: 300; color: var(--faint); text-decoration: none; transition: color 0.18s; }
+.footer-links a:hover { color: var(--gold); }
+.footer-bottom { display: flex; justify-content: space-between; font-size: 10px; color: var(--faint); gap: 24px; }
+
+/* ── SCROLL REVEAL ────────────────────────────────── */
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.in { opacity: 1; transform: translateY(0); }
+
+/* ── RESPONSIVE ───────────────────────────────────── */
+@media (max-width: 1024px) {
+  .pillars-grid { grid-template-columns: 1fr; }
+  .pillar { border-right: none; border-bottom: 1px solid var(--gold-line); }
+  .pillar:last-child { border-bottom: none; }
+  .engine-grid { grid-template-columns: 1fr; gap: 48px; }
+  .markets-grid { grid-template-columns: repeat(3,1fr); }
+  .partners-grid { grid-template-columns: 1fr; gap: 48px; }
+  .cta-grid { grid-template-columns: 1fr; gap: 48px; }
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
+}
+
+@media (max-width: 680px) {
+  nav { padding-inline: 18px; }
+  .nav-links { display: none; }
+  .hero-tagline { font-size: clamp(36px,10vw,52px); }
+  .hero-actions { flex-direction: column; }
+  .btn { width: 100%; text-align: center; }
+  .hero-stats { flex-wrap: wrap; gap: 20px; }
+  .hero-stat { min-width: 40%; }
+  .markets-grid { grid-template-columns: 1fr 1fr; }
+  .footer-grid { grid-template-columns: 1fr; gap: 28px; }
+  .footer-bottom { flex-direction: column; }
+  .form-2col { grid-template-columns: 1fr; }
+  .form-body, .form-head { padding: 20px; }
+  .section { padding-block: 64px; }
+}
 </style>
 </head>
 <body>
 
-<!-- ─── NAV ───────────────────────────────────────────── -->
-<nav>
+<!-- NAV -->
+<nav id="nav">
   <a href="#" class="nav-logo">
-    <div class="nav-mark">TC</div>
-    <div class="nav-brand">
-      The Property Clearing House
-      <span>Research Portal</span>
+    <svg width="34" height="34" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/>
+      <polygon points="21,10 8,22 34,22" fill="#FFFFFF"/>
+      <rect x="10" y="21" width="24" height="18" fill="#FFFFFF"/>
+      <rect x="16" y="30" width="10" height="9" fill="#C8A951"/>
+    </svg>
+    <div class="nav-rule"></div>
+    <div>
+      <div class="nav-brand-name">The Property Clearing House</div>
+      <div class="nav-brand-tag">Vision. Intelligence. Advantage.</div>
     </div>
   </a>
   <ul class="nav-links">
-    <li><a href="#features">Platform</a></li>
-    <li><a href="#engine">Research Engine</a></li>
+    <li><a href="#pillars">Platform</a></li>
+    <li><a href="#engine">Research</a></li>
     <li><a href="#markets">Markets</a></li>
-    <li><a href="#partners">For Partners</a></li>
     <li><a href="#cta" class="nav-cta">Request Access</a></li>
   </ul>
 </nav>
 
-<!-- ─── HERO ──────────────────────────────────────────── -->
+<!-- HERO -->
 <section id="hero">
-  <div class="grid-texture"></div>
-  <div class="hero-glow hero-glow-1"></div>
-  <div class="hero-glow hero-glow-2"></div>
+  <div class="hero-img"></div>
 
-  <div class="hero-eyebrow">
-    <span class="hero-eyebrow-dot"></span>
-    Channel Partner Platform — Australia
-  </div>
-
-  <h1 class="hero-title">
-    Research-grade intelligence.<br>
-    <em>Partner-ready</em> distribution.
-  </h1>
-
-  <p class="hero-sub">
-    The Property Clearing House arms channel partners with AI-powered suburb research, live investment stock, and white-label reports — everything you need to present property with conviction.
-  </p>
-
-  <div class="hero-actions">
-    <a href="#cta" class="btn-primary">Become a Partner</a>
-    <a href="#features" class="btn-secondary">See the Platform</a>
-  </div>
-
-  <div class="hero-strip">
-    <div class="strip-stat">
-      <div class="strip-num">8+</div>
-      <div class="strip-label">Live Data Sources</div>
+  <div class="hero-content">
+    <div class="hero-label">
+      <span class="hero-label-dot"></span>
+      Channel Partner Intelligence — Australia
     </div>
-    <div class="strip-stat">
-      <div class="strip-num">5</div>
-      <div class="strip-label">States Covered</div>
+
+    <h1 class="hero-tagline">
+      Vision.<br>Intelligence.<br><span>Advantage.</span>
+    </h1>
+
+    <p class="hero-sub">
+      AI-powered suburb research, live investment stock, and white-label reporting — giving property professionals the edge that closes.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#cta" class="btn btn-gold">Become a Partner</a>
+      <a href="#pillars" class="btn btn-ghost">Explore the Platform</a>
     </div>
-    <div class="strip-stat">
-      <div class="strip-num">◈</div>
-      <div class="strip-label">AI Research Agent</div>
-    </div>
-    <div class="strip-stat">
-      <div class="strip-num">1–click</div>
-      <div class="strip-label">White-Label Reports</div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="stat-num">8+</div>
+        <div class="stat-label">Data Sources</div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-num">5</div>
+        <div class="stat-label">States Active</div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-num">AI</div>
+        <div class="stat-label">Research Agent</div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-num">1×</div>
+        <div class="stat-label">Click Reports</div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ─── TICKER ───────────────────────────────────────── -->
-<div class="ticker-wrap">
+<!-- TICKER -->
+<div class="ticker-wrap" aria-hidden="true">
   <div class="ticker-track">
-    <!-- first set -->
-    <div class="ticker-item"><span class="ticker-key">MELB CBD</span><span class="ticker-val">Vacancy 2.4%</span><span class="ticker-up">↓ Tightening</span></div>
-    <div class="ticker-item"><span class="ticker-key">MELB CBD</span><span class="ticker-val">Gross Yield 5.1%</span></div>
-    <div class="ticker-item"><span class="ticker-key">BRISBANE</span><span class="ticker-val">Median $612k</span><span class="ticker-up">↑ +8.2% YoY</span></div>
-    <div class="ticker-item"><span class="ticker-key">PERTH</span><span class="ticker-val">Rental Demand</span><span class="ticker-up">Strong Buy</span></div>
-    <div class="ticker-item"><span class="ticker-key">CANBERRA</span><span class="ticker-val">Vacancy 1.8%</span></div>
-    <div class="ticker-item"><span class="ticker-key">VIC PIPELINE</span><span class="ticker-val">Supply Shortfall 21,600 dwellings</span><span class="ticker-dn">↓ FY25 comps</span></div>
-    <div class="ticker-item"><span class="ticker-key">RBA</span><span class="ticker-val">Rate Trajectory</span><span class="ticker-up">3.35–3.85% Target</span></div>
-    <div class="ticker-item"><span class="ticker-key">SMSF ELIGIBLE</span><span class="ticker-val">Properties Available</span><span class="ticker-up">◈ Active</span></div>
-    <!-- duplicate for seamless loop -->
-    <div class="ticker-item"><span class="ticker-key">MELB CBD</span><span class="ticker-val">Vacancy 2.4%</span><span class="ticker-up">↓ Tightening</span></div>
-    <div class="ticker-item"><span class="ticker-key">MELB CBD</span><span class="ticker-val">Gross Yield 5.1%</span></div>
-    <div class="ticker-item"><span class="ticker-key">BRISBANE</span><span class="ticker-val">Median $612k</span><span class="ticker-up">↑ +8.2% YoY</span></div>
-    <div class="ticker-item"><span class="ticker-key">PERTH</span><span class="ticker-val">Rental Demand</span><span class="ticker-up">Strong Buy</span></div>
-    <div class="ticker-item"><span class="ticker-key">CANBERRA</span><span class="ticker-val">Vacancy 1.8%</span></div>
-    <div class="ticker-item"><span class="ticker-key">VIC PIPELINE</span><span class="ticker-val">Supply Shortfall 21,600 dwellings</span><span class="ticker-dn">↓ FY25 comps</span></div>
-    <div class="ticker-item"><span class="ticker-key">RBA</span><span class="ticker-val">Rate Trajectory</span><span class="ticker-up">3.35–3.85% Target</span></div>
-    <div class="ticker-item"><span class="ticker-key">SMSF ELIGIBLE</span><span class="ticker-val">Properties Available</span><span class="ticker-up">◈ Active</span></div>
+    <div class="ti"><span class="ti-k">MELB CBD</span><span class="ti-v">Vacancy 2.4%</span><span class="ti-u">↓ Tightening</span></div>
+    <div class="ti"><span class="ti-k">MELB CBD</span><span class="ti-v">Gross Yield 5.1%</span></div>
+    <div class="ti"><span class="ti-k">BRISBANE</span><span class="ti-v">Median $612k</span><span class="ti-u">↑ +8.2% YoY</span></div>
+    <div class="ti"><span class="ti-k">PERTH</span><span class="ti-v">Rental Demand High</span></div>
+    <div class="ti"><span class="ti-k">CANBERRA</span><span class="ti-v">Vacancy 1.8%</span></div>
+    <div class="ti"><span class="ti-k">VIC PIPELINE</span><span class="ti-v">21,600 Dwelling Shortfall</span></div>
+    <div class="ti"><span class="ti-k">RBA</span><span class="ti-v">Rate Target 3.35–3.85%</span><span class="ti-u">Declining</span></div>
+    <div class="ti"><span class="ti-k">SMSF ELIGIBLE</span><span class="ti-v">Properties Available Now</span></div>
+    <div class="ti"><span class="ti-k">MELB CBD</span><span class="ti-v">Vacancy 2.4%</span><span class="ti-u">↓ Tightening</span></div>
+    <div class="ti"><span class="ti-k">MELB CBD</span><span class="ti-v">Gross Yield 5.1%</span></div>
+    <div class="ti"><span class="ti-k">BRISBANE</span><span class="ti-v">Median $612k</span><span class="ti-u">↑ +8.2% YoY</span></div>
+    <div class="ti"><span class="ti-k">PERTH</span><span class="ti-v">Rental Demand High</span></div>
+    <div class="ti"><span class="ti-k">CANBERRA</span><span class="ti-v">Vacancy 1.8%</span></div>
+    <div class="ti"><span class="ti-k">VIC PIPELINE</span><span class="ti-v">21,600 Dwelling Shortfall</span></div>
+    <div class="ti"><span class="ti-k">RBA</span><span class="ti-v">Rate Target 3.35–3.85%</span><span class="ti-u">Declining</span></div>
+    <div class="ti"><span class="ti-k">SMSF ELIGIBLE</span><span class="ti-v">Properties Available Now</span></div>
   </div>
 </div>
 
-<!-- ─── FEATURES ─────────────────────────────────────── -->
-<section id="features">
-  <div class="section-inner">
-    <div class="section-label">The Platform</div>
-    <h2 class="section-title">Four pillars.<br><em>One portal.</em></h2>
+<!-- THREE PILLARS -->
+<section id="pillars" class="section">
+  <div class="wrap">
+    <div class="label reveal">The Platform</div>
+    <h2 class="h2 reveal">Three capabilities.<br><em>One portal.</em></h2>
 
-    <div class="feat-grid reveal">
+    <div class="pillars-grid reveal">
 
-      <div class="feat-card">
-        <span class="feat-icon">◈</span>
-        <div class="feat-title">Research Intelligence</div>
-        <div class="feat-body">
-          Suburb-level investment research synthesised from eight live data sources — vacancy rates, rental yields, supply pipeline, demand drivers, risk factors, and a conviction rating. Delivered in seconds, not days.
-        </div>
-        <div class="feat-tags">
-          <span class="feat-tag">SQM Research</span>
-          <span class="feat-tag">CoreLogic</span>
-          <span class="feat-tag">ABS</span>
-          <span class="feat-tag">Urbis</span>
-          <span class="feat-tag">Domain / REA</span>
+      <div class="pillar">
+        <div class="pillar-inner">
+          <div class="pillar-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8A951" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <div class="pillar-title">Research Intelligence</div>
+          <p class="pillar-body">Suburb-level investment analysis from eight live data sources — vacancy, yield, supply pipeline, demand drivers, and a TPCH conviction rating. In seconds, not days.</p>
+          <a href="#engine" class="pillar-link">Explore the Engine →</a>
         </div>
       </div>
 
-      <div class="feat-card">
-        <span class="feat-icon">◧</span>
-        <div class="feat-title">Live Stock Portal</div>
-        <div class="feat-body">
-          Browse curated investment properties with full pricing breakdowns, floor plans, gross and net yield calculations, SMSF eligibility flags, and transparent commission structures — all in one interface.
-        </div>
-        <div class="feat-tags">
-          <span class="feat-tag">Houses &amp; Townhouses</span>
-          <span class="feat-tag">Apartments</span>
-          <span class="feat-tag">SMSF Eligible</span>
-          <span class="feat-tag">Reserve Direct</span>
-        </div>
-      </div>
-
-      <div class="feat-card">
-        <span class="feat-icon">◷</span>
-        <div class="feat-title">White-Label Reports</div>
-        <div class="feat-body">
-          Generate polished investor research reports branded with your firm's identity. Present TPCH intelligence directly to clients as your own — with one click. No formatting, no copy-pasting.
-        </div>
-        <div class="feat-tags">
-          <span class="feat-tag">Custom Branding</span>
-          <span class="feat-tag">PDF Export</span>
-          <span class="feat-tag">Print Ready</span>
-          <span class="feat-tag">Client Ready</span>
+      <div class="pillar">
+        <div class="pillar-inner">
+          <div class="pillar-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8A951" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9,22 9,12 15,12 15,22"/>
+            </svg>
+          </div>
+          <div class="pillar-title">Live Stock Portal</div>
+          <p class="pillar-body">Curated investment properties with full pricing, floor plans, net yield calculations, SMSF eligibility, and transparent commission structures — all in one place.</p>
+          <a href="#partners" class="pillar-link">View Sample Analysis →</a>
         </div>
       </div>
 
-      <div class="feat-card">
-        <span class="feat-icon">◉</span>
-        <div class="feat-title">Channel Partner Network</div>
-        <div class="feat-body">
-          Access reserved for vetted professionals. Mortgage brokers, financial advisers, and real estate agents gain a competitive edge through exclusive research, commission transparency, and priority stock allocation.
-        </div>
-        <div class="feat-tags">
-          <span class="feat-tag">Invited Access</span>
-          <span class="feat-tag">Commission Portal</span>
-          <span class="feat-tag">Investor Kits</span>
-          <span class="feat-tag">Priority Stock</span>
+      <div class="pillar">
+        <div class="pillar-inner">
+          <div class="pillar-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8A951" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+          </div>
+          <div class="pillar-title">White-Label Reports</div>
+          <p class="pillar-body">Generate polished investor research reports under your firm's brand in one click. Source-cited. Print-ready. Yours instantly.</p>
+          <a href="#cta" class="pillar-link">Request Access →</a>
         </div>
       </div>
 
@@ -963,95 +621,55 @@
   </div>
 </section>
 
-<!-- ─── RESEARCH ENGINE ──────────────────────────────── -->
-<section id="engine">
-  <div class="section-inner">
-    <div class="section-label">The Research Engine</div>
-    <h2 class="section-title reveal">AI-synthesised.<br><em>Source-verified.</em></h2>
+<!-- RESEARCH ENGINE -->
+<section id="engine" class="section" style="background:rgba(4,10,18,1);">
+  <div class="wrap">
+    <div class="engine-grid">
 
-    <div class="engine-layout">
-
-      <div class="engine-terminal reveal">
-        <div class="terminal-bar">
-          <div class="terminal-dot td-red"></div>
-          <div class="terminal-dot td-amber"></div>
-          <div class="terminal-dot td-green"></div>
-          <span class="terminal-title">TPCH Research Agent — Deep Mode</span>
-        </div>
-        <div class="terminal-body">
-          <div class="t-line"><span class="t-prompt">◈</span><span class="t-cmd">research Melbourne CBD VIC --depth deep</span></div>
-          <div class="t-blank"></div>
-          <div class="t-line"><span class="t-out">Querying SQM Research...</span></div>
-          <div class="t-line"><span class="t-out">vacancy_rate: <span class="t-val">2.4%</span> <span class="t-source">[sqm]</span></span></div>
-          <div class="t-line"><span class="t-out">weekly_rent: <span class="t-val">$575</span> <span class="t-source">[domain]</span></span></div>
-          <div class="t-blank"></div>
-          <div class="t-line"><span class="t-out">Querying Urbis pipeline data...</span></div>
-          <div class="t-line"><span class="t-out">supply_shortfall: <span class="t-val">21,600 dwellings</span> <span class="t-source">[urbis]</span></span></div>
-          <div class="t-line"><span class="t-out">completions_fy25: <span class="t-val">3,070 BTS</span> <span class="t-source">[urbis]</span></span></div>
-          <div class="t-blank"></div>
-          <div class="t-line"><span class="t-out">Querying ABS migration data...</span></div>
-          <div class="t-line"><span class="t-out">net_migration_vic: <span class="t-val">140,000+ pa</span> <span class="t-source">[abs]</span></span></div>
-          <div class="t-blank"></div>
-          <div class="t-line"><span class="t-out">Synthesising investment thesis...</span></div>
-          <div class="t-line"><span class="t-out">avg_yield: <span class="t-val">5.1%</span></span></div>
-          <div class="t-line"><span class="t-out">rating: <span class="t-val">◈ STRONG BUY</span></span></div>
-          <div class="t-line"><span class="t-out">smsf_eligible: <span class="t-val">true</span></span></div>
-          <div class="t-blank"></div>
-          <div class="t-line"><span class="t-prompt">◈</span><span class="t-cmd">approve &amp;&amp; push live</span></div>
+      <div class="reveal">
+        <div class="terminal">
+          <div class="t-bar">
+            <div class="t-dot td-r"></div>
+            <div class="t-dot td-g"></div>
+            <div class="t-dot td-t"></div>
+            <span class="t-title">TPCH Research Agent — Deep Mode</span>
+          </div>
+          <div class="t-body">
+            <div class="tl"><span class="tp">›</span><span class="tc">research "Melbourne CBD" VIC --depth deep</span></div>
+            <div class="tb"></div>
+            <div class="tl"><span class="to">Querying SQM Research...</span></div>
+            <div class="tl"><span class="to">  vacancy_rate &nbsp;&nbsp;&nbsp;<span class="tv">2.4%</span> &nbsp;<span class="ts">[sqm]</span></span></div>
+            <div class="tl"><span class="to">  weekly_rent &nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">$575</span> &nbsp;<span class="ts">[domain]</span></span></div>
+            <div class="tb"></div>
+            <div class="tl"><span class="to">Querying Urbis pipeline...</span></div>
+            <div class="tl"><span class="to">  supply_shortfall &nbsp;<span class="tv">21,600 dwellings</span> &nbsp;<span class="ts">[urbis]</span></span></div>
+            <div class="tl"><span class="to">  completions_fy25 &nbsp;<span class="tv">3,070 BTS</span> &nbsp;<span class="ts">[urbis]</span></span></div>
+            <div class="tb"></div>
+            <div class="tl"><span class="to">Querying ABS migration...</span></div>
+            <div class="tl"><span class="to">  net_migration_vic &nbsp;<span class="tv">140,000+ pa</span> &nbsp;<span class="ts">[abs]</span></span></div>
+            <div class="tb"></div>
+            <div class="tl"><span class="to">Synthesising thesis...</span></div>
+            <div class="tl"><span class="to">  avg_yield &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">5.1%</span></span></div>
+            <div class="tl"><span class="to">  rating &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tv">STRONG BUY</span></span></div>
+            <div class="tl"><span class="to">  smsf_eligible &nbsp;<span class="tv">true</span></span></div>
+            <div class="tb"></div>
+            <div class="tl"><span class="tp">›</span><span class="tc">approve &amp;&amp; push live</span></div>
+            <div class="tl"><span class="to"><span class="tv">✓ Published to partner portal</span></span></div>
+          </div>
         </div>
       </div>
 
       <div class="reveal">
-        <p class="section-body">
-          Our AI agent pulls from eight curated data sources, cross-references findings, and produces a complete investment thesis — with demand drivers, risk factors, and a TPCH conviction rating.
-        </p>
-        <p class="section-body" style="margin-top:20px;">
-          Admins review and approve research before it goes live. Partners get confident, source-cited intelligence. Not summarised fluff.
-        </p>
-
-        <div class="sources-grid" style="margin-top:40px;">
-          <div class="source-chip">
-            <div class="source-chip-dot"></div>
-            <div>
-              <div class="source-chip-name">SQM Research</div>
-              <div class="source-chip-sub">Vacancy rates, asking rents, stock on market</div>
-            </div>
-          </div>
-          <div class="source-chip">
-            <div class="source-chip-dot"></div>
-            <div>
-              <div class="source-chip-name">CoreLogic</div>
-              <div class="source-chip-sub">Price growth, yield trends, rental data</div>
-            </div>
-          </div>
-          <div class="source-chip">
-            <div class="source-chip-dot"></div>
-            <div>
-              <div class="source-chip-name">Urbis / HTW</div>
-              <div class="source-chip-sub">Development pipeline, market reports</div>
-            </div>
-          </div>
-          <div class="source-chip">
-            <div class="source-chip-dot"></div>
-            <div>
-              <div class="source-chip-name">ABS</div>
-              <div class="source-chip-sub">Population, income, migration, unemployment</div>
-            </div>
-          </div>
-          <div class="source-chip">
-            <div class="source-chip-dot"></div>
-            <div>
-              <div class="source-chip-name">Domain / REA</div>
-              <div class="source-chip-sub">Median prices, days on market, listings</div>
-            </div>
-          </div>
-          <div class="source-chip">
-            <div class="source-chip-dot"></div>
-            <div>
-              <div class="source-chip-name">Local Councils</div>
-              <div class="source-chip-sub">Planning approvals, infrastructure pipeline</div>
-            </div>
-          </div>
+        <div class="label">Research Engine</div>
+        <h2 class="h2">AI-synthesised.<br><em>Source-verified.</em></h2>
+        <p class="body-text" style="margin-bottom:32px;">Eight curated data sources. A complete investment thesis. Demand drivers, risk factors, and a conviction rating — reviewed and approved before it reaches you.</p>
+        <div class="sources-grid">
+          <div class="source-chip"><div class="sc-dot"></div><div><div class="sc-name">SQM Research</div><div class="sc-sub">Vacancy, rents, stock on market</div></div></div>
+          <div class="source-chip"><div class="sc-dot"></div><div><div class="sc-name">CoreLogic</div><div class="sc-sub">Price growth, yield, rentals</div></div></div>
+          <div class="source-chip"><div class="sc-dot"></div><div><div class="sc-name">Urbis / HTW</div><div class="sc-sub">Pipeline, market reports</div></div></div>
+          <div class="source-chip"><div class="sc-dot"></div><div><div class="sc-name">ABS</div><div class="sc-sub">Population, migration</div></div></div>
+          <div class="source-chip"><div class="sc-dot"></div><div><div class="sc-name">Domain / REA</div><div class="sc-sub">Median prices, listings</div></div></div>
+          <div class="source-chip"><div class="sc-dot"></div><div><div class="sc-name">Local Councils</div><div class="sc-sub">Planning, infrastructure</div></div></div>
         </div>
       </div>
 
@@ -1059,349 +677,284 @@
   </div>
 </section>
 
-<!-- ─── MARKETS ──────────────────────────────────────── -->
-<section id="markets">
-  <div class="section-inner">
-
-    <div class="markets-intro">
-      <div>
-        <div class="section-label">Markets</div>
-        <h2 class="section-title reveal">Where we<br><em>research.</em></h2>
-      </div>
-      <div class="section-body reveal" style="padding-top:56px;">
-        Active research coverage across Australia's strongest investment markets, with new suburbs added as our agent approves them. Partners see live conviction ratings for every covered market.
-      </div>
-    </div>
-
+<!-- MARKETS -->
+<section id="markets" class="section" style="background:var(--navy-mid);">
+  <div class="wrap">
+    <div class="label reveal">Active Markets</div>
+    <h2 class="h2 reveal">Where we <em>research.</em></h2>
     <div class="markets-grid reveal">
-      <div class="market-card">
-        <div class="market-state">VIC</div>
-        <div class="market-name">Victoria</div>
-        <div class="market-stat">Yield <span>5.1%</span></div>
-        <div class="market-stat">Vacancy <span>2.4%</span></div>
-        <div class="market-stat">Rating <span>Strong Buy</span></div>
-      </div>
-      <div class="market-card">
-        <div class="market-state">QLD</div>
-        <div class="market-name">Queensland</div>
-        <div class="market-stat">Growth <span>+8.2%</span></div>
-        <div class="market-stat">Median <span>$612k</span></div>
-        <div class="market-stat">Rating <span>Strong Buy</span></div>
-      </div>
-      <div class="market-card">
-        <div class="market-state">WA</div>
-        <div class="market-name">West Australia</div>
-        <div class="market-stat">Demand <span>High</span></div>
-        <div class="market-stat">Supply <span>Constrained</span></div>
-        <div class="market-stat">Rating <span>Watch</span></div>
-      </div>
-      <div class="market-card">
-        <div class="market-state">ACT</div>
-        <div class="market-name">Canberra</div>
-        <div class="market-stat">Vacancy <span>1.8%</span></div>
-        <div class="market-stat">Stability <span>High</span></div>
-        <div class="market-stat">Rating <span>Watch</span></div>
-      </div>
-      <div class="market-card">
-        <div class="market-state">NSW</div>
-        <div class="market-name">New South Wales</div>
-        <div class="market-stat">Pipeline <span>Active</span></div>
-        <div class="market-stat">Entry <span>Selective</span></div>
-        <div class="market-stat">Rating <span>Pending</span></div>
-      </div>
-    </div>
 
+      <div class="market-card">
+        <div class="mc-head"><div class="mc-state">VIC</div><div class="mc-name">Victoria</div></div>
+        <div class="mc-body">
+          <div class="mc-row"><span class="mc-k">Yield</span><span class="mc-v">5.1%</span></div>
+          <div class="mc-row"><span class="mc-k">Vacancy</span><span class="mc-v">2.4%</span></div>
+          <div class="mc-row"><span class="mc-k">Migration</span><span class="mc-v">140k pa</span></div>
+          <div class="mc-badge badge-buy">Strong Buy</div>
+        </div>
+      </div>
+
+      <div class="market-card">
+        <div class="mc-head"><div class="mc-state">QLD</div><div class="mc-name">Queensland</div></div>
+        <div class="mc-body">
+          <div class="mc-row"><span class="mc-k">Growth</span><span class="mc-v">+8.2%</span></div>
+          <div class="mc-row"><span class="mc-k">Median</span><span class="mc-v">$612k</span></div>
+          <div class="mc-row"><span class="mc-k">Demand</span><span class="mc-v">High</span></div>
+          <div class="mc-badge badge-buy">Strong Buy</div>
+        </div>
+      </div>
+
+      <div class="market-card">
+        <div class="mc-head"><div class="mc-state">WA</div><div class="mc-name">West Australia</div></div>
+        <div class="mc-body">
+          <div class="mc-row"><span class="mc-k">Demand</span><span class="mc-v">High</span></div>
+          <div class="mc-row"><span class="mc-k">Supply</span><span class="mc-v">Constrained</span></div>
+          <div class="mc-row"><span class="mc-k">Resources</span><span class="mc-v">Active</span></div>
+          <div class="mc-badge badge-watch">Watch</div>
+        </div>
+      </div>
+
+      <div class="market-card">
+        <div class="mc-head"><div class="mc-state">ACT</div><div class="mc-name">Canberra</div></div>
+        <div class="mc-body">
+          <div class="mc-row"><span class="mc-k">Vacancy</span><span class="mc-v">1.8%</span></div>
+          <div class="mc-row"><span class="mc-k">Stability</span><span class="mc-v">High</span></div>
+          <div class="mc-row"><span class="mc-k">Gov. Sector</span><span class="mc-v">Stable</span></div>
+          <div class="mc-badge badge-watch">Watch</div>
+        </div>
+      </div>
+
+      <div class="market-card">
+        <div class="mc-head"><div class="mc-state">NSW</div><div class="mc-name">New South Wales</div></div>
+        <div class="mc-body">
+          <div class="mc-row"><span class="mc-k">Pipeline</span><span class="mc-v">Active</span></div>
+          <div class="mc-row"><span class="mc-k">Entry</span><span class="mc-v">Selective</span></div>
+          <div class="mc-row"><span class="mc-k">Coverage</span><span class="mc-v">Expanding</span></div>
+          <div class="mc-badge badge-pend">Pending</div>
+        </div>
+      </div>
+
+    </div>
   </div>
 </section>
 
-<!-- ─── PARTNER BENEFITS ─────────────────────────────── -->
-<section id="partners">
-  <div class="section-inner">
-    <div class="partner-layout">
-
+<!-- PARTNER BENEFITS -->
+<section id="partners" class="section" style="background:var(--navy);">
+  <div class="wrap">
+    <div class="partners-grid">
       <div>
-        <div class="section-label">For Channel Partners</div>
-        <h2 class="section-title reveal">Built for professionals<br>who <em>present with conviction.</em></h2>
-
+        <div class="label reveal">For Channel Partners</div>
+        <h2 class="h2 reveal">Built for professionals<br>who <em>present with conviction.</em></h2>
         <ul class="partner-list reveal">
-          <li>
-            <span class="partner-num">01</span>
-            <div>
-              <div class="partner-li-title">Commission transparency, finally</div>
-              <div class="partner-li-body">See exact commission structures, staged payments, and bonus terms on every property before you present. No chasing emails.</div>
-            </div>
+          <li class="partner-item">
+            <span class="pi-num">01</span>
+            <div><div class="pi-title">Commission transparency, finally</div><p class="pi-body">See exact structures, staged payments, and bonus terms on every property before you present.</p></div>
           </li>
-          <li>
-            <span class="partner-num">02</span>
-            <div>
-              <div class="partner-li-title">Research you can put your name on</div>
-              <div class="partner-li-body">White-label suburb research reports in one click. Source-cited data from Urbis, SQM, ABS, CoreLogic — presented under your brand.</div>
-            </div>
+          <li class="partner-item">
+            <span class="pi-num">02</span>
+            <div><div class="pi-title">Research you can put your name on</div><p class="pi-body">White-label reports in one click. Source-cited from Urbis, SQM, ABS, CoreLogic — under your brand.</p></div>
           </li>
-          <li>
-            <span class="partner-num">03</span>
-            <div>
-              <div class="partner-li-title">Reserve properties direct</div>
-              <div class="partner-li-body">When you find the right lot, reserve it on behalf of a client directly from the stock portal — no intermediaries, no delays.</div>
-            </div>
+          <li class="partner-item">
+            <span class="pi-num">03</span>
+            <div><div class="pi-title">Reserve properties direct</div><p class="pi-body">Find the right lot and reserve it for a client directly from the portal — no intermediaries.</p></div>
           </li>
-          <li>
-            <span class="partner-num">04</span>
-            <div>
-              <div class="partner-li-title">SMSF-eligible inventory</div>
-              <div class="partner-li-body">Every property is flagged for SMSF eligibility. Present compliant investment options to self-managed super fund clients with confidence.</div>
-            </div>
+          <li class="partner-item">
+            <span class="pi-num">04</span>
+            <div><div class="pi-title">SMSF-eligible inventory, clearly flagged</div><p class="pi-body">Every property is screened for SMSF eligibility. Present compliant options with confidence.</p></div>
           </li>
         </ul>
       </div>
 
-      <div class="partner-visual reveal">
-        <div class="pv-tag">◈ Sample Property Analysis</div>
-        <div class="pv-stat-row">
-          <div class="pv-key">Total Contract Price</div>
-          <div class="pv-val">$649,000</div>
+      <div class="prop-card reveal">
+        <div class="prop-head">
+          <svg width="26" height="26" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/>
+            <polygon points="21,10 8,22 34,22" fill="#FFFFFF"/>
+            <rect x="10" y="21" width="24" height="18" fill="#FFFFFF"/>
+            <rect x="16" y="30" width="10" height="9" fill="#C8A951"/>
+          </svg>
+          <div><div class="ph-label">Sample Property Analysis</div><div class="ph-sub">Melbourne CBD — 2 Bed / 2 Bath</div></div>
         </div>
-        <div class="pv-stat-row">
-          <div class="pv-key">Weekly Rent</div>
-          <div class="pv-val">$620</div>
+        <div class="prop-rows">
+          <div class="prop-row"><span class="pk">Total Contract Price</span><span class="pv">$649,000</span></div>
+          <div class="prop-row"><span class="pk">Weekly Rent</span><span class="pv">$620</span></div>
+          <div class="prop-row"><span class="pk">Gross Yield</span><span class="pv teal">4.97%</span></div>
+          <div class="prop-row"><span class="pk">Est. Net Yield</span><span class="pv teal">3.81%</span></div>
+          <div class="prop-row"><span class="pk">Body Corporate</span><span class="pv plain">$3,200 / yr</span></div>
+          <div class="prop-row"><span class="pk">SMSF Eligible</span><span class="pv teal">Yes</span></div>
+          <div class="prop-row"><span class="pk">Your Commission</span><span class="pv">$13,980</span></div>
+          <div class="prop-row"><span class="pk">TPCH Conviction</span><span class="pv teal">Strong Buy</span></div>
         </div>
-        <div class="pv-stat-row">
-          <div class="pv-key">Gross Yield</div>
-          <div class="pv-val green">4.97%</div>
-        </div>
-        <div class="pv-stat-row">
-          <div class="pv-key">Est. Net Yield</div>
-          <div class="pv-val green">3.81%</div>
-        </div>
-        <div class="pv-stat-row">
-          <div class="pv-key">Body Corporate</div>
-          <div class="pv-val white">$3,200 / yr</div>
-        </div>
-        <div class="pv-stat-row">
-          <div class="pv-key">SMSF Eligible</div>
-          <div class="pv-val green">Yes</div>
-        </div>
-        <div class="pv-stat-row">
-          <div class="pv-key">Your Commission</div>
-          <div class="pv-val">$13,980</div>
-        </div>
-        <div class="pv-stat-row">
-          <div class="pv-key">TPCH Conviction</div>
-          <div class="pv-val green">Strong Buy</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ─── HOW IT WORKS ─────────────────────────────────── -->
-<section id="process">
-  <div class="section-inner">
-    <div class="section-label">How It Works</div>
-    <h2 class="section-title reveal">Apply. Access. <em>Present.</em></h2>
-
-    <div class="process-steps reveal">
-      <div class="process-step">
-        <div class="process-num">01</div>
-        <div class="process-title">Apply for Access</div>
-        <div class="process-body">Submit your details and professional background. TPCH reviews applications and grants access to qualified channel partners — mortgage brokers, advisers, and agents.</div>
-      </div>
-      <div class="process-step">
-        <div class="process-num">02</div>
-        <div class="process-title">Access the Portal</div>
-        <div class="process-body">Log in to the research portal. Browse AI-curated suburb reports, live stock with full investment analysis, and client-ready materials — all in one place.</div>
-      </div>
-      <div class="process-step">
-        <div class="process-num">03</div>
-        <div class="process-title">Present with Authority</div>
-        <div class="process-body">Generate a white-label report in seconds. Walk clients through vacancy rates, yield calculations, supply data, and your TPCH conviction rating — all under your brand.</div>
-      </div>
-      <div class="process-step">
-        <div class="process-num">04</div>
-        <div class="process-title">Reserve &amp; Earn</div>
-        <div class="process-body">Reserve properties directly from the portal. Track commission stages, settlement timelines, and your full earnings pipeline — transparent from day one.</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ─── CTA ───────────────────────────────────────────── -->
-<section id="cta">
-  <div class="cta-inner">
-    <div class="reveal">
-      <div class="section-label">Partner Access</div>
-      <h2 class="section-title">The edge is<br><em>the research.</em></h2>
-      <p class="section-body" style="margin-top:20px;">
-        Property professionals who present with data close more. The TPCH Research Portal gives you the intelligence to walk into any conversation with certainty.
-      </p>
-      <p style="font-size:13px;color:var(--grey-mid);margin-top:32px;line-height:1.7;max-width:480px;">
-        Access is selective. We work with channel partners who are committed to presenting investment property professionally and ethically. Applications are reviewed within 2 business days.
-      </p>
-    </div>
+<!-- CTA + FORM -->
+<section id="cta" class="section" style="background:rgba(4,10,18,1);">
+  <div class="wrap">
+    <div class="cta-grid">
 
-    <div class="cta-form reveal">
-      <div class="cta-form-title">Request Partner Access</div>
-      <div class="cta-form-sub">Tell us about your practice. We'll be in touch within 2 business days.</div>
-
-      <div class="form-grid">
-        <div class="form-row">
-          <label class="form-label">First Name</label>
-          <input class="form-input" type="text" placeholder="James">
-        </div>
-        <div class="form-row">
-          <label class="form-label">Last Name</label>
-          <input class="form-input" type="text" placeholder="Henderson">
-        </div>
-      </div>
-
-      <div class="form-row">
-        <label class="form-label">Email Address</label>
-        <input class="form-input" type="email" placeholder="james@hendersonfinancial.com.au">
-      </div>
-
-      <div class="form-row">
-        <label class="form-label">Mobile</label>
-        <input class="form-input" type="tel" placeholder="04xx xxx xxx">
-      </div>
-
-      <div class="form-row">
-        <label class="form-label">Your Role</label>
-        <select class="form-select">
-          <option value="" disabled selected>Select your profession</option>
-          <option>Mortgage Broker</option>
-          <option>Financial Adviser</option>
-          <option>Real Estate Agent</option>
-          <option>Buyers Agent</option>
-          <option>Accountant / Tax Adviser</option>
-          <option>Other</option>
-        </select>
-      </div>
-
-      <div class="form-row">
-        <label class="form-label">Firm / Business Name</label>
-        <input class="form-input" type="text" placeholder="Henderson Financial Group">
-      </div>
-
-      <button class="btn-form" onclick="handleSubmit(this)">Submit Application</button>
-
-      <div class="form-note">
-        By submitting you agree to our <a href="#">Privacy Policy</a>. We won't share your details.
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── FOOTER ───────────────────────────────────────── -->
-<footer>
-  <div class="footer-inner">
-    <div class="footer-top">
-      <div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="nav-mark" style="width:32px;height:32px;font-size:14px;">TC</div>
-          <div>
-            <div class="footer-brand-name">The Property Clearing House</div>
+      <div class="reveal">
+        <div class="label">Partner Access</div>
+        <h2 class="h2">The edge is<br><em>the research.</em></h2>
+        <p class="body-text" style="margin-top:16px;">Professionals who present with data close more. Access is selective — vetted channel partners only. Applications reviewed within 2 business days.</p>
+        <div style="margin-top:36px;padding:22px 28px;border:1px solid var(--gold-line);background:var(--navy-card);">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+            <svg width="28" height="28" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/>
+              <polygon points="21,10 8,22 34,22" fill="#FFFFFF"/>
+              <rect x="10" y="21" width="24" height="18" fill="#FFFFFF"/>
+              <rect x="16" y="30" width="10" height="9" fill="#C8A951"/>
+            </svg>
+            <div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text);">The Property Clearing House</div>
+              <div style="font-family:var(--serif);font-style:italic;font-size:11px;color:var(--gold);margin-top:1px;">Built on relationships. Driven by results.</div>
+            </div>
           </div>
+          <a href="#cta" style="font-size:12px;color:var(--gold);text-decoration:none;">Submit an application →</a>
         </div>
-        <p class="footer-brand-desc" style="margin-top:16px;">
-          Research-grade property intelligence for Australia's channel partner network. AI-powered suburb research, live investment stock, and white-label reporting — in one portal.
-        </p>
       </div>
 
+      <div class="form-card reveal">
+        <div class="form-head">
+          <div class="form-title">Request Partner Access</div>
+          <div class="form-sub">We'll be in touch within 2 business days.</div>
+        </div>
+        <div class="form-body">
+          <div class="form-2col">
+            <div class="form-row">
+              <label class="form-label" for="f-first">First Name</label>
+              <input class="form-input" type="text" id="f-first" placeholder="James" autocomplete="given-name">
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="f-last">Last Name</label>
+              <input class="form-input" type="text" id="f-last" placeholder="Henderson" autocomplete="family-name">
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="f-email">Email</label>
+            <input class="form-input" type="email" id="f-email" placeholder="james@firm.com.au" autocomplete="email">
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="f-phone">Mobile</label>
+            <input class="form-input" type="tel" id="f-phone" placeholder="04xx xxx xxx" autocomplete="tel">
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="f-role">Your Role</label>
+            <select class="form-select" id="f-role">
+              <option value="" disabled selected>Select your profession</option>
+              <option>Mortgage Broker</option>
+              <option>Financial Adviser</option>
+              <option>Real Estate Agent</option>
+              <option>Buyers Agent</option>
+              <option>Accountant / Tax Adviser</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="f-firm">Business Name</label>
+            <input class="form-input" type="text" id="f-firm" placeholder="Henderson Financial Group" autocomplete="organization">
+          </div>
+          <button class="form-submit" type="button" onclick="submitForm(this)">Submit Application</button>
+          <p class="form-note">By submitting you agree to our <a href="#">Privacy Policy</a>.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/>
+            <polygon points="21,10 8,22 34,22" fill="#FFFFFF"/>
+            <rect x="10" y="21" width="24" height="18" fill="#FFFFFF"/>
+            <rect x="16" y="30" width="10" height="9" fill="#C8A951"/>
+          </svg>
+          <span style="font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text);">The Property Clearing House</span>
+        </div>
+        <div class="footer-tagline">Built on relationships. Driven by results.</div>
+        <p class="footer-desc">Research-grade property intelligence for Australia's channel partner network.</p>
+      </div>
       <div>
         <div class="footer-col-title">Platform</div>
         <ul class="footer-links">
-          <li><a href="#features">Research Portal</a></li>
-          <li><a href="#features">Stock Portal</a></li>
-          <li><a href="#features">White-Label Reports</a></li>
-          <li><a href="#engine">Research Engine</a></li>
+          <li><a href="#pillars">Research Portal</a></li>
+          <li><a href="#pillars">Stock Portal</a></li>
+          <li><a href="#pillars">White-Label Reports</a></li>
         </ul>
       </div>
-
       <div>
         <div class="footer-col-title">Markets</div>
         <ul class="footer-links">
           <li><a href="#markets">Victoria</a></li>
           <li><a href="#markets">Queensland</a></li>
           <li><a href="#markets">West Australia</a></li>
-          <li><a href="#markets">ACT / Canberra</a></li>
+          <li><a href="#markets">Canberra</a></li>
         </ul>
       </div>
-
       <div>
         <div class="footer-col-title">Company</div>
         <ul class="footer-links">
           <li><a href="#cta">Become a Partner</a></li>
-          <li><a href="#">Contact</a></li>
+          <li><a href="#cta">Contact</a></li>
           <li><a href="#">Privacy Policy</a></li>
           <li><a href="#">Disclaimer</a></li>
         </ul>
       </div>
     </div>
-
     <div class="footer-bottom">
-      <div>© 2026 The Property Clearing House. All rights reserved.</div>
-      <div>
-        Research data sourced from Urbis, SQM Research, ABS, CoreLogic, Domain. For channel partner use only. Not financial advice.
-      </div>
+      <span>© 2026 The Property Clearing House. All rights reserved.</span>
+      <span>Data sourced from SQM Research, CoreLogic, ABS, Urbis, Domain. Not financial advice.</span>
     </div>
   </div>
 </footer>
 
 <script>
-  // ─── SCROLL REVEAL ─────────────────────────────────
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(el => {
-      if (el.isIntersecting) {
-        el.target.classList.add('in');
-        observer.unobserve(el.target);
-      }
-    });
-  }, { threshold: 0.1 });
+// Nav becomes opaque on scroll
+const nav = document.getElementById('nav');
+addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', scrollY > 20);
+}, { passive: true });
 
-  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+// Scroll reveal
+const ro = new IntersectionObserver(
+  entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); ro.unobserve(e.target); } }),
+  { threshold: 0.07, rootMargin: '0px 0px -24px 0px' }
+);
+document.querySelectorAll('.reveal').forEach(el => ro.observe(el));
 
-  // ─── FORM SUBMIT ────────────────────────────────────
-  function handleSubmit(btn) {
-    const inputs = btn.closest('.cta-form').querySelectorAll('input, select');
-    let valid = true;
-
-    inputs.forEach(inp => {
-      if (!inp.value.trim()) {
-        inp.style.borderColor = '#C94C4C';
-        valid = false;
-        inp.addEventListener('input', () => inp.style.borderColor = '', { once: true });
-      }
-    });
-
-    if (!valid) return;
-
-    btn.textContent = 'Submitting...';
-    btn.disabled = true;
-
-    setTimeout(() => {
-      btn.closest('.cta-form').innerHTML = `
-        <div style="text-align:center;padding:48px 20px;">
-          <div style="font-family:'DM Mono',monospace;font-size:28px;color:var(--gold);margin-bottom:20px;">◈</div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:500;color:var(--white);margin-bottom:12px;">Application Received</div>
-          <p style="font-size:13px;color:var(--grey-light);line-height:1.7;max-width:360px;margin:0 auto;">
-            Thank you. The TPCH team will review your application and be in touch within 2 business days.
-          </p>
-        </div>
-      `;
-    }, 1200);
-  }
-
-  // ─── NAVBAR SCROLL EFFECT ───────────────────────────
-  const nav = document.querySelector('nav');
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 40) {
-      nav.style.borderBottomColor = 'rgba(201,168,76,0.35)';
-    } else {
-      nav.style.borderBottomColor = 'rgba(201,168,76,0.25)';
-    }
+// Form
+function submitForm(btn) {
+  const inputs = btn.closest('.form-body').querySelectorAll('input, select');
+  let ok = true;
+  inputs.forEach(el => {
+    el.style.borderColor = '';
+    if (!el.value.trim()) { el.style.borderColor = '#C0392B'; ok = false; el.addEventListener('input', () => el.style.borderColor = '', { once: true }); }
   });
+  if (!ok) return;
+  btn.textContent = 'Submitting…'; btn.disabled = true;
+  setTimeout(() => {
+    btn.closest('.form-card').innerHTML = `
+      <div style="padding:72px 36px;text-align:center;">
+        <svg style="margin:0 auto 24px" width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/>
+          <polygon points="21,10 8,22 34,22" fill="#FFFFFF"/>
+          <rect x="10" y="21" width="24" height="18" fill="#FFFFFF"/>
+          <rect x="16" y="30" width="10" height="9" fill="#C8A951"/>
+        </svg>
+        <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:500;color:#F5F3EE;margin-bottom:12px;">Application Received</div>
+        <p style="font-size:13px;font-weight:300;color:#98A5B3;line-height:1.8;max-width:30ch;margin:0 auto 20px;">We'll review your application and be in touch within 2 business days.</p>
+        <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:12px;color:#C8A951;">Built on relationships. Driven by results.</div>
+      </div>`;
+  }, 800);
+}
 </script>
-
 </body>
 </html>

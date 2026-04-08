@@ -17,7 +17,27 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(npx uipro-cli:*)",
       "Bash(python skills/ui-ux-pro-max/scripts/search.py \"property investment research portal dark luxury sophisticated fintech channel partner\" --design-system -p \"TPCH\")",
-      "Bash(py --version)"
+      "Bash(py --version)",
+      "Bash(where python:*)",
+      "Bash(where py:*)",
+      "Bash(where python3:*)",
+      "Bash(/c/Windows/py.exe --version)",
+      "Bash(/c/Users/micha/AppData/Local/Microsoft/WindowsApps/python.exe --version)",
+      "Bash(sed -i \"s/font-family:'Cormorant Garamond',serif/font-family:'Playfair Display',Georgia,serif/g\" index.html)",
+      "Bash(sed -i \"s/font-family:'DM Sans',sans-serif/font-family:'Outfit',system-ui,sans-serif/g\" index.html)",
+      "Bash(sed -i 's/font-size: 9px; font-weight: 700; color: var\\(--gold\\);/font-size: 11px; font-weight: 700; color: var\\(--gold\\);/g' index.html)",
+      "Bash(sed -i 's/.agent-rm-label { font-size: 9px;/.agent-rm-label { font-size: 11px;/g' index.html)",
+      "Bash(sed -i 's/font-size: 9px; font-weight: 700; letter-spacing: 2px;\\\\n    text-transform: uppercase; color: var\\(--grey-mid\\); margin-bottom: 12px;/font-size: 11px; font-weight: 700; letter-spacing: 2px;\\\\n    text-transform: uppercase; color: var\\(--grey-mid\\); margin-bottom: 12px;/g' index.html)",
+      "Bash(sed -i 's/font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var\\(--grey-mid\\);margin-bottom:2px;/font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var\\(--grey-mid\\);margin-bottom:2px;/g' index.html)",
+      "Bash(sed -i 's/font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var\\(--gold\\);margin-bottom:8px;/font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var\\(--gold\\);margin-bottom:8px;/g' index.html)",
+      "Bash(sed -i 's/font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var\\(--grey-mid\\);margin-bottom:6px;/font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var\\(--grey-mid\\);margin-bottom:6px;/g' index.html)",
+      "Bash(sed -i 's/style=\"font-size:9px;padding:2px 7px;\"/style=\"font-size:11px;padding:2px 7px;\"/g' index.html)",
+      "Bash(sed -i 's/style=\"font-size:9px;padding:2px 6px;\"/style=\"font-size:11px;padding:2px 6px;\"/g' index.html)",
+      "Bash(sed -i 's/font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var\\(--grey-mid\\);margin-bottom:10px;/font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var\\(--grey-mid\\);margin-bottom:10px;/g' index.html)",
+      "Bash(sed -i 's/font-size:10px;color:var\\(--grey-mid\\);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;/font-size:11px;color:var\\(--grey-mid\\);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;/g' index.html)",
+      "Bash(sed -i 's/font-size:10px;color:var\\(--grey-mid\\);margin-top:8px;/font-size:11px;color:var\\(--grey-mid\\);margin-top:8px;/g' index.html)",
+      "Bash(sed -i 's/font-size:10px;color:var\\(--grey-mid\\);margin-top:3px;/font-size:11px;color:var\\(--grey-mid\\);margin-top:3px;/g' index.html)",
+      "Bash(sed -i 's/font-size:10px;color:var\\(--grey-mid\\);margin-top:2px;/font-size:11px;color:var\\(--grey-mid\\);margin-top:2px;/g' index.html)"
     ]
   }
 }
