@@ -87,14 +87,9 @@ async function sendConfirmationEmail(body: any, reservationId: string, expiresAt
   <div style="max-width:600px;margin:0 auto;background:#F5F3EE;">
 
     <!-- Header -->
-    <div style="background:#080F1A;padding:28px 36px;text-align:center;">
-      <div style="display:inline-flex;align-items:center;gap:14px;">
-        <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/><polygon points="21,10 8,22 34,22" fill="#F5F3EE"/><rect x="10" y="21" width="24" height="18" fill="#F5F3EE"/><rect x="16" y="30" width="10" height="9" fill="#C8A951"/></svg>
-        <div style="text-align:left;">
-          <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F5F3EE;">The Property Clearing House</div>
-          <div style="font-size:9px;color:#C8A951;letter-spacing:2px;text-transform:uppercase;margin-top:3px;">Stock Reservation Confirmation</div>
-        </div>
-      </div>
+    <div style="background:#112240;padding:28px 36px;text-align:center;">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNjQiIGZpbGw9Im5vbmUiPgogIDwhLS0gRW1ibGVtIC0tPgogIDxyZWN0IHg9IjE4IiB5PSIxMCIgd2lkdGg9IjM0IiBoZWlnaHQ9IjM0IiByeD0iMyIgdHJhbnNmb3JtPSJyb3RhdGUoNDUgMzUgMjcpIiBmaWxsPSIjQzhBOTUxIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIyMSwxMCA4LDIyIDM0LDIyIiBmaWxsPSIjRjVGM0VFIi8+CiAgPHJlY3QgeD0iMTAiIHk9IjIxIiB3aWR0aD0iMjQiIGhlaWdodD0iMTgiIGZpbGw9IiNGNUYzRUUiLz4KICA8cmVjdCB4PSIxNiIgeT0iMzAiIHdpZHRoPSIxMCIgaGVpZ2h0PSI5IiBmaWxsPSIjQzhBOTUxIi8+CiAgPCEtLSBXb3JkbWFyayAtLT4KICA8dGV4dCB4PSI3NiIgeT0iMzYiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI0Y1RjNFRSIgbGV0dGVyLXNwYWNpbmc9IjIiPlRQQ0g8L3RleHQ+CiAgPHRleHQgeD0iNzYiIHk9IjUwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOCIgZmlsbD0iIzk4QTVCMyIgbGV0dGVyLXNwYWNpbmc9IjIiPlRIRSBQUk9QRVJUWSBDTEVBUklORyBIT1VTRTwvdGV4dD4KPC9zdmc+Cg==" width="220" height="47" alt="TPCH" style="display:block;margin:0 auto;">
+      <div style="font-size:9px;color:#C8A951;letter-spacing:2px;text-transform:uppercase;margin-top:10px;">Stock Reservation Confirmation</div>
     </div>
     <div style="height:3px;background:linear-gradient(90deg,#C8A951,#E8D48B,#C8A951);"></div>
 
@@ -137,7 +132,7 @@ async function sendConfirmationEmail(body: any, reservationId: string, expiresAt
     </div>
 
     <!-- Footer -->
-    <div style="background:#080F1A;padding:24px 36px;text-align:center;">
+    <div style="background:#112240;padding:24px 36px;text-align:center;">
       <p style="margin:0 0 6px;font-size:11px;color:#5A6878;">
         The Property Clearing House &nbsp;·&nbsp; <a href="https://tpch.com.au" style="color:#C8A951;text-decoration:none;">tpch.com.au</a>
       </p>

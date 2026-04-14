@@ -5514,7 +5514,7 @@
 
   function checkAuthRedirect() {
     const hash = window.location.hash;
-    if (!hash || !hash.includes('access_token')) return;
+    if (!hash || !hash.includes('access_token')) return false;
     const params = new URLSearchParams(hash.replace(/^#/, ''));
     const type   = params.get('type');
     const token  = params.get('access_token');
@@ -5528,7 +5528,9 @@
       }
       history.replaceState(null, '', window.location.pathname + window.location.search);
       showScreen('screen-setpassword');
+      return true;
     }
+    return false;
   }
 
   async function doSetPassword() {
@@ -5642,8 +5644,8 @@
     document.getElementById('setpass-confirm').addEventListener('keydown', e => { if (e.key==='Enter') doSetPassword(); });
     document.getElementById('forgot-email').addEventListener('keydown', e => { if (e.key==='Enter') sendPasswordReset(); });
     initTeamAuth(); // load admin emails from tpch_team before first login attempt
-    checkAuthRedirect(); // handle invite/recovery links
-    restoreSession();    // re-enter portal if session exists from before refresh
+    const wasRedirected = checkAuthRedirect(); // handle invite/recovery links — must run before restoreSession
+    if (!wasRedirected) restoreSession();      // only restore session if not handling an auth redirect
   });
 
   // ─── PARTNER SETTINGS ─────────────────────────────────

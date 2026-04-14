@@ -46,7 +46,12 @@
       "Bash(python3 -c ':*)",
       "Bash(node -e ':*)",
       "Bash(node /c/Users/micha/.claude/tpch-portal/.claude/skills/tpch-doc/node_modules/.bin/../adm-zip/adm-zip.js)",
-      "Bash(grep -l \"resend\\\\|html\\\\|email\\\\|noreply\" /c/Users/micha/.claude/tpch-portal/*/index.ts)"
+      "Bash(grep -l \"resend\\\\|html\\\\|email\\\\|noreply\" /c/Users/micha/.claude/tpch-portal/*/index.ts)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const svg=fs.readFileSync\\('logo-dark.svg'\\);const b64=svg.toString\\('base64'\\);console.log\\(b64\\)\")",
+      "Bash(node fix-logos.js)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const b64=fs.readFileSync\\('logo-dark.svg'\\).toString\\('base64'\\);console.log\\(b64\\)\")",
+      "Bash(node fix-logos2.js)",
+      "Bash(rm fix-logos2.js)"
     ]
   }
 }
