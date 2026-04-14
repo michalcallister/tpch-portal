@@ -7269,13 +7269,23 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
              s.includes('awaiting title') || s.includes('await title') ||
              s.includes('construction');
     });
-    // Tile 4: Sum of commission — for staff, only count deals assigned to them
-    const _isStaff = currentPartnerRecord?.role === 'staff';
-    const _myId    = _isStaff ? currentPartnerRecord.staff_id : null;
-    const commDeals = _myId
+    // Tile 4: Sum of commission — respect staff comm_display_type and assignment filter
+    const _isStaff     = currentPartnerRecord?.role === 'staff';
+    const _myId        = _isStaff ? currentPartnerRecord.staff_id : null;
+    const _commType    = _isStaff ? (currentPartnerRecord.comm_display_type || 'portal') : 'portal';
+    const _commCustom  = currentPartnerRecord?.comm_custom_value || null;
+    const commDeals    = _myId
       ? visible.filter(d => dealAssignments.some(a => a.deal_id === d.id && a.staff_id === _myId))
       : visible;
-    const totalComm = commDeals.reduce((sum, d) => sum + (d.channel_commission || 0), 0);
+    let totalComm;
+    if (_commType === 'hidden') {
+      totalComm = null;
+    } else if (_commType === 'custom' && _commCustom) {
+      const perDeal = parseFloat((_commCustom).replace(/[^0-9.]/g, ''));
+      totalComm = isNaN(perDeal) ? 0 : commDeals.length * perDeal;
+    } else {
+      totalComm = commDeals.reduce((sum, d) => sum + (d.channel_commission || 0), 0);
+    }
 
     const r  = document.getElementById('pds-reservations');
     const e  = document.getElementById('pds-eois');
@@ -7289,11 +7299,11 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
     if (r)  r.textContent  = String(reserved.length);
     if (e)  e.textContent  = String(eois.length);
     if (c)  c.textContent  = String(inContract.length);
-    if (v)  v.textContent  = totalComm > 0 ? '$' + Math.round(totalComm).toLocaleString('en-AU') : '$0';
+    if (v)  v.textContent  = totalComm === null ? '—' : (totalComm > 0 ? '$' + Math.round(totalComm).toLocaleString('en-AU') : '$0');
     if (rs) rs.textContent = 'Reserved stage';
     if (es) es.textContent = 'EOI submitted';
     if (cs) cs.textContent = 'COS to construction';
-    if (vs) vs.textContent = 'Channel commission';
+    if (vs) vs.textContent = _isStaff && _myId ? 'Your assigned commission' : 'Channel commission';
   }
 
   // ─── PARTNER DASHBOARD ───────────────────────────────────
