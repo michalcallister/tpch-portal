@@ -51,7 +51,9 @@
       "Bash(node fix-logos.js)",
       "Bash(node -e \"const fs=require\\('fs'\\);const b64=fs.readFileSync\\('logo-dark.svg'\\).toString\\('base64'\\);console.log\\(b64\\)\")",
       "Bash(node fix-logos2.js)",
-      "Bash(rm fix-logos2.js)"
+      "Bash(rm fix-logos2.js)",
+      "Bash(mkdir -p \"c:/Users/micha/.claude/tpch-portal/supabase/functions/sync-monday\")",
+      "Bash(cp \"c:/Users/micha/.claude/tpch-portal/sync-monday/index.ts\" \"c:/Users/micha/.claude/tpch-portal/supabase/functions/sync-monday/index.ts\")"
     ]
   }
 }
