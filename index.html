@@ -7366,13 +7366,7 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
       document.getElementById('pds-reservations').textContent = reserved.length;
       document.getElementById('pds-eois').textContent         = eois.length;
       document.getElementById('pds-contracts').textContent    = contracts.length;
-      document.getElementById('pds-commission').textContent   =
-        totalComm > 0 ? '$' + Math.round(totalComm).toLocaleString('en-AU') : '$0';
-
-      if (commType === 'hidden') {
-        document.getElementById('pds-commission').textContent = '—';
-        document.getElementById('pds-commission-sub').textContent = 'Contact your firm owner';
-      }
+      // Commission tile is owned by updateDealTiles (deals data) — do not set here
     } catch(e) { /* silently fail — table not yet created */ }
   }
 
