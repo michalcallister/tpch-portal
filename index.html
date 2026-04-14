@@ -3468,7 +3468,8 @@
               <th class="dlp-th-sort" onclick="dlpSortBy('cos_executed_date')">COS Executed <span class="dlp-si" id="si-cos_executed_date">⇅</span></th>
               <th class="dlp-th-sort" onclick="dlpSortBy('expected_approval_date')">Exp. Approval <span class="dlp-si" id="si-expected_approval_date">⇅</span></th>
               <th class="dlp-th-sort" onclick="dlpSortBy('expected_settlement_date')">Exp. Settlement <span class="dlp-si" id="si-expected_settlement_date">⇅</span></th>
-              <th class="dlp-th-sort" onclick="dlpSortBy('channel_commission')" style="text-align:right">Commission <span class="dlp-si" id="si-channel_commission">⇅</span></th>
+              <th class="dlp-th-sort" onclick="dlpSortBy('paid_to_date')" style="text-align:right">Paid to Date <span class="dlp-si" id="si-paid_to_date">⇅</span></th>
+              <th class="dlp-th-sort" onclick="dlpSortBy('channel_commission')" style="text-align:right">Outstanding <span class="dlp-si" id="si-channel_commission">⇅</span></th>
               <th id="dlp-th-assigned" style="display:none">Assigned To</th>
             </tr>
           </thead>
@@ -4347,7 +4348,7 @@
 
   function applySortIndicators() {
     // Deals
-    ['property','client_name','stage','cos_executed_date','expected_approval_date','expected_settlement_date','channel_commission'].forEach(c => {
+    ['property','client_name','stage','cos_executed_date','expected_approval_date','expected_settlement_date','paid_to_date','channel_commission'].forEach(c => {
       const el = document.getElementById('si-' + c);
       if (el) el.textContent = c === dlpSort.col ? (dlpSort.dir === 'asc' ? '▲' : '▼') : '⇅';
     });
@@ -5676,6 +5677,16 @@
   // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
 
   const CHANGELOG = [
+    {
+      version: '1.5',
+      date: '14 Apr 2026',
+      title: 'Paid to Date & Outstanding Commission',
+      items: [
+        'Team Deals now shows a "Paid to Date" column — how much commission has already been received.',
+        'The commission column is now "Outstanding" — showing only what\'s still to be paid (total minus paid to date).',
+        'Both columns are sortable. Data syncs automatically from Monday.com.',
+      ]
+    },
     {
       version: '1.4',
       date: '14 Apr 2026',
@@ -7260,15 +7271,22 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
         ? dealAssignments.some(a => a.deal_id === d.id && a.staff_id === _myStaffId)
         : true; // partner admin: always "assigned"
 
-      let commDisplay;
-      if (_isStaffMember && !_isAssignedToMe) {
-        commDisplay = '—'; // staff can't see comm unless assigned
-      } else if (_staffCommType === 'hidden') {
+      // Paid to Date & Outstanding commission
+      const _showComm = !(_isStaffMember && !_isAssignedToMe) && _staffCommType !== 'hidden';
+      let paidDisplay, commDisplay;
+      if (!_showComm) {
+        paidDisplay = '—';
         commDisplay = '—';
       } else if (_staffCommType === 'custom' && _staffCommCustom) {
+        // Custom flat rate — paid_to_date not meaningful, show raw outstanding as custom value
+        paidDisplay = d.paid_to_date != null ? fmtCurrency(d.paid_to_date) : '—';
         commDisplay = _staffCommCustom;
       } else {
-        commDisplay = d.channel_commission != null ? fmtCurrency(d.channel_commission) : '—';
+        paidDisplay = d.paid_to_date != null ? fmtCurrency(d.paid_to_date) : '—';
+        const outstanding = d.channel_commission != null
+          ? Math.max(0, (d.channel_commission || 0) - (d.paid_to_date || 0))
+          : null;
+        commDisplay = outstanding != null ? fmtCurrency(outstanding) : '—';
       }
 
       // Assigned To cell (admin only)
@@ -7289,6 +7307,7 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
         <td class="dlp-date">${fmtDealDate(d.cos_executed_date)}</td>
         <td class="dlp-date${approvCls}">${fmtDealDate(d.expected_approval_date)}</td>
         <td class="dlp-date${settlCls}">${fmtDealDate(d.expected_settlement_date)}</td>
+        <td class="dlp-comm" style="color:var(--grey-light);">${paidDisplay}</td>
         <td class="dlp-comm">${commDisplay}</td>
         ${assignedCell}
       </tr>`;
@@ -7299,7 +7318,8 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
     if (col === 'property')           return (d.property_name || '').toLowerCase();
     if (col === 'client_name')        return (d.client_name || '').toLowerCase();
     if (col === 'stage')              return (d.stage || '').toLowerCase();
-    if (col === 'channel_commission') return d.channel_commission ?? -1; // nulls sort last when desc
+    if (col === 'paid_to_date')       return d.paid_to_date ?? -1;
+    if (col === 'channel_commission') return Math.max(0, (d.channel_commission || 0) - (d.paid_to_date || 0));
     return d[col] || '9999-99-99'; // dates: nulls sort last
   }
 
@@ -7310,7 +7330,7 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
       dlpSort.col = col;
       dlpSort.dir = 'asc';
     }
-    ['property','client_name','stage','cos_executed_date','expected_approval_date','expected_settlement_date','channel_commission'].forEach(c => {
+    ['property','client_name','stage','cos_executed_date','expected_approval_date','expected_settlement_date','paid_to_date','channel_commission'].forEach(c => {
       const el = document.getElementById('si-' + c);
       if (el) el.textContent = c === col ? (dlpSort.dir === 'asc' ? '▲' : '▼') : '⇅';
     });
