@@ -7709,7 +7709,6 @@ function fmtCurrencyShort(n) {
 function fmtSqm(n)  { return n ? (Math.round(n * 10) / 10) + ' m²' : '—'; }
 function fmtNum(n)  { return (n != null && n !== '') ? n : '—'; }
 function fmtCommForUser(s) {
-  console.log('[fmtCommForUser] currentPartnerRecord=', JSON.stringify(currentPartnerRecord));
   if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff') return fmtComm(s);
   const ct = currentPartnerRecord.comm_display_type || 'portal';
   if (ct === 'hidden') return '—';
