@@ -55,15 +55,100 @@ Deno.serve(async (req) => {
 
       if (partnerErr) return json({ error: partnerErr.message }, 500)
 
-      // Send Supabase Auth invite email
-      const { error: inviteErr } = await supabase.auth.admin.inviteUserByEmail(email, {
-        data: { full_name, partner_id: partner.id, tpch_role: 'partner' },
-        redirectTo,
+      // Generate invite link (fall back to recovery if already registered)
+      const resendKey  = Deno.env.get('RESEND_API_KEY') || ''
+      const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@tpch.com.au'
+      const firstName  = full_name?.split(' ')[0] || full_name || 'there'
+
+      let linkData: any = null
+      const { data: inviteData, error: inviteErr } = await supabase.auth.admin.generateLink({
+        type: 'invite',
+        email,
+        options: { redirectTo, data: { full_name, partner_id: partner.id, tpch_role: 'partner' } },
       })
 
-      // "User already registered" is fine — they may be re-invited
-      if (inviteErr && !inviteErr.message.includes('already')) {
+      if (inviteErr && inviteErr.message.toLowerCase().includes('already')) {
+        const { data: recoveryData, error: recoveryErr } = await supabase.auth.admin.generateLink({
+          type: 'recovery',
+          email,
+          options: { redirectTo },
+        })
+        if (recoveryErr) return json({ error: recoveryErr.message }, 500)
+        linkData = recoveryData
+      } else if (inviteErr) {
         return json({ error: inviteErr.message }, 500)
+      } else {
+        linkData = inviteData
+      }
+
+      const inviteLink = linkData?.properties?.action_link ?? redirectTo
+
+      // Send branded invite email via Resend
+      if (resendKey) {
+        const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F5F3EE;font-family:'Arial',sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background:#F5F3EE;">
+    <div style="background:#080F1A;padding:28px 36px;text-align:center;">
+      <div style="display:inline-flex;align-items:center;gap:14px;">
+        <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/><polygon points="21,10 8,22 34,22" fill="#F5F3EE"/><rect x="10" y="21" width="24" height="18" fill="#F5F3EE"/><rect x="16" y="30" width="10" height="9" fill="#C8A951"/></svg>
+        <div style="text-align:left;">
+          <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F5F3EE;">The Property Clearing House</div>
+          <div style="font-size:9px;color:#C8A951;letter-spacing:2px;text-transform:uppercase;margin-top:3px;">Channel Partner Network</div>
+        </div>
+      </div>
+    </div>
+    <div style="height:3px;background:linear-gradient(90deg,#C8A951,#E8D48B,#C8A951);"></div>
+    <div style="background:#ffffff;padding:44px 44px 36px;">
+      <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#080F1A;line-height:1.3;">Welcome to the network, ${firstName}.</p>
+      <p style="margin:0 0 28px;font-size:14px;color:#C8A951;letter-spacing:1px;text-transform:uppercase;">Partner access — ${company_name}</p>
+      <p style="margin:0 0 20px;font-size:15px;color:#2A3A50;line-height:1.7;">You've been added as a channel partner at <strong style="color:#080F1A;">${company_name}</strong>. Click the button below to set your password and access the TPCH Partner Portal.</p>
+      <p style="margin:0 0 32px;font-size:15px;color:#2A3A50;line-height:1.7;">This link is valid for <strong style="color:#080F1A;">24 hours</strong>.</p>
+      <div style="text-align:center;margin:0 0 36px;">
+        <a href="${inviteLink}" style="display:inline-block;background:#C8A951;color:#080F1A;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:16px 40px;">
+          Set Password &amp; Access Portal →
+        </a>
+      </div>
+      <div style="background:#F5F3EE;border:1px solid rgba(200,169,81,0.22);padding:24px;margin-bottom:32px;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#C8A951;margin-bottom:16px;">What you'll find in the portal</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          ${[
+            ['Research Intelligence',  'AI-powered suburb analysis, demand drivers, and market conviction ratings'],
+            ['Live Stock Portal',       'Browse available properties with yields, floor plans, and commission schedules'],
+            ['My Deals',               'Track your pipeline from reservation through to settlement in real time'],
+            ['White-Label Reports',    'Generate branded investor research reports in one click'],
+          ].map(([title, desc]) => `
+          <tr style="border-bottom:1px solid rgba(200,169,81,0.15);">
+            <td style="padding:10px 0;vertical-align:top;">
+              <div style="font-size:12px;font-weight:600;color:#080F1A;margin-bottom:2px;">${title}</div>
+              <div style="font-size:12px;color:#5A6878;line-height:1.5;">${desc}</div>
+            </td>
+          </tr>`).join('')}
+        </table>
+      </div>
+      <p style="margin:0 0 8px;font-size:14px;color:#2A3A50;line-height:1.7;">Questions? Contact us at <a href="mailto:${adminEmail}" style="color:#C8A951;text-decoration:none;">${adminEmail}</a>.</p>
+      <p style="margin:16px 0 0;font-size:14px;color:#080F1A;font-weight:600;">The TPCH Team</p>
+    </div>
+    <div style="background:#080F1A;padding:24px 36px;text-align:center;">
+      <p style="margin:0 0 6px;font-size:11px;color:#5A6878;">The Property Clearing House · <a href="https://tpch.com.au" style="color:#C8A951;text-decoration:none;">tpch.com.au</a></p>
+      <p style="margin:0;font-size:10px;color:#98A5B3;">You're receiving this because you were invited to join the TPCH Partner Portal.</p>
+    </div>
+  </div>
+</body>
+</html>`
+
+        const emailRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'TPCH Partner Network <noreply@tpch.com.au>',
+            to: [email],
+            subject: `You've been invited to the TPCH Partner Portal`,
+            html,
+          }),
+        })
+        if (!emailRes.ok) console.error('Resend error:', await emailRes.text())
       }
 
       return json({ success: true, partner_id: partner.id })
@@ -104,20 +189,84 @@ Deno.serve(async (req) => {
         .eq('id', partner_id)
         .single()
 
-      // Send Supabase Auth invite
-      const { error: inviteErr } = await supabase.auth.admin.inviteUserByEmail(email, {
-        data: {
-          full_name,
-          staff_id: staff.id,
-          partner_id,
-          tpch_role: 'staff',
-          firm_name: firm?.company_name,
-        },
-        redirectTo,
+      // Generate invite link (fall back to recovery if already registered)
+      const resendKey  = Deno.env.get('RESEND_API_KEY') || ''
+      const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@tpch.com.au'
+      const firmName   = firm?.company_name || 'TPCH Partner Network'
+      const firstName  = full_name?.split(' ')[0] || full_name || 'there'
+
+      let linkData: any = null
+      const { data: inviteData, error: inviteErr } = await supabase.auth.admin.generateLink({
+        type: 'invite',
+        email,
+        options: { redirectTo: portalUrl, data: { full_name, staff_id: staff.id, partner_id, tpch_role: 'staff', firm_name: firmName } },
       })
 
-      if (inviteErr && !inviteErr.message.includes('already')) {
+      if (inviteErr && inviteErr.message.toLowerCase().includes('already')) {
+        const { data: recoveryData, error: recoveryErr } = await supabase.auth.admin.generateLink({
+          type: 'recovery',
+          email,
+          options: { redirectTo: portalUrl },
+        })
+        if (recoveryErr) return json({ error: recoveryErr.message }, 500)
+        linkData = recoveryData
+      } else if (inviteErr) {
         return json({ error: inviteErr.message }, 500)
+      } else {
+        linkData = inviteData
+      }
+
+      const inviteLink = linkData?.properties?.action_link ?? portalUrl
+
+      // Send branded email via Resend
+      if (resendKey) {
+        const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F5F3EE;font-family:'Arial',sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background:#F5F3EE;">
+    <div style="background:#080F1A;padding:28px 36px;text-align:center;">
+      <div style="display:inline-flex;align-items:center;gap:14px;">
+        <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/><polygon points="21,10 8,22 34,22" fill="#F5F3EE"/><rect x="10" y="21" width="24" height="18" fill="#F5F3EE"/><rect x="16" y="30" width="10" height="9" fill="#C8A951"/></svg>
+        <div style="text-align:left;">
+          <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F5F3EE;">The Property Clearing House</div>
+          <div style="font-size:9px;color:#C8A951;letter-spacing:2px;text-transform:uppercase;margin-top:3px;">Channel Partner Network</div>
+        </div>
+      </div>
+    </div>
+    <div style="height:3px;background:linear-gradient(90deg,#C8A951,#E8D48B,#C8A951);"></div>
+    <div style="background:#ffffff;padding:44px 44px 36px;">
+      <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#080F1A;line-height:1.3;">You've been invited, ${firstName}.</p>
+      <p style="margin:0 0 28px;font-size:14px;color:#C8A951;letter-spacing:1px;text-transform:uppercase;">Portal access — ${firmName}</p>
+      <p style="margin:0 0 20px;font-size:15px;color:#2A3A50;line-height:1.7;">You've been added to the <strong style="color:#080F1A;">${firmName}</strong> team on the TPCH Partner Portal. Click the button below to set your password and get access.</p>
+      <p style="margin:0 0 32px;font-size:15px;color:#2A3A50;line-height:1.7;">This link is valid for <strong style="color:#080F1A;">24 hours</strong>.</p>
+      <div style="text-align:center;margin:0 0 36px;">
+        <a href="${inviteLink}" style="display:inline-block;background:#C8A951;color:#080F1A;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:16px 40px;">
+          Set Password &amp; Access Portal →
+        </a>
+      </div>
+      <p style="margin:0 0 8px;font-size:14px;color:#2A3A50;line-height:1.7;">Questions? Contact us at <a href="mailto:${adminEmail}" style="color:#C8A951;text-decoration:none;">${adminEmail}</a>.</p>
+      <p style="margin:16px 0 0;font-size:14px;color:#080F1A;font-weight:600;">The TPCH Team</p>
+    </div>
+    <div style="background:#080F1A;padding:24px 36px;text-align:center;">
+      <p style="margin:0 0 6px;font-size:11px;color:#5A6878;">The Property Clearing House · <a href="https://tpch.com.au" style="color:#C8A951;text-decoration:none;">tpch.com.au</a></p>
+      <p style="margin:0;font-size:10px;color:#98A5B3;">You're receiving this because you were invited to join the TPCH Partner Portal.</p>
+    </div>
+  </div>
+</body>
+</html>`
+
+        const emailRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'TPCH Partner Network <noreply@tpch.com.au>',
+            to: [email],
+            subject: `You've been invited to the TPCH Partner Portal`,
+            html,
+          }),
+        })
+        if (!emailRes.ok) console.error('Resend error:', await emailRes.text())
       }
 
       return json({ success: true, staff_id: staff.id })
@@ -161,35 +310,35 @@ Deno.serve(async (req) => {
       const welcomeHtml = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F4F4F0;font-family:'Arial',sans-serif;">
-  <div style="max-width:600px;margin:0 auto;background:#F4F4F0;">
-    <div style="background:#0A0A08;padding:28px 36px;text-align:center;">
-      <div style="display:inline-flex;align-items:center;gap:12px;">
-        <div style="width:40px;height:40px;background:#C9A84C;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0A0A08;">TC</div>
+<body style="margin:0;padding:0;background:#F5F3EE;font-family:'Arial',sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background:#F5F3EE;">
+    <div style="background:#080F1A;padding:28px 36px;text-align:center;">
+      <div style="display:inline-flex;align-items:center;gap:14px;">
+        <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/><polygon points="21,10 8,22 34,22" fill="#F5F3EE"/><rect x="10" y="21" width="24" height="18" fill="#F5F3EE"/><rect x="16" y="30" width="10" height="9" fill="#C8A951"/></svg>
         <div style="text-align:left;">
-          <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F8F6F0;">The Property Clearing House</div>
-          <div style="font-size:10px;color:#C9A84C;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">Partner Network</div>
+          <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F5F3EE;">The Property Clearing House</div>
+          <div style="font-size:9px;color:#C8A951;letter-spacing:2px;text-transform:uppercase;margin-top:3px;">Channel Partner Network</div>
         </div>
       </div>
     </div>
-    <div style="height:3px;background:linear-gradient(90deg,#C9A84C,#E8D08A,#C9A84C);"></div>
+    <div style="height:3px;background:linear-gradient(90deg,#C8A951,#E8D48B,#C8A951);"></div>
     <div style="background:#ffffff;padding:44px 44px 36px;">
-      <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1A1A16;line-height:1.3;">Your portal access link, ${firstName}.</p>
-      <p style="margin:0 0 28px;font-size:14px;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;">New access link — ${company_name || 'TPCH Partner Network'}</p>
-      <p style="margin:0 0 20px;font-size:15px;color:#3A3A35;line-height:1.7;">A new access link has been generated for your account. Click the button below to set your password and access the TPCH Partner Portal.</p>
-      <p style="margin:0 0 32px;font-size:15px;color:#3A3A35;line-height:1.7;">This link is valid for <strong style="color:#1A1A16;">24 hours</strong>. If it expires, please contact us and we will send a new one.</p>
+      <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#080F1A;line-height:1.3;">Your portal access link, ${firstName}.</p>
+      <p style="margin:0 0 28px;font-size:14px;color:#C8A951;letter-spacing:1px;text-transform:uppercase;">New access link — ${company_name || 'TPCH Partner Network'}</p>
+      <p style="margin:0 0 20px;font-size:15px;color:#2A3A50;line-height:1.7;">A new access link has been generated for your account. Click the button below to set your password and access the TPCH Partner Portal.</p>
+      <p style="margin:0 0 32px;font-size:15px;color:#2A3A50;line-height:1.7;">This link is valid for <strong style="color:#080F1A;">24 hours</strong>. If it expires, please contact us and we will send a new one.</p>
       <div style="text-align:center;margin:0 0 36px;">
-        <a href="${inviteLink}" style="display:inline-block;background:#C9A84C;color:#0A0A08;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:16px 40px;">
+        <a href="${inviteLink}" style="display:inline-block;background:#C8A951;color:#080F1A;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:16px 40px;">
           Set Password &amp; Access Portal →
         </a>
       </div>
-      <p style="margin:0 0 8px;font-size:14px;color:#3A3A35;line-height:1.7;">If you have any questions, reach out to us at <a href="mailto:${adminEmail}" style="color:#C9A84C;text-decoration:none;">${adminEmail}</a>.</p>
-      <p style="margin:0;font-size:14px;color:#3A3A35;line-height:1.7;">We look forward to working with you.</p>
-      <p style="margin:16px 0 0;font-size:14px;color:#1A1A16;font-weight:600;">The TPCH Team</p>
+      <p style="margin:0 0 8px;font-size:14px;color:#2A3A50;line-height:1.7;">If you have any questions, reach out to us at <a href="mailto:${adminEmail}" style="color:#C8A951;text-decoration:none;">${adminEmail}</a>.</p>
+      <p style="margin:0;font-size:14px;color:#2A3A50;line-height:1.7;">We look forward to working with you.</p>
+      <p style="margin:16px 0 0;font-size:14px;color:#080F1A;font-weight:600;">The TPCH Team</p>
     </div>
-    <div style="background:#0A0A08;padding:24px 36px;text-align:center;">
-      <p style="margin:0 0 6px;font-size:11px;color:#5A5A52;">The Property Clearing House · <a href="https://tpch.com.au" style="color:#C9A84C;text-decoration:none;">tpch.com.au</a></p>
-      <p style="margin:0;font-size:10px;color:#3A3A35;">You're receiving this email because an admin resent your portal access link.</p>
+    <div style="background:#080F1A;padding:24px 36px;text-align:center;">
+      <p style="margin:0 0 6px;font-size:11px;color:#5A6878;">The Property Clearing House · <a href="https://tpch.com.au" style="color:#C8A951;text-decoration:none;">tpch.com.au</a></p>
+      <p style="margin:0;font-size:10px;color:#98A5B3;">You're receiving this email because an admin resent your portal access link.</p>
     </div>
   </div>
 </body>

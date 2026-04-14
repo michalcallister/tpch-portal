@@ -37,7 +37,16 @@
       "Bash(sed -i 's/font-size:10px;color:var\\(--grey-mid\\);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;/font-size:11px;color:var\\(--grey-mid\\);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;/g' index.html)",
       "Bash(sed -i 's/font-size:10px;color:var\\(--grey-mid\\);margin-top:8px;/font-size:11px;color:var\\(--grey-mid\\);margin-top:8px;/g' index.html)",
       "Bash(sed -i 's/font-size:10px;color:var\\(--grey-mid\\);margin-top:3px;/font-size:11px;color:var\\(--grey-mid\\);margin-top:3px;/g' index.html)",
-      "Bash(sed -i 's/font-size:10px;color:var\\(--grey-mid\\);margin-top:2px;/font-size:11px;color:var\\(--grey-mid\\);margin-top:2px;/g' index.html)"
+      "Bash(sed -i 's/font-size:10px;color:var\\(--grey-mid\\);margin-top:2px;/font-size:11px;color:var\\(--grey-mid\\);margin-top:2px;/g' index.html)",
+      "Bash(npm install:*)",
+      "Bash(node build.js templates/example-proposal.json)",
+      "Bash(zip -r tpch-doc.zip tpch-doc/ --exclude \"tpch-doc/node_modules/*\" --exclude \"tpch-doc/*.docx\")",
+      "Bash(powershell.exe -Command \"Compress-Archive -Force -Path 'tpch-doc' -DestinationPath 'tpch-doc.zip'\")",
+      "Bash(powershell.exe -Command ':*)",
+      "Bash(python3 -c ':*)",
+      "Bash(node -e ':*)",
+      "Bash(node /c/Users/micha/.claude/tpch-portal/.claude/skills/tpch-doc/node_modules/.bin/../adm-zip/adm-zip.js)",
+      "Bash(grep -l \"resend\\\\|html\\\\|email\\\\|noreply\" /c/Users/micha/.claude/tpch-portal/*/index.ts)"
     ]
   }
 }

@@ -5795,9 +5795,13 @@
                 ${s.comm_display_type === 'custom' ? (s.comm_custom_value || 'Custom') : (commLabel[s.comm_display_type] || '—')}
               </td>
               <td style="padding:10px 12px;">
-                <span style="font-size:11px;padding:2px 8px;border-radius:3px;background:${s.status==='active'?'rgba(80,200,120,0.15)':'rgba(150,150,150,0.1)'};color:${s.status==='active'?'#50c878':'var(--grey-light)'};">
-                  ${s.status}
-                </span>
+                ${(()=>{
+                  const isActive = s.status === 'active';
+                  const label = isActive ? 'Active' : 'Invited';
+                  const bg    = isActive ? 'rgba(80,200,120,0.15)' : 'rgba(201,168,76,0.12)';
+                  const color = isActive ? '#50c878' : 'var(--gold)';
+                  return `<span style="font-size:11px;padding:2px 8px;border-radius:3px;background:${bg};color:${color};">${label}</span>`;
+                })()}
               </td>
               <td style="padding:10px 12px;text-align:right;">
                 <button class="btn-outline" style="font-size:11px;padding:4px 10px;" onclick="editStaffComm('${s.id}','${s.comm_display_type}',${JSON.stringify(s.comm_custom_value||'')})">Edit</button>

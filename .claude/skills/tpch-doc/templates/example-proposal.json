@@ -1,0 +1,59 @@
+{
+  "outputFile": "tpch-proposal.docx",
+  "docTitle": "Investment Proposal",
+  "title": "Melbourne CBD",
+  "subtitle": "Investment Opportunity.",
+  "docType": "Proposal",
+  "date": "10 April 2026",
+  "recipientName": "John Smith",
+  "recipientCompany": "Smith Wealth Advisory",
+  "preparedBy": "The Property Clearing House",
+  "sections": [
+    { "type": "overline", "text": "Executive Summary" },
+    { "type": "heading", "text": "The Opportunity" },
+    { "type": "body", "paragraphs": [
+      "Melbourne CBD continues to represent one of Australia's highest-conviction investment precincts for off-the-plan apartments.",
+      "With net overseas migration into Victoria at decade highs and apartment completions at their lowest in 10 years, the supply-demand imbalance creates a rare entry point for SMSF and investor clients."
+    ]},
+    { "type": "stats", "stats": [
+      { "number": "9.0%", "label": "Rental Growth YoY" },
+      { "number": "5.1%", "label": "Net Yield" },
+      { "number": "41%", "label": "Discount vs Sydney" },
+      { "number": "✓", "label": "SMSF Eligible" }
+    ]},
+    { "type": "divider" },
+    { "type": "overline", "text": "Market Context" },
+    { "type": "heading", "text": "Demand Drivers" },
+    { "type": "bullets", "items": [
+      "Net overseas migration into Victoria at decade highs — 140,000+ per annum (ABS, VIF23)",
+      "FY2025 apartment completions the lowest on record — just 3,070 BTS apartments (Urbis)",
+      "Melbourne median house prices 41% cheaper than Sydney — largest discount in 20 years",
+      "$107 billion Victorian Infrastructure Plan — Suburban Rail Loop, Greenline, QVM renewal",
+      "Major banks forecasting RBA cash rate to fall to 3.35–3.85% by Dec 2025"
+    ]},
+    { "type": "divider" },
+    { "type": "overline", "text": "Stock Detail" },
+    { "type": "heading", "text": "Property Summary" },
+    { "type": "table",
+      "headers": ["Detail", "Value"],
+      "rows": [
+        ["Project", "Example Tower, Melbourne CBD"],
+        ["Type", "2 Bedroom Apartment"],
+        ["Price", "$650,000"],
+        ["Net Yield", "5.1%"],
+        ["Rental Estimate", "$640–$680 p/w"],
+        ["SMSF Eligible", "Yes"],
+        ["Estimated Completion", "Q4 2027"],
+        ["Commission", "4.0% + GST"]
+      ]
+    },
+    { "type": "pagebreak" },
+    { "type": "overline", "text": "Next Steps" },
+    { "type": "heading", "text": "How to Proceed" },
+    { "type": "body", "paragraphs": [
+      "To reserve this property for your client, please log in to the TPCH Partner Portal and submit a 48-hour hold request. Stock is updated in real time from our Monday.com project management system."
+    ]},
+    { "type": "callout", "text": "Properties at this price point and yield are moving quickly. TPCH recommends presentation within 5 business days of receipt of this document." },
+    { "type": "disclaimer" }
+  ]
+}

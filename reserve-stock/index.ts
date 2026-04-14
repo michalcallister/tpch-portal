@@ -83,58 +83,65 @@ async function sendConfirmationEmail(body: any, reservationId: string, expiresAt
   const html = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F4F4F0;font-family:'Arial',sans-serif;">
-  <div style="max-width:600px;margin:0 auto;background:#F4F4F0;">
+<body style="margin:0;padding:0;background:#F5F3EE;font-family:'Arial',sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background:#F5F3EE;">
 
     <!-- Header -->
-    <div style="background:#1A1A16;padding:36px 48px 28px;text-align:center;">
-      <div style="font-size:13px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:600;margin-bottom:6px;">THE PROPERTY CLEARING HOUSE</div>
-      <div style="height:1px;background:linear-gradient(to right,transparent,#C9A84C,transparent);margin:12px 0;"></div>
-      <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8A8A7A;">Stock Reservation Confirmation</div>
+    <div style="background:#080F1A;padding:28px 36px;text-align:center;">
+      <div style="display:inline-flex;align-items:center;gap:14px;">
+        <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/><polygon points="21,10 8,22 34,22" fill="#F5F3EE"/><rect x="10" y="21" width="24" height="18" fill="#F5F3EE"/><rect x="16" y="30" width="10" height="9" fill="#C8A951"/></svg>
+        <div style="text-align:left;">
+          <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F5F3EE;">The Property Clearing House</div>
+          <div style="font-size:9px;color:#C8A951;letter-spacing:2px;text-transform:uppercase;margin-top:3px;">Stock Reservation Confirmation</div>
+        </div>
+      </div>
     </div>
+    <div style="height:3px;background:linear-gradient(90deg,#C8A951,#E8D48B,#C8A951);"></div>
 
     <!-- Body -->
-    <div style="background:#FFFFFF;padding:40px 48px;">
-      <p style="margin:0 0 20px;font-size:15px;color:#3A3A35;line-height:1.7;">Hi ${firstName},</p>
-      <p style="margin:0 0 20px;font-size:15px;color:#3A3A35;line-height:1.7;">
-        Your reservation has been confirmed. The property has been placed on hold for <strong>48 hours</strong> exclusively for your client.
+    <div style="background:#FFFFFF;padding:40px 44px;">
+      <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#080F1A;line-height:1.3;">Reservation confirmed, ${firstName}.</p>
+      <p style="margin:0 0 28px;font-size:14px;color:#C8A951;letter-spacing:1px;text-transform:uppercase;">48-hour hold — ${body.stock_name}</p>
+      <p style="margin:0 0 24px;font-size:15px;color:#2A3A50;line-height:1.7;">
+        Your reservation has been confirmed. The property has been placed on hold for <strong style="color:#080F1A;">48 hours</strong> exclusively for your client.
       </p>
 
       <!-- Reservation Details -->
-      <div style="background:#F4F4F0;border-left:3px solid #C9A84C;padding:20px 24px;margin:0 0 24px;border-radius:2px;">
-        <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#8A8A7A;margin-bottom:12px;">Reservation Details</div>
-        <table style="width:100%;border-collapse:collapse;font-size:14px;color:#3A3A35;">
-          <tr><td style="padding:5px 0;color:#6A6A5A;width:40%;">Property</td><td style="padding:5px 0;font-weight:600;">${body.stock_name}</td></tr>
-          ${body.project_name ? `<tr><td style="padding:5px 0;color:#6A6A5A;">Project</td><td style="padding:5px 0;">${body.project_name}</td></tr>` : ''}
-          <tr><td style="padding:5px 0;color:#6A6A5A;">Client Name</td><td style="padding:5px 0;">${body.client_name}</td></tr>
-          <tr><td style="padding:5px 0;color:#6A6A5A;">Client Email</td><td style="padding:5px 0;">${body.client_email}</td></tr>
-          ${body.client_phone ? `<tr><td style="padding:5px 0;color:#6A6A5A;">Client Phone</td><td style="padding:5px 0;">${body.client_phone}</td></tr>` : ''}
-          <tr><td style="padding:5px 0;color:#6A6A5A;">Reservation ID</td><td style="padding:5px 0;font-family:monospace;font-size:12px;">${reservationId}</td></tr>
+      <div style="background:#F5F3EE;border-left:3px solid #C8A951;padding:20px 24px;margin:0 0 24px;">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#C8A951;margin-bottom:12px;">Reservation Details</div>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;color:#2A3A50;">
+          <tr><td style="padding:6px 0;color:#98A5B3;width:40%;">Property</td><td style="padding:6px 0;font-weight:600;color:#080F1A;">${body.stock_name}</td></tr>
+          ${body.project_name ? `<tr><td style="padding:6px 0;color:#98A5B3;">Project</td><td style="padding:6px 0;color:#080F1A;">${body.project_name}</td></tr>` : ''}
+          <tr><td style="padding:6px 0;color:#98A5B3;">Client Name</td><td style="padding:6px 0;color:#080F1A;">${body.client_name}</td></tr>
+          <tr><td style="padding:6px 0;color:#98A5B3;">Client Email</td><td style="padding:6px 0;color:#080F1A;">${body.client_email}</td></tr>
+          ${body.client_phone ? `<tr><td style="padding:6px 0;color:#98A5B3;">Client Phone</td><td style="padding:6px 0;color:#080F1A;">${body.client_phone}</td></tr>` : ''}
+          <tr><td style="padding:6px 0;color:#98A5B3;">Reservation ID</td><td style="padding:6px 0;font-family:monospace;font-size:12px;color:#5A6878;">${reservationId}</td></tr>
         </table>
       </div>
 
       <!-- Expiry Warning -->
-      <div style="background:#FFF8E7;border:1px solid #E8C84A;padding:16px 20px;margin:0 0 24px;border-radius:3px;">
-        <div style="font-size:13px;font-weight:600;color:#8A6A00;margin-bottom:4px;">⏱ Reservation Expires</div>
-        <div style="font-size:14px;color:#6A5000;">${expiryDisplay}</div>
-        <div style="font-size:12px;color:#8A6A00;margin-top:8px;">
+      <div style="background:#FFF8E7;border:1px solid rgba(200,169,81,0.4);padding:16px 20px;margin:0 0 24px;">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#C8A951;margin-bottom:8px;">Reservation Expires</div>
+        <div style="font-size:14px;font-weight:600;color:#080F1A;margin-bottom:6px;">${expiryDisplay}</div>
+        <div style="font-size:12px;color:#5A6878;line-height:1.6;">
           If the reservation is not converted to an EOI before this time, the property will automatically revert to Available status.
         </div>
       </div>
 
-      <p style="margin:0 0 20px;font-size:15px;color:#3A3A35;line-height:1.7;">
-        To manage this reservation or proceed to EOI, please log in to the Partner Portal and visit <strong>My Deals</strong>.
+      <p style="margin:0 0 16px;font-size:15px;color:#2A3A50;line-height:1.7;">
+        To manage this reservation or proceed to EOI, log in to the Partner Portal and visit <strong style="color:#080F1A;">My Deals</strong>.
       </p>
-      <p style="margin:0 0 20px;font-size:15px;color:#3A3A35;line-height:1.7;">
-        If you need to cancel the reservation for any reason, you can do so from My Deals at any time before expiry.
+      <p style="margin:0 0 0;font-size:15px;color:#2A3A50;line-height:1.7;">
+        You can cancel the reservation from My Deals at any time before expiry.
       </p>
     </div>
 
     <!-- Footer -->
-    <div style="background:#1A1A16;padding:24px 48px;text-align:center;">
-      <p style="margin:0;font-size:11px;color:#6A6A5A;letter-spacing:0.5px;">
-        The Property Clearing House &nbsp;·&nbsp; <a href="https://tpch.com.au" style="color:#C9A84C;text-decoration:none;">tpch.com.au</a>
+    <div style="background:#080F1A;padding:24px 36px;text-align:center;">
+      <p style="margin:0 0 6px;font-size:11px;color:#5A6878;">
+        The Property Clearing House &nbsp;·&nbsp; <a href="https://tpch.com.au" style="color:#C8A951;text-decoration:none;">tpch.com.au</a>
       </p>
+      <p style="margin:0;font-size:10px;color:#98A5B3;">You're receiving this because you submitted a reservation via the TPCH Partner Portal.</p>
     </div>
   </div>
 </body>

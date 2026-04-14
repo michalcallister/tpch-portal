@@ -48,31 +48,31 @@ async function handleUpdate(record: Record<string, string>): Promise<void> {
       const declineHtml = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F4F4F0;font-family:'Arial',sans-serif;">
-  <div style="max-width:600px;margin:0 auto;background:#F4F4F0;">
-    <div style="background:#0A0A08;padding:28px 36px;text-align:center;">
-      <div style="display:inline-flex;align-items:center;gap:12px;">
-        <div style="width:40px;height:40px;background:#C9A84C;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0A0A08;">TC</div>
+<body style="margin:0;padding:0;background:#F5F3EE;font-family:'Arial',sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background:#F5F3EE;">
+    <div style="background:#080F1A;padding:28px 36px;text-align:center;">
+      <div style="display:inline-flex;align-items:center;gap:14px;">
+        <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/><polygon points="21,10 8,22 34,22" fill="#F5F3EE"/><rect x="10" y="21" width="24" height="18" fill="#F5F3EE"/><rect x="16" y="30" width="10" height="9" fill="#C8A951"/></svg>
         <div style="text-align:left;">
-          <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F8F6F0;">The Property Clearing House</div>
-          <div style="font-size:10px;color:#C9A84C;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">Partner Network</div>
+          <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F5F3EE;">The Property Clearing House</div>
+          <div style="font-size:9px;color:#C8A951;letter-spacing:2px;text-transform:uppercase;margin-top:3px;">Channel Partner Network</div>
         </div>
       </div>
     </div>
-    <div style="height:3px;background:linear-gradient(90deg,#C9A84C,#E8D08A,#C9A84C);"></div>
+    <div style="height:3px;background:linear-gradient(90deg,#C8A951,#E8D48B,#C8A951);"></div>
     <div style="background:#ffffff;padding:44px 44px 36px;">
-      <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1A1A16;line-height:1.3;">Thank you for your interest, ${firstName}.</p>
-      <p style="margin:0 0 28px;font-size:14px;color:#8A8A80;letter-spacing:1px;text-transform:uppercase;">Application update — ${record.company_name}</p>
-      <p style="margin:0 0 20px;font-size:15px;color:#3A3A35;line-height:1.7;">We appreciate the time you took to apply to join the TPCH Channel Partner Network and the interest you've shown in working with us.</p>
+      <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#080F1A;line-height:1.3;">Thank you for your interest, ${firstName}.</p>
+      <p style="margin:0 0 28px;font-size:14px;color:#98A5B3;letter-spacing:1px;text-transform:uppercase;">Application update — ${record.company_name}</p>
+      <p style="margin:0 0 20px;font-size:15px;color:#2A3A50;line-height:1.7;">We appreciate the time you took to apply to join the TPCH Channel Partner Network and the interest you've shown in working with us.</p>
       ${rationaleBlock}
-      <p style="margin:0 0 20px;font-size:15px;color:#3A3A35;line-height:1.7;">This decision is not necessarily permanent. If your circumstances change — for example, if you obtain relevant licensing, grow your client base, or establish a stronger track record — we would encourage you to reapply in the future.</p>
-      <p style="margin:0 0 32px;font-size:15px;color:#3A3A35;line-height:1.7;">If you have any questions regarding this decision, please feel free to reach out to us at <a href="mailto:${ADMIN_EMAIL}" style="color:#C9A84C;text-decoration:none;">${ADMIN_EMAIL}</a>.</p>
-      <p style="margin:0;font-size:14px;color:#3A3A35;line-height:1.7;">We wish you every success in your endeavours.</p>
-      <p style="margin:16px 0 0;font-size:14px;color:#1A1A16;font-weight:600;">The TPCH Team</p>
+      <p style="margin:0 0 20px;font-size:15px;color:#2A3A50;line-height:1.7;">This decision is not necessarily permanent. If your circumstances change — for example, if you obtain relevant licensing, grow your client base, or establish a stronger track record — we would encourage you to reapply in the future.</p>
+      <p style="margin:0 0 32px;font-size:15px;color:#2A3A50;line-height:1.7;">If you have any questions regarding this decision, please feel free to reach out to us at <a href="mailto:${ADMIN_EMAIL}" style="color:#C8A951;text-decoration:none;">${ADMIN_EMAIL}</a>.</p>
+      <p style="margin:0;font-size:14px;color:#2A3A50;line-height:1.7;">We wish you every success in your endeavours.</p>
+      <p style="margin:16px 0 0;font-size:14px;color:#080F1A;font-weight:600;">The TPCH Team</p>
     </div>
-    <div style="background:#0A0A08;padding:24px 36px;text-align:center;">
-      <p style="margin:0 0 6px;font-size:11px;color:#5A5A52;">The Property Clearing House · <a href="https://tpch.com.au" style="color:#C9A84C;text-decoration:none;">tpch.com.au</a></p>
-      <p style="margin:0;font-size:10px;color:#3A3A35;">You're receiving this email because you submitted a partner application.</p>
+    <div style="background:#080F1A;padding:24px 36px;text-align:center;">
+      <p style="margin:0 0 6px;font-size:11px;color:#5A6878;">The Property Clearing House · <a href="https://tpch.com.au" style="color:#C8A951;text-decoration:none;">tpch.com.au</a></p>
+      <p style="margin:0;font-size:10px;color:#98A5B3;">You're receiving this email because you submitted a partner application.</p>
     </div>
   </div>
 </body>
@@ -121,52 +121,52 @@ async function handleUpdate(record: Record<string, string>): Promise<void> {
       const welcomeHtml = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F4F4F0;font-family:'Arial',sans-serif;">
-  <div style="max-width:600px;margin:0 auto;background:#F4F4F0;">
-    <div style="background:#0A0A08;padding:28px 36px;text-align:center;">
-      <div style="display:inline-flex;align-items:center;gap:12px;">
-        <div style="width:40px;height:40px;background:#C9A84C;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0A0A08;">TC</div>
+<body style="margin:0;padding:0;background:#F5F3EE;font-family:'Arial',sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background:#F5F3EE;">
+    <div style="background:#080F1A;padding:28px 36px;text-align:center;">
+      <div style="display:inline-flex;align-items:center;gap:14px;">
+        <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/><polygon points="21,10 8,22 34,22" fill="#F5F3EE"/><rect x="10" y="21" width="24" height="18" fill="#F5F3EE"/><rect x="16" y="30" width="10" height="9" fill="#C8A951"/></svg>
         <div style="text-align:left;">
-          <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F8F6F0;">The Property Clearing House</div>
-          <div style="font-size:10px;color:#C9A84C;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">Partner Network</div>
+          <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#F5F3EE;">The Property Clearing House</div>
+          <div style="font-size:9px;color:#C8A951;letter-spacing:2px;text-transform:uppercase;margin-top:3px;">Channel Partner Network</div>
         </div>
       </div>
     </div>
-    <div style="height:3px;background:linear-gradient(90deg,#C9A84C,#E8D08A,#C9A84C);"></div>
+    <div style="height:3px;background:linear-gradient(90deg,#C8A951,#E8D48B,#C8A951);"></div>
     <div style="background:#ffffff;padding:44px 44px 36px;">
-      <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1A1A16;line-height:1.3;">Welcome to the network, ${firstName}.</p>
-      <p style="margin:0 0 28px;font-size:14px;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;">Application approved — ${record.company_name}</p>
-      <p style="margin:0 0 20px;font-size:15px;color:#3A3A35;line-height:1.7;">We're pleased to welcome <strong style="color:#1A1A16;">${record.company_name}</strong> to the TPCH Channel Partner Network. Your application has been reviewed and approved — you now have access to the full Partner Portal.</p>
-      <p style="margin:0 0 32px;font-size:15px;color:#3A3A35;line-height:1.7;">To get started, click the button below to set your password and access the portal. This link is valid for <strong style="color:#1A1A16;">24 hours</strong>.</p>
+      <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#080F1A;line-height:1.3;">Welcome to the network, ${firstName}.</p>
+      <p style="margin:0 0 28px;font-size:14px;color:#C8A951;letter-spacing:1px;text-transform:uppercase;">Application approved — ${record.company_name}</p>
+      <p style="margin:0 0 20px;font-size:15px;color:#2A3A50;line-height:1.7;">We're pleased to welcome <strong style="color:#080F1A;">${record.company_name}</strong> to the TPCH Channel Partner Network. Your application has been reviewed and approved — you now have access to the full Partner Portal.</p>
+      <p style="margin:0 0 32px;font-size:15px;color:#2A3A50;line-height:1.7;">To get started, click the button below to set your password and access the portal. This link is valid for <strong style="color:#080F1A;">24 hours</strong>.</p>
       <div style="text-align:center;margin:0 0 36px;">
-        <a href="${inviteLink}" style="display:inline-block;background:#C9A84C;color:#0A0A08;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:16px 40px;">
+        <a href="${inviteLink}" style="display:inline-block;background:#C8A951;color:#080F1A;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:16px 40px;">
           Set Password &amp; Access Portal →
         </a>
       </div>
-      <div style="background:#F8F7F3;border:1px solid #E4E0D4;padding:24px;margin-bottom:32px;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9A8A6A;margin-bottom:16px;">What you'll find in the portal</div>
+      <div style="background:#F5F3EE;border:1px solid rgba(200,169,81,0.22);padding:24px;margin-bottom:32px;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#C8A951;margin-bottom:16px;">What you'll find in the portal</div>
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
           ${[
-            ['◈ Stock Portal',      'Browse available investment properties, lot details, yields, and commission schedules'],
-            ['◈ Research Reports',  'AI-powered suburb intelligence, demand drivers, and market analysis'],
-            ['◈ My Deals',          'Track your pipeline from EOI through to settlement in real time'],
-            ['◈ Market Resources',  'Investor guides, factsheets, and due diligence tools'],
+            ['Research Intelligence',  'AI-powered suburb analysis, demand drivers, and market conviction ratings'],
+            ['Live Stock Portal',       'Browse available properties with yields, floor plans, and commission schedules'],
+            ['My Deals',               'Track your pipeline from reservation through to settlement in real time'],
+            ['White-Label Reports',    'Generate branded investor research reports in one click'],
           ].map(([title, desc]) => `
-          <tr style="border-bottom:1px solid #E4E0D4;">
+          <tr style="border-bottom:1px solid rgba(200,169,81,0.15);">
             <td style="padding:10px 0;vertical-align:top;">
-              <div style="font-size:12px;font-weight:600;color:#1A1A16;margin-bottom:2px;">${title}</div>
-              <div style="font-size:12px;color:#7A7A70;line-height:1.5;">${desc}</div>
+              <div style="font-size:12px;font-weight:600;color:#080F1A;margin-bottom:2px;">${title}</div>
+              <div style="font-size:12px;color:#5A6878;line-height:1.5;">${desc}</div>
             </td>
           </tr>`).join('')}
         </table>
       </div>
-      <p style="margin:0 0 8px;font-size:14px;color:#3A3A35;line-height:1.7;">If you have any questions, reach out to us at <a href="mailto:${ADMIN_EMAIL}" style="color:#C9A84C;text-decoration:none;">${ADMIN_EMAIL}</a>.</p>
-      <p style="margin:0;font-size:14px;color:#3A3A35;line-height:1.7;">We look forward to working with you.</p>
-      <p style="margin:16px 0 0;font-size:14px;color:#1A1A16;font-weight:600;">The TPCH Team</p>
+      <p style="margin:0 0 8px;font-size:14px;color:#2A3A50;line-height:1.7;">If you have any questions, reach out to us at <a href="mailto:${ADMIN_EMAIL}" style="color:#C8A951;text-decoration:none;">${ADMIN_EMAIL}</a>.</p>
+      <p style="margin:0;font-size:14px;color:#2A3A50;line-height:1.7;">We look forward to working with you.</p>
+      <p style="margin:16px 0 0;font-size:14px;color:#080F1A;font-weight:600;">The TPCH Team</p>
     </div>
-    <div style="background:#0A0A08;padding:24px 36px;text-align:center;">
-      <p style="margin:0 0 6px;font-size:11px;color:#5A5A52;">The Property Clearing House · <a href="https://tpch.com.au" style="color:#C9A84C;text-decoration:none;">tpch.com.au</a></p>
-      <p style="margin:0;font-size:10px;color:#3A3A35;">You're receiving this email because your partner application was approved.</p>
+    <div style="background:#080F1A;padding:24px 36px;text-align:center;">
+      <p style="margin:0 0 6px;font-size:11px;color:#5A6878;">The Property Clearing House · <a href="https://tpch.com.au" style="color:#C8A951;text-decoration:none;">tpch.com.au</a></p>
+      <p style="margin:0;font-size:10px;color:#98A5B3;">You're receiving this email because your partner application was approved.</p>
     </div>
   </div>
 </body>
