@@ -7254,12 +7254,18 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
 
   function updateDealTiles(deals) {
     // Only count whitelisted (visible) deals — same set as the My Deals table
-    const visible = deals.filter(d => isDlpVisible(d.stage));
+    const _isStaff = currentPartnerRecord?.role === 'staff';
+    const _myId    = _isStaff ? currentPartnerRecord.staff_id : null;
+    const allVisible = deals.filter(d => isDlpVisible(d.stage));
+    // For staff, all tile counts are scoped to their assigned deals only
+    const visible = _myId
+      ? allVisible.filter(d => dealAssignments.some(a => a.deal_id === d.id && a.staff_id === _myId))
+      : allVisible;
     const ss = s => (s || '').toLowerCase();
 
     // Tile 1: Reserved stage only
     const reserved = visible.filter(d => ss(d.stage).includes('reserved'));
-    // Tile 2: EOI Submitted — will show once that stage is added in Monday.com
+    // Tile 2: EOI Submitted
     const eois = visible.filter(d => ss(d.stage).includes('eoi'));
     // Tile 3: COS Issued through to Under Construction
     const inContract = visible.filter(d => {
@@ -7269,14 +7275,10 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
              s.includes('awaiting title') || s.includes('await title') ||
              s.includes('construction');
     });
-    // Tile 4: Sum of commission — respect staff comm_display_type and assignment filter
-    const _isStaff     = currentPartnerRecord?.role === 'staff';
-    const _myId        = _isStaff ? currentPartnerRecord.staff_id : null;
-    const _commType    = _isStaff ? (currentPartnerRecord.comm_display_type || 'portal') : 'portal';
-    const _commCustom  = currentPartnerRecord?.comm_custom_value || null;
-    const commDeals    = _myId
-      ? visible.filter(d => dealAssignments.some(a => a.deal_id === d.id && a.staff_id === _myId))
-      : visible;
+    // Tile 4: Sum of commission — respect staff comm_display_type
+    const _commType   = _isStaff ? (currentPartnerRecord.comm_display_type || 'portal') : 'portal';
+    const _commCustom = currentPartnerRecord?.comm_custom_value || null;
+    const commDeals   = visible; // already filtered to assigned deals for staff above
     let totalComm;
     if (_commType === 'hidden') {
       totalComm = null;
