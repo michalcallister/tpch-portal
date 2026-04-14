@@ -329,17 +329,28 @@ async function fetchAllItems(boardId: string): Promise<any[]> {
       }
     }`
 
-    const res = await fetch(MONDAY_API, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': MONDAY_TOKEN,
-        'API-Version': '2023-10',
-      },
-      body: JSON.stringify({ query }),
-    })
+    let res: Response | null = null
+    let lastStatus = 0
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (attempt > 0) {
+        const wait = attempt * 5000 // 5s, 10s, 15s
+        console.log(`Rate limited (429), waiting ${wait / 1000}s before retry ${attempt}...`)
+        await new Promise(r => setTimeout(r, wait))
+      }
+      res = await fetch(MONDAY_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': MONDAY_TOKEN,
+          'API-Version': '2023-10',
+        },
+        body: JSON.stringify({ query }),
+      })
+      lastStatus = res.status
+      if (res.status !== 429) break
+    }
 
-    if (!res.ok) throw new Error(`Monday.com API error: ${res.status} ${res.statusText}`)
+    if (!res || !res.ok) throw new Error(`Monday.com API error: ${lastStatus} after retries`)
 
     const json = await res.json()
     if (json.errors) throw new Error(`Monday.com GraphQL error: ${JSON.stringify(json.errors)}`)
@@ -708,6 +719,9 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
   }
 
   // 4. Fetch & upsert Deals in Progress
+  // Wait 3 seconds before deals fetch to avoid Monday.com rate limits after stock
+  console.log('Waiting before fetching deals to avoid rate limiting...')
+  await new Promise(r => setTimeout(r, 3000))
   console.log('Fetching deals from Monday.com...')
   const dealItems = await fetchAllItems(DEALS_BOARD_ID)
   console.log(`Fetched ${dealItems.length} deal items`)

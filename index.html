@@ -2140,7 +2140,7 @@
           <div class="update-dot"></div>
           Research updated 18 Feb 2025
         </div>
-        <span style="color:var(--grey-mid)">Wed 18 Feb 2025</span>
+        <span id="topbar-today" style="color:var(--grey-mid)"></span>
       </div>
     </div>
 
@@ -5808,6 +5808,9 @@
     applyNavForRole(false, false);
   }
   document.addEventListener('DOMContentLoaded', () => {
+    const _todayEl = document.getElementById('topbar-today');
+    if (_todayEl) _todayEl.textContent = new Date().toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
     document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
     document.getElementById('login-email').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('login-pass').focus(); });
     document.getElementById('setpass-new').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('setpass-confirm').focus(); });
