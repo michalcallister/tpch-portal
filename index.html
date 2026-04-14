@@ -2069,7 +2069,7 @@
       <span class="nav-icon">♡</span> My Lists
     </div>
     <div class="nav-item partner-only" id="nav-deals" onclick="showPage('deals', this)">
-      <span class="nav-icon">⬡</span> My Deals
+      <span class="nav-icon">⬡</span> Team Deals
       <span class="nav-deals-badge" id="nav-deals-badge" style="display:none"></span>
     </div>
 
@@ -5961,7 +5961,7 @@
     document.getElementById('page-' + page).classList.add('active');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    const titles = { dashboard:'Dashboard', reports:'All Research Reports', stock:'Stock Portal', agent:'Research Agent', enquiries:'Enquiries', partners:'Partners', team:'Team', 'partner-settings':'Settings', deals:'My Deals', lists:'My Lists' };
+    const titles = { dashboard:'Dashboard', reports:'All Research Reports', stock:'Stock Portal', agent:'Research Agent', enquiries:'Enquiries', partners:'Partners', team:'Team', 'partner-settings':'Settings', deals:'Team Deals', lists:'My Lists' };
     document.getElementById('topbar-title').textContent = titles[page] || '';
     if (page === 'dashboard')         { setTimeout(initLeafletMap, 80); }
     if (page === 'stock')             { loadStockProjects(); }
