@@ -3720,6 +3720,31 @@
       </div>
     </div>
 
+    <!-- Edit staff commission modal -->
+    <div id="modal-edit-staff-comm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:var(--dark-card);border:1px solid var(--gold-border);padding:32px;width:100%;max-width:400px;border-radius:4px;">
+        <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:20px;">Edit Commission Display</div>
+        <input type="hidden" id="edit-comm-staff-id">
+        <div style="margin-bottom:14px;">
+          <div style="font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Commission Display</div>
+          <select class="form-input" id="edit-comm-type">
+            <option value="portal">Portal rate (show standard commission)</option>
+            <option value="custom">Custom amount</option>
+            <option value="hidden">Hidden</option>
+          </select>
+        </div>
+        <div id="edit-comm-custom-wrap" style="display:none;margin-bottom:14px;">
+          <div style="font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Custom Amount</div>
+          <input class="form-input" type="text" id="edit-comm-custom-value" placeholder="e.g. $10,000">
+        </div>
+        <div id="edit-comm-msg" style="display:none;font-size:12px;margin-bottom:12px;"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button class="btn-outline" onclick="document.getElementById('modal-edit-staff-comm').style.display='none'">Cancel</button>
+          <button class="btn-primary" onclick="saveStaffComm()">Save</button>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -5855,20 +5880,38 @@
     }
   }
 
-  async function editStaffComm(staffId, currentType, currentValue) {
-    const type = prompt(`Commission display for this staff member:\nEnter: portal, custom, or hidden\n\nCurrent: ${currentType}`, currentType);
-    if (!type || !['portal','custom','hidden'].includes(type.trim())) return;
-    let value = null;
-    if (type.trim() === 'custom') {
-      value = prompt('Enter the commission amount to show them (e.g. $10,000):', currentValue || '');
-      if (value === null) return;
+  function editStaffComm(staffId, currentType, currentValue) {
+    document.getElementById('edit-comm-staff-id').value = staffId;
+    document.getElementById('edit-comm-type').value = currentType || 'portal';
+    document.getElementById('edit-comm-custom-value').value = currentValue || '';
+    document.getElementById('edit-comm-custom-wrap').style.display = currentType === 'custom' ? '' : 'none';
+    document.getElementById('edit-comm-msg').style.display = 'none';
+    document.getElementById('modal-edit-staff-comm').style.display = 'flex';
+    document.getElementById('edit-comm-type').onchange = function() {
+      document.getElementById('edit-comm-custom-wrap').style.display = this.value === 'custom' ? '' : 'none';
+    };
+  }
+
+  async function saveStaffComm() {
+    const staffId = document.getElementById('edit-comm-staff-id').value;
+    const type    = document.getElementById('edit-comm-type').value;
+    const value   = type === 'custom' ? document.getElementById('edit-comm-custom-value').value.trim() || null : null;
+    const btn     = document.querySelector('#modal-edit-staff-comm .btn-primary');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/partner_staff?id=eq.' + staffId, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ comm_display_type: type, comm_custom_value: value }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      document.getElementById('modal-edit-staff-comm').style.display = 'none';
+      loadPartnerStaff();
+    } catch(e) {
+      showPsetMsg('edit-comm-msg', e.message, false);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save';
     }
-    await fetch(SUPABASE_URL + '/rest/v1/partner_staff?id=eq.' + staffId, {
-      method: 'PATCH',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ comm_display_type: type.trim(), comm_custom_value: value }),
-    });
-    loadPartnerStaff();
   }
 
   function showPsetMsg(elId, msg, ok) {
