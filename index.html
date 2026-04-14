@@ -7238,7 +7238,7 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
       // Commission total: staff uses custom flat value if set, else channel_commission from stock
       const isStaff    = currentPartnerRecord.role === 'staff';
       const commType   = isStaff ? (currentPartnerRecord.comm_display_type || 'portal') : 'portal';
-      const customComm = parseFloat(currentPartnerRecord.comm_custom_value) || 0;
+      const customComm = parseFloat((currentPartnerRecord.comm_custom_value || '').replace(/[^0-9.]/g, '')) || 0;
 
       const inProgress = [...reserved, ...eois, ...contracts];
       let totalComm = 0;
