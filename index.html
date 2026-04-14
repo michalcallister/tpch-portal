@@ -3466,6 +3466,7 @@
               <th class="dlp-th-sort" onclick="dlpSortBy('expected_approval_date')">Exp. Approval <span class="dlp-si" id="si-expected_approval_date">⇅</span></th>
               <th class="dlp-th-sort" onclick="dlpSortBy('expected_settlement_date')">Exp. Settlement <span class="dlp-si" id="si-expected_settlement_date">⇅</span></th>
               <th class="dlp-th-sort" onclick="dlpSortBy('channel_commission')" style="text-align:right">Commission <span class="dlp-si" id="si-channel_commission">⇅</span></th>
+              <th id="dlp-th-assigned" style="display:none">Assigned To</th>
             </tr>
           </thead>
           <tbody id="dlp-tbody"></tbody>
@@ -3752,6 +3753,18 @@
     </div>
 
   </main>
+</div>
+
+<!-- Deal Assign Modal -->
+<div id="modal-deal-assign" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--black-card);border:1px solid var(--border);border-radius:12px;padding:28px;width:360px;max-width:90vw;" onclick="event.stopPropagation()">
+    <div style="font-size:16px;font-weight:600;margin-bottom:4px;">Assign Deal</div>
+    <div style="font-size:13px;color:var(--grey-mid);margin-bottom:16px;">Select which team members can see the commission for this deal.</div>
+    <div id="modal-deal-assign-body"></div>
+    <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+      <button class="btn-outline" onclick="document.getElementById('modal-deal-assign').style.display='none'">Done</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════
@@ -6963,6 +6976,8 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
   // ─── MY DEALS ────────────────────────────────────────────
 
   let partnerDeals = [];
+  let dealAssignments = [];   // [{ deal_id, staff_id }]
+  let partnerStaffCache = []; // [{ id, full_name }] for assign modal
   let dlpFilter = 'all';
   let dlpSort = { col: null, dir: 'asc' };
 
@@ -7033,14 +7048,25 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
         body: JSON.stringify({ p_partner_id: currentPartnerRecord.partner_id }),
       });
       const data = await res.json();
-      let allDeals = Array.isArray(data) ? data : [];
-      // Standard staff only see deals where client name matches their own name
-      const isStandardStaff = currentPartnerRecord.role === 'staff' && currentPartnerRecord.job_role !== 'admin';
-      if (isStandardStaff) {
-        const myName = (currentPartnerRecord.full_name || '').toLowerCase();
-        allDeals = allDeals.filter(d => (d.client_name || '').toLowerCase().includes(myName) || (d.name || '').toLowerCase().includes(myName));
-      }
-      partnerDeals = allDeals;
+      partnerDeals = Array.isArray(data) ? data : [];
+
+      // Load deal assignments for this partner
+      try {
+        const aRes = await fetch(
+          SUPABASE_URL + '/rest/v1/deal_assignments?partner_id=eq.' + currentPartnerRecord.partner_id + '&select=deal_id,staff_id',
+          { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken } }
+        );
+        dealAssignments = aRes.ok ? await aRes.json() : [];
+      } catch(e) { dealAssignments = []; }
+
+      // Cache staff list for assign modal
+      try {
+        const sRes = await fetch(
+          SUPABASE_URL + '/rest/v1/partner_staff?partner_id=eq.' + currentPartnerRecord.partner_id + '&status=eq.active&select=id,full_name&order=full_name',
+          { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken } }
+        );
+        partnerStaffCache = sRes.ok ? await sRes.json() : [];
+      } catch(e) { partnerStaffCache = []; }
     } catch(e) {
       partnerDeals = [];
     }
@@ -7102,20 +7128,46 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
     const _isStaffMember = currentPartnerRecord?.role === 'staff';
     const _staffCommType = _isStaffMember ? (currentPartnerRecord.comm_display_type || 'portal') : 'portal';
     const _staffCommCustom = currentPartnerRecord?.comm_custom_value || null;
+    const _canAssign = !_isStaffMember || (currentPartnerRecord?.job_role || '').toLowerCase() === 'admin';
+    const _myStaffId = _isStaffMember ? currentPartnerRecord.staff_id : null;
+
+    // Show/hide Assigned To column
+    const _assignedTh = document.getElementById('dlp-th-assigned');
+    if (_assignedTh) _assignedTh.style.display = _canAssign ? '' : 'none';
 
     tbody.innerHTML = visible.map(d => {
       const meta      = dealStageMeta(d.stage);
       const badge     = `<span class="dlp-stage-badge" style="background:${meta.bg};color:${meta.color};border-color:${meta.border}">${escHtml(d.stage || '—')}</span>`;
       const settlCls  = isUpcoming(d.expected_settlement_date) ? ' upcoming' : '';
       const approvCls = isUpcoming(d.expected_approval_date) ? ' upcoming' : '';
+
+      // Is this deal assigned to the current staff member?
+      const _isAssignedToMe = _myStaffId
+        ? dealAssignments.some(a => a.deal_id === d.id && a.staff_id === _myStaffId)
+        : true; // partner admin: always "assigned"
+
       let commDisplay;
-      if (_staffCommType === 'hidden') {
+      if (_isStaffMember && !_isAssignedToMe) {
+        commDisplay = '—'; // staff can't see comm unless assigned
+      } else if (_staffCommType === 'hidden') {
         commDisplay = '—';
       } else if (_staffCommType === 'custom' && _staffCommCustom) {
         commDisplay = _staffCommCustom;
       } else {
         commDisplay = d.channel_commission != null ? fmtCurrency(d.channel_commission) : '—';
       }
+
+      // Assigned To cell (admin only)
+      let assignedCell = '';
+      if (_canAssign) {
+        const names = dealAssignments
+          .filter(a => a.deal_id === d.id)
+          .map(a => { const s = partnerStaffCache.find(s => s.id === a.staff_id); return s ? s.full_name.split(' ')[0] : ''; })
+          .filter(Boolean);
+        const label = names.length ? names.join(', ') : '<span style="color:var(--grey-mid)">Unassigned</span>';
+        assignedCell = `<td class="dlp-assign" onclick="openDealAssignModal('${d.id}')">${label} <span style="opacity:0.5;font-size:11px;">✎</span></td>`;
+      }
+
       return `<tr>
         <td>${badge}</td>
         <td class="dlp-property">${escHtml(d.property_name || '—')}</td>
@@ -7124,6 +7176,7 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
         <td class="dlp-date${approvCls}">${fmtDealDate(d.expected_approval_date)}</td>
         <td class="dlp-date${settlCls}">${fmtDealDate(d.expected_settlement_date)}</td>
         <td class="dlp-comm">${commDisplay}</td>
+        ${assignedCell}
       </tr>`;
     }).join('');
   }
@@ -7158,6 +7211,47 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
     renderDealsTable();
   }
 
+  function openDealAssignModal(dealId) {
+    const modal = document.getElementById('modal-deal-assign');
+    if (!modal) return;
+    modal.dataset.dealId = dealId;
+    const body = document.getElementById('modal-deal-assign-body');
+    if (!partnerStaffCache.length) {
+      body.innerHTML = '<p style="color:var(--grey-mid);font-size:13px;">No staff members found.</p>';
+    } else {
+      body.innerHTML = partnerStaffCache.map(s => {
+        const assigned = dealAssignments.some(a => a.deal_id === dealId && a.staff_id === s.id);
+        return `<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">
+          <input type="checkbox" value="${s.id}" ${assigned ? 'checked' : ''} onchange="toggleDealAssignment('${dealId}','${s.id}',this.checked)" style="accent-color:var(--gold);width:16px;height:16px;">
+          <span style="font-size:14px;">${escHtml(s.full_name)}</span>
+        </label>`;
+      }).join('');
+    }
+    modal.style.display = 'flex';
+  }
+
+  async function toggleDealAssignment(dealId, staffId, assign) {
+    try {
+      if (assign) {
+        await fetch(SUPABASE_URL + '/rest/v1/deal_assignments', {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ partner_id: currentPartnerRecord.partner_id, deal_id: dealId, staff_id: staffId }),
+        });
+        if (!dealAssignments.some(a => a.deal_id === dealId && a.staff_id === staffId)) {
+          dealAssignments.push({ deal_id: dealId, staff_id: staffId });
+        }
+      } else {
+        await fetch(SUPABASE_URL + '/rest/v1/deal_assignments?deal_id=eq.' + encodeURIComponent(dealId) + '&staff_id=eq.' + staffId, {
+          method: 'DELETE',
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken },
+        });
+        dealAssignments = dealAssignments.filter(a => !(a.deal_id === dealId && a.staff_id === staffId));
+      }
+      renderDealsTable();
+    } catch(e) { /* fail silently */ }
+  }
+
   function updateDealTiles(deals) {
     // Only count whitelisted (visible) deals — same set as the My Deals table
     const visible = deals.filter(d => isDlpVisible(d.stage));
@@ -7175,8 +7269,13 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
              s.includes('awaiting title') || s.includes('await title') ||
              s.includes('construction');
     });
-    // Tile 4: Sum of channel commission from the stock join (not deal value)
-    const totalComm = visible.reduce((sum, d) => sum + (d.channel_commission || 0), 0);
+    // Tile 4: Sum of commission — for staff, only count deals assigned to them
+    const _isStaff = currentPartnerRecord?.role === 'staff';
+    const _myId    = _isStaff ? currentPartnerRecord.staff_id : null;
+    const commDeals = _myId
+      ? visible.filter(d => dealAssignments.some(a => a.deal_id === d.id && a.staff_id === _myId))
+      : visible;
+    const totalComm = commDeals.reduce((sum, d) => sum + (d.channel_commission || 0), 0);
 
     const r  = document.getElementById('pds-reservations');
     const e  = document.getElementById('pds-eois');
@@ -9939,6 +10038,10 @@ function buildKitHtml(s, research, brand) {
 .dlp-table td.dlp-comm {
   color: var(--gold); font-weight: 500; white-space: nowrap; text-align: right;
 }
+.dlp-table td.dlp-assign {
+  font-size: 13px; color: var(--grey-light); cursor: pointer; white-space: nowrap;
+}
+.dlp-table td.dlp-assign:hover { color: var(--gold); }
 .dlp-table td.dlp-value { color: var(--gold); font-weight: 500; white-space: nowrap; }
 .dlp-table td.dlp-date { white-space: nowrap; color: var(--grey-light); }
 .dlp-table td.dlp-date.settled { color: #60C080; }
