@@ -3696,8 +3696,11 @@
           <input class="form-input" type="email" id="staff-email" placeholder="jane@yourfirm.com.au">
         </div>
         <div class="form-group">
-          <label class="form-label">Role / Title</label>
-          <input class="form-input" type="text" id="staff-job-role" placeholder="e.g. Financial Adviser">
+          <label class="form-label">Portal Access Level</label>
+          <select class="form-input" id="staff-job-role">
+            <option value="standard">Standard — can browse stock and see their own deals</option>
+            <option value="admin">Admin — full access including Settings</option>
+          </select>
         </div>
         <div class="prt-section-title" style="margin-top:8px;">Commission Display</div>
         <div class="form-group">
@@ -4388,7 +4391,8 @@
     document.getElementById('nav-lists').classList.toggle('visible', isPartner);
     document.getElementById('nav-deals').classList.toggle('visible', isPartner);
     document.getElementById('nav-deals-section').classList.toggle('visible', isPartner);
-    document.getElementById('nav-partner-settings').classList.toggle('visible', isPartner);
+    const isPartnerAdmin = isPartner && (currentPartnerRecord?.role !== 'staff' || (currentPartnerRecord?.job_role || '').toLowerCase() === 'admin');
+    document.getElementById('nav-partner-settings').classList.toggle('visible', isPartnerAdmin);
     document.getElementById('nav-partner-section').classList.toggle('visible', isPartner);
     // Notification bell (partner only)
     const bellBtn = document.getElementById('notif-bell-btn');
@@ -5802,22 +5806,34 @@
       return;
     }
     const commLabel = { portal: 'Portal rate', custom: '', hidden: 'Hidden' };
+    const accessLabel = { admin: 'Admin', standard: 'Standard' };
+    const owner = currentPartnerRecord;
+    const ownerRow = `
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+        <td style="padding:10px 12px;font-size:13px;color:var(--white);">${owner.full_name} <span style="font-size:10px;color:var(--gold);margin-left:4px;">Owner</span></td>
+        <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">${owner.email}</td>
+        <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">Admin</td>
+        <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">Portal rate</td>
+        <td style="padding:10px 12px;"><span style="font-size:11px;padding:2px 8px;border-radius:3px;background:rgba(80,200,120,0.15);color:#50c878;">Active</span></td>
+        <td style="padding:10px 12px;"></td>
+      </tr>`;
     listEl.innerHTML = `
       <table style="width:100%;border-collapse:collapse;">
         <thead><tr style="border-bottom:1px solid var(--gold-border);">
           <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Name</th>
           <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Email</th>
-          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Role</th>
+          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Access</th>
           <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Commission Display</th>
           <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Status</th>
           <th style="padding:8px 12px;"></th>
         </tr></thead>
         <tbody>
+          ${ownerRow}
           ${staff.map(s => `
             <tr style="border-bottom:1px solid rgba(255,255,255,0.04);" id="staff-row-${s.id}">
               <td style="padding:10px 12px;font-size:13px;color:var(--white);">${s.full_name}</td>
               <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">${s.email}</td>
-              <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">${s.role || '—'}</td>
+              <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">${accessLabel[s.role] || s.role || 'Standard'}</td>
               <td style="padding:10px 12px;font-size:13px;color:var(--gold);">
                 ${s.comm_display_type === 'custom' ? (s.comm_custom_value || 'Custom') : (commLabel[s.comm_display_type] || '—')}
               </td>
@@ -7014,7 +7030,14 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
         body: JSON.stringify({ p_partner_id: currentPartnerRecord.partner_id }),
       });
       const data = await res.json();
-      partnerDeals = Array.isArray(data) ? data : [];
+      let allDeals = Array.isArray(data) ? data : [];
+      // Standard staff only see deals where client name matches their own name
+      const isStandardStaff = currentPartnerRecord.role === 'staff' && currentPartnerRecord.job_role !== 'admin';
+      if (isStandardStaff) {
+        const myName = (currentPartnerRecord.full_name || '').toLowerCase();
+        allDeals = allDeals.filter(d => (d.client_name || '').toLowerCase().includes(myName) || (d.name || '').toLowerCase().includes(myName));
+      }
+      partnerDeals = allDeals;
     } catch(e) {
       partnerDeals = [];
     }
@@ -7073,11 +7096,23 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
     if (emptyEl) emptyEl.style.display = 'none';
     if (!tbody) return;
 
+    const _isStaffMember = currentPartnerRecord?.role === 'staff';
+    const _staffCommType = _isStaffMember ? (currentPartnerRecord.comm_display_type || 'portal') : 'portal';
+    const _staffCommCustom = currentPartnerRecord?.comm_custom_value || null;
+
     tbody.innerHTML = visible.map(d => {
       const meta      = dealStageMeta(d.stage);
       const badge     = `<span class="dlp-stage-badge" style="background:${meta.bg};color:${meta.color};border-color:${meta.border}">${escHtml(d.stage || '—')}</span>`;
       const settlCls  = isUpcoming(d.expected_settlement_date) ? ' upcoming' : '';
       const approvCls = isUpcoming(d.expected_approval_date) ? ' upcoming' : '';
+      let commDisplay;
+      if (_staffCommType === 'hidden') {
+        commDisplay = '—';
+      } else if (_staffCommType === 'custom' && _staffCommCustom) {
+        commDisplay = _staffCommCustom;
+      } else {
+        commDisplay = d.channel_commission != null ? fmtCurrency(d.channel_commission) : '—';
+      }
       return `<tr>
         <td>${badge}</td>
         <td class="dlp-property">${escHtml(d.property_name || '—')}</td>
@@ -7085,7 +7120,7 @@ Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current
         <td class="dlp-date">${fmtDealDate(d.cos_executed_date)}</td>
         <td class="dlp-date${approvCls}">${fmtDealDate(d.expected_approval_date)}</td>
         <td class="dlp-date${settlCls}">${fmtDealDate(d.expected_settlement_date)}</td>
-        <td class="dlp-comm">${d.channel_commission != null ? fmtCurrency(d.channel_commission) : '—'}</td>
+        <td class="dlp-comm">${commDisplay}</td>
       </tr>`;
     }).join('');
   }
