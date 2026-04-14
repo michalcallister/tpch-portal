@@ -2099,6 +2099,9 @@
           <div class="user-name">Andrew P.</div>
           <div class="user-role">Channel Partner</div>
         </div>
+        <button class="notif-bell partner-only" id="whats-new-btn" onclick="openWhatsNew()" title="What's New" style="display:none;position:relative;">
+          ✦<span id="whats-new-badge" style="display:none;position:absolute;top:2px;right:2px;width:7px;height:7px;background:var(--gold);border-radius:50%;"></span>
+        </button>
         <button class="notif-bell partner-only" id="notif-bell-btn" onclick="toggleNotifPanel()" title="Notifications">
           🔔<span class="notif-badge" id="notif-badge" style="display:none">0</span>
         </button>
@@ -3755,6 +3758,20 @@
   </main>
 </div>
 
+<!-- What's New Modal -->
+<div id="modal-whats-new" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1100;align-items:center;justify-content:center;" onclick="if(event.target===this)closeWhatsNew()">
+  <div style="background:var(--black-card);border:1px solid var(--border);border-radius:14px;width:480px;max-width:92vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;" onclick="event.stopPropagation()">
+    <div style="padding:24px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:17px;font-weight:700;letter-spacing:-0.3px;">What's New</div>
+        <div style="font-size:12px;color:var(--grey-mid);margin-top:2px;">Latest updates to the TPCH Partner Portal</div>
+      </div>
+      <button onclick="closeWhatsNew()" style="background:none;border:none;color:var(--grey-mid);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;">×</button>
+    </div>
+    <div id="whats-new-body" style="overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:20px;"></div>
+  </div>
+</div>
+
 <!-- Deal Assign Modal -->
 <div id="modal-deal-assign" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
   <div style="background:var(--black-card);border:1px solid var(--border);border-radius:12px;padding:28px;width:360px;max-width:90vw;" onclick="event.stopPropagation()">
@@ -4385,6 +4402,7 @@
         applyUserCard(displayName, roleLabel, initials);
         restoreSortPrefs();
         enterPortal();
+        initWhatsNew();
         loadNotifications();
         loadPartnerDashboard();
         loadDeals();
@@ -4551,6 +4569,7 @@
       restoreSortPrefs();
       saveSession();
       enterPortal();
+      initWhatsNew();
       loadNotifications();
       loadPartnerDashboard();
       loadDeals();
@@ -5652,6 +5671,101 @@
       btn.disabled = false;
       btn.textContent = 'Send Reset Link →';
     }
+  }
+
+  // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
+
+  const CHANGELOG = [
+    {
+      version: '1.4',
+      date: '14 Apr 2026',
+      title: 'Team Deals & Deal Assignment',
+      items: [
+        'Renamed "My Deals" to "Team Deals" — your full pipeline in one place.',
+        'Admins can now assign individual deals to team members using the ✎ button on each row.',
+        'Team members only see commission on deals assigned to them — all other deals show a dash.',
+        'Dashboard tiles (Reserved, EOI, Contracts, Commission) now reflect each team member\'s assigned pipeline.',
+      ]
+    },
+    {
+      version: '1.3',
+      date: '12 Apr 2026',
+      title: 'Staff Access & Commission Control',
+      items: [
+        'Added Staff access levels — Admin (full access) and Standard (no settings).',
+        'Admins can set a custom commission display per staff member: show full rate, a flat dollar amount, or hide it entirely.',
+        'Commission override now applies across stock lists, project cards, stock detail, and deals table.',
+        'Team page now shows the firm owner alongside all staff members.',
+      ]
+    },
+    {
+      version: '1.2',
+      date: '10 Apr 2026',
+      title: 'Stock & Deals Improvements',
+      items: [
+        'Stock tables now support column sorting — click any header to sort.',
+        'Stage column moved to first position in the deals table.',
+        'Commission in My Deals now shows the correct channel commission amount.',
+        'Fixed click-through to stock detail from the all-stock list view.',
+        'Login session now persists across browser refreshes.',
+        'Sort preferences remembered between sessions.',
+      ]
+    },
+    {
+      version: '1.1',
+      date: '5 Apr 2026',
+      title: 'Partner Portal Launch',
+      items: [
+        'Channel partner login with secure invite flow.',
+        'Stock portal with project cards and all-stock table view, map, and filters.',
+        'Research reports library.',
+        'My Deals pipeline view synced from Monday.com.',
+        'Partner settings — update your firm profile, logo, and team.',
+        'Invite and manage staff members from your Settings page.',
+      ]
+    },
+  ];
+
+  const CHANGELOG_STORAGE_KEY = 'tpch_changelog_seen';
+
+  function initWhatsNew() {
+    const btn = document.getElementById('whats-new-btn');
+    if (!btn) return;
+    btn.style.display = 'inline-flex';
+    const latestVersion = CHANGELOG[0]?.version || '0';
+    const lastSeen = localStorage.getItem(CHANGELOG_STORAGE_KEY) || '';
+    if (lastSeen !== latestVersion) {
+      document.getElementById('whats-new-badge').style.display = 'block';
+    }
+  }
+
+  function openWhatsNew() {
+    const body = document.getElementById('whats-new-body');
+    body.innerHTML = CHANGELOG.map((entry, i) => `
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px;">
+          <span style="font-size:13px;font-weight:700;color:var(--gold);">v${entry.version}</span>
+          <span style="font-size:12px;color:var(--grey-mid);">${entry.date}</span>
+          ${i === 0 ? '<span style="font-size:10px;font-weight:600;background:var(--gold);color:var(--black);padding:2px 7px;border-radius:20px;letter-spacing:0.3px;">LATEST</span>' : ''}
+        </div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px;">${entry.title}</div>
+        <ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:5px;">
+          ${entry.items.map(item => `<li style="font-size:13px;color:var(--grey-light);line-height:1.5;">${item}</li>`).join('')}
+        </ul>
+      </div>
+      ${i < CHANGELOG.length - 1 ? '<div style="border-top:1px solid var(--border);"></div>' : ''}
+    `).join('');
+
+    document.getElementById('modal-whats-new').style.display = 'flex';
+
+    // Mark as seen
+    const latestVersion = CHANGELOG[0]?.version || '0';
+    localStorage.setItem(CHANGELOG_STORAGE_KEY, latestVersion);
+    document.getElementById('whats-new-badge').style.display = 'none';
+  }
+
+  function closeWhatsNew() {
+    document.getElementById('modal-whats-new').style.display = 'none';
   }
 
   function doLogout() {
@@ -10099,6 +10213,7 @@ function buildKitHtml(s, research, brand) {
 }
 .notif-bell:hover { color: var(--gold); }
 .notif-bell.has-unread { color: var(--gold); }
+#whats-new-btn { font-size: 13px; }
 .notif-badge {
   position: absolute; top: 1px; right: 0px;
   background: #E53E3E; color: #fff;
