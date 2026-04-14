@@ -7790,6 +7790,13 @@ function fmtProjComm(p) {
   if (p._maxCommPct)  return p._maxCommPct + '%';
   return '—';
 }
+function fmtProjCommForUser(p) {
+  if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff') return fmtProjComm(p);
+  const ct = currentPartnerRecord.comm_display_type || 'portal';
+  if (ct === 'hidden') return '—';
+  if (ct === 'custom' && currentPartnerRecord.comm_custom_value) return currentPartnerRecord.comm_custom_value;
+  return fmtProjComm(p);
+}
 
 function calcGrossYield(annual, price) {
   if (!annual || !price) return '—';
@@ -8025,7 +8032,7 @@ function renderProjectCards() {
           </div>
           <div class="stk-card-stat stk-card-stat-comm">
             <span class="stk-card-stat-label">Comm</span>
-            <span class="stk-card-stat-val">${fmtProjComm(p)}</span>
+            <span class="stk-card-stat-val">${fmtProjCommForUser(p)}</span>
           </div>
           <div class="stk-card-stat">
             <span class="stk-card-stat-label">Available</span>
