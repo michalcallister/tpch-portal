@@ -7708,6 +7708,14 @@ function fmtCurrencyShort(n) {
 }
 function fmtSqm(n)  { return n ? (Math.round(n * 10) / 10) + ' m²' : '—'; }
 function fmtNum(n)  { return (n != null && n !== '') ? n : '—'; }
+function fmtCommForUser(s) {
+  if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff') return fmtComm(s);
+  const ct = currentPartnerRecord.comm_display_type || 'portal';
+  if (ct === 'hidden') return '—';
+  if (ct === 'custom' && currentPartnerRecord.comm_custom_value) return currentPartnerRecord.comm_custom_value;
+  return fmtComm(s);
+}
+
 function fmtComm(s) {
   const flat = s.channel_comm_flat;
   const pct  = s.channel_comm_pct;
@@ -7948,7 +7956,7 @@ function renderAllStockTable() {
       <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
       <td>${fmtCurrency(s.total_contract)}</td>
       <td>${s.rate_per_sqm ? fmtCurrency(Math.round(s.rate_per_sqm)) + '/m²' : '—'}</td>
-      <td style="color:var(--gold);font-weight:500;">${fmtComm(s)}</td>
+      <td style="color:var(--gold);font-weight:500;">${fmtCommForUser(s)}</td>
     </tr>`).join('');
 }
 
@@ -8236,7 +8244,7 @@ function renderStockTable() {
       <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
       <td>${s.rate_per_sqm ? fmtCurrency(Math.round(s.rate_per_sqm)) + '/m²' : '—'}</td>
       <td><span class="stk-badge ${availClass}" style="font-size:11px;padding:2px 7px;">${s.availability || '—'}</span>${s.smsf_eligible ? ' <span class="stk-badge stk-badge-smsf" style="font-size:11px;padding:2px 6px;">SMSF</span>' : ''}</td>
-      <td class="comm-cell">${fmtComm(s)}</td>
+      <td class="comm-cell">${fmtCommForUser(s)}</td>
     </tr>`;
   }).join('');
 }
