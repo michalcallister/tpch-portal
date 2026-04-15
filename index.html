@@ -2992,10 +2992,10 @@
                 <thead><tr>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('project')">Lot / Location / Project <span class="dlp-si" id="sas-project">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('availability')">Status <span class="dlp-si" id="sas-availability">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('price')">Price <span class="dlp-si" id="sas-price">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('type')">Type <span class="dlp-si" id="sas-type">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('bedrooms')">Bed·Bath·Car <span class="dlp-si" id="sas-bedrooms">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('size')">Size <span class="dlp-si" id="sas-size">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('price')">Price <span class="dlp-si" id="sas-price">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('rate')">Rate/m² <span class="dlp-si" id="sas-rate">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('yield')">Rental Yield <span class="dlp-si" id="sas-yield">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('comm')">Comm <span class="dlp-si" id="sas-comm">⇅</span></th>
@@ -5719,7 +5719,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '2.8';
+  const APP_VERSION = '2.9';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8269,10 +8269,10 @@ function renderAllStockTable() {
         <div style="font-size:13px;color:var(--text-primary);line-height:1.3;">${[s.lot_number || s.name, s.project_name].filter(Boolean).join(' · ')|| '—'}</div>
       </td>
       <td><span class="stk-badge ${stkAvailBadgeClass(s.availability)}" style="font-size:11px;padding:2px 7px;">${s.availability || '—'}</span></td>
+      <td>${fmtCurrency(s.total_contract)}</td>
       <td>${s.property_type || s.development_type || '—'}</td>
       <td>${fmtNum(s.bedrooms)} · ${fmtNum(s.bathrooms)} · ${fmtNum(s.car_parks)}</td>
       <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
-      <td>${fmtCurrency(s.total_contract)}</td>
       <td>${s.rate_per_sqm ? fmtCurrency(Math.round(s.rate_per_sqm)) + '/m²' : '—'}</td>
       <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
       <td style="color:var(--gold);font-weight:500;">${fmtCommForUser(s)}</td>
