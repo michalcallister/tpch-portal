@@ -3109,10 +3109,10 @@
               <tr>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('lot')">Lot / Location <span class="dlp-si" id="sps-lot">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('availability')">Status <span class="dlp-si" id="sps-availability">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('price')">Price <span class="dlp-si" id="sps-price">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('type')">Property Type <span class="dlp-si" id="sps-type">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('bedrooms')">Bed · Bath · Car <span class="dlp-si" id="sps-bedrooms">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('size')">Size <span class="dlp-si" id="sps-size">⇅</span></th>
-                <th class="dlp-th-sort" onclick="stkProjSortBy('price')">Price <span class="dlp-si" id="sps-price">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('rent')">Rent/wk <span class="dlp-si" id="sps-rent">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('rate')">Rate/m² <span class="dlp-si" id="sps-rate">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('yield')">Rental Yield <span class="dlp-si" id="sps-yield">⇅</span></th>
@@ -5719,7 +5719,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '2.7';
+  const APP_VERSION = '2.8';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8562,10 +8562,10 @@ function renderStockTable() {
         <div style="font-size:13px;color:var(--text-primary);">${s.lot_number || s.name || '—'}</div>
       </td>
       <td><span class="stk-badge ${availClass}" style="font-size:11px;padding:2px 7px;">${s.availability || '—'}</span></td>
+      <td>${fmtCurrency(s.total_contract)}</td>
       <td>${s.property_type || s.development_type || '—'}</td>
       <td>${fmtNum(s.bedrooms)} · ${fmtNum(s.bathrooms)} · ${fmtNum(s.car_parks)}</td>
       <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
-      <td>${fmtCurrency(s.total_contract)}</td>
       <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
       <td>${s.rate_per_sqm ? fmtCurrency(Math.round(s.rate_per_sqm)) + '/m²' : '—'}</td>
       <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
