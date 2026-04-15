@@ -2900,10 +2900,14 @@
 
           <div class="stk-filter-group">
             <span class="stk-filter-label">Property Type</span>
-            <div class="stk-pill-row">
+            <div class="stk-pill-row" style="flex-wrap:wrap;gap:6px;">
               <button class="stk-pill" onclick="toggleStkMulti('types','Apartment',this)">Apartment</button>
               <button class="stk-pill" onclick="toggleStkMulti('types','Townhouse',this)">Townhouse</button>
               <button class="stk-pill" onclick="toggleStkMulti('types','House & Land',this)">House & Land</button>
+              <button class="stk-pill" onclick="toggleStkMulti('types','Standard',this)">Standard</button>
+              <button class="stk-pill" onclick="toggleStkMulti('types','Dual living',this)">Dual Living</button>
+              <button class="stk-pill" onclick="toggleStkMulti('types','Co-living',this)">Co-living</button>
+              <button class="stk-pill" onclick="toggleStkMulti('types','NDIS',this)">NDIS</button>
             </div>
           </div>
 
@@ -5719,7 +5723,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '2.9';
+  const APP_VERSION = '3.0';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
