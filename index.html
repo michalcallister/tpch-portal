@@ -3014,7 +3014,7 @@
     </div>
 
     <!-- ── PAGE: STOCK PROJECT DETAIL ────────────────────── -->
-    <div id="page-stock-project" class="page-view" style="padding:0;overflow:auto;max-height:calc(100vh - 61px);">
+    <div id="page-stock-project" class="page-view" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 61px);overflow:hidden;">
 
       <!-- Sticky header -->
       <div class="stk-proj-header">
@@ -3061,6 +3061,9 @@
         <button class="stk-tab-btn" onclick="switchProjTab('analysis',this)">Analysis</button>
         <button class="stk-tab-btn" id="spj-gallery-tab-btn" onclick="switchProjTab('gallery',this)" style="display:none;">Gallery</button>
       </div>
+
+      <!-- Scrollable tab content area -->
+      <div id="spj-scroll-area" style="flex:1;overflow-y:auto;overflow-x:hidden;">
 
       <!-- Tab: Overview -->
       <div class="stk-tab-content active" id="spj-tab-overview">
@@ -3169,6 +3172,8 @@
       <div class="stk-tab-content" id="spj-tab-gallery" style="padding:24px 36px;">
         <div id="spj-gallery-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"></div>
       </div>
+
+      </div><!-- end spj-scroll-area -->
     </div>
 
     <!-- ── PAGE: STOCK LOT DETAIL ─────────────────────────── -->
@@ -5724,7 +5729,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '3.2';
+  const APP_VERSION = '3.3';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -9978,7 +9983,6 @@ function buildKitHtml(s, research, brand) {
 
 /* ── Project Detail Page ─────────────────────────────────────── */
 .stk-proj-header {
-  position: sticky; top: 0; z-index: 40;
   background: var(--black-card);
   border-bottom: 1px solid var(--gold-border);
   padding: 18px 36px;
