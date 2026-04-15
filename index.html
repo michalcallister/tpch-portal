@@ -5675,7 +5675,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '1.8';
+  const APP_VERSION = '1.9';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8515,7 +8515,7 @@ function renderStockTable() {
       <td>${fmtCurrency(s.total_contract)}</td>
       <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
       <td>${s.rate_per_sqm ? fmtCurrency(Math.round(s.rate_per_sqm)) + '/m²' : '—'}</td>
-      <td><span class="stk-badge ${availClass}" style="font-size:11px;padding:2px 7px;">${s.availability || '—'}</span>${s.smsf_eligible ? ' <span class="stk-badge stk-badge-smsf" style="font-size:11px;padding:2px 6px;">SMSF</span>' : ''}</td>
+      <td><span class="stk-badge ${availClass}" style="font-size:11px;padding:2px 7px;">${s.availability || '—'}</span></td>
       <td class="comm-cell">${fmtCommForUser(s)}</td>
     </tr>`;
   }).join('');
