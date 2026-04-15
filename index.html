@@ -4326,6 +4326,33 @@
   let currentAdminEmail   = null;
   let currentPartnerRecord = null;  // { role, partner_id, full_name, company_name, logo_url, ... }
   let currentAuthToken    = null;
+  let currentRefreshToken = null;
+  let _tokenRefreshTimer  = null;
+
+  async function refreshAuthToken() {
+    if (!currentRefreshToken) return;
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: currentRefreshToken }),
+      });
+      if (!res.ok) return;
+      const { access_token, refresh_token } = await res.json();
+      if (access_token) {
+        currentAuthToken    = access_token;
+        currentRefreshToken = refresh_token || currentRefreshToken;
+        saveSession();
+        scheduleTokenRefresh();
+      }
+    } catch(e) { /* silent — will retry next cycle */ }
+  }
+
+  function scheduleTokenRefresh() {
+    if (_tokenRefreshTimer) clearTimeout(_tokenRefreshTimer);
+    // Refresh 5 minutes before the 1-hour expiry
+    _tokenRefreshTimer = setTimeout(refreshAuthToken, 55 * 60 * 1000);
+  }
 
   function saveSession() {
     if (currentUserIsAdmin) {
@@ -4334,7 +4361,7 @@
       }));
     } else if (currentPartnerRecord) {
       sessionStorage.setItem('tpch_session', JSON.stringify({
-        type: 'partner', authToken: currentAuthToken, partnerRecord: currentPartnerRecord,
+        type: 'partner', authToken: currentAuthToken, refreshToken: currentRefreshToken, partnerRecord: currentPartnerRecord,
       }));
     }
   }
@@ -4403,7 +4430,9 @@
         return true;
       } else if (s.type === 'partner' && s.authToken) {
         currentAuthToken     = s.authToken;
+        currentRefreshToken  = s.refreshToken || null;
         currentPartnerRecord = s.partnerRecord;
+        scheduleTokenRefresh();
         currentUserIsAdmin   = false;
         const record         = s.partnerRecord;
         const displayName    = record.full_name || record.email?.split('@')[0] || '';
@@ -4547,8 +4576,9 @@
         return;
       }
 
-      const { access_token, user } = await authRes.json();
+      const { access_token, refresh_token, user } = await authRes.json();
       currentAuthToken = access_token;
+      currentRefreshToken = refresh_token;
 
       // Look up partner / staff record
       const rpcRes = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_my_partner_record', {
@@ -4571,6 +4601,7 @@
 
       currentPartnerRecord = record;
       currentUserIsAdmin   = false;
+      scheduleTokenRefresh();
       applyNavForRole(false, true);
 
       const displayName = record.full_name || email.split('@')[0];
@@ -5689,7 +5720,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '2.4';
+  const APP_VERSION = '2.5';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -5815,6 +5846,8 @@
       }).catch(() => {});
     }
     currentAuthToken     = null;
+    currentRefreshToken  = null;
+    if (_tokenRefreshTimer) { clearTimeout(_tokenRefreshTimer); _tokenRefreshTimer = null; }
     currentPartnerRecord = null;
     currentUserIsAdmin   = false;
     clearSession();
