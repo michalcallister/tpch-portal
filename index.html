@@ -2953,6 +2953,18 @@
               </label>
             </div>
           </div>
+
+          <div class="stk-filter-group">
+            <span class="stk-filter-label">Rental Yield</span>
+            <div class="stk-pill-row">
+              <button class="stk-pill active" onclick="toggleStkPill('yieldMin',0,this)">Any</button>
+              <button class="stk-pill" onclick="toggleStkPill('yieldMin',4,this)">4%+</button>
+              <button class="stk-pill" onclick="toggleStkPill('yieldMin',5,this)">5%+</button>
+              <button class="stk-pill" onclick="toggleStkPill('yieldMin',6,this)">6%+</button>
+              <button class="stk-pill" onclick="toggleStkPill('yieldMin',7,this)">7%+</button>
+              <button class="stk-pill" onclick="toggleStkPill('yieldMin',8,this)">8%+</button>
+            </div>
+          </div>
         </div>
 
         <!-- CARDS AREA -->
@@ -2985,6 +2997,7 @@
                   <th class="dlp-th-sort" onclick="stkAllSortBy('size')">Size <span class="dlp-si" id="sas-size">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('price')">Price <span class="dlp-si" id="sas-price">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('rate')">Rate/m² <span class="dlp-si" id="sas-rate">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('yield')">Rental Yield <span class="dlp-si" id="sas-yield">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('comm')">Comm <span class="dlp-si" id="sas-comm">⇅</span></th>
                 </tr></thead>
                 <tbody id="stk-all-stock-tbody"></tbody>
@@ -3103,11 +3116,12 @@
                 <th class="dlp-th-sort" onclick="stkProjSortBy('price')">Price <span class="dlp-si" id="sps-price">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('rent')">Rent/wk <span class="dlp-si" id="sps-rent">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('rate')">Rate/m² <span class="dlp-si" id="sps-rate">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('yield')">Rental Yield <span class="dlp-si" id="sps-yield">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('comm')">Your Comm <span class="dlp-si" id="sps-comm">⇅</span></th>
               </tr>
             </thead>
             <tbody id="spj-stock-tbody">
-              <tr><td colspan="9" style="text-align:center;color:var(--grey-mid);padding:24px;">Loading lots...</td></tr>
+              <tr><td colspan="10" style="text-align:center;color:var(--grey-mid);padding:24px;">Loading lots...</td></tr>
             </tbody>
           </table>
         </div>
@@ -5675,7 +5689,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '2.3';
+  const APP_VERSION = '2.4';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -7943,7 +7957,7 @@ let stkPriceRange = { min: 200000, max: 5000000 };
 let stkFilter = {
   avail: 'all', states: [], types: [],
   beds: 'any', priceMin: 200000, priceMax: 5000000,
-  projStatus: 'all', smsf: false
+  projStatus: 'all', smsf: false, yieldMin: 0
 };
 // Stamp duty rates by state — sourced from Monday.com Stamp Duty Estimate formula.
 // Update here if Monday.com formula rates are changed.
@@ -8024,6 +8038,7 @@ function stkSortVal(s, col) {
     case 'price':        return s.total_contract ?? -1;
     case 'rent':         return s.rent_per_week ?? -1;
     case 'rate':         return s.rate_per_sqm ?? -1;
+    case 'yield':        { const _ar = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null); return (_ar && s.total_contract) ? _ar / s.total_contract * 100 : -1; }
     case 'comm':         return commSortVal(s);
     default:             return 0;
   }
@@ -8198,6 +8213,11 @@ function renderAllStockTable() {
       if (s.total_contract < f.priceMin || s.total_contract > f.priceMax) return false;
     }
     if (f.smsf && !s.smsf_eligible) return false;
+    if (f.yieldMin > 0) {
+      const _ar = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null);
+      const _y = (_ar && s.total_contract) ? (_ar / s.total_contract * 100) : 0;
+      if (_y < f.yieldMin) return false;
+    }
     return true;
   });
 
@@ -8205,7 +8225,7 @@ function renderAllStockTable() {
 
   if (!filtered.length) {
     document.getElementById('stk-all-stock-tbody').innerHTML =
-      '<tr><td colspan="8" style="text-align:center;color:var(--grey-mid);padding:24px;">No stock matches your filters.</td></tr>';
+      '<tr><td colspan="9" style="text-align:center;color:var(--grey-mid);padding:24px;">No stock matches your filters.</td></tr>';
     return;
   }
 
@@ -8222,6 +8242,7 @@ function renderAllStockTable() {
       <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
       <td>${fmtCurrency(s.total_contract)}</td>
       <td>${s.rate_per_sqm ? fmtCurrency(Math.round(s.rate_per_sqm)) + '/m²' : '—'}</td>
+      <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
       <td style="color:var(--gold);font-weight:500;">${fmtCommForUser(s)}</td>
     </tr>`).join('');
 }
@@ -8355,7 +8376,7 @@ function updatePriceFilter() {
 }
 
 function resetStkFilters() {
-  stkFilter = { avail:'all', states:[], types:[], beds:'any', priceMin:stkPriceRange.min, priceMax:stkPriceRange.max, projStatus:'all', smsf:false };
+  stkFilter = { avail:'all', states:[], types:[], beds:'any', priceMin:stkPriceRange.min, priceMax:stkPriceRange.max, projStatus:'all', smsf:false, yieldMin:0 };
   // Reset pill UI
   document.querySelectorAll('#page-stock .stk-pill').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('#page-stock .stk-pill').forEach(b => {
@@ -8516,6 +8537,7 @@ function renderStockTable() {
       <td>${fmtCurrency(s.total_contract)}</td>
       <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
       <td>${s.rate_per_sqm ? fmtCurrency(Math.round(s.rate_per_sqm)) + '/m²' : '—'}</td>
+      <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
       <td class="comm-cell">${fmtCommForUser(s)}</td>
     </tr>`;
   }).join('');
