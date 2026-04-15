@@ -3013,7 +3013,7 @@
     </div>
 
     <!-- ── PAGE: STOCK PROJECT DETAIL ────────────────────── -->
-    <div id="page-stock-project" class="page-view" style="padding:0;overflow-y:auto;max-height:calc(100vh - 61px);">
+    <div id="page-stock-project" class="page-view" style="padding:0;overflow:auto;max-height:calc(100vh - 61px);">
 
       <!-- Sticky header -->
       <div class="stk-proj-header">
@@ -3107,7 +3107,7 @@
           <button class="stk-pill" onclick="toggleLotFilter('avail','Available',this)" style="padding:4px 10px;font-size:12px;">Available</button>
           <button class="stk-pill" onclick="toggleLotFilter('avail','Reserved',this)" style="padding:4px 10px;font-size:12px;">Reserved</button>
         </div>
-        <div style="overflow-x:auto;">
+        <div>
           <table class="stk-stock-table">
             <thead>
               <tr>
@@ -5723,7 +5723,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '3.0';
+  const APP_VERSION = '3.1';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
