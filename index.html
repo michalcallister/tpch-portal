@@ -3000,6 +3000,7 @@
                   <th class="dlp-th-sort" onclick="stkAllSortBy('type')">Type <span class="dlp-si" id="sas-type">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('bedrooms')">Bed·Bath·Car <span class="dlp-si" id="sas-bedrooms">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('size')">Size <span class="dlp-si" id="sas-size">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('rent')">Rent/wk <span class="dlp-si" id="sas-rent">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('rate')">Rate/m² <span class="dlp-si" id="sas-rate">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('yield')">Rental Yield <span class="dlp-si" id="sas-yield">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('comm')">Comm <span class="dlp-si" id="sas-comm">⇅</span></th>
@@ -5723,7 +5724,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '3.1';
+  const APP_VERSION = '3.2';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8261,7 +8262,7 @@ function renderAllStockTable() {
 
   if (!filtered.length) {
     document.getElementById('stk-all-stock-tbody').innerHTML =
-      '<tr><td colspan="9" style="text-align:center;color:var(--grey-mid);padding:24px;">No stock matches your filters.</td></tr>';
+      '<tr><td colspan="10" style="text-align:center;color:var(--grey-mid);padding:24px;">No stock matches your filters.</td></tr>';
     return;
   }
 
@@ -8277,6 +8278,7 @@ function renderAllStockTable() {
       <td>${s.property_type || s.development_type || '—'}</td>
       <td>${fmtNum(s.bedrooms)} · ${fmtNum(s.bathrooms)} · ${fmtNum(s.car_parks)}</td>
       <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
+      <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
       <td>${s.rate_per_sqm ? fmtCurrency(Math.round(s.rate_per_sqm)) + '/m²' : '—'}</td>
       <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
       <td style="color:var(--gold);font-weight:500;">${fmtCommForUser(s)}</td>
