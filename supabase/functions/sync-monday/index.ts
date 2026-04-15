@@ -76,7 +76,7 @@ const STOCK_COLS = {
   address:            'mirror98',
   developer:          'mirror1',
   developmentType:    'mirror0',
-  propertyType:       'mirror5',
+  propertyType:       'color_mm2dxk03',
   lotNumber:          'text04',
   level:              'text0',
   bedrooms:           'numbers13',
@@ -456,7 +456,7 @@ function mapStock(item: any, projectNameMap: Record<string, string>, projectData
 
   // Mirror columns — fall back to project data when API returns empty
   const developmentType  = getText(item, STOCK_COLS.developmentType)  || project?.development_type  || null
-  const propertyType     = getText(item, STOCK_COLS.propertyType)      || project?.property_type     || null
+  const propertyType     = getText(item, STOCK_COLS.propertyType)      || developmentType            || null
   const address          = getText(item, STOCK_COLS.address)           || project?.address           || null
   const commPaymentTerms = getText(item, STOCK_COLS.commPaymentTerms)  || project?.commission_payment_terms || null
 

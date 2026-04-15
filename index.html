@@ -5675,7 +5675,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '1.7';
+  const APP_VERSION = '1.8';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8499,11 +8499,14 @@ function renderStockTable() {
   }
 
   const sorted = applyStockSort(filtered, stkProjSort);
+  const _proj = allProjects.find(x => x.id === currentProjectId);
+  const _projSuburb = _proj?.suburb || null;
+  const _projState  = _proj?.state  || null;
   document.getElementById('spj-stock-tbody').innerHTML = sorted.map(s => {
     const availClass = stkAvailBadgeClass(s.availability);
     return `<tr onclick="showStockListing('${s.id}')">
       <td style="padding:10px 12px;">
-        ${[s._suburb, s._state].filter(Boolean).length ? `<div style="font-size:10px;font-weight:600;letter-spacing:0.06em;color:var(--grey-mid);text-transform:uppercase;margin-bottom:4px;">${[s._suburb, s._state].filter(Boolean).join(', ')}</div>` : ''}
+        ${[_projSuburb, _projState].filter(Boolean).length ? `<div style="font-size:10px;font-weight:600;letter-spacing:0.06em;color:var(--grey-mid);text-transform:uppercase;margin-bottom:4px;">${[_projSuburb, _projState].filter(Boolean).join(', ')}</div>` : ''}
         <div style="font-size:13px;color:var(--text-primary);">${s.lot_number || s.name || '—'}</div>
       </td>
       <td>${s.property_type || s.development_type || '—'}</td>
