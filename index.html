@@ -3211,7 +3211,7 @@
               <div class="stk-detail-section-title">Rental Estimate</div>
               <div class="stk-detail-row"><span class="stk-detail-key">Weekly Rent</span><span class="stk-detail-val gold" id="slg-rent-week">—</span></div>
               <div class="stk-detail-row"><span class="stk-detail-key">Annual Rent</span><span class="stk-detail-val" id="slg-rent-annual">—</span></div>
-              <div class="stk-detail-row"><span class="stk-detail-key">Occupancy</span><span class="stk-detail-val" id="slg-occupancy">—</span></div>
+
               <div class="stk-detail-row"><span class="stk-detail-key">Gross Yield</span><span class="stk-detail-val gold" id="slg-gross-yield">—</span></div>
             </div>
             <div class="stk-detail-section" id="slg-floor-plan-section" style="display:none;">
@@ -5675,7 +5675,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '2.2';
+  const APP_VERSION = '2.3';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
