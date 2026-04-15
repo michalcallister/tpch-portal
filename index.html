@@ -5719,7 +5719,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '2.6';
+  const APP_VERSION = '2.7';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8463,8 +8463,7 @@ async function showStockProject(id) {
   // Overview tab
   document.getElementById('spj-ov-developer').textContent = p.developer || '—';
   document.getElementById('spj-ov-address').textContent   = p.address || '—';
-  document.getElementById('spj-ov-devtype').textContent   = p.development_type || '—';
-  document.getElementById('spj-ov-proptype').textContent  = p.property_type || '—';
+  document.getElementById('spj-ov-devtype').textContent   = p.property_type || p.development_type || '—';
   document.getElementById('spj-ov-levels').textContent    = p.levels ? p.levels + ' storeys' : '—';
   document.getElementById('spj-ov-year').textContent      = p.year_constructed || '—';
   document.getElementById('spj-ov-start').textContent     = p.est_construction_start
