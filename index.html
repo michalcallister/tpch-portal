@@ -3095,7 +3095,7 @@
           <table class="stk-stock-table">
             <thead>
               <tr>
-                <th class="dlp-th-sort" onclick="stkProjSortBy('lot')">Lot <span class="dlp-si" id="sps-lot">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('lot')">Lot / Location <span class="dlp-si" id="sps-lot">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('type')">Type <span class="dlp-si" id="sps-type">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('bedrooms')">Bed · Bath · Car <span class="dlp-si" id="sps-bedrooms">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('size')">Size <span class="dlp-si" id="sps-size">⇅</span></th>
@@ -5675,7 +5675,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '1.6';
+  const APP_VERSION = '1.7';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8502,7 +8502,10 @@ function renderStockTable() {
   document.getElementById('spj-stock-tbody').innerHTML = sorted.map(s => {
     const availClass = stkAvailBadgeClass(s.availability);
     return `<tr onclick="showStockListing('${s.id}')">
-      <td>${s.lot_number || s.name || '—'}</td>
+      <td style="padding:10px 12px;">
+        ${[s._suburb, s._state].filter(Boolean).length ? `<div style="font-size:10px;font-weight:600;letter-spacing:0.06em;color:var(--grey-mid);text-transform:uppercase;margin-bottom:4px;">${[s._suburb, s._state].filter(Boolean).join(', ')}</div>` : ''}
+        <div style="font-size:13px;color:var(--text-primary);">${s.lot_number || s.name || '—'}</div>
+      </td>
       <td>${s.property_type || s.development_type || '—'}</td>
       <td>${fmtNum(s.bedrooms)} · ${fmtNum(s.bathrooms)} · ${fmtNum(s.car_parks)}</td>
       <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
