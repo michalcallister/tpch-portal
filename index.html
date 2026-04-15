@@ -5675,7 +5675,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '2.0';
+  const APP_VERSION = '2.1';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8625,11 +8625,12 @@ function showStockListing(id) {
   const _state = (_proj?.state || '').toUpperCase().trim();
   const _stampDuty = s.stamp_duty_estimate ?? (s.total_contract && STAMP_DUTY_RATES[_state] ? Math.round(s.total_contract * STAMP_DUTY_RATES[_state]) : null);
   document.getElementById('slg-stamp-duty').textContent  = fmtCurrency(_stampDuty);
-  // Rental
+  // Rental — annual rent = stored value or rent_per_week * 52 as fallback
+  const _annualRent = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null);
   document.getElementById('slg-rent-week').textContent   = s.rent_per_week ? fmtCurrency(s.rent_per_week) + ' / wk' : '—';
-  document.getElementById('slg-rent-annual').textContent = fmtCurrency(s.annual_rent);
+  document.getElementById('slg-rent-annual').textContent = fmtCurrency(_annualRent);
   document.getElementById('slg-occupancy').textContent   = s.occupancy_weeks ? s.occupancy_weeks + ' weeks / yr' : '—';
-  document.getElementById('slg-gross-yield').textContent = calcGrossYield(s.annual_rent, s.total_contract);
+  document.getElementById('slg-gross-yield').textContent = calcGrossYield(_annualRent, s.total_contract);
   // Floor plan
   const fpSection = document.getElementById('slg-floor-plan-section');
   const fpThumb   = document.getElementById('slg-floor-plan-thumb');
@@ -8660,11 +8661,11 @@ function showStockListing(id) {
   document.getElementById('slg-maintenance').textContent = fmtCurrency(s.maintenance_annual);
   const totalCosts = calcTotalOutgoings(s);
   document.getElementById('slg-total-costs').textContent = fmtCurrency(totalCosts);
-  document.getElementById('slg-inv-annual-rent').textContent = fmtCurrency(s.annual_rent);
+  document.getElementById('slg-inv-annual-rent').textContent = fmtCurrency(_annualRent);
   document.getElementById('slg-inv-total-costs').textContent = totalCosts ? '−' + fmtCurrency(totalCosts) : '—';
-  const netIncome = (s.annual_rent || 0) - totalCosts;
+  const netIncome = (_annualRent || 0) - totalCosts;
   document.getElementById('slg-net-income').textContent  = fmtCurrency(netIncome);
-  document.getElementById('slg-net-yield').textContent   = calcNetYield(s.annual_rent, totalCosts, s.total_contract);
+  document.getElementById('slg-net-yield').textContent   = calcNetYield(_annualRent, totalCosts, s.total_contract);
 
   // Commission tab — staff may have an override set by their firm owner
   const _isStaff = currentPartnerRecord?.role === 'staff';
@@ -8709,7 +8710,7 @@ function showStockListing(id) {
   document.getElementById('slg-sidebar-badge').innerHTML   =
     `<span class="stk-badge ${stkAvailBadgeClass(s.availability)}">${s.availability || '—'}</span>`;
   document.getElementById('slg-sb-rent').textContent  = s.rent_per_week ? fmtCurrency(s.rent_per_week) + ' / wk' : '—';
-  document.getElementById('slg-sb-yield').textContent = calcGrossYield(s.annual_rent, s.total_contract);
+  document.getElementById('slg-sb-yield').textContent = calcGrossYield(_annualRent, s.total_contract);
 
   // Reserve button: enabled for partners on Available stock only
   const reserveBtn    = document.getElementById('slg-reserve-btn');
