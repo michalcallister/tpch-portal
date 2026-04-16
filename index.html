@@ -5941,7 +5941,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '4.7';
+  const APP_VERSION = '4.8';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -6925,6 +6925,16 @@
     document.getElementById('aad-name').textContent = agent.name;
     document.getElementById('aad-desc').textContent = agent.description || '';
     document.getElementById('aad-status-badge').innerHTML = `<div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:12px;${agent.status==='active'?'background:rgba(76,175,122,0.15);color:#4CAF7A;border:1px solid rgba(76,175,122,0.25)':'background:rgba(255,255,255,0.05);color:var(--grey-mid);border:1px solid rgba(255,255,255,0.1)'}">${agent.status}</div>`;
+
+    // Ensure projects are loaded (they normally load on Stock page visit)
+    if (!allProjects.length) {
+      try {
+        const res = await fetch(SUPABASE_URL + '/rest/v1/projects?order=name', {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        });
+        if (res.ok) allProjects = await res.json();
+      } catch(e) { console.error('Failed to load projects for agent', e); }
+    }
 
     // Populate project dropdown
     const sel = document.getElementById('aad-project-select');
