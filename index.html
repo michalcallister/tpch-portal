@@ -5749,7 +5749,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '4.2';
+  const APP_VERSION = '4.3';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8026,17 +8026,17 @@ function parseTitleForecast(raw) {
   if (!raw) return null;
   const s = raw.trim();
   if (/^titled$/i.test(s)) return new Date(0); // Titled = already completed
-  // Standard date
-  let d = new Date(s);
-  if (!isNaN(d.getTime())) return d;
-  // "Month'YY" or "Month 'YY" — optional space, straight or curly apostrophe
-  // Normalise "Sept" → "Sep" (not a JS-recognised abbreviation)
-  const m = s.match(/^([A-Za-z]+)\s*['\u2018\u2019\u02bc](\d{2})$/);
+  // Check "Month'YY" pattern FIRST — before new Date(), because browsers can misread
+  // 2-digit years (e.g. "May '26" → May 1926). Any non-digit separator accepted.
+  const m = s.match(/^([A-Za-z]+)\s*[^\d\s]?(\d{2})$/);
   if (m) {
-    const month = m[1].replace(/^sept$/i, 'Sep');
-    d = new Date(`${month} 20${m[2]}`);
+    const month = m[1].replace(/^sept$/i, 'Sep'); // normalise Sept → Sep
+    const d = new Date(`${month} 20${m[2]}`);
     if (!isNaN(d.getTime())) return d;
   }
+  // Standard ISO date string (YYYY-MM-DD etc.)
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d;
   return null;
 }
 
