@@ -2089,7 +2089,7 @@
       <span class="nav-icon">⊙</span> Team
     </div>
     <div class="nav-item admin-only" id="nav-agent" onclick="showPage('agent', this)">
-      <span class="nav-icon">◈</span> Research Agent <span class="admin-badge">Admin</span>
+      <span class="nav-icon">◈</span> AI Agents <span class="admin-badge">Admin</span>
     </div>
 
     <div class="sidebar-bottom">
@@ -3584,100 +3584,71 @@
     </div>
 
     <!-- ── PAGE: RESEARCH AGENT (ADMIN ONLY) ──────────── -->
-    <div id="page-agent" class="page-view">
-      <div class="agent-layout">
+    <div id="page-agent" class="page-view" style="padding:0;overflow-y:auto;max-height:calc(100vh - 61px);">
 
-        <!-- LEFT: SUBURB QUEUE -->
-        <div class="agent-panel-left">
-          <div class="agent-panel-heading">
-            <h2>Research Queue</h2>
-            <p>Add markets, run the agent, approve results to push live.</p>
+      <!-- ── AGENTS HUB: Card Grid ─── -->
+      <div id="ai-agents-hub" style="padding:32px 36px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div>
+            <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;font-weight:600;color:var(--white);margin-bottom:4px;">AI Agents</h2>
+            <p style="font-size:13px;color:var(--grey-mid);">Manage, run and review AI-powered agents for the portal.</p>
           </div>
-          <div class="agent-suburb-list" id="agent-suburb-list"></div>
-          <div class="agent-add-row">
-            <input class="agent-add-input" id="agent-new-suburb" placeholder="Suburb name..." />
-            <input class="agent-add-state" id="agent-new-state" placeholder="VIC" maxlength="3" />
-            <button class="agent-btn-add" onclick="agentAddSuburb()">+</button>
+        </div>
+        <div id="ai-agents-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:24px;"></div>
+      </div>
+
+      <!-- ── AGENT DETAIL VIEW ─── -->
+      <div id="ai-agent-detail" style="display:none;padding:32px 36px;">
+        <button class="back-btn" onclick="aiAgentsBack()" style="margin-bottom:20px;">← Back to Agents</button>
+
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+          <div id="aad-avatar" style="font-size:40px;line-height:1;"></div>
+          <div>
+            <h2 id="aad-name" style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:600;color:var(--white);margin-bottom:2px;"></h2>
+            <p id="aad-desc" style="font-size:13px;color:var(--grey-mid);max-width:600px;"></p>
           </div>
-          <div class="agent-run-controls">
-            <button class="agent-btn-run-all" id="agent-btn-run-all" onclick="agentRunAll()">
-              ▶ Run All Research
+          <div id="aad-status-badge" style="margin-left:auto;"></div>
+        </div>
+
+        <!-- Run controls -->
+        <div style="background:var(--black-card);border:1px solid var(--gold-border);border-radius:4px;padding:20px 24px;margin-bottom:24px;">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--grey-mid);margin-bottom:14px;">Run Agent</div>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <select id="aad-project-select" style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.1);color:var(--white);padding:10px 14px;border-radius:3px;font-size:13px;min-width:260px;">
+              <option value="">Select a project...</option>
+            </select>
+            <button id="aad-run-btn" onclick="aiAgentRun()" style="background:var(--gold);color:var(--black);border:none;padding:10px 20px;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;">
+              ▶ Run for Project
             </button>
-            <button class="agent-btn-run-one" id="agent-btn-run-one" onclick="agentRunSelected()" disabled>
-              Run Selected Only
+            <button id="aad-run-all-btn" onclick="aiAgentRunAll()" style="background:transparent;color:var(--gold);border:1px solid var(--gold-border);padding:10px 20px;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;">
+              Run All Projects
             </button>
+            <div id="aad-run-status" style="font-size:12px;color:var(--grey-mid);margin-left:8px;"></div>
           </div>
         </div>
 
-        <!-- CENTRE: LIVE OUTPUT -->
-        <div class="agent-panel-centre">
-          <div class="agent-centre-top">
-            <div>
-              <div class="agent-centre-title" id="agent-centre-title">Agent Output</div>
-              <div class="agent-centre-subtitle" id="agent-centre-subtitle">Select a suburb and run research, or run all to process the queue.</div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <div id="agent-status-pill" class="agent-status-pill">◈ Ready</div>
-              <span id="agent-last-run" style="font-size:10px;color:var(--grey-mid)"></span>
-              <button onclick="agentClearLog()" style="padding:5px 11px;background:none;border:1px solid var(--gold-border);color:var(--grey-light);cursor:pointer;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Clear</button>
-            </div>
-          </div>
-          <div id="agent-sources-used" class="agent-sources-used">
-            <div style="font-size:11px;color:var(--grey-mid)">Sources appear here during research</div>
-          </div>
-          <div id="agent-log" class="agent-log">
-            <div class="agent-empty" id="agent-empty-state">
-              <div class="agent-empty-icon">◈</div>
-              <h3>Ready to Research</h3>
-              <p>Add suburbs to the queue, configure your API key and sources on the right, then hit <strong style="color:var(--gold)">Run All Research</strong>. Results can be approved and pushed live to the portal instantly.</p>
-            </div>
+        <!-- Tabs: Results / Run History -->
+        <div style="display:flex;gap:4px;margin-bottom:0;">
+          <button class="stk-tab-btn active" onclick="switchAgentDetailTab('results',this)">Draft Results</button>
+          <button class="stk-tab-btn" onclick="switchAgentDetailTab('history',this)">Run History</button>
+        </div>
+
+        <!-- Results tab -->
+        <div id="aad-tab-results" class="stk-tab-content" style="display:block;background:var(--black-card);border:1px solid rgba(255,255,255,0.06);border-radius:0 0 4px 4px;padding:20px 24px;">
+          <div id="aad-results-list" style="display:flex;flex-direction:column;gap:12px;">
+            <div style="text-align:center;padding:40px;color:var(--grey-mid);font-size:13px;">No draft results yet. Run the agent on a project to generate analysis.</div>
           </div>
         </div>
 
-        <!-- RIGHT: SETTINGS + HISTORY -->
-        <div class="agent-panel-right">
-          <div class="agent-settings-section">
-            <div class="agent-settings-heading">Agent Configuration</div>
-            <div class="agent-setting-row">
-              <div class="agent-setting-label">Claude API Key</div>
-              <input class="agent-setting-input" id="agent-api-key" type="password" placeholder="sk-ant-..." />
-            </div>
-            <div class="agent-setting-row">
-              <div class="agent-setting-label">
-                Supabase URL
-                <span id="agent-sb-status">○ not connected</span>
-              </div>
-              <input class="agent-setting-input" id="agent-sb-url" value="https://oreklvbzwgbufbkvvzny.supabase.co" />
-            </div>
-            <div class="agent-setting-row">
-              <div class="agent-setting-label">Supabase Anon Key</div>
-              <input class="agent-setting-input" id="agent-sb-key" type="password"
-                value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZWtsdmJ6d2didWZia3Z2em55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NjkwNDAsImV4cCI6MjA4NzU0NTA0MH0.fh_36UByHWSwtPMHLOg-8L417dD-n6nQAcmkmnUair0" />
-            </div>
-            <div class="agent-setting-row">
-              <div class="agent-setting-label">Research Depth</div>
-              <select class="agent-setting-select" id="agent-research-depth">
-                <option value="standard">Standard (faster)</option>
-                <option value="deep" selected>Deep (comprehensive)</option>
-                <option value="ultra">Ultra (max sources)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="agent-settings-section">
-            <div class="agent-settings-heading">Data Sources</div>
-            <div id="agent-source-toggles"></div>
-          </div>
-
-          <div class="agent-settings-section" style="border-bottom:none;">
-            <div class="agent-settings-heading">Recent Research History</div>
-            <div id="agent-history-list">
-              <div style="font-size:11px;color:var(--grey-mid);padding:4px 0">No runs yet</div>
-            </div>
+        <!-- History tab -->
+        <div id="aad-tab-history" class="stk-tab-content" style="display:none;background:var(--black-card);border:1px solid rgba(255,255,255,0.06);border-radius:0 0 4px 4px;padding:20px 24px;">
+          <div id="aad-history-list" style="display:flex;flex-direction:column;gap:8px;">
+            <div style="text-align:center;padding:40px;color:var(--grey-mid);font-size:13px;">No runs yet.</div>
           </div>
         </div>
 
       </div>
+
     </div>
 
     <!-- ══════════════════════════════════════════════════
@@ -5970,7 +5941,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '4.6';
+  const APP_VERSION = '4.7';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -6901,515 +6872,242 @@
 
 
   // ══════════════════════════════════════════════════════
-  // RESEARCH AGENT — ADMIN ONLY
+  // AI AGENTS HUB — ADMIN ONLY
   // ══════════════════════════════════════════════════════
-  const AGENT_SOURCES = [
-    { id:'sqm',       label:'SQM Research',             sub:'Vacancy rates, asking rents, stock on market', on:true },
-    { id:'domain',    label:'Domain / REA',              sub:'Median prices, days on market, listings data', on:true },
-    { id:'abs',       label:'ABS',                       sub:'Population, income, migration, unemployment', on:true },
-    { id:'corelogic', label:'CoreLogic',                 sub:'Price growth, yield, rental trends', on:true },
-    { id:'council',   label:'Local Councils',            sub:'Planning approvals, infrastructure pipeline', on:true },
-    { id:'hotspot',   label:'Hotspotting / Terry Ryder', sub:'Hotspot rankings, growth drivers', on:true },
-    { id:'urbis',     label:'Urbis / HTW',               sub:'Development pipeline, market reports', on:true },
-    { id:'reia',      label:'REIA / State REIs',         sub:'State-level auction & rental data', on:false },
-  ];
+  let aiAgentsCache = [];
+  let aiCurrentAgent = null;
+  let aiAgentInited = false;
 
-  let agentSuburbs = [
-    { id:1, name:'Melbourne CBD', state:'VIC', status:'idle' },
-    { id:2, name:'Canberra',      state:'ACT', status:'idle' },
-    { id:3, name:'Brisbane',      state:'QLD', status:'idle' },
-    { id:4, name:'Perth',         state:'WA',  status:'idle' },
-    { id:5, name:'Port Hedland',  state:'WA',  status:'idle' },
-  ];
-
-  let agentSelectedId = null;
-  let agentIsRunning = false;
-  let agentHistory = [];
-  let agentNextId = 6;
-  let agentInited = false;
-
-  function agentInit() {
-    if (agentInited) return;
-    agentInited = true;
-    agentRenderSuburbs();
-    agentRenderSources();
-    agentRenderHistory();
-    document.getElementById('agent-new-suburb').addEventListener('keydown', e => {
-      if (e.key === 'Enter') agentAddSuburb();
-    });
+  async function agentInit() {
+    if (aiAgentInited) { aiRenderHub(); return; }
+    aiAgentInited = true;
+    await aiLoadAgents();
   }
 
-  function agentRenderSuburbs() {
-    const list = document.getElementById('agent-suburb-list');
-    if (!list) return;
-    list.innerHTML = agentSuburbs.map(s => {
-      const icons = { idle:'○', running:'◌', done:'◉', error:'✕' };
-      return `
-      <div class="agent-suburb-item ${s.status} ${agentSelectedId===s.id?'active':''}"
-           onclick="agentSelectSuburb(${s.id})">
-        <div class="agent-suburb-state">${s.state}</div>
-        <div class="agent-suburb-info">
-          <div class="agent-suburb-name">${s.name}</div>
-          <div class="agent-suburb-region">${s.state} · ${s.status==='done'?'✓ Researched':s.status==='running'?'Researching...':s.status==='error'?'Failed':'Queued'}</div>
-        </div>
-        <div class="agent-suburb-status-icon" style="color:${s.status==='done'?'var(--green)':s.status==='error'?'var(--red)':s.status==='running'?'var(--gold)':'var(--grey-mid)'}">${icons[s.status]||'○'}</div>
-        ${s.status==='running'?'<div class="agent-suburb-progress"></div>':''}
-      </div>`;
-    }).join('');
-  }
-
-  function agentSelectSuburb(id) {
-    agentSelectedId = id;
-    agentRenderSuburbs();
-    document.getElementById('agent-btn-run-one').disabled = false;
-  }
-
-  function agentRenderSources() {
-    const el = document.getElementById('agent-source-toggles');
-    if (!el) return;
-    el.innerHTML = AGENT_SOURCES.map(s => `
-      <div class="agent-toggle-row">
-        <div>
-          <div class="agent-toggle-label">${s.label}</div>
-          <div class="agent-toggle-sub">${s.sub}</div>
-        </div>
-        <button class="agent-toggle ${s.on?'on':''}" id="agent-tog-${s.id}"
-          onclick="agentToggleSource('${s.id}')"></button>
-      </div>`).join('');
-  }
-
-  function agentToggleSource(id) {
-    const src = AGENT_SOURCES.find(s=>s.id===id);
-    if (src) src.on = !src.on;
-    const btn = document.getElementById('agent-tog-'+id);
-    if (btn) btn.classList.toggle('on');
-  }
-
-  function agentRenderHistory() {
-    const el = document.getElementById('agent-history-list');
-    if (!el) return;
-    if (!agentHistory.length) {
-      el.innerHTML = '<div style="font-size:11px;color:var(--grey-mid);padding:4px 0">No runs yet</div>';
-      return;
-    }
-    el.innerHTML = agentHistory.slice().reverse().map(h => `
-      <div class="agent-history-item">
-        <div class="agent-hi-top">
-          <div class="agent-hi-suburb">${h.suburb}, ${h.state}</div>
-          <div class="agent-hi-rating ${h.rating==='Strong Buy'?'buy':'watch'}">${h.rating}</div>
-        </div>
-        <div class="agent-hi-date">${h.date}</div>
-        <div class="agent-hi-preview">${h.preview}</div>
-      </div>`).join('');
-  }
-
-  function agentAddSuburb() {
-    const name = document.getElementById('agent-new-suburb').value.trim();
-    const state = document.getElementById('agent-new-state').value.trim().toUpperCase();
-    if (!name || !state) return;
-    agentSuburbs.push({ id: agentNextId++, name, state, status:'idle' });
-    document.getElementById('agent-new-suburb').value = '';
-    document.getElementById('agent-new-state').value = '';
-    agentRenderSuburbs();
-  }
-
-  async function agentRunAll() {
-    if (agentIsRunning) return;
-    const apiKey = document.getElementById('agent-api-key').value.trim();
-    if (!apiKey) { alert('Please enter your Claude API key in the settings panel.'); return; }
-    agentIsRunning = true;
-    document.getElementById('agent-btn-run-all').disabled = true;
-    document.getElementById('agent-btn-run-one').disabled = true;
-    document.getElementById('agent-empty-state')?.remove();
-    agentClearLog();
-    agentSuburbs.forEach(s => s.status = 'idle');
-    agentRenderSuburbs();
-    agentLog('info','◈',`Starting research run — <strong>${agentSuburbs.length} suburbs</strong> queued`);
-    agentLog('info','⚙',`Depth: <strong>${document.getElementById('agent-research-depth').value}</strong> · Mode: Claude knowledge synthesis`);
-    for (let i = 0; i < agentSuburbs.length; i++) {
-      const suburb = agentSuburbs[i];
-      await agentResearchSuburb(suburb, apiKey);
-      if (i < agentSuburbs.length - 1) await agentDelay(15000);
-    }
-    agentLog('success','◉',`<strong>Research run complete.</strong> Review results above, then approve to publish to the portal.`);
-    document.getElementById('agent-status-pill').textContent = '◉ Complete';
-    document.getElementById('agent-last-run').textContent = 'Last run: ' + new Date().toLocaleString('en-AU',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
-    agentIsRunning = false;
-    document.getElementById('agent-btn-run-all').disabled = false;
-  }
-
-  async function agentRunSelected() {
-    if (!agentSelectedId || agentIsRunning) return;
-    const apiKey = document.getElementById('agent-api-key').value.trim();
-    if (!apiKey) { alert('Please enter your Claude API key in the settings panel.'); return; }
-    const suburb = agentSuburbs.find(s => s.id === agentSelectedId);
-    if (!suburb) return;
-    agentIsRunning = true;
-    document.getElementById('agent-btn-run-all').disabled = true;
-    document.getElementById('agent-btn-run-one').disabled = true;
-    document.getElementById('agent-empty-state')?.remove();
-    await agentResearchSuburb(suburb, apiKey);
-    agentIsRunning = false;
-    document.getElementById('agent-btn-run-all').disabled = false;
-    document.getElementById('agent-btn-run-one').disabled = false;
-  }
-
-  async function agentResearchSuburb(suburb, apiKey) {
-    const activeSources = AGENT_SOURCES.filter(s => s.on).map(s => s.label);
-    const depth = document.getElementById('agent-research-depth').value;
-    suburb.status = 'running';
-    agentRenderSuburbs();
-    document.getElementById('agent-centre-title').textContent = suburb.name + ', ' + suburb.state;
-    document.getElementById('agent-centre-subtitle').textContent = 'Researching now — synthesising from multiple sources...';
-    document.getElementById('agent-status-pill').textContent = '◌ Researching';
-    document.getElementById('agent-sources-used').innerHTML = activeSources.map(s =>
-      `<div class="agent-source-chip active">${s}</div>`).join('');
-
-    agentLog('suburb','▶',`Starting research: <strong>${suburb.name}, ${suburb.state}</strong>`);
-    agentLog('info','🧠',`Synthesising: ${activeSources.map(s=>`<span class="agent-log-source">${s}</span>`).join('')}`);
-    agentShowThinking();
-
-    const depthInstructions = depth==='ultra'?'Comprehensive analysis with specific statistics.'
-      :depth==='deep'?'Solid analysis with key data points.':'Brief overview with key statistics.';
-
-    const prompt = `You are a senior Australian property research analyst for The Property Clearing House (TPCH). Research this market and respond with ONLY valid JSON — no markdown, no explanation, no text outside the JSON object.
-
-Market: ${suburb.name}, ${suburb.state}, Australia
-Sources to draw from: ${activeSources.join(', ')}
-Depth: ${depthInstructions}
-
-Return ONLY this JSON structure with all fields completed accurately for the specific market:
-{
-  "suburb": "${suburb.name}",
-  "region": "Descriptive region name e.g. Inner City and Surrounds",
-  "state": "${suburb.state}",
-  "rating": "Strong Buy",
-  "avg_yield": 5.8,
-  "capital_growth": 6.2,
-  "vacancy_rate": 1.2,
-  "median_price": 685000,
-  "weekly_rent": 620,
-  "rental_growth": 8.5,
-  "population": "2.1M metro",
-  "pop_growth_pct": 2.2,
-  "unemployment": 3.4,
-  "smsf_eligible": true,
-  "thesis_short": "1-2 sentence punchy summary for the research list",
-  "thesis_main": "Main investment thesis 80-120 words",
-  "thesis_detail": "Second paragraph 60-90 words on specific opportunity context",
-  "tpch_headline": "Single compelling sentence summarising TPCH view on this market",
-  "tpch_view": "150-200 word editorial perspective from TPCH first person plural (we/our) — why we love or watch this market, the key opportunity, what clients should know",
-  "demand_drivers": [
-    "Driver 1 with specific data and source attribution",
-    "Driver 2 with data and source",
-    "Driver 3 with data and source",
-    "Driver 4 with data and source",
-    "Driver 5 with data and source"
-  ],
-  "comparable_rents": [
-    {"label": "1BR Inner", "weekly": 500},
-    {"label": "2BR Inner", "weekly": 650},
-    {"label": "1BR CBD", "weekly": 530},
-    {"label": "2BR CBD", "weekly": 700}
-  ],
-  "supply_pipeline": [
-    {"year": "2024", "pipeline": 500, "demand": 6000},
-    {"year": "2025", "pipeline": 800, "demand": 7000},
-    {"year": "2026", "pipeline": 700, "demand": 8000},
-    {"year": "2027", "pipeline": 900, "demand": 9000},
-    {"year": "2028", "pipeline": 600, "demand": 10000}
-  ],
-  "supply_shortfall": 12000,
-  "supply_shortfall_label": "projected dwellings deficit by 2028",
-  "construction_cost_rise": "22%",
-  "construction_cost_context": "One sentence on replacement cost and existing stock value",
-  "growth_forecast": "20-25%",
-  "growth_forecast_context": "One sentence on who forecasts this and over what timeframe",
-  "yield_vs_comparison": "5.8% vs Sydney 2.9%",
-  "infrastructure_pipeline": [
-    {"year": "2025", "project": "Project name", "detail": "1-2 sentence description", "status": "confirmed"},
-    {"year": "2027", "project": "Project name", "detail": "1-2 sentence description", "status": "planned"}
-  ],
-  "economic_environment": [
-    {"label": "Unemployment", "value": "3.8%", "context": "Below 10yr average"},
-    {"label": "Inflation CPI", "value": "2.8%", "context": "3.5yr low"},
-    {"label": "Net Migration", "value": "+140k", "context": "Year ending Jun 2024"},
-    {"label": "Consumer Confidence", "value": "+8pts", "context": "YoY improvement"}
-  ],
-  "risk_factors": [
-    "Risk 1 with specific detail and source",
-    "Risk 2 with detail and source",
-    "Risk 3 with detail and source",
-    "Risk 4 with detail and source"
-  ],
-  "data_sources": [
-    {"tag": "SQM", "description": "Vacancy Rate and Rental Data"},
-    {"tag": "ABS", "description": "Population and Migration Statistics"},
-    {"tag": "TPCH", "description": "Editorial and Investment Perspective"}
-  ]
-}
-
-CRITICAL RULES FOR VALID JSON OUTPUT:
-1. Do NOT use apostrophes or single quotes inside any string value. Write "does not" not "doesn't", "we are" not "we're", "it is" not "it's", "that is" not "that's".
-2. Do NOT use double quotes inside string values unless escaped with backslash.
-3. All arrays must be properly closed with ].
-4. All objects must be properly closed with }.
-5. No trailing commas after the last item in arrays or objects.
-
-Fill ALL values accurately for ${suburb.name}, ${suburb.state}. Use real current market data. Be specific with numbers and sources.`;
-
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      if (attempt > 1) {
-        const waitSecs = attempt * 20;
-        agentLog('info','⏳',`Rate limit — waiting ${waitSecs}s then retrying (${attempt}/3)...`);
-        await agentDelay(waitSecs * 1000);
-      }
-      try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-          },
-          body: JSON.stringify({
-            model: 'claude-haiku-4-5-20251001',
-            max_tokens: 4000,
-            system: 'You are a JSON-only API. You output ONLY valid JSON. No markdown. No explanation. No text before or after the JSON object. CRITICAL: In all string values, use double quotes for any quotes, never use apostrophes or single quotes within string values — write "does not" instead of "doesn\'t", "we are" instead of "we\'re", "it is" instead of "it\'s". All strings must be valid JSON strings.',
-            messages: [{ role: 'user', content: prompt }]
-          })
-        });
-        agentRemoveThinking();
-        if (!response.ok) {
-          const errData = await response.json();
-          const msg = errData.error?.message || 'API error ' + response.status;
-          if (response.status===529 || msg.includes('rate limit') || msg.includes('overloaded')) {
-            agentLog('info','⏳',`Rate limit on attempt ${attempt} — will retry...`);
-            continue;
-          }
-          throw new Error(msg);
-        }
-        const data = await response.json();
-        let rawText = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
-        rawText = rawText.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
-        let result;
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        const jsonStr = jsonMatch ? jsonMatch[0] : rawText;
-        try {
-          result = JSON.parse(jsonStr);
-        } catch {
-          result = JSON.parse(jsonStr.replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"'));
-        }
-        agentLog('success','◉',`Research complete — <strong>${suburb.name}: ${result.rating}</strong>`);
-        if (result.sources_referenced?.length) {
-          agentLog('info','📚',`Sources: ${result.sources_referenced.map(s=>`<span class="agent-log-source">${s}</span>`).join('')}`);
-        }
-        agentShowResultCard(result, suburb);
-        agentHistory.push({
-          suburb: suburb.name, state: suburb.state, rating: result.rating,
-          date: new Date().toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}),
-          preview: result.thesis_short, data: result
-        });
-        agentRenderHistory();
-        suburb.status = 'done';
-        suburb.result = result;
-        agentRenderSuburbs();
-        return;
-      } catch(err) {
-        agentRemoveThinking();
-        // Retry on rate limits, overload, AND JSON parse failures
-        const isRetryable = err.message?.includes('rate limit') || err.message?.includes('overloaded') || err.message?.includes('JSON') || err.message?.includes('parse');
-        if (attempt < 3 && isRetryable) {
-          agentLog('info','↺',`Retrying <strong>${suburb.name}</strong> (attempt ${attempt}/3) — ${err.message.slice(0,60)}...`);
-          continue;
-        }
-        agentLog('error','✕',`Error — <strong>${suburb.name}</strong>: ${err.message}`);
-        suburb.status = 'error';
-        agentRenderSuburbs();
-        return;
-      }
-    }
-    agentRemoveThinking();
-    agentLog('error','✕',`Failed after 3 attempts — <strong>${suburb.name}</strong>`);
-    suburb.status = 'error';
-    agentRenderSuburbs();
-  }
-
-  function agentShowResultCard(r, suburb) {
-    const logEl = document.getElementById('agent-log');
-    const card = document.createElement('div');
-    card.className = 'agent-result-card';
-    card.id = 'agent-result-' + suburb.id;
-    card.innerHTML = `
-      <div class="agent-result-title">◉ ${r.suburb}, ${r.state} — ${r.rating}</div>
-      <div class="agent-result-metrics">
-        <div class="agent-rm"><div class="agent-rm-label">Avg Yield</div><div class="agent-rm-value">${r.avg_yield}%</div></div>
-        <div class="agent-rm"><div class="agent-rm-label">Growth p.a.</div><div class="agent-rm-value">${r.capital_growth}%</div></div>
-        <div class="agent-rm"><div class="agent-rm-label">Vacancy</div><div class="agent-rm-value">${r.vacancy_rate}%</div></div>
-        <div class="agent-rm"><div class="agent-rm-label">Median Price</div><div class="agent-rm-value">$${Math.round(r.median_price/1000)}k</div></div>
-      </div>
-      <div class="agent-result-thesis">${r.thesis_main}</div>
-      ${r.risk_factors?`<div style="font-size:11px;color:var(--gold);margin-top:6px;padding:8px 10px;border-left:2px solid var(--gold);background:var(--gold-dim)">⚠ ${r.risk_factors}</div>`:''}
-      <div class="agent-result-actions">
-        <button class="agent-btn-approve" onclick="agentApprove(${suburb.id})">✓ Approve & Push to Portal</button>
-        <button class="agent-btn-rerun" onclick="agentRerun(${suburb.id})">↺ Re-run</button>
-        <button class="agent-btn-reject" onclick="agentReject(${suburb.id})">✕ Discard</button>
-      </div>`;
-    logEl.appendChild(card);
-    card.scrollIntoView({ behavior:'smooth', block:'nearest' });
-  }
-
-  async function agentApprove(suburbId) {
-    const suburb = agentSuburbs.find(s => s.id === suburbId);
-    if (!suburb?.result) return;
-    const r = suburb.result;
-    const sbUrl = document.getElementById('agent-sb-url').value.trim();
-    const sbKey  = document.getElementById('agent-sb-key').value.trim();
-    if (!sbUrl || !sbKey) { agentLog('error','✕','Supabase not configured. Add URL and key in settings.'); return; }
-    agentLog('info','⬆',`Pushing <strong>${suburb.name}</strong> to Supabase...`);
-    const payload = {
-      suburb: r.suburb, region: r.region || null, state: r.state,
-      rating: r.rating, avg_yield: r.avg_yield, capital_growth: r.capital_growth,
-      vacancy_rate: r.vacancy_rate, median_price: r.median_price,
-      weekly_rent: r.weekly_rent || r.rental_per_week || null,
-      rental_growth: r.rental_growth,
-      population: r.population, pop_growth_pct: r.pop_growth_pct, unemployment: r.unemployment,
-      smsf_eligible: r.smsf_eligible || false,
-      thesis_short: r.thesis_short, thesis_main: r.thesis_main, thesis_detail: r.thesis_detail,
-      tpch_headline: r.tpch_headline || null,
-      tpch_view: r.tpch_view || null,
-      demand_drivers: r.demand_drivers,
-      comparable_rents: r.comparable_rents,
-      supply_pipeline: r.supply_pipeline || null,
-      supply_shortfall: r.supply_shortfall || null,
-      supply_shortfall_label: r.supply_shortfall_label || null,
-      infrastructure_pipeline: r.infrastructure_pipeline || null,
-      economic_environment: r.economic_environment || null,
-      risk_factors: r.risk_factors || null,
-      data_sources: r.data_sources || null,
-      construction_cost_rise: r.construction_cost_rise || null,
-      construction_cost_context: r.construction_cost_context || null,
-      growth_forecast: r.growth_forecast || null,
-      growth_forecast_context: r.growth_forecast_context || null,
-      yield_vs_comparison: r.yield_vs_comparison || null,
-      ai_generated: true, updated_by: 'ai-agent', is_visible: true,
-      source_notes: JSON.stringify(r.data_sources || r.sources_referenced || [])
-    };
+  async function aiLoadAgents() {
     try {
-      const res = await fetch(sbUrl+'/rest/v1/research_reports?on_conflict=suburb,state', {
-        method:'POST',
-        headers:{
-          'apikey':sbKey,'Authorization':'Bearer '+sbKey,
-          'Content-Type':'application/json',
-          'Prefer':'resolution=merge-duplicates,return=minimal'
-        },
-        body: JSON.stringify(payload)
+      const res = await fetch(SUPABASE_URL + '/rest/v1/agents?order=created_at', {
+        headers: { 'apikey': SUPABASE_ANON_KEY }
       });
-      if (res.ok || res.status===201) {
-        agentLog('success','◉',`<strong>${suburb.name}</strong> published to portal successfully.`);
-        const card = document.getElementById('agent-result-'+suburbId);
-        if (card) {
-          const btn = card.querySelector('.agent-btn-approve');
-          if (btn) { btn.textContent='✓ Published'; btn.disabled=true; btn.style.opacity='0.6'; }
-        }
-        // Push to liveResearch so portal updates immediately without page reload
-        const newEntry = {
-          id: r.suburb.toLowerCase().replace(/\s+/g,'-'),
-          suburb: r.suburb, region: r.region || null, state: r.state,
-          map_lat: null, map_lng: null,
-          rating: r.rating, smsf_eligible: r.smsf_eligible || false,
-          avg_yield: r.avg_yield, capital_growth: r.capital_growth,
-          vacancy_rate: r.vacancy_rate, median_price: r.median_price,
-          weekly_rent: r.weekly_rent || r.rental_per_week || null,
-          rental_growth: r.rental_growth,
-          thesis_short: r.thesis_short, thesis_main: r.thesis_main, thesis_detail: r.thesis_detail,
-          tpch_headline: r.tpch_headline || null,
-          tpch_view: r.tpch_view || null,
-          demand_drivers: r.demand_drivers,
-          comparable_rents: r.comparable_rents,
-          supply_pipeline: r.supply_pipeline || null,
-          supply_shortfall: r.supply_shortfall || null,
-          supply_shortfall_label: r.supply_shortfall_label || null,
-          infrastructure_pipeline: r.infrastructure_pipeline || null,
-          economic_environment: r.economic_environment || null,
-          risk_factors: r.risk_factors || null,
-          data_sources: r.data_sources || null,
-          construction_cost_rise: r.construction_cost_rise || null,
-          construction_cost_context: r.construction_cost_context || null,
-          growth_forecast: r.growth_forecast || null,
-          growth_forecast_context: r.growth_forecast_context || null,
-          yield_vs_comparison: r.yield_vs_comparison || null,
-          population: r.population, pop_growth_pct: r.pop_growth_pct, unemployment: r.unemployment,
-          updated_at: new Date().toISOString()
-        };
-        const existing = liveResearch.findIndex(x => x.id === newEntry.id);
-        if (existing >= 0) liveResearch[existing] = newEntry;
-        else liveResearch.push(newEntry);
-        refreshResearchList();
-        refreshDashboard();
-      } else {
-        throw new Error('Supabase error: ' + await res.text());
-      }
-    } catch(err) {
-      agentLog('error','✕',`Failed to push to Supabase: ${err.message}`);
-    }
+      aiAgentsCache = await res.json();
+      aiRenderHub();
+    } catch(e) { console.error('Failed to load agents', e); }
   }
 
-  function agentReject(suburbId) {
-    document.getElementById('agent-result-'+suburbId)?.remove();
-    const suburb = agentSuburbs.find(s=>s.id===suburbId);
-    if (suburb) { suburb.status='idle'; suburb.result=null; }
-    agentRenderSuburbs();
-    agentLog('info','○','Result discarded. Re-run to try again.');
-  }
-
-  async function agentRerun(suburbId) {
-    const suburb = agentSuburbs.find(s=>s.id===suburbId);
-    if (!suburb) return;
-    document.getElementById('agent-result-'+suburbId)?.remove();
-    suburb.status='idle'; suburb.result=null;
-    const apiKey = document.getElementById('agent-api-key').value.trim();
-    if (!apiKey) { alert('Please enter your Claude API key.'); return; }
-    await agentResearchSuburb(suburb, apiKey);
-  }
-
-  function agentLog(type, icon, html) {
-    const el = document.getElementById('agent-log');
-    document.getElementById('agent-empty-state')?.remove();
-    const colors = { suburb:'var(--gold)',success:'var(--green)',error:'var(--red)',search:'#4C8EC9',info:'var(--grey-light)' };
-    const time = new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    const entry = document.createElement('div');
-    entry.className = 'agent-log-entry';
-    entry.innerHTML = `
-      <div class="agent-log-time">${time}</div>
-      <div class="agent-log-icon" style="color:${colors[type]||'var(--grey-light)'}">${icon}</div>
-      <div class="agent-log-content" style="color:${type==='error'?'var(--red)':type==='success'?'var(--green)':'var(--grey-pale)'}">${html}</div>`;
-    el.appendChild(entry);
-    el.scrollTop = el.scrollHeight;
-  }
-
-  function agentShowThinking() {
-    const el = document.getElementById('agent-log');
-    const div = document.createElement('div');
-    div.className = 'agent-thinking';
-    div.id = 'agent-thinking-indicator';
-    div.innerHTML = `
-      <div class="agent-log-time"></div>
-      <div class="agent-log-icon" style="color:var(--gold)">◌</div>
-      <div class="agent-log-content" style="color:var(--grey-mid)">
-        Searching sources and synthesising report
-        <div class="agent-thinking-dots" style="margin-top:5px">
-          <span></span><span></span><span></span>
+  function aiRenderHub() {
+    document.getElementById('ai-agents-hub').style.display = '';
+    document.getElementById('ai-agent-detail').style.display = 'none';
+    const grid = document.getElementById('ai-agents-grid');
+    grid.innerHTML = aiAgentsCache.map(a => `
+      <div onclick="aiOpenAgent('${a.slug}')" style="background:var(--black-card);border:1px solid ${a.status==='active'?'var(--gold-border)':'rgba(255,255,255,0.06)'};border-radius:4px;padding:24px;cursor:pointer;transition:border-color 0.2s,transform 0.15s;display:flex;flex-direction:column;gap:12px;"
+           onmouseenter="this.style.borderColor='var(--gold)';this.style.transform='translateY(-2px)'"
+           onmouseleave="this.style.borderColor='${a.status==='active'?'var(--gold-border)':'rgba(255,255,255,0.06)'}';this.style.transform=''">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="font-size:32px;line-height:1;">${a.avatar || '🤖'}</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:600;color:var(--white);">${a.name}</div>
+            <div style="font-size:10px;font-family:'DM Mono',monospace;letter-spacing:1.5px;color:var(--grey-mid);text-transform:uppercase;margin-top:2px;">${a.slug}</div>
+          </div>
+          <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:12px;${a.status==='active'?'background:rgba(76,175,122,0.15);color:#4CAF7A;border:1px solid rgba(76,175,122,0.25)':'background:rgba(255,255,255,0.05);color:var(--grey-mid);border:1px solid rgba(255,255,255,0.1)'}">${a.status}</div>
         </div>
-      </div>`;
-    el.appendChild(div);
-    el.scrollTop = el.scrollHeight;
+        <div style="font-size:12px;color:var(--grey-light);line-height:1.5;">${a.description || ''}</div>
+      </div>
+    `).join('');
   }
 
-  function agentRemoveThinking() { document.getElementById('agent-thinking-indicator')?.remove(); }
-  function agentClearLog() { document.getElementById('agent-log').innerHTML = ''; }
-  function agentDelay(ms) { return new Promise(r => setTimeout(r, ms)); }
+  async function aiOpenAgent(slug) {
+    const agent = aiAgentsCache.find(a => a.slug === slug);
+    if (!agent) return;
+    aiCurrentAgent = agent;
+    document.getElementById('ai-agents-hub').style.display = 'none';
+    document.getElementById('ai-agent-detail').style.display = '';
+    document.getElementById('aad-avatar').textContent = agent.avatar || '🤖';
+    document.getElementById('aad-name').textContent = agent.name;
+    document.getElementById('aad-desc').textContent = agent.description || '';
+    document.getElementById('aad-status-badge').innerHTML = `<div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:12px;${agent.status==='active'?'background:rgba(76,175,122,0.15);color:#4CAF7A;border:1px solid rgba(76,175,122,0.25)':'background:rgba(255,255,255,0.05);color:var(--grey-mid);border:1px solid rgba(255,255,255,0.1)'}">${agent.status}</div>`;
+
+    // Populate project dropdown
+    const sel = document.getElementById('aad-project-select');
+    sel.innerHTML = '<option value="">Select a project...</option>' +
+      allProjects.map(p => `<option value="${p.id}">${p.name} — ${p.suburb || ''}, ${p.state || ''}</option>`).join('');
+
+    // Disable run buttons if agent not active
+    document.getElementById('aad-run-btn').disabled = agent.status !== 'active';
+    document.getElementById('aad-run-all-btn').disabled = agent.status !== 'active';
+
+    // Load results + history
+    await Promise.all([aiLoadDraftResults(agent.id), aiLoadRunHistory(agent.id)]);
+  }
+
+  function aiAgentsBack() {
+    aiCurrentAgent = null;
+    aiRenderHub();
+  }
+
+  function switchAgentDetailTab(tab, el) {
+    el.parentElement.querySelectorAll('.stk-tab-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('aad-tab-results').style.display = tab === 'results' ? 'block' : 'none';
+    document.getElementById('aad-tab-history').style.display = tab === 'history' ? 'block' : 'none';
+  }
+
+  // ── Run agent ──────────────────────────────────────────
+  async function aiAgentRun() {
+    const projectId = document.getElementById('aad-project-select').value;
+    if (!projectId) { showToast('Select a project first.'); return; }
+    if (!aiCurrentAgent) return;
+    await aiTriggerRun(aiCurrentAgent.slug, projectId);
+  }
+
+  async function aiAgentRunAll() {
+    if (!aiCurrentAgent) return;
+    const statusEl = document.getElementById('aad-run-status');
+    statusEl.textContent = 'Running for all projects...';
+    document.getElementById('aad-run-all-btn').disabled = true;
+    let completed = 0;
+    for (const p of allProjects) {
+      statusEl.textContent = `Running ${++completed}/${allProjects.length}: ${p.name}...`;
+      await aiTriggerRun(aiCurrentAgent.slug, p.id);
+    }
+    statusEl.innerHTML = `<span style="color:var(--green);">Batch complete — ${completed} projects processed.</span>`;
+    document.getElementById('aad-run-all-btn').disabled = false;
+  }
+
+  async function aiTriggerRun(agentSlug, projectId) {
+    const statusEl = document.getElementById('aad-run-status');
+    const proj = allProjects.find(p => p.id === projectId);
+    statusEl.innerHTML = `<span style="color:var(--gold);">Running for ${proj?.name || projectId}...</span>`;
+    document.getElementById('aad-run-btn').disabled = true;
+
+    try {
+      const res = await fetch(SUPABASE_URL + '/functions/v1/run-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agent_slug: agentSlug,
+          project_id: projectId,
+          triggered_by: currentPartnerRecord?.email || 'admin'
+        })
+      });
+      const data = await res.json();
+      if (data.error) {
+        statusEl.innerHTML = `<span style="color:var(--red);">Failed: ${data.error}</span>`;
+      } else {
+        statusEl.innerHTML = `<span style="color:var(--green);">Complete — ${data.result?.overall_rating || 'done'} (${data.result?.overall_score || '?'}/100)</span>`;
+        // Refresh results and history
+        if (aiCurrentAgent) {
+          await Promise.all([aiLoadDraftResults(aiCurrentAgent.id), aiLoadRunHistory(aiCurrentAgent.id)]);
+        }
+      }
+    } catch(e) {
+      statusEl.innerHTML = `<span style="color:var(--red);">Error: ${e.message}</span>`;
+    }
+    document.getElementById('aad-run-btn').disabled = false;
+  }
+
+  // ── Load draft results ─────────────────────────────────
+  async function aiLoadDraftResults(agentId) {
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/project_analysis?status=eq.draft&order=created_at.desc', {
+        headers: { 'apikey': SUPABASE_ANON_KEY }
+      });
+      // RLS blocks drafts for anon — use service role via edge function or just show what we get
+      let drafts = [];
+      if (res.ok) drafts = await res.json();
+      const el = document.getElementById('aad-results-list');
+      if (!drafts.length) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--grey-mid);font-size:13px;">No draft results. Run the agent on a project to generate analysis.</div>';
+        return;
+      }
+      el.innerHTML = drafts.map(d => {
+        const proj = allProjects.find(p => p.id === d.project_id);
+        const ratingClass = d.overall_rating === 'Strong Buy' ? 'strong' : d.overall_rating === 'Good Buy' ? 'good' : d.overall_rating === 'Moderate' ? 'moderate' : 'caution';
+        return `
+        <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:16px 20px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+            <div style="font-size:14px;font-weight:600;color:var(--white);flex:1;">${proj?.name || d.project_id}</div>
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:700;color:var(--gold);">${d.overall_score || '?'}<span style="font-size:12px;color:var(--grey-mid);font-weight:400;">/100</span></div>
+            <div class="ia-key-badge ${ratingClass}" style="font-size:9px;">${d.overall_rating || 'Pending'}</div>
+          </div>
+          <div style="font-size:12px;color:var(--grey-light);line-height:1.5;margin-bottom:12px;font-style:italic;">${d.thesis_text || '—'}</div>
+          <div style="display:flex;gap:16px;margin-bottom:12px;">
+            ${['population','economic','supply','affordability','scarcity'].map(p => `
+              <div style="text-align:center;flex:1;">
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--grey-mid);margin-bottom:4px;">${p.slice(0,3).toUpperCase()}</div>
+                <div style="font-family:'Playfair Display',Georgia,serif;font-size:16px;color:var(--gold);">${d[p+'_score'] ?? '—'}</div>
+              </div>`).join('')}
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="aiPublishAnalysis('${d.id}')" style="background:var(--green);color:var(--black);border:none;padding:8px 16px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;">Publish</button>
+            <button onclick="aiRejectAnalysis('${d.id}')" style="background:transparent;color:var(--red);border:1px solid rgba(201,76,76,0.3);padding:8px 16px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;">Reject</button>
+            <div style="flex:1;"></div>
+            <div style="font-size:10px;color:var(--grey-mid);align-self:center;">${new Date(d.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+        </div>`;
+      }).join('');
+    } catch(e) { console.error('Load drafts failed', e); }
+  }
+
+  // ── Load run history ───────────────────────────────────
+  async function aiLoadRunHistory(agentId) {
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/agent_runs?agent_id=eq.' + agentId + '&order=created_at.desc&limit=20', {
+        headers: { 'apikey': SUPABASE_ANON_KEY }
+      });
+      const runs = await res.json();
+      const el = document.getElementById('aad-history-list');
+      if (!runs.length) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--grey-mid);font-size:13px;">No runs yet.</div>';
+        return;
+      }
+      el.innerHTML = runs.map(r => {
+        const proj = allProjects.find(p => p.id === r.project_id);
+        const statusColors = { completed:'var(--green)', failed:'var(--red)', running:'var(--gold)', queued:'var(--grey-mid)' };
+        const statusIcons = { completed:'◉', failed:'✕', running:'◌', queued:'○' };
+        const duration = r.duration_ms ? (r.duration_ms/1000).toFixed(1) + 's' : '—';
+        return `
+        <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:12px 16px;cursor:pointer;" onclick="this.querySelector('.aar-logs').style.display=this.querySelector('.aar-logs').style.display==='none'?'block':'none'">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="color:${statusColors[r.status]||'var(--grey-mid)'};font-size:14px;">${statusIcons[r.status]||'○'}</span>
+            <div style="flex:1;">
+              <div style="font-size:13px;color:var(--white);">${proj?.name || r.project_id || '—'}</div>
+              <div style="font-size:10px;color:var(--grey-mid);">${new Date(r.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · ${duration} · by ${r.triggered_by || '—'}</div>
+            </div>
+            <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:${statusColors[r.status]||'var(--grey-mid)'};">${r.status}</div>
+          </div>
+          ${r.error ? `<div style="font-size:11px;color:var(--red);margin-top:6px;padding:6px 8px;background:rgba(201,76,76,0.08);border-radius:3px;">${r.error}</div>` : ''}
+          <div class="aar-logs" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
+            ${(r.logs||[]).map(l => `<div style="font-size:11px;color:var(--grey-light);padding:2px 0;font-family:'DM Mono',monospace;"><span style="color:var(--grey-mid);">${new Date(l.ts).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span> ${l.message}</div>`).join('')}
+          </div>
+        </div>`;
+      }).join('');
+    } catch(e) { console.error('Load history failed', e); }
+  }
+
+  // ── Publish / Reject ───────────────────────────────────
+  async function aiPublishAnalysis(analysisId) {
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/project_analysis?id=eq.' + analysisId, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ status: 'published', reviewed_by: currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString(), published_at: new Date().toISOString() })
+      });
+      showToast('Analysis published.');
+      if (aiCurrentAgent) await aiLoadDraftResults(aiCurrentAgent.id);
+    } catch(e) { showToast('Publish failed: ' + e.message); }
+  }
+
+  async function aiRejectAnalysis(analysisId) {
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/project_analysis?id=eq.' + analysisId, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ status: 'rejected', reviewed_by: currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString() })
+      });
+      showToast('Analysis rejected.');
+      if (aiCurrentAgent) await aiLoadDraftResults(aiCurrentAgent.id);
+    } catch(e) { showToast('Reject failed: ' + e.message); }
+  }
 
   // ─── MY DEALS ────────────────────────────────────────────
 
@@ -8903,30 +8601,89 @@ function switchProjTab(tab, el) {
   if (tab === 'analysis') renderAnalysis();
 }
 
-function renderAnalysis() {
-  const items = allStockItems.filter(s => s.total_contract && s.annual_rent);
-  if (!items.length) {
-    ['san-yield','san-rent','san-price','san-bc','san-outgoings','san-netyield'].forEach(id => {
-      document.getElementById(id).textContent = '—';
+async function renderAnalysis() {
+  if (!currentProjectId) return;
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/project_analysis?project_id=eq.' + currentProjectId + '&status=eq.published&order=published_at.desc&limit=1', {
+      headers: { 'apikey': SUPABASE_ANON_KEY }
     });
-    return;
+    const rows = await res.json();
+    if (!rows.length) {
+      // No published analysis — leave placeholders
+      document.getElementById('ia-overall-score').innerHTML = '—<span>/100</span>';
+      document.getElementById('ia-overall-rating').textContent = 'Pending Analysis';
+      document.getElementById('ia-thesis-text').style.display = 'none';
+      document.getElementById('ia-thesis-pending').style.display = '';
+      return;
+    }
+    const a = rows[0];
+    // Overall
+    document.getElementById('ia-overall-score').innerHTML = `${a.overall_score}<span>/100</span>`;
+    const ratingEl = document.getElementById('ia-overall-rating');
+    ratingEl.textContent = a.overall_rating || '—';
+    const rc = a.overall_rating === 'Strong Buy' ? 'rgba(76,175,122,0.15);color:#4CAF7A;border-color:rgba(76,175,122,0.25)' :
+               a.overall_rating === 'Good Buy' ? 'rgba(200,169,81,0.12);color:var(--gold);border-color:var(--gold-border)' :
+               a.overall_rating === 'Moderate' ? 'rgba(255,193,7,0.12);color:#FFC107;border-color:rgba(255,193,7,0.25)' :
+               'rgba(201,76,76,0.12);color:#E07070;border-color:rgba(201,76,76,0.25)';
+    ratingEl.style.cssText += ';background:' + rc.split(';')[0].split(':')[1] + ';color:' + rc.split(';')[1].split(':')[1] + ';border-color:' + rc.split(';')[2].split(':')[1];
+
+    // Thesis
+    if (a.thesis_text) {
+      document.getElementById('ia-thesis-text').textContent = a.thesis_text;
+      document.getElementById('ia-thesis-text').style.display = '';
+      document.getElementById('ia-thesis-pending').style.display = 'none';
+    }
+
+    // Pillars
+    const pillars = ['population','economic','supply','affordability','scarcity'];
+    pillars.forEach(p => {
+      const score = a[p + '_score'];
+      const el = document.getElementById('ia-p-' + p);
+      if (el) el.textContent = score ?? '—';
+      const bar = document.getElementById('ia-bar-' + p);
+      if (bar) bar.style.width = score != null ? (score / 20 * 100) + '%' : '0%';
+      const hl = document.getElementById('ia-ph-' + p);
+      if (hl) hl.textContent = a[p + '_headline'] || 'Pending';
+    });
+
+    // Detail sections
+    pillars.forEach(p => {
+      const stats = a[p + '_stats'] || {};
+      const statsEl = document.getElementById('ia-stats-' + p);
+      if (statsEl) {
+        const statDivs = statsEl.querySelectorAll('.ia-detail-stat');
+        const keys = Object.keys(stats);
+        statDivs.forEach((div, i) => {
+          const valEl = div.querySelector('.ia-detail-stat-val');
+          if (valEl && keys[i]) valEl.textContent = stats[keys[i]] || '—';
+        });
+      }
+      const narEl = document.getElementById('ia-narrative-' + p);
+      if (narEl && a[p + '_narrative']) {
+        narEl.innerHTML = a[p + '_narrative'].split('\n\n').map(para => `<p style="margin-bottom:10px;">${para}</p>`).join('');
+      }
+    });
+
+    // Developer & Trust
+    const trustMap = {
+      'ia-trust-developer': ['developer_name', 'developer_detail'],
+      'ia-trust-track': ['track_record', 'track_record_detail'],
+      'ia-trust-stage': ['project_stage', 'project_stage_detail'],
+      'ia-trust-certs': ['warranties', null],
+      'ia-trust-memberships': ['memberships', null],
+      'ia-trust-tpch': ['tpch_assessment', null],
+    };
+    Object.entries(trustMap).forEach(([elId, [valKey, subKey]]) => {
+      const valEl = document.getElementById(elId);
+      if (valEl && a[valKey]) valEl.textContent = a[valKey];
+      if (subKey) {
+        const subEl = document.getElementById(elId + '-sub');
+        if (subEl && a[subKey]) subEl.textContent = a[subKey];
+      }
+    });
+  } catch(e) {
+    console.error('renderAnalysis error', e);
   }
-  const prices  = items.map(s => s.total_contract);
-  const rents   = items.map(s => s.annual_rent);
-  const yields  = items.map(s => s.annual_rent / s.total_contract * 100);
-  const bcs     = allStockItems.map(s => s.body_corporate_annual || 0);
-  const outgs   = allStockItems.map(s => calcTotalOutgoings(s));
-  const netYlds = items.map(s => (s.annual_rent - calcTotalOutgoings(s)) / s.total_contract * 100);
-
-  const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
-  const median = arr => { const s = [...arr].sort((a,b) => a-b); return s[Math.floor(s.length/2)]; };
-
-  document.getElementById('san-yield').textContent     = avg(yields).toFixed(1) + '%';
-  document.getElementById('san-rent').textContent      = fmtCurrency(avg(rents) / 52);
-  document.getElementById('san-price').textContent     = fmtCurrency(median(prices));
-  document.getElementById('san-bc').textContent        = fmtCurrency(avg(bcs));
-  document.getElementById('san-outgoings').textContent = fmtCurrency(avg(outgs));
-  document.getElementById('san-netyield').textContent  = avg(netYlds).toFixed(1) + '%';
 }
 
 // ── Lot detail ────────────────────────────────────────────
