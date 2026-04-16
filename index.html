@@ -5749,7 +5749,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '4.0';
+  const APP_VERSION = '4.1';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8021,14 +8021,26 @@ let stkFilter = {
   beds: 'any', priceMin: 200000, priceMax: 5000000,
   projStatus: 'all', smsf: false, yieldMin: 0, titleWindow: 'any'
 };
+// Parse title_forecast text — handles ISO dates and "Month 'YY" format (e.g. "June '26")
+function parseTitleForecast(raw) {
+  if (!raw) return null;
+  // Standard ISO / unambiguous date string
+  let d = new Date(raw);
+  if (!isNaN(d.getTime())) return d;
+  // "Month 'YY" or "Mon 'YY" e.g. "June '26", "Dec '25"
+  const m = raw.trim().match(/^([A-Za-z]+)\s+'(\d{2})$/);
+  if (m) {
+    d = new Date(`${m[1]} 20${m[2]}`);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
 // Title date bucket — returns 'completed', '0-6', '6-12', '12-24', '24-36', or 'other'
 function titleDateBucket(s) {
-  const raw = s.title_forecast;
-  if (!raw) return 'completed';
-  const d = new Date(raw);
-  if (isNaN(d.getTime())) return 'completed'; // unparseable = treat as ready
-  const now = new Date();
-  const diffMs = d - now;
+  const d = parseTitleForecast(s.title_forecast);
+  if (!d) return 'completed';
+  const diffMs = d - new Date();
   if (diffMs <= 0) return 'completed';
   const diffMonths = diffMs / (1000 * 60 * 60 * 24 * 30.44);
   if (diffMonths <= 6)  return '0-6';
@@ -8039,9 +8051,9 @@ function titleDateBucket(s) {
 }
 function fmtTitleDate(s) {
   if (!s.title_forecast) return '—';
-  const d = new Date(s.title_forecast);
-  if (!isNaN(d.getTime()) && d < new Date()) return 'Ready';
-  return s.title_forecast;
+  const d = parseTitleForecast(s.title_forecast);
+  if (d && d < new Date()) return 'Ready';
+  return s.title_forecast; // show as-is e.g. "June '26"
 }
 
 // Stamp duty rates by state — sourced from Monday.com Stamp Duty Estimate formula.
@@ -8127,7 +8139,7 @@ function stkSortVal(s, col) {
     case 'build_price':  return s.build_price ?? -1;
     case 'land_price':   return s.land_price ?? -1;
     case 'yield':        { const _ar = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null); return (_ar && s.total_contract) ? _ar / s.total_contract * 100 : -1; }
-    case 'title':        { if (!s.title_forecast) return Infinity; const _td = new Date(s.title_forecast); return isNaN(_td.getTime()) ? Infinity : _td.getTime(); }
+    case 'title':        { const _td = parseTitleForecast(s.title_forecast); return _td ? _td.getTime() : Infinity; }
     case 'comm':         return commSortVal(s);
     default:             return 0;
   }
