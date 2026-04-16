@@ -3000,6 +3000,9 @@
                   <th class="dlp-th-sort" onclick="stkAllSortBy('type')">Type <span class="dlp-si" id="sas-type">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('bedrooms')">Bed·Bath·Car <span class="dlp-si" id="sas-bedrooms">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('size')">Build m² <span class="dlp-si" id="sas-size">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('land_sqm')">Land m² <span class="dlp-si" id="sas-land_sqm">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('build_price')">Build Price <span class="dlp-si" id="sas-build_price">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('land_price')">Land Price <span class="dlp-si" id="sas-land_price">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('rent')">Rent/wk <span class="dlp-si" id="sas-rent">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('rate')">Rate/m² <span class="dlp-si" id="sas-rate">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('yield')">Rental Yield <span class="dlp-si" id="sas-yield">⇅</span></th>
@@ -3121,6 +3124,9 @@
                 <th class="dlp-th-sort" onclick="stkProjSortBy('type')">Property Type <span class="dlp-si" id="sps-type">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('bedrooms')">Bed · Bath · Car <span class="dlp-si" id="sps-bedrooms">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('size')">Build m² <span class="dlp-si" id="sps-size">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('land_sqm')">Land m² <span class="dlp-si" id="sps-land_sqm">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('build_price')">Build Price <span class="dlp-si" id="sps-build_price">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('land_price')">Land Price <span class="dlp-si" id="sps-land_price">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('rent')">Rent/wk <span class="dlp-si" id="sps-rent">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('rate')">Rate/m² <span class="dlp-si" id="sps-rate">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('yield')">Rental Yield <span class="dlp-si" id="sps-yield">⇅</span></th>
@@ -3128,7 +3134,7 @@
               </tr>
             </thead>
             <tbody id="spj-stock-tbody">
-              <tr><td colspan="10" style="text-align:center;color:var(--grey-mid);padding:24px;">Loading lots...</td></tr>
+              <tr><td colspan="13" style="text-align:center;color:var(--grey-mid);padding:24px;">Loading lots...</td></tr>
             </tbody>
           </table>
         </div>
@@ -5730,7 +5736,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '3.4';
+  const APP_VERSION = '3.5';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8081,6 +8087,9 @@ function stkSortVal(s, col) {
     case 'price':        return s.total_contract ?? -1;
     case 'rent':         return s.rent_per_week ?? -1;
     case 'rate':         return s.rate_per_sqm ?? -1;
+    case 'land_sqm':     return s.lot_size_sqm ?? -1;
+    case 'build_price':  return s.build_price ?? -1;
+    case 'land_price':   return s.land_price ?? -1;
     case 'yield':        { const _ar = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null); return (_ar && s.total_contract) ? _ar / s.total_contract * 100 : -1; }
     case 'comm':         return commSortVal(s);
     default:             return 0;
@@ -8268,7 +8277,7 @@ function renderAllStockTable() {
 
   if (!filtered.length) {
     document.getElementById('stk-all-stock-tbody').innerHTML =
-      '<tr><td colspan="10" style="text-align:center;color:var(--grey-mid);padding:24px;">No stock matches your filters.</td></tr>';
+      '<tr><td colspan="13" style="text-align:center;color:var(--grey-mid);padding:24px;">No stock matches your filters.</td></tr>';
     return;
   }
 
@@ -8284,6 +8293,9 @@ function renderAllStockTable() {
       <td>${s.property_type || s.development_type || '—'}</td>
       <td>${fmtNum(s.bedrooms)} · ${fmtNum(s.bathrooms)} · ${fmtNum(s.car_parks)}</td>
       <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
+      <td>${s.lot_size_sqm ? fmtSqm(s.lot_size_sqm) : '—'}</td>
+      <td>${s.build_price ? fmtCurrency(s.build_price) : '—'}</td>
+      <td>${s.land_price ? fmtCurrency(s.land_price) : '—'}</td>
       <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
       <td>${s.rate_per_sqm ? fmtCurrency(Math.round(s.rate_per_sqm)) + '/m²' : '—'}</td>
       <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
@@ -8578,6 +8590,9 @@ function renderStockTable() {
       <td>${s.property_type || s.development_type || '—'}</td>
       <td>${fmtNum(s.bedrooms)} · ${fmtNum(s.bathrooms)} · ${fmtNum(s.car_parks)}</td>
       <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
+      <td>${s.lot_size_sqm ? fmtSqm(s.lot_size_sqm) : '—'}</td>
+      <td>${s.build_price ? fmtCurrency(s.build_price) : '—'}</td>
+      <td>${s.land_price ? fmtCurrency(s.land_price) : '—'}</td>
       <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
       <td>${s.rate_per_sqm ? fmtCurrency(Math.round(s.rate_per_sqm)) + '/m²' : '—'}</td>
       <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
