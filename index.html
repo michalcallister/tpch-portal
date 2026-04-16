@@ -2999,10 +2999,10 @@
                   <th class="dlp-th-sort" onclick="stkAllSortBy('price')">Price <span class="dlp-si" id="sas-price">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('type')">Type <span class="dlp-si" id="sas-type">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('bedrooms')">Bed·Bath·Car <span class="dlp-si" id="sas-bedrooms">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('size')">Build m² <span class="dlp-si" id="sas-size">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('land_sqm')">Land m² <span class="dlp-si" id="sas-land_sqm">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('build_price')">Build Price <span class="dlp-si" id="sas-build_price">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('land_price')">Land Price <span class="dlp-si" id="sas-land_price">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('size')">Build m² <span class="dlp-si" id="sas-size">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('build_price')">Build Price <span class="dlp-si" id="sas-build_price">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('rent')">Rent/wk <span class="dlp-si" id="sas-rent">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('rate')">Rate/m² <span class="dlp-si" id="sas-rate">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('yield')">Rental Yield <span class="dlp-si" id="sas-yield">⇅</span></th>
@@ -3123,10 +3123,10 @@
                 <th class="dlp-th-sort" onclick="stkProjSortBy('price')">Price <span class="dlp-si" id="sps-price">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('type')">Property Type <span class="dlp-si" id="sps-type">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('bedrooms')">Bed · Bath · Car <span class="dlp-si" id="sps-bedrooms">⇅</span></th>
-                <th class="dlp-th-sort" onclick="stkProjSortBy('size')">Build m² <span class="dlp-si" id="sps-size">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('land_sqm')">Land m² <span class="dlp-si" id="sps-land_sqm">⇅</span></th>
-                <th class="dlp-th-sort" onclick="stkProjSortBy('build_price')">Build Price <span class="dlp-si" id="sps-build_price">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('land_price')">Land Price <span class="dlp-si" id="sps-land_price">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('size')">Build m² <span class="dlp-si" id="sps-size">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('build_price')">Build Price <span class="dlp-si" id="sps-build_price">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('rent')">Rent/wk <span class="dlp-si" id="sps-rent">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('rate')">Rate/m² <span class="dlp-si" id="sps-rate">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('yield')">Rental Yield <span class="dlp-si" id="sps-yield">⇅</span></th>
@@ -5736,7 +5736,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '3.7';
+  const APP_VERSION = '3.8';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8292,12 +8292,12 @@ function renderAllStockTable() {
       <td>${fmtCurrency(s.total_contract)}</td>
       <td>${s.property_type || s.development_type || '—'}</td>
       <td>${fmtNum(s.bedrooms)} · ${fmtNum(s.bathrooms)} · ${fmtNum(s.car_parks)}</td>
-      <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
       <td>${s.lot_size_sqm ? fmtSqm(s.lot_size_sqm) : '—'}</td>
-      <td>${s.build_price ? fmtCurrency(s.build_price) : '—'}</td>
       <td>${s.land_price ? fmtCurrency(s.land_price) : '—'}</td>
+      <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
+      <td>${s.build_price ? fmtCurrency(s.build_price) : '—'}</td>
       <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
-      <td>${s.rate_per_sqm ? fmtCurrency(Math.round(s.rate_per_sqm)) + '/m²' : '—'}</td>
+      <td>${(()=>{ const _bm = s.build_total_sqm||s.build_internal_sqm; const _bp = s.build_price; return (_bm&&_bp) ? fmtCurrency(Math.round(_bp/_bm))+'/m²' : '—'; })()}</td>
       <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
       <td style="color:var(--gold);font-weight:500;">${fmtCommForUser(s)}</td>
     </tr>`).join('');
@@ -8589,12 +8589,12 @@ function renderStockTable() {
       <td>${fmtCurrency(s.total_contract)}</td>
       <td>${s.property_type || s.development_type || '—'}</td>
       <td>${fmtNum(s.bedrooms)} · ${fmtNum(s.bathrooms)} · ${fmtNum(s.car_parks)}</td>
-      <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
       <td>${s.lot_size_sqm ? fmtSqm(s.lot_size_sqm) : '—'}</td>
-      <td>${s.build_price ? fmtCurrency(s.build_price) : '—'}</td>
       <td>${s.land_price ? fmtCurrency(s.land_price) : '—'}</td>
+      <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
+      <td>${s.build_price ? fmtCurrency(s.build_price) : '—'}</td>
       <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
-      <td>${s.rate_per_sqm ? fmtCurrency(Math.round(s.rate_per_sqm)) + '/m²' : '—'}</td>
+      <td>${(()=>{ const _bm = s.build_total_sqm||s.build_internal_sqm; const _bp = s.build_price; return (_bm&&_bp) ? fmtCurrency(Math.round(_bp/_bm))+'/m²' : '—'; })()}</td>
       <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
       <td class="comm-cell">${fmtCommForUser(s)}</td>
     </tr>`;
