@@ -61,7 +61,7 @@ async function runInvestmentAnalysis(projectId: string, runId: string) {
 
   // Fetch stock summary for context
   const { data: stock } = await sb
-    .from('stock_listings')
+    .from('stock')
     .select('total_contract, rent_per_week, lot_size_sqm, build_total_sqm, availability, development_type')
     .eq('project_id', projectId)
 
