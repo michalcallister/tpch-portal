@@ -3017,7 +3017,7 @@
     </div>
 
     <!-- ── PAGE: STOCK PROJECT DETAIL ────────────────────── -->
-    <div id="page-stock-project" class="page-view" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 61px);overflow:hidden;">
+    <div id="page-stock-project" class="page-view" style="padding:0;">
 
       <!-- Sticky header -->
       <div class="stk-proj-header">
@@ -5736,7 +5736,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '3.6';
+  const APP_VERSION = '3.7';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -10005,6 +10005,10 @@ function buildKitHtml(s, research, brand) {
 }
 
 /* ── Project Detail Page ─────────────────────────────────────── */
+#page-stock-project.active {
+  display: flex; flex-direction: column;
+  height: calc(100vh - 61px); overflow: hidden;
+}
 .stk-proj-header {
   background: var(--black-card);
   border-bottom: 1px solid var(--gold-border);
