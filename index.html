@@ -2991,7 +2991,7 @@
             <div class="stk-cards" id="stk-cards">
               <div class="stk-empty"><div class="stk-empty-icon">◈</div>Loading...</div>
             </div>
-            <div id="stk-stock-table-wrap" style="display:none;padding:0 24px 24px;">
+            <div id="stk-stock-table-wrap" style="display:none;padding:0 24px 24px;overflow-x:auto;">
               <table class="stk-all-stock-table">
                 <thead><tr>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('project')">Lot / Location / Project <span class="dlp-si" id="sas-project">⇅</span></th>
@@ -3114,7 +3114,7 @@
           <button class="stk-pill" onclick="toggleLotFilter('avail','Available',this)" style="padding:4px 10px;font-size:12px;">Available</button>
           <button class="stk-pill" onclick="toggleLotFilter('avail','Reserved',this)" style="padding:4px 10px;font-size:12px;">Reserved</button>
         </div>
-        <div>
+        <div style="overflow-x:auto;">
           <table class="stk-stock-table">
             <thead>
               <tr>
@@ -5736,7 +5736,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '3.5';
+  const APP_VERSION = '3.6';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -9844,13 +9844,14 @@ function buildKitHtml(s, research, brand) {
 .stk-browse-tab.active { z-index: 1; }
 .stk-browse-tab.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
 .stk-browse-tab:hover:not(.active) { color: var(--grey-light); }
-.stk-all-stock-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+.stk-all-stock-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; white-space: nowrap; }
 .stk-all-stock-table th {
-  text-align: left; padding: 8px 10px; font-size: 11px; letter-spacing: 1px;
+  text-align: left; padding: 8px 8px; font-size: 10px; letter-spacing: 0.8px;
   text-transform: uppercase; color: var(--grey-mid);
   border-bottom: 1px solid var(--gold-border); font-weight: 400; font-family: 'DM Mono', monospace;
+  white-space: nowrap;
 }
-.stk-all-stock-table td { padding: 10px 10px; border-bottom: 1px solid rgba(201,168,76,0.08); color: var(--grey-light); }
+.stk-all-stock-table td { padding: 8px 8px; border-bottom: 1px solid rgba(201,168,76,0.08); color: var(--grey-light); }
 .stk-all-stock-table tr:hover td { background: var(--gold-dim); cursor: pointer; }
 
 .stk-count { font-size: 13px; color: var(--grey-light); }
@@ -10059,12 +10060,12 @@ function buildKitHtml(s, research, brand) {
 /* Stock table in project detail */
 .stk-stock-table {
   width: 100%; border-collapse: collapse;
-  font-size: 13px;
+  font-size: 12px; white-space: nowrap;
 }
 .stk-stock-table th {
-  text-align: left; padding: 10px 12px;
+  text-align: left; padding: 8px 8px;
   font-family: 'DM Mono', monospace;
-  font-size: 11px; letter-spacing: 1.5px;
+  font-size: 10px; letter-spacing: 0.8px;
   text-transform: uppercase; color: var(--grey-mid);
   border-bottom: 1px solid var(--gold-border);
   white-space: nowrap;
