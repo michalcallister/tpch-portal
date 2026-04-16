@@ -5749,7 +5749,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '4.1';
+  const APP_VERSION = '4.2';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8021,16 +8021,20 @@ let stkFilter = {
   beds: 'any', priceMin: 200000, priceMax: 5000000,
   projStatus: 'all', smsf: false, yieldMin: 0, titleWindow: 'any'
 };
-// Parse title_forecast text — handles ISO dates and "Month 'YY" format (e.g. "June '26")
+// Parse title_forecast text — handles "Titled", ISO dates, and "Month'YY" / "Month 'YY" formats
 function parseTitleForecast(raw) {
   if (!raw) return null;
-  // Standard ISO / unambiguous date string
-  let d = new Date(raw);
+  const s = raw.trim();
+  if (/^titled$/i.test(s)) return new Date(0); // Titled = already completed
+  // Standard date
+  let d = new Date(s);
   if (!isNaN(d.getTime())) return d;
-  // "Month 'YY" or "Mon 'YY" e.g. "June '26", "Dec '25"
-  const m = raw.trim().match(/^([A-Za-z]+)\s+'(\d{2})$/);
+  // "Month'YY" or "Month 'YY" — optional space, straight or curly apostrophe
+  // Normalise "Sept" → "Sep" (not a JS-recognised abbreviation)
+  const m = s.match(/^([A-Za-z]+)\s*['\u2018\u2019\u02bc](\d{2})$/);
   if (m) {
-    d = new Date(`${m[1]} 20${m[2]}`);
+    const month = m[1].replace(/^sept$/i, 'Sep');
+    d = new Date(`${month} 20${m[2]}`);
     if (!isNaN(d.getTime())) return d;
   }
   return null;
@@ -8051,9 +8055,11 @@ function titleDateBucket(s) {
 }
 function fmtTitleDate(s) {
   if (!s.title_forecast) return '—';
+  const raw = s.title_forecast.trim();
+  if (/^titled$/i.test(raw)) return 'Titled';
   const d = parseTitleForecast(s.title_forecast);
   if (d && d < new Date()) return 'Ready';
-  return s.title_forecast; // show as-is e.g. "June '26"
+  return raw;
 }
 
 // Stamp duty rates by state — sourced from Monday.com Stamp Duty Estimate formula.
