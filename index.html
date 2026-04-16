@@ -5941,7 +5941,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '4.8';
+  const APP_VERSION = '4.9';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -7032,26 +7032,64 @@
       el.innerHTML = drafts.map(d => {
         const proj = allProjects.find(p => p.id === d.project_id);
         const ratingClass = d.overall_rating === 'Strong Buy' ? 'strong' : d.overall_rating === 'Good Buy' ? 'good' : d.overall_rating === 'Moderate' ? 'moderate' : 'caution';
+        const pillarNames = { population:'Population Growth', economic:'Economic Growth', supply:'Supply & Demand', affordability:'Affordability', scarcity:'Scarcity' };
+        const pillarIcons = { population:'📈', economic:'💼', supply:'⚖️', affordability:'🏷️', scarcity:'💎' };
+        const fmtStats = (stats) => { if (!stats || typeof stats !== 'object') return ''; return Object.entries(stats).map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="color:var(--grey-mid);font-size:11px;">${k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</span><span style="color:var(--white);font-size:11px;font-weight:600;">${v}</span></div>`).join(''); };
         return `
-        <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:16px 20px;">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-            <div style="font-size:14px;font-weight:600;color:var(--white);flex:1;">${proj?.name || d.project_id}</div>
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:700;color:var(--gold);">${d.overall_score || '?'}<span style="font-size:12px;color:var(--grey-mid);font-weight:400;">/100</span></div>
-            <div class="ia-key-badge ${ratingClass}" style="font-size:9px;">${d.overall_rating || 'Pending'}</div>
+        <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
+          <!-- Header -->
+          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.06);">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <div style="font-size:16px;font-weight:600;color:var(--white);flex:1;">${proj?.name || d.project_id}</div>
+              <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;font-weight:700;color:var(--gold);">${d.overall_score || '?'}<span style="font-size:13px;color:var(--grey-mid);font-weight:400;">/100</span></div>
+              <div class="ia-key-badge ${ratingClass}">${d.overall_rating || 'Pending'}</div>
+            </div>
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:14px;color:var(--grey-light);line-height:1.6;font-style:italic;margin-bottom:16px;">${d.thesis_text || '—'}</div>
+            <!-- Pillar score bar -->
+            <div style="display:flex;gap:8px;">
+              ${['population','economic','supply','affordability','scarcity'].map(p => `
+                <div style="flex:1;text-align:center;">
+                  <div style="font-size:8px;text-transform:uppercase;letter-spacing:1px;color:var(--grey-mid);margin-bottom:4px;">${pillarNames[p].split(' ')[0]}</div>
+                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:18px;color:var(--gold);margin-bottom:4px;">${d[p+'_score'] ?? '—'}<span style="font-size:10px;color:var(--grey-mid);">/20</span></div>
+                  <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;"><div style="height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold-light),var(--gold));width:${d[p+'_score'] != null ? (d[p+'_score']/20*100) : 0}%;"></div></div>
+                </div>`).join('')}
+            </div>
           </div>
-          <div style="font-size:12px;color:var(--grey-light);line-height:1.5;margin-bottom:12px;font-style:italic;">${d.thesis_text || '—'}</div>
-          <div style="display:flex;gap:16px;margin-bottom:12px;">
-            ${['population','economic','supply','affordability','scarcity'].map(p => `
-              <div style="text-align:center;flex:1;">
-                <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--grey-mid);margin-bottom:4px;">${p.slice(0,3).toUpperCase()}</div>
-                <div style="font-family:'Playfair Display',Georgia,serif;font-size:16px;color:var(--gold);">${d[p+'_score'] ?? '—'}</div>
-              </div>`).join('')}
+
+          <!-- Pillar details -->
+          ${['population','economic','supply','affordability','scarcity'].map(p => `
+          <div style="padding:16px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <span>${pillarIcons[p]}</span>
+              <span style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--white);">${pillarNames[p]}</span>
+              <span style="font-family:'Playfair Display',Georgia,serif;font-size:14px;color:var(--gold);margin-left:auto;">${d[p+'_score'] ?? '—'}/20</span>
+            </div>
+            ${d[p+'_headline'] ? `<div style="font-size:12px;font-weight:600;color:var(--gold-light);margin-bottom:8px;">${d[p+'_headline']}</div>` : ''}
+            <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;">
+              <div>${fmtStats(d[p+'_stats'])}</div>
+              <div style="font-size:12px;color:var(--grey-light);line-height:1.65;">${(d[p+'_narrative'] || 'No narrative available.').split('\\n\\n').map(para => '<p style="margin-bottom:8px;">'+para+'</p>').join('')}</div>
+            </div>
+          </div>`).join('')}
+
+          <!-- Developer & Trust -->
+          <div style="padding:16px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--white);margin-bottom:12px;">Developer & Trust</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+              ${[['Developer', d.developer_name, d.developer_detail], ['Track Record', d.track_record, d.track_record_detail], ['Project Stage', d.project_stage, d.project_stage_detail], ['Warranties', d.warranties, null], ['Memberships', d.memberships, null], ['TPCH Assessment', d.tpch_assessment, null]].map(([label, val, sub]) => `
+                <div style="background:rgba(255,255,255,0.03);border-radius:3px;padding:10px 12px;">
+                  <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);margin-bottom:4px;">${label}</div>
+                  <div style="font-size:12px;color:var(--white);line-height:1.4;">${val || '—'}</div>
+                  ${sub ? `<div style="font-size:11px;color:var(--grey-mid);margin-top:3px;line-height:1.4;">${sub}</div>` : ''}
+                </div>`).join('')}
+            </div>
           </div>
-          <div style="display:flex;gap:8px;">
-            <button onclick="aiPublishAnalysis('${d.id}')" style="background:var(--green);color:var(--black);border:none;padding:8px 16px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;">Publish</button>
-            <button onclick="aiRejectAnalysis('${d.id}')" style="background:transparent;color:var(--red);border:1px solid rgba(201,76,76,0.3);padding:8px 16px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;">Reject</button>
+
+          <!-- Actions -->
+          <div style="padding:16px 24px;display:flex;gap:10px;align-items:center;">
+            <button onclick="aiPublishAnalysis('${d.id}')" style="background:var(--green);color:var(--black);border:none;padding:10px 24px;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:0.5px;">Publish to Portal</button>
+            <button onclick="aiRejectAnalysis('${d.id}')" style="background:transparent;color:var(--red);border:1px solid rgba(201,76,76,0.3);padding:10px 24px;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>
             <div style="flex:1;"></div>
-            <div style="font-size:10px;color:var(--grey-mid);align-self:center;">${new Date(d.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+            <div style="font-size:10px;color:var(--grey-mid);">Generated ${new Date(d.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
           </div>
         </div>`;
       }).join('');
