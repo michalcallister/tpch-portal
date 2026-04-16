@@ -2969,6 +2969,17 @@
               <button class="stk-pill" onclick="toggleStkPill('yieldMin',8,this)">8%+</button>
             </div>
           </div>
+          <div class="stk-filter-group">
+            <span class="stk-filter-label">Settlement</span>
+            <div class="stk-pill-row">
+              <button class="stk-pill active" onclick="toggleStkPill('titleWindow','any',this)">Any</button>
+              <button class="stk-pill" onclick="toggleStkPill('titleWindow','completed',this)">Completed</button>
+              <button class="stk-pill" onclick="toggleStkPill('titleWindow','0-6',this)">0–6 months</button>
+              <button class="stk-pill" onclick="toggleStkPill('titleWindow','6-12',this)">6–12 months</button>
+              <button class="stk-pill" onclick="toggleStkPill('titleWindow','12-24',this)">12–24 months</button>
+              <button class="stk-pill" onclick="toggleStkPill('titleWindow','24-36',this)">2–3 years</button>
+            </div>
+          </div>
         </div>
 
         <!-- CARDS AREA -->
@@ -3006,6 +3017,7 @@
                   <th class="dlp-th-sort" onclick="stkAllSortBy('rent')">Rent/wk <span class="dlp-si" id="sas-rent">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('rate')">Rate/m² <span class="dlp-si" id="sas-rate">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('yield')">Rental Yield <span class="dlp-si" id="sas-yield">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('title')">Title Date <span class="dlp-si" id="sas-title">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('comm')">Comm <span class="dlp-si" id="sas-comm">⇅</span></th>
                 </tr></thead>
                 <tbody id="stk-all-stock-tbody"></tbody>
@@ -3130,11 +3142,12 @@
                 <th class="dlp-th-sort" onclick="stkProjSortBy('rent')">Rent/wk <span class="dlp-si" id="sps-rent">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('rate')">Rate/m² <span class="dlp-si" id="sps-rate">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('yield')">Rental Yield <span class="dlp-si" id="sps-yield">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('title')">Title Date <span class="dlp-si" id="sps-title">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('comm')">Your Comm <span class="dlp-si" id="sps-comm">⇅</span></th>
               </tr>
             </thead>
             <tbody id="spj-stock-tbody">
-              <tr><td colspan="13" style="text-align:center;color:var(--grey-mid);padding:24px;">Loading lots...</td></tr>
+              <tr><td colspan="14" style="text-align:center;color:var(--grey-mid);padding:24px;">Loading lots...</td></tr>
             </tbody>
           </table>
         </div>
@@ -5736,7 +5749,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '3.9';
+  const APP_VERSION = '4.0';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8006,8 +8019,31 @@ let stkPriceRange = { min: 200000, max: 5000000 };
 let stkFilter = {
   avail: 'all', states: [], types: [],
   beds: 'any', priceMin: 200000, priceMax: 5000000,
-  projStatus: 'all', smsf: false, yieldMin: 0
+  projStatus: 'all', smsf: false, yieldMin: 0, titleWindow: 'any'
 };
+// Title date bucket — returns 'completed', '0-6', '6-12', '12-24', '24-36', or 'other'
+function titleDateBucket(s) {
+  const raw = s.title_forecast;
+  if (!raw) return 'completed';
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return 'completed'; // unparseable = treat as ready
+  const now = new Date();
+  const diffMs = d - now;
+  if (diffMs <= 0) return 'completed';
+  const diffMonths = diffMs / (1000 * 60 * 60 * 24 * 30.44);
+  if (diffMonths <= 6)  return '0-6';
+  if (diffMonths <= 12) return '6-12';
+  if (diffMonths <= 24) return '12-24';
+  if (diffMonths <= 36) return '24-36';
+  return 'other';
+}
+function fmtTitleDate(s) {
+  if (!s.title_forecast) return '—';
+  const d = new Date(s.title_forecast);
+  if (!isNaN(d.getTime()) && d < new Date()) return 'Ready';
+  return s.title_forecast;
+}
+
 // Stamp duty rates by state — sourced from Monday.com Stamp Duty Estimate formula.
 // Update here if Monday.com formula rates are changed.
 const STAMP_DUTY_RATES = { NSW:0.04, VIC:0.055, QLD:0.038, WA:0.045, SA:0.05, TAS:0.037, ACT:0.037, NT:0.062 };
@@ -8091,6 +8127,7 @@ function stkSortVal(s, col) {
     case 'build_price':  return s.build_price ?? -1;
     case 'land_price':   return s.land_price ?? -1;
     case 'yield':        { const _ar = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null); return (_ar && s.total_contract) ? _ar / s.total_contract * 100 : -1; }
+    case 'title':        { if (!s.title_forecast) return Infinity; const _td = new Date(s.title_forecast); return isNaN(_td.getTime()) ? Infinity : _td.getTime(); }
     case 'comm':         return commSortVal(s);
     default:             return 0;
   }
@@ -8270,6 +8307,7 @@ function renderAllStockTable() {
       const _y = (_ar && s.total_contract) ? (_ar / s.total_contract * 100) : 0;
       if (_y < f.yieldMin) return false;
     }
+    if (f.titleWindow !== 'any' && titleDateBucket(s) !== f.titleWindow) return false;
     return true;
   });
 
@@ -8277,7 +8315,7 @@ function renderAllStockTable() {
 
   if (!filtered.length) {
     document.getElementById('stk-all-stock-tbody').innerHTML =
-      '<tr><td colspan="13" style="text-align:center;color:var(--grey-mid);padding:24px;">No stock matches your filters.</td></tr>';
+      '<tr><td colspan="14" style="text-align:center;color:var(--grey-mid);padding:24px;">No stock matches your filters.</td></tr>';
     return;
   }
 
@@ -8302,6 +8340,7 @@ function renderAllStockTable() {
       <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
       <td>${(()=>{ const _bm = s.build_total_sqm||s.build_internal_sqm; const _bp = s.build_price; return (_bm&&_bp) ? fmtCurrency(Math.round(_bp/_bm))+'/m²' : '—'; })()}</td>
       <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
+      <td style="white-space:nowrap;">${fmtTitleDate(s)}</td>
       <td style="color:var(--gold);font-weight:500;">${fmtCommForUser(s)}</td>
     </tr>`).join('');
 }
@@ -8435,7 +8474,7 @@ function updatePriceFilter() {
 }
 
 function resetStkFilters() {
-  stkFilter = { avail:'all', states:[], types:[], beds:'any', priceMin:stkPriceRange.min, priceMax:stkPriceRange.max, projStatus:'all', smsf:false, yieldMin:0 };
+  stkFilter = { avail:'all', states:[], types:[], beds:'any', priceMin:stkPriceRange.min, priceMax:stkPriceRange.max, projStatus:'all', smsf:false, yieldMin:0, titleWindow:'any' };
   // Reset pill UI
   document.querySelectorAll('#page-stock .stk-pill').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('#page-stock .stk-pill').forEach(b => {
@@ -8602,6 +8641,7 @@ function renderStockTable() {
       <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
       <td>${(()=>{ const _bm = s.build_total_sqm||s.build_internal_sqm; const _bp = s.build_price; return (_bm&&_bp) ? fmtCurrency(Math.round(_bp/_bm))+'/m²' : '—'; })()}</td>
       <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
+      <td style="white-space:nowrap;">${fmtTitleDate(s)}</td>
       <td class="comm-cell">${fmtCommForUser(s)}</td>
     </tr>`;
   }).join('');
