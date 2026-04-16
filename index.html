@@ -2999,7 +2999,7 @@
                   <th class="dlp-th-sort" onclick="stkAllSortBy('price')">Price <span class="dlp-si" id="sas-price">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('type')">Type <span class="dlp-si" id="sas-type">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('bedrooms')">Bed·Bath·Car <span class="dlp-si" id="sas-bedrooms">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('size')">Size <span class="dlp-si" id="sas-size">⇅</span></th>
+                  <th class="dlp-th-sort" onclick="stkAllSortBy('size')">Build m² <span class="dlp-si" id="sas-size">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('rent')">Rent/wk <span class="dlp-si" id="sas-rent">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('rate')">Rate/m² <span class="dlp-si" id="sas-rate">⇅</span></th>
                   <th class="dlp-th-sort" onclick="stkAllSortBy('yield')">Rental Yield <span class="dlp-si" id="sas-yield">⇅</span></th>
@@ -3120,7 +3120,7 @@
                 <th class="dlp-th-sort" onclick="stkProjSortBy('price')">Price <span class="dlp-si" id="sps-price">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('type')">Property Type <span class="dlp-si" id="sps-type">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('bedrooms')">Bed · Bath · Car <span class="dlp-si" id="sps-bedrooms">⇅</span></th>
-                <th class="dlp-th-sort" onclick="stkProjSortBy('size')">Size <span class="dlp-si" id="sps-size">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkProjSortBy('size')">Build m² <span class="dlp-si" id="sps-size">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('rent')">Rent/wk <span class="dlp-si" id="sps-rent">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('rate')">Rate/m² <span class="dlp-si" id="sps-rate">⇅</span></th>
                 <th class="dlp-th-sort" onclick="stkProjSortBy('yield')">Rental Yield <span class="dlp-si" id="sps-yield">⇅</span></th>
@@ -3222,6 +3222,7 @@
               <div class="stk-detail-row"><span class="stk-detail-key">External Area</span><span class="stk-detail-val" id="slg-external">—</span></div>
               <div class="stk-detail-row"><span class="stk-detail-key">Total Build Area</span><span class="stk-detail-val" id="slg-total-sqm">—</span></div>
               <div class="stk-detail-row" id="slg-land-row" style="display:none;"><span class="stk-detail-key">Land Size</span><span class="stk-detail-val" id="slg-land-sqm">—</span></div>
+              <div class="stk-detail-row" id="slg-title-row" style="display:none;"><span class="stk-detail-key">Title Date</span><span class="stk-detail-val" id="slg-title-forecast">—</span></div>
             </div>
             <div class="stk-detail-section">
               <div class="stk-detail-section-title">Pricing</div>
@@ -5729,7 +5730,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '3.3';
+  const APP_VERSION = '3.4';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8683,6 +8684,12 @@ function showStockListing(id) {
     document.getElementById('slg-build-price-row').style.display = '';
   } else {
     document.getElementById('slg-build-price-row').style.display = 'none';
+  }
+  if (s.title_forecast) {
+    document.getElementById('slg-title-forecast').textContent = s.title_forecast;
+    document.getElementById('slg-title-row').style.display = '';
+  } else {
+    document.getElementById('slg-title-row').style.display = 'none';
   }
   document.getElementById('slg-total-price').textContent = fmtCurrency(s.total_contract);
   const _proj = allProjects.find(p => p.id === s.project_id);
