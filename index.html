@@ -5749,7 +5749,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '4.4';
+  const APP_VERSION = '4.5';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8710,9 +8710,6 @@ function renderAnalysis() {
 
 // ── Lot detail ────────────────────────────────────────────
 function showStockListing(id) {
-  try { _showStockListingInner(id); } catch(e) { console.error('showStockListing error:', e); showToast('Error: ' + e.message); }
-}
-function _showStockListingInner(id) {
   currentStockId = id;
   const s = allStockItems.find(x => x.id === id) || allAvailableStock.find(x => x.id === id);
   if (!s) { console.warn('showStockListing: item not found', id, 'allStockItems:', allStockItems.length, 'allAvailableStock:', allAvailableStock.length); return; }
@@ -8782,7 +8779,6 @@ function _showStockListingInner(id) {
   const _annualRent = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null);
   document.getElementById('slg-rent-week').textContent   = s.rent_per_week ? fmtCurrency(s.rent_per_week) + ' / wk' : '—';
   document.getElementById('slg-rent-annual').textContent = fmtCurrency(_annualRent);
-  document.getElementById('slg-occupancy').textContent   = s.occupancy_weeks ? s.occupancy_weeks + ' weeks / yr' : '—';
   document.getElementById('slg-gross-yield').textContent = calcGrossYield(_annualRent, s.total_contract);
   // Floor plan
   const fpSection = document.getElementById('slg-floor-plan-section');
