@@ -5749,7 +5749,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '4.3';
+  const APP_VERSION = '4.4';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8710,9 +8710,12 @@ function renderAnalysis() {
 
 // ── Lot detail ────────────────────────────────────────────
 function showStockListing(id) {
+  try { _showStockListingInner(id); } catch(e) { console.error('showStockListing error:', e); showToast('Error: ' + e.message); }
+}
+function _showStockListingInner(id) {
   currentStockId = id;
   const s = allStockItems.find(x => x.id === id) || allAvailableStock.find(x => x.id === id);
-  if (!s) return;
+  if (!s) { console.warn('showStockListing: item not found', id, 'allStockItems:', allStockItems.length, 'allAvailableStock:', allAvailableStock.length); return; }
 
   // Header
   document.getElementById('slg-name').textContent    = s.name || '—';
