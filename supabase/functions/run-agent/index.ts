@@ -32,12 +32,13 @@ async function callClaude(systemPrompt: string, userPrompt: string, model = 'cla
     headers: {
       'Content-Type': 'application/json',
       'x-api-key': CLAUDE_API_KEY,
-      'anthropic-version': '2023-06-01',
+      'anthropic-version': '2025-03-26',
     },
     body: JSON.stringify({
       model,
-      max_tokens: 4096,
+      max_tokens: 16000,
       system: systemPrompt,
+      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 10 }],
       messages: [{ role: 'user', content: userPrompt }],
     }),
   })
@@ -46,7 +47,9 @@ async function callClaude(systemPrompt: string, userPrompt: string, model = 'cla
     throw new Error(`Claude API ${res.status}: ${err}`)
   }
   const data = await res.json()
-  return data.content?.[0]?.text || ''
+  // Extract text blocks from the response (web search responses have mixed content types)
+  const textBlocks = (data.content || []).filter((b: any) => b.type === 'text')
+  return textBlocks.map((b: any) => b.text).join('\n') || ''
 }
 
 // ── Investment Analysis Agent ────────────────────────────
@@ -77,9 +80,19 @@ async function runInvestmentAnalysis(projectId: string, runId: string) {
 
   const systemPrompt = `You are an expert Australian property investment analyst working for The Property Clearing House (TPCH), a channel partner distribution platform for residential property developers.
 
-Your job is to research and score a specific property development project on 5 investment fundamentals. You must be factual, cite real data points where possible, and be honest — do not inflate scores to make a project look better than it is.
+Your job is to research and score a specific property development project on 5 investment fundamentals. You have access to web search — USE IT to find current, real data. Do not rely on memory or training data alone.
 
-IMPORTANT: Return your response as a single valid JSON object with NO markdown formatting, NO code fences, and NO explanation text outside the JSON. The response must start with { and end with }.
+RESEARCH REQUIREMENTS:
+- Search for current vacancy rates from SQM Research or Domain for the specific suburb
+- Search for recent ABS census/population data for the area
+- Search for median property prices from CoreLogic, Domain or REA
+- Search for the developer by name to verify their track record
+- Search for infrastructure projects and economic developments in the region
+- Every statistic you cite MUST come from a web search result. If you cannot find a current figure, say "Data unavailable" rather than guessing.
+
+SOURCING: In each narrative paragraph, cite your sources inline, e.g. "(Source: SQM Research, Jan 2026)" or "(Source: ABS Census 2021)". This is critical — the admin reviewing this needs to verify the data.
+
+After completing your research, return your response as a single valid JSON object with NO markdown formatting, NO code fences, and NO explanation text outside the JSON. The response must start with { and end with }.
 
 The JSON schema:
 {
@@ -90,37 +103,37 @@ The JSON schema:
   "population_score": <int 0-20>,
   "population_headline": "<one line summary>",
   "population_stats": {"5yr_growth": "<value>", "forecast_10yr": "<value>", "migration_trend": "<value>"},
-  "population_narrative": "<2-3 paragraph analysis>",
+  "population_narrative": "<2-3 paragraph analysis with inline source citations>",
 
   "economic_score": <int 0-20>,
   "economic_headline": "<one line summary>",
   "economic_stats": {"employment_growth": "<value>", "major_employers": "<value>", "infrastructure_spend": "<value>"},
-  "economic_narrative": "<2-3 paragraph analysis>",
+  "economic_narrative": "<2-3 paragraph analysis with inline source citations>",
 
   "supply_score": <int 0-20>,
   "supply_headline": "<one line summary>",
   "supply_stats": {"vacancy_rate": "<value>", "days_on_market": "<value>", "new_supply_12mo": "<value>"},
-  "supply_narrative": "<2-3 paragraph analysis>",
+  "supply_narrative": "<2-3 paragraph analysis with inline source citations>",
 
   "affordability_score": <int 0-20>,
   "affordability_headline": "<one line summary>",
   "affordability_stats": {"price_to_income": "<value>", "median_suburb_price": "<value>", "vs_metro_median": "<value>"},
-  "affordability_narrative": "<2-3 paragraph analysis>",
+  "affordability_narrative": "<2-3 paragraph analysis with inline source citations>",
 
   "scarcity_score": <int 0-20>,
   "scarcity_headline": "<one line summary>",
   "scarcity_stats": {"land_availability": "<value>", "zoning_constraints": "<value>", "competing_supply": "<value>"},
-  "scarcity_narrative": "<2-3 paragraph analysis>",
+  "scarcity_narrative": "<2-3 paragraph analysis with inline source citations>",
 
   "developer_name": "<developer name>",
-  "developer_detail": "<brief background>",
+  "developer_detail": "<brief background with source>",
   "track_record": "<summary of completed projects>",
-  "track_record_detail": "<detail>",
+  "track_record_detail": "<detail with source>",
   "project_stage": "<current stage>",
   "project_stage_detail": "<timeline detail>",
-  "warranties": "<known warranties>",
-  "memberships": "<industry memberships>",
-  "tpch_assessment": "<TPCH's assessment summary>"
+  "warranties": "<known warranties or Data unavailable>",
+  "memberships": "<industry memberships or Data unavailable>",
+  "tpch_assessment": "<TPCH assessment summary based on the research>"
 }
 
 Scoring guide:
@@ -130,7 +143,7 @@ Scoring guide:
 - 0-39 overall (0-7 per pillar): Caution — significant headwinds
 
 The overall_score should equal the sum of the 5 pillar scores.
-If you cannot find reliable data for a metric, say "Data unavailable" for that stat and note the limitation in the narrative. Do not guess.`
+Be honest and rigorous. Channel partners make investment decisions based on this analysis.`
 
   const userPrompt = `Research and score this Australian property development project:
 
@@ -159,19 +172,28 @@ Please research this location and project thoroughly. Consider:
 
 Return ONLY the JSON object, no other text.`
 
-  await addLog(runId, 'Calling Claude API for research...')
+  await addLog(runId, 'Calling Claude API with web search enabled (up to 10 searches)...')
 
   const raw = await callClaude(systemPrompt, userPrompt)
 
   await addLog(runId, `Claude response received (${raw.length} chars)`)
 
-  // Parse — strip any markdown fences if Claude wraps it
+  // Parse — extract JSON from response (web search may add text around it)
   let result: any
   try {
+    // Try direct parse first
     const cleaned = raw.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()
-    result = JSON.parse(cleaned)
+    try {
+      result = JSON.parse(cleaned)
+    } catch {
+      // Extract the JSON object from surrounding text
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('No JSON object found in response')
+      result = JSON.parse(jsonMatch[0])
+    }
   } catch (e) {
     await addLog(runId, `JSON parse error: ${(e as Error).message}`)
+    await addLog(runId, `Raw response (first 500 chars): ${raw.slice(0, 500)}`)
     throw new Error('Failed to parse Claude response as JSON')
   }
 
