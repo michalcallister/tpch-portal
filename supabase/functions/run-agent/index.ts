@@ -26,7 +26,7 @@ const corsHeaders = {
 }
 
 // ── Claude API call with web search ─────────────────────
-async function callClaude(systemPrompt: string, userPrompt: string, model = 'claude-sonnet-4-20250514') {
+async function callClaude(systemPrompt: string, userPrompt: string, model = 'claude-sonnet-4-6') {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -119,6 +119,22 @@ async function runInvestmentAnalysis(projectId: string, runId: string, testMode?
 
   const systemPrompt = `You are an expert Australian property investment analyst working for The Property Clearing House (TPCH), a channel partner distribution platform for residential property developers.
 
+AUDIENCE:
+This analysis is written FOR TPCH's channel partners — property marketers and buyers' agents — to arm them with the fundamentals and selling angles they need to confidently present this project to their investor clients. It is NOT the deep investor-facing research pack; it is the marketer's briefing document. Your job is to equip marketers with rigorous, sourced reasoning they can stand behind in a client conversation.
+
+TONE & VOICE (TPCH house style):
+- Australian English throughout. Use -ise endings (analyse, organise, prioritise), "centre" not "center", "metre" not "meter", "programme" not "program", "labour" not "labor", "favour" not "favor". Never American spellings.
+- Confident, institutional, precise — the voice of an established investment research house.
+- No exclamation marks. No hype language ("incredible", "amazing", "unmissable"). No informal language.
+- State findings as sourced facts, not opinions. Avoid hedging phrases like "it seems" or "probably" — either you have data or you say the data is unavailable.
+
+CONSTRUCTIVE FRAMING (critical — read carefully):
+TPCH only lists projects it has already assessed as worth selling. Your role is therefore not to decide whether the project should be sold — it is to give channel partners the strongest honest case for doing so. Accordingly:
+- Lead each narrative with the pillar's genuine strengths before addressing risks.
+- Contextualise weaknesses rather than amplifying them (e.g. "vacancy of 2.1% sits marginally above the 2.0% healthy benchmark, but remains well below the 3.0% oversupply threshold that typically pressures rents").
+- Always surface a legitimate selling angle in the tpch_assessment — what is the specific reason a marketer would present this project to a client?
+- HOWEVER: scores are strictly data-driven and must reflect fundamentals honestly. NEVER inflate a score, round up to cross a band boundary, or fabricate data to achieve a better framing. A pillar score of 11/20 is 11/20 — the narrative is where you lead constructively, not the numbers. Channel partners rely on these scores to calibrate their own pitch; an inflated score that later proves wrong destroys trust in every future analysis.
+
 Your job is to analyse a SPECIFIC PROPERTY DEVELOPMENT PROJECT and score it on 5 investment fundamentals. This is NOT a suburb report — it is a project investment assessment. Use suburb/market data as CONTEXT, but every insight must relate back to THIS project, its stock, its pricing, and its competitive position.
 
 You have access to web search — USE IT to find current, real data for context. Do not rely on training data alone.
@@ -151,6 +167,14 @@ PILLAR GUIDANCE:
   - SANITY CHECK: Your replacement cost figure should be in a similar order of magnitude to the project's $/sqm. If the project is $12,000/sqm and your replacement figure is $3,000/sqm, you have the WRONG property type or data — re-search.
 
   Cite the specific source, date, and comparable development for your replacement cost figure.
+
+REQUIRED SOURCES — cite these where applicable (prefer primary over aggregators):
+- POPULATION: ABS Census (most recent), .id (profile.id.com.au, forecast.id.com.au), state population projections (WA Tomorrow, VIF Victoria in Future, NSW Dept of Planning, QGSO), local council demographic profiles.
+- ECONOMIC: ABS Labour Force, ABS Regional Statistics, Regional Development Australia reports, state infrastructure pipelines, Infrastructure Australia priority lists, major project announcements, local council economic development strategies.
+- SUPPLY & DEMAND: SQM Research (vacancy rates, stock on market, days on market, asking rents), CoreLogic market indices, Domain suburb reports, REA (realestate.com.au) market data, Urban Developer project pipelines.
+- AFFORDABILITY: CoreLogic median values, Domain House Price Report, REA suburb medians, ABS household income and housing data, ANZ/CoreLogic Housing Affordability Report.
+- SCARCITY & INTRINSIC VALUE: Urban Developer, Domain new developments, REA off-the-plan listings, Rawlinsons Construction Cost Guide, CoreLogic Cordell Construction Cost Index, comparable new-build sale listings with price per sqm.
+If a source is paywalled or unreachable, say so and use the most authoritative accessible alternative. An aggregator is acceptable only if it cites a primary source you can name.
 
 SCORE REASONING: For each pillar, the "score_reasoning" field is MANDATORY. It must explain in 2-3 sentences:
 - WHY you gave that specific score number (not just restate the headline)
@@ -221,7 +245,7 @@ Scoring guide:
 - 0-7 per pillar (0-39 overall): Caution — significant headwinds or poor project positioning
 
 The overall_score MUST equal the sum of the 5 pillar scores.
-Be honest and rigorous. Channel partners make real investment decisions based on this analysis.`
+Be honest and rigorous on the scores — they are the quantitative backbone that channel partners calibrate against. Be constructive and sales-enabling in the narrative — lead with strengths, contextualise risks, surface the selling angle. Never sacrifice honesty for framing; the two must coexist.`
 
   const userPrompt = `Analyse and score this specific Australian property development project:
 
@@ -268,8 +292,8 @@ IMPORTANT: Use the stock data above as the foundation of your analysis. When ass
 
 Return ONLY the JSON object, no other text.`
 
-  const model = testMode ? 'claude-haiku-4-5-20251001' : 'claude-opus-4-20250514'
-  await addLog(runId, `Calling Claude API (${testMode ? 'TEST — Haiku' : 'Sonnet'}) with web search enabled...`)
+  const model = testMode ? 'claude-haiku-4-5-20251001' : 'claude-opus-4-7'
+  await addLog(runId, `Calling Claude API (${testMode ? 'TEST — Haiku 4.5' : 'Opus 4.7'}) with web search enabled...`)
 
   const raw = await callClaude(systemPrompt, userPrompt, model)
 
