@@ -53,7 +53,20 @@
       "Bash(node fix-logos2.js)",
       "Bash(rm fix-logos2.js)",
       "Bash(mkdir -p \"c:/Users/micha/.claude/tpch-portal/supabase/functions/sync-monday\")",
-      "Bash(cp \"c:/Users/micha/.claude/tpch-portal/sync-monday/index.ts\" \"c:/Users/micha/.claude/tpch-portal/supabase/functions/sync-monday/index.ts\")"
+      "Bash(cp \"c:/Users/micha/.claude/tpch-portal/sync-monday/index.ts\" \"c:/Users/micha/.claude/tpch-portal/supabase/functions/sync-monday/index.ts\")",
+      "mcp__claude_ai_monday_com__get_board_info",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(cp \"c:\\\\Users\\\\micha\\\\.claude\\\\tpch-portal\\\\sync-monday\\\\index.ts\" \"c:\\\\Users\\\\micha\\\\.claude\\\\tpch-portal\\\\supabase\\\\functions\\\\sync-monday\\\\index.ts\")",
+      "Bash(npx --prefix \"c:\\\\Users\\\\micha\\\\.claude\\\\tpch-portal\" supabase functions deploy sync-monday --project-ref oreklvbzwgbufbkvvzny --use-api)",
+      "mcp__plugin_supabase_supabase__execute_sql",
+      "mcp__plugin_supabase_supabase__apply_migration",
+      "Bash(supabase --version)",
+      "mcp__plugin_supabase_supabase__deploy_edge_function",
+      "Bash(node -c \"c:/Users/micha/.claude/tpch-portal/supabase/functions/run-agent/index.ts\")",
+      "Bash(npx -y esbuild --bundle --format=esm --platform=neutral \"c:/Users/micha/.claude/tpch-portal/supabase/functions/run-agent/index.ts\")",
+      "Bash(node -e \"const fs = require\\('fs'\\); const content = fs.readFileSync\\('c:/Users/micha/.claude/tpch-portal/supabase/functions/run-agent/index.ts', 'utf8'\\); fs.writeFileSync\\('/tmp/deploy_content.json', JSON.stringify\\(content\\)\\);\")",
+      "Bash(node -e \"const fs = require\\('fs'\\); const c = JSON.parse\\(fs.readFileSync\\('c:/Users/micha/deploy_content.txt', 'utf8'\\)\\); console.log\\(c.length, 'chars'\\); console.log\\(c.substring\\(0,80\\)\\)\")",
+      "WebSearch"
     ]
   }
 }
