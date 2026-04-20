@@ -66,7 +66,26 @@
       "Bash(npx -y esbuild --bundle --format=esm --platform=neutral \"c:/Users/micha/.claude/tpch-portal/supabase/functions/run-agent/index.ts\")",
       "Bash(node -e \"const fs = require\\('fs'\\); const content = fs.readFileSync\\('c:/Users/micha/.claude/tpch-portal/supabase/functions/run-agent/index.ts', 'utf8'\\); fs.writeFileSync\\('/tmp/deploy_content.json', JSON.stringify\\(content\\)\\);\")",
       "Bash(node -e \"const fs = require\\('fs'\\); const c = JSON.parse\\(fs.readFileSync\\('c:/Users/micha/deploy_content.txt', 'utf8'\\)\\); console.log\\(c.length, 'chars'\\); console.log\\(c.substring\\(0,80\\)\\)\")",
-      "WebSearch"
+      "WebSearch",
+      "mcp__55fbc88d-9485-47a4-8289-9ea42c522659__list_projects",
+      "mcp__55fbc88d-9485-47a4-8289-9ea42c522659__deploy_edge_function",
+      "mcp__55fbc88d-9485-47a4-8289-9ea42c522659__execute_sql",
+      "Bash(node -e \"const fs=require\\('fs'\\);const c=fs.readFileSync\\('supabase/functions/run-agent/index.ts','utf8'\\);process.stdout.write\\(JSON.stringify\\(c\\)\\)\")",
+      "Read(//tmp/**)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const c=fs.readFileSync\\('C:/Users/micha/Claude/tpch/tpch-portal/supabase/functions/run-agent/index.ts','utf8'\\);fs.writeFileSync\\('/tmp/idx.json',JSON.stringify\\(c\\)\\);console.log\\('len',c.length\\);\")",
+      "Bash(node -e \"const fs=require\\('fs'\\);const c=fs.readFileSync\\('C:/Users/micha/Claude/tpch/tpch-portal/supabase/functions/run-agent/index.ts','utf8'\\);fs.writeFileSync\\('C:/Users/micha/AppData/Local/Temp/idx.json',JSON.stringify\\(c\\)\\);console.log\\('len',c.length\\);\")",
+      "Bash(curl -sS -X POST \"https://oreklvbzwgbufbkvvzny.supabase.co/functions/v1/run-agent\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZWtsdmJ6d2didWZia3Z2em55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwOTQxMjMsImV4cCI6MjA3NjY3MDEyM30.-4YxoHL1AKksypeQc4xkMG-UphdZ2EPqXWWoVzvN4nI\" -H \"Content-Type: application/json\" --data '{\"agent_slug\":\"investment-analysis\",\"project_id\":\"3355563132\",\"triggered_by\":\"admin@tpch-iterate\"}' --max-time 480)",
+      "Bash(curl -sS -X POST \"https://oreklvbzwgbufbkvvzny.supabase.co/functions/v1/run-agent\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZWtsdmJ6d2didWZia3Z2em55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NjkwNDAsImV4cCI6MjA4NzU0NTA0MH0.fh_36UByHWSwtPMHLOg-8L417dD-n6nQAcmkmnUair0\" -H \"Content-Type: application/json\" --data '{\"agent_slug\":\"investment-analysis\",\"project_id\":\"3355563132\",\"triggered_by\":\"admin@tpch-iterate\"}' --max-time 480)",
+      "WebFetch(domain:www.apartments.com.au)",
+      "WebFetch(domain:www.urban.com.au)",
+      "WebFetch(domain:sqmresearch.com.au)",
+      "WebFetch(domain:zammitrealestate.com.au)",
+      "WebFetch(domain:ariamelbourne.com)",
+      "WebFetch(domain:a-d.com.au)",
+      "WebFetch(domain:hockingstuart.com.au)",
+      "Bash(curl -sS -X POST \"https://oreklvbzwgbufbkvvzny.supabase.co/functions/v1/run-agent\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZWtsdmJ6d2didWZia3Z2em55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NjkwNDAsImV4cCI6MjA4NzU0NTA0MH0.fh_36UByHWSwtPMHLOg-8L417dD-n6nQAcmkmnUair0\" -H \"Content-Type: application/json\" --data '{\"agent_slug\":\"investment-analysis\",\"project_id\":\"3355563132\",\"triggered_by\":\"admin@mick-credit-test\",\"test_mode\":true}' --max-time 240)",
+      "mcp__55fbc88d-9485-47a4-8289-9ea42c522659__get_logs",
+      "mcp__55fbc88d-9485-47a4-8289-9ea42c522659__get_publishable_keys"
     ]
   }
 }

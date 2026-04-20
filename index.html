@@ -6994,7 +6994,7 @@
   async function aiTriggerRun(agentSlug, projectId, testMode) {
     const statusEl = document.getElementById('aad-run-status');
     const proj = allProjects.find(p => p.id === projectId);
-    const modeLabel = testMode ? '🧪 TEST (Haiku)' : 'Production (Sonnet)';
+    const modeLabel = testMode ? '🧪 TEST (Haiku 4.5)' : 'Production (Opus 4.7)';
     statusEl.innerHTML = `<span style="color:var(--gold);">${modeLabel} — Running for ${proj?.name || projectId}. You can leave this page; the agent runs server-side.</span>`;
     document.getElementById('aad-run-btn').disabled = true;
     if (document.getElementById('aad-test-btn')) document.getElementById('aad-test-btn').disabled = true;
@@ -7002,7 +7002,11 @@
     try {
       const res = await fetch(SUPABASE_URL + '/functions/v1/run-agent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+        },
         body: JSON.stringify({
           agent_slug: agentSlug,
           project_id: projectId,
