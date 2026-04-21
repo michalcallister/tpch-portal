@@ -76,7 +76,14 @@ PILLAR GUIDANCE:
   - SANITY CHECK: Your replacement cost figure should be in a similar order of magnitude to the project's $/sqm. If the project is $12,000/sqm and your replacement figure is $3,000/sqm, you have the WRONG property type or data — re-search.
 
   REPLACEMENT COST SOURCING (mandatory): The new-build $/sqm benchmark MUST be anchored by at least TWO specific currently-selling comparable new developments named individually, with each one's actual $/sqm drawn from current sale listings or published price lists. A market-summary or aggregate figure alone is INSUFFICIENT. The named comparables and their per-sqm figures live in scarcity_narrative, not in the stat box. Narrative format example: "Development A ([Name], [Developer], [Suburb]) selling at $X/sqm; Development B ([Name], [Developer], [Suburb]) at $Y/sqm (Sources: apartments.com.au listing accessed [date], Urban Developer pricing [date], REA new apartments [date])". The goal is to give the marketer named, verifiable comparables they can point to in a client conversation. If only one genuinely comparable development is currently selling in the area, extend the search to nearest comparable suburbs and name those.
-  STAT BOX RULE: scarcity_stats.replacement_cost_sqm is a short single-line verdict, not a list of comparables. Keep it to one data point (a single anchor figure or tight range) of 60 characters or fewer. Example: "Queens Place 3-bed $14,464/sqm" or "New-build band $13k to $15k/sqm". All stat values across all pillars follow the same rule: one data point per stat, no inline citations (citations belong in the narrative), no packing multiple comparables into a single stat string.
+  STAT BOX RULE (mandatory — applies to every "<pillar>_stats" value): Each pillar renders three stat values under short overline labels in the portal UI. A stat value is a single-data-point label, NOT a sentence.
+  - Aim for 60 characters or fewer per stat value. Hard ceiling 80 characters.
+  - One data point per stat: one number, one name, one period. Do not pack multiple years, census comparisons, or ERP transitions into a single value.
+  - NO inline "(Source: ...)" citations inside a stat value. Citations belong in the narrative field, not the stat strip.
+  - No hedging, no elaboration, no parenthetical explanation. The stat is the glance; the narrative is the evidence.
+  - scarcity_stats.replacement_cost_sqm is a short single-line verdict, not a list of comparables. Example: "Queens Place 3-bed $14,464/sqm" or "New-build band $13k to $15k/sqm". The named comparables with their $/sqm figures live in scarcity_narrative.
+  - Good examples: "+15.3% (2021-23)", "4.4% (2-bed)", "Metro Tunnel (opened Feb 2026)", "3,745 sqm private Kennedy Park".
+  - Bad examples (do NOT emit these): "+21.0% 2016-21; ERP 22,699 to 26,166 between 2021 and 2023 (approx 15% over two years)", "+22,000 residents and +15,000 jobs by 2043 (City of Melbourne Forecasts 2023-2043)".
 
 REQUIRED SOURCES — cite these where applicable (prefer primary over aggregators):
 - POPULATION: ABS Estimated Resident Population, cat. 3218.0 Regional Population (PRIMARY, latest annual release at SA2 level), ABS cat. 3101.0 National, State and Territory Population (state-level current ERP), .id (profile.id.com.au, forecast.id.com.au, rebased to latest ERP), state population projections (VIF Victoria in Future, WA Tomorrow, NSW Dept of Planning, QGSO), local council demographic profiles. Use 2021 Census only for breakdowns not in ERP (age, income, household composition, country of birth).
@@ -111,6 +118,7 @@ Before emitting the JSON, silently verify:
   8. scarcity_narrative names at least TWO comparables individually with $/sqm each. scarcity_stats.replacement_cost_sqm is a short single-line verdict (<=60 chars, one data point, no inline citations).
   9. affordability_narrative contains per-bedroom like-for-like comparisons, not a mixed-average against a suburb median.
  10. developer_name, track_record, project_stage, warranties, memberships, and tpch_assessment are all populated (use "Data unavailable" with source-search note rather than null).
+ 11. Every stat value in every "<pillar>_stats" object is ≤60 chars (hard ceiling 80), is a single-data-point label, and contains NO inline "(Source: ...)" citation. Sentences, caveats, and source citations belong in the corresponding narrative. scarcity_stats.replacement_cost_sqm is a short one-line verdict; the named comparables live in scarcity_narrative.
 
 If any check fails, fix the output before returning. Do not return content that fails any self-check.
 

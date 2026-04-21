@@ -108,7 +108,12 @@
       "Read(//c/Users/micha/AppData/Local/Programs/**)",
       "Read(//c/Users/micha/AppData/Local/**)",
       "Bash(curl -s 'https://oreklvbzwgbufbkvvzny.supabase.co/rest/v1/project_analysis?id=eq.868c60da-2957-4ffb-83b0-3cee69b8dc84&select=*' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZWtsdmJ6d2didWZia3Z2em55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NjkwNDAsImV4cCI6MjA4NzU0NTA0MH0.fh_36UByHWSwtPMHLOg-8L417dD-n6nQAcmkmnUair0' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZWtsdmJ6d2didWZia3Z2em55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NjkwNDAsImV4cCI6MjA4NzU0NTA0MH0.fh_36UByHWSwtPMHLOg-8L417dD-n6nQAcmkmnUair0' -o /tmp/ms_row.json)",
-      "Bash(node \"C:\\\\Users\\\\micha\\\\build_payload.js\")"
+      "Bash(node \"C:\\\\Users\\\\micha\\\\build_payload.js\")",
+      "Bash(node \"C:/Users/micha/Claude/tpch/tpch-portal/.claude/.tmp-preflight.js\")",
+      "Bash(curl -sS -w '\\\\nHTTP:%{http_code}\\\\n' -X POST https://oreklvbzwgbufbkvvzny.supabase.co/functions/v1/upload-analysis -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZWtsdmJ6d2didWZia3Z2em55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NjkwNDAsImV4cCI6MjA4NzU0NTA0MH0.fh_36UByHWSwtPMHLOg-8L417dD-n6nQAcmkmnUair0' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZWtsdmJ6d2didWZia3Z2em55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NjkwNDAsImV4cCI6MjA4NzU0NTA0MH0.fh_36UByHWSwtPMHLOg-8L417dD-n6nQAcmkmnUair0' -H 'x-tpch-upload-secret: 10d88cf99127618933ba36c407bdb1ab80083e9d78ddf457b71f2fb29fc3d447' -H 'Content-Type: application/json' --data-binary @C:/Users/micha/Claude/tpch/tpch-portal/.claude/.tmp-upload-body.json)",
+      "Bash(git add *)",
+      "Bash(git reset *)",
+      "Bash(git stash *)"
     ]
   }
 }

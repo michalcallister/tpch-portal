@@ -168,7 +168,19 @@ Each pillar renders a 3-stat strip. Locked keys:
 | Affordability | price_to_income | gross_yield | price_per_sqm |
 | Scarcity & Intrinsic Value | differentiation | replacement_cost_sqm | intrinsic_value |
 
-**Stat-label brevity rule (mandatory):** Stat values are short labels. ≤60 characters. One data point per stat. No inline citations — those live in the narrative. Never pack multiple comparables into a single stat string; the box is a one-line verdict, not a list.
+**Stat-label brevity rule (mandatory):** Stat values are short labels. ≤60 characters (hard ceiling 80). One data point per stat. No inline `(Source: ...)` citations — those live in the narrative. No hedging or elaboration. The stat is the glance; the narrative is the evidence. Never pack multiple comparables into a single stat string; the box is a one-line verdict, not a list.
+
+Good:
+
+- `+15.3% (2021-23)`
+- `4.4% (2-bed)`
+- `Metro Tunnel (opened Feb 2026)`
+- `3,745 sqm private Kennedy Park`
+
+Bad:
+
+- `+21.0% 2016-21; ERP 22,699 to 26,166 between 2021 and 2023 (approx 15% over two years)`
+- `+22,000 residents and +15,000 jobs by 2043 (City of Melbourne Forecasts 2023-2043)`
 
 `replacement_cost_sqm` is a short single-line verdict, e.g. `"Queens Place 3-bed $14,464/sqm"` or `"New-build band $13k to $15k/sqm"`. The named comparables and their per-sqm figures go in `scarcity_narrative`.
 
@@ -283,6 +295,7 @@ Work through this ten-item check against your draft. If any item fails, fix the 
 8. **Affordability produces per-bedroom like-for-like comparisons.** 2-bed project stock compared against 2-bed comparables; 3-bed against 3-bed. Never a mixed-bedroom project average against a mixed-suburb median.
 9. **Trust & Governance has no null fields.** `warranties` and `memberships` must be genuine strings; use the literal `"Data unavailable"` (or `"To be reconfirmed"`) when the figure is genuinely unknown rather than emitting null.
 10. **Population quotes ABS ERP cat. 3218.0 at SA2 level with vintage stated,** or flags the limitation if the current-vintage figure could not be retrieved via public search.
+11. **Every stat value is ≤60 chars (hard ceiling 80), single-data-point, no inline citation.** Sentences, caveats, and `(Source: ...)` citations belong in `narrative`, not in the stat strip. `replacement_cost_sqm` is a short one-line verdict; its named comparables and per-sqm figures live in `scarcity_narrative`.
 
 ## Tie-back to the portal
 

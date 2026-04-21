@@ -138,10 +138,10 @@
         },
         "stats": {
           "type": "object",
-          "description": "Exactly three stat keys per pillar, locked to the pillar-specific keys documented in SKILL.md. Validation of key names happens at the consumer level.",
+          "description": "Exactly three stat keys per pillar, locked to the pillar-specific keys documented in SKILL.md. Each stat value is a single-data-point label, not a sentence. Aim for ≤60 chars; hard ceiling 80. No inline (Source: ...) citations — those belong in narrative. replacement_cost_sqm is a short one-line verdict; its named comparables live in scarcity_narrative.",
           "minProperties": 3,
           "maxProperties": 3,
-          "additionalProperties": { "type": "string", "minLength": 1 }
+          "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 80 }
         },
         "narrative": {
           "type": "string",

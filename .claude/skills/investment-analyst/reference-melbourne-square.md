@@ -2,6 +2,9 @@
 
 This is the **approved output** for Melbourne Square produced by the Investment Analyst running on Claude Opus 4.7 in the session of 20 April 2026. User approval: "ok we are pretty happy with how that turned out."
 
+> **Note — rule added after this reference was approved (2026-04-21).**
+> SKILL.md, `prompt.ts`, and the `upload-analysis` validator now require stat values to be single-data-point labels ≤60 chars (hard ceiling 80) with no inline `(Source: ...)` citation. Named `$/sqm` comparables live in `scarcity_narrative`, not in `scarcity_stats.replacement_cost_sqm`. The stat strips in this reference (e.g. the population `5yr_growth` value `+21.0% (2016–21); 22,699 → 26,166 (2021–23)`) predate that rule and run longer than the current ceiling. Calibrate new analyses against the tighter rule; the narrative and structure of this reference are still the pattern to match.
+
 Use this file when producing future analyses to calibrate tone, length, stat-strip structure, score-reasoning depth, sourcing density, and the constructive-but-honest framing. If a future draft drifts off this pattern, re-read this file before submitting the JSON.
 
 The rendered form below is the **Presentation mode** output. The equivalent JSON mode would carry the same content packed into the schema defined in `output-schema.json`.
