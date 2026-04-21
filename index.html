@@ -3157,6 +3157,11 @@
       <div class="stk-tab-content" id="spj-tab-analysis">
         <div class="ia-wrap">
 
+          <!-- Admin edit button -->
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+            <button id="ia-edit-btn" onclick="openAnalysisEditor()" style="display:none;font-size:10px;padding:4px 12px;border:1px solid var(--gold-border);background:transparent;color:var(--gold);cursor:pointer;letter-spacing:1px;">EDIT ANALYSIS</button>
+          </div>
+
           <!-- Header: Score + Thesis -->
           <div class="ia-header">
             <div class="ia-score-card">
@@ -4088,6 +4093,23 @@
   <button onclick="galleryNav(-1)" style="position:absolute;left:20px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:24px;cursor:pointer;width:48px;height:48px;line-height:1;">‹</button>
   <button onclick="galleryNav(1)"  style="position:absolute;right:20px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:24px;cursor:pointer;width:48px;height:48px;line-height:1;">›</button>
   <div id="gallery-lightbox-counter" style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.5);font-size:12px;letter-spacing:1px;"></div>
+</div>
+
+<div id="ia-editor-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--black-card);border:1px solid var(--gold-border);width:min(96vw,1000px);max-height:92vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
+    <div style="padding:18px 24px;border-bottom:1px solid var(--gold-border);display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:600;">Edit Investment Analysis</span>
+      <button onclick="closeAnalysisEditor()" style="background:none;border:none;color:var(--grey-mid);font-size:22px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div id="iae-form" style="padding:20px 24px;flex:1;overflow-y:auto;"></div>
+    <div style="padding:14px 24px;border-top:1px solid var(--gold-border);display:flex;justify-content:space-between;align-items:center;gap:14px;">
+      <div id="iae-status" style="font-size:11px;color:var(--grey-mid);"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="closeAnalysisEditor()" style="padding:8px 20px;border:1px solid var(--gold-border);background:transparent;color:var(--grey-light);cursor:pointer;">Cancel</button>
+        <button id="iae-save-btn" onclick="saveAnalysisEdits()" style="padding:8px 20px;border:1px solid var(--gold);background:var(--gold-dim);color:var(--gold);cursor:pointer;font-weight:600;">Save Changes</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="desc-editor-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:none;align-items:center;justify-content:center;">
@@ -8700,15 +8722,22 @@ function resetAnalysisDOM() {
   });
 }
 
+let currentAnalysisRow = null;
+
 async function renderAnalysis() {
   if (!currentProjectId) return;
   resetAnalysisDOM();
+  currentAnalysisRow = null;
+  const editBtn = document.getElementById('ia-edit-btn');
+  if (editBtn) editBtn.style.display = 'none';
   try {
     const res = await fetch(SUPABASE_URL + '/rest/v1/project_analysis?project_id=eq.' + currentProjectId + '&status=eq.published&order=published_at.desc&limit=1', {
       headers: { 'apikey': SUPABASE_ANON_KEY }
     });
     const rows = await res.json();
     if (!rows.length) return;
+    currentAnalysisRow = rows[0];
+    if (editBtn && currentUserIsAdmin) editBtn.style.display = '';
     const a = rows[0];
     // Overall
     document.getElementById('ia-overall-score').innerHTML = `${a.overall_score}<span>/100</span>`;
@@ -8783,6 +8812,177 @@ async function renderAnalysis() {
     });
   } catch(e) {
     console.error('renderAnalysis error', e);
+  }
+}
+
+// ── Analysis editor (admin only) ──────────────────────────
+const IA_PILLARS = [
+  { key:'population',    label:'Population',          stats:['5yr_growth','forecast_10yr','migration_trend'] },
+  { key:'economic',      label:'Economic',            stats:['employment_growth','major_employers','infrastructure_spend'] },
+  { key:'supply',        label:'Supply & Demand',     stats:['vacancy_rate','days_on_market','new_supply_12mo'] },
+  { key:'affordability', label:'Affordability',       stats:['price_to_income','gross_yield','price_per_sqm'] },
+  { key:'scarcity',      label:'Scarcity & Intrinsic',stats:['differentiation','replacement_cost_sqm','intrinsic_value'] },
+];
+
+function _iaeField(label, inputHtml, hint) {
+  return `<label style="display:block;margin-bottom:14px;">
+    <div style="font-size:10px;letter-spacing:1.2px;color:var(--gold);text-transform:uppercase;margin-bottom:5px;">${label}</div>
+    ${inputHtml}
+    ${hint ? `<div style="font-size:10px;color:var(--grey-mid);margin-top:3px;">${hint}</div>` : ''}
+  </label>`;
+}
+const _iaeInputStyle = `width:100%;background:var(--black-hover);border:1px solid var(--gold-border);color:var(--grey-light);font-size:12px;font-family:inherit;padding:8px 10px;box-sizing:border-box;`;
+const _iaeTextareaStyle = _iaeInputStyle + 'resize:vertical;font-family:inherit;';
+
+function openAnalysisEditor() {
+  if (!currentAnalysisRow) { alert('No published analysis to edit.'); return; }
+  const a = currentAnalysisRow;
+  const form = document.getElementById('iae-form');
+  const esc = s => String(s ?? '').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+
+  let html = '<div style="padding-bottom:14px;border-bottom:1px solid var(--gold-border);margin-bottom:18px;">';
+  html += '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:14px;color:var(--gold);margin-bottom:10px;">Overall</div>';
+  html += _iaeField('Overall Score (auto-summed from pillars on save)',
+    `<input id="iae-overall-score" type="number" readonly value="${a.overall_score ?? ''}" style="${_iaeInputStyle}opacity:0.6;">`);
+  html += _iaeField('Overall Rating (auto-derived from score on save)',
+    `<input id="iae-overall-rating" readonly value="${esc(a.overall_rating)}" style="${_iaeInputStyle}opacity:0.6;">`);
+  html += _iaeField('Investment Thesis',
+    `<textarea id="iae-thesis" rows="6" style="${_iaeTextareaStyle}">${esc(a.thesis_text)}</textarea>`);
+  html += '</div>';
+
+  IA_PILLARS.forEach(p => {
+    html += `<div style="padding-bottom:14px;border-bottom:1px solid var(--gold-border);margin-bottom:18px;">`;
+    html += `<div style="font-family:'Playfair Display',Georgia,serif;font-size:14px;color:var(--gold);margin-bottom:10px;">${p.label}</div>`;
+    html += _iaeField('Score (0-20)',
+      `<input id="iae-${p.key}-score" type="number" min="0" max="20" value="${a[p.key+'_score'] ?? 0}" style="${_iaeInputStyle}max-width:100px;">`);
+    html += _iaeField('Headline',
+      `<input id="iae-${p.key}-headline" value="${esc(a[p.key+'_headline'])}" style="${_iaeInputStyle}">`);
+    html += _iaeField('Score reasoning',
+      `<textarea id="iae-${p.key}-reasoning" rows="3" style="${_iaeTextareaStyle}">${esc(a[p.key+'_score_reasoning'])}</textarea>`);
+    const stats = a[p.key+'_stats'] || {};
+    p.stats.forEach(sk => {
+      html += _iaeField(`Stat: ${sk}`,
+        `<input id="iae-${p.key}-stat-${sk}" value="${esc(stats[sk])}" maxlength="80" style="${_iaeInputStyle}">`,
+        'Single data point, ≤80 chars, no inline citations');
+    });
+    const narrativeHint = p.key === 'scarcity'
+      ? 'Must contain at least two comparables with $X/sqm figures (validator will reject on publish if missing).'
+      : 'Every factual claim needs an inline (Source: ...) citation.';
+    html += _iaeField('Narrative',
+      `<textarea id="iae-${p.key}-narrative" rows="8" style="${_iaeTextareaStyle}">${esc(a[p.key+'_narrative'])}</textarea>`,
+      narrativeHint);
+    html += '</div>';
+  });
+
+  html += '<div style="padding-bottom:14px;border-bottom:1px solid var(--gold-border);margin-bottom:18px;">';
+  html += '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:14px;color:var(--gold);margin-bottom:10px;">Trust &amp; Governance</div>';
+  html += _iaeField('Developer name', `<input id="iae-developer-name" value="${esc(a.developer_name)}" style="${_iaeInputStyle}">`);
+  html += _iaeField('Developer detail', `<textarea id="iae-developer-detail" rows="2" style="${_iaeTextareaStyle}">${esc(a.developer_detail)}</textarea>`);
+  html += _iaeField('Track record', `<input id="iae-track-record" value="${esc(a.track_record)}" style="${_iaeInputStyle}">`);
+  html += _iaeField('Track record detail', `<textarea id="iae-track-detail" rows="2" style="${_iaeTextareaStyle}">${esc(a.track_record_detail)}</textarea>`);
+  html += _iaeField('Project stage', `<input id="iae-project-stage" value="${esc(a.project_stage)}" style="${_iaeInputStyle}">`);
+  html += _iaeField('Project stage detail', `<textarea id="iae-stage-detail" rows="2" style="${_iaeTextareaStyle}">${esc(a.project_stage_detail)}</textarea>`);
+  html += _iaeField('Warranties', `<input id="iae-warranties" value="${esc(a.warranties)}" style="${_iaeInputStyle}">`);
+  html += _iaeField('Memberships', `<input id="iae-memberships" value="${esc(a.memberships)}" style="${_iaeInputStyle}">`);
+  html += '</div>';
+
+  html += '<div>';
+  html += '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:14px;color:var(--gold);margin-bottom:10px;">TPCH Assessment</div>';
+  html += _iaeField('Marketer\'s brief',
+    `<textarea id="iae-tpch" rows="8" style="${_iaeTextareaStyle}">${esc(a.tpch_assessment)}</textarea>`);
+  html += '</div>';
+
+  form.innerHTML = html;
+  document.getElementById('iae-status').textContent = '';
+  document.getElementById('ia-editor-overlay').style.display = 'flex';
+
+  // Live-recompute overall score & rating as pillar scores change
+  const recompute = () => {
+    let sum = 0;
+    IA_PILLARS.forEach(p => {
+      const v = parseInt(document.getElementById('iae-'+p.key+'-score').value, 10);
+      if (!isNaN(v)) sum += v;
+    });
+    document.getElementById('iae-overall-score').value = sum;
+    document.getElementById('iae-overall-rating').value =
+      sum >= 80 ? 'Strong Buy' : sum >= 60 ? 'Good Buy' : sum >= 40 ? 'Moderate' : 'Caution';
+  };
+  IA_PILLARS.forEach(p => {
+    document.getElementById('iae-'+p.key+'-score').addEventListener('input', recompute);
+  });
+}
+
+function closeAnalysisEditor() {
+  document.getElementById('ia-editor-overlay').style.display = 'none';
+}
+
+async function saveAnalysisEdits() {
+  if (!currentAnalysisRow) return;
+  const btn = document.getElementById('iae-save-btn');
+  const status = document.getElementById('iae-status');
+  const val = id => document.getElementById(id).value;
+  const num = id => parseInt(document.getElementById(id).value, 10);
+
+  const patch = {
+    thesis_text: val('iae-thesis'),
+    developer_name: val('iae-developer-name'),
+    developer_detail: val('iae-developer-detail'),
+    track_record: val('iae-track-record'),
+    track_record_detail: val('iae-track-detail'),
+    project_stage: val('iae-project-stage'),
+    project_stage_detail: val('iae-stage-detail'),
+    warranties: val('iae-warranties'),
+    memberships: val('iae-memberships'),
+    tpch_assessment: val('iae-tpch'),
+  };
+  let sum = 0;
+  IA_PILLARS.forEach(p => {
+    const score = Math.max(0, Math.min(20, num('iae-'+p.key+'-score') || 0));
+    sum += score;
+    patch[p.key+'_score'] = score;
+    patch[p.key+'_headline'] = val('iae-'+p.key+'-headline');
+    patch[p.key+'_score_reasoning'] = val('iae-'+p.key+'-reasoning');
+    patch[p.key+'_narrative'] = val('iae-'+p.key+'-narrative');
+    const stats = {};
+    p.stats.forEach(sk => { stats[sk] = val('iae-'+p.key+'-stat-'+sk); });
+    patch[p.key+'_stats'] = stats;
+  });
+  patch.overall_score = sum;
+  patch.overall_rating = sum >= 80 ? 'Strong Buy' : sum >= 60 ? 'Good Buy' : sum >= 40 ? 'Moderate' : 'Caution';
+
+  // Client-side guardrails: em-dash and scarcity $/sqm count
+  const blob = JSON.stringify(patch);
+  if (blob.includes('\u2014')) {
+    status.textContent = 'Em-dash (—) detected. Replace with full stop, comma, or brackets before saving.';
+    status.style.color = '#E07070';
+    return;
+  }
+  const sqmMatches = (patch.scarcity_narrative || '').match(/\$\s*[\d,]+\s*\/?\s*sqm/gi) || [];
+  if (sqmMatches.length < 2) {
+    status.textContent = 'Scarcity narrative must name at least two $X/sqm comparables (found ' + sqmMatches.length + ').';
+    status.style.color = '#E07070';
+    return;
+  }
+
+  btn.textContent = 'Saving...'; btn.disabled = true; status.style.color = 'var(--grey-mid)'; status.textContent = '';
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/project_analysis?id=eq.' + currentAnalysisRow.id, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(res.status + ': ' + t);
+    }
+    closeAnalysisEditor();
+    await renderAnalysis();
+    if (typeof showToast === 'function') showToast('Analysis updated.');
+  } catch(e) {
+    status.style.color = '#E07070';
+    status.textContent = 'Save failed: ' + e.message;
+  } finally {
+    btn.textContent = 'Save Changes'; btn.disabled = false;
   }
 }
 
