@@ -85,7 +85,16 @@
       "WebFetch(domain:hockingstuart.com.au)",
       "Bash(curl -sS -X POST \"https://oreklvbzwgbufbkvvzny.supabase.co/functions/v1/run-agent\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZWtsdmJ6d2didWZia3Z2em55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NjkwNDAsImV4cCI6MjA4NzU0NTA0MH0.fh_36UByHWSwtPMHLOg-8L417dD-n6nQAcmkmnUair0\" -H \"Content-Type: application/json\" --data '{\"agent_slug\":\"investment-analysis\",\"project_id\":\"3355563132\",\"triggered_by\":\"admin@mick-credit-test\",\"test_mode\":true}' --max-time 240)",
       "mcp__55fbc88d-9485-47a4-8289-9ea42c522659__get_logs",
-      "mcp__55fbc88d-9485-47a4-8289-9ea42c522659__get_publishable_keys"
+      "mcp__55fbc88d-9485-47a4-8289-9ea42c522659__get_publishable_keys",
+      "Bash(awk 'NR>=380 && NR<=415' \"C:/Users/micha/.claude/projects/C--Users-micha-Claude-tpch-tpch-portal/d3735e4b-e2bc-4916-8a13-78cb6a96ce09.jsonl\")",
+      "Bash(awk 'NR>=400 && NR<=420' \"C:\\\\Users\\\\micha\\\\.claude\\\\projects\\\\C--Users-micha-Claude-tpch-tpch-portal\\\\d3735e4b-e2bc-4916-8a13-78cb6a96ce09.jsonl\")",
+      "Bash(awk 'NR>=415 && NR<=420 {print NR\": \"substr\\($0,1,400\\)}' \"C:\\\\Users\\\\micha\\\\.claude\\\\projects\\\\C--Users-micha-Claude-tpch-tpch-portal\\\\d3735e4b-e2bc-4916-8a13-78cb6a96ce09.jsonl\")",
+      "Bash(awk 'NR>=380 && NR<=414' \"C:\\\\Users\\\\micha\\\\.claude\\\\projects\\\\C--Users-micha-Claude-tpch-tpch-portal\\\\d3735e4b-e2bc-4916-8a13-78cb6a96ce09.jsonl\")",
+      "Bash(awk 'NR<123 || NR>262' \"C:\\\\Users\\\\micha\\\\Claude\\\\tpch\\\\tpch-portal\\\\supabase\\\\functions\\\\run-agent\\\\index.ts\")",
+      "mcp__plugin_supabase_supabase__list_projects",
+      "Bash(node -e \"const fs=require\\('fs'\\); const idx=fs.readFileSync\\('C:/Users/micha/Claude/tpch/tpch-portal/supabase/functions/run-agent/index.ts','utf8'\\); const pr=fs.readFileSync\\('C:/Users/micha/Claude/tpch/tpch-portal/supabase/functions/run-agent/prompt.ts','utf8'\\); console.log\\('index.ts length:',idx.length\\); console.log\\('prompt.ts length:',pr.length\\);\")",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"const p=require\\('C:/Users/micha/Claude/tpch/tpch-portal/.deploy-payload.json'\\); console.log\\(JSON.stringify\\(p.files.map\\(f=>\\({name:f.name,len:f.content.length}\\)\\)\\)\\);\")"
     ]
   }
 }

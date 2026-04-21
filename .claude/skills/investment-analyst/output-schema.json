@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portal.tpch.com.au/schemas/investment-analyst-output.json",
+  "title": "TPCH Investment Analyst Output Schema",
+  "description": "Strict schema for the JSON payload produced by the Investment Analyst agent (both the Supabase run-agent edge function and the local .claude/skills/investment-analyst skill). Any field written into the project_analysis table must conform to this shape. Keep this file aligned with supabase/functions/run-agent/prompt.ts.",
+  "type": "object",
+  "required": [
+    "project_id",
+    "overall_score",
+    "rating",
+    "headline",
+    "summary",
+    "population",
+    "economic",
+    "supply_demand",
+    "affordability",
+    "scarcity",
+    "trust_governance",
+    "tpch_assessment",
+    "sources"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "UUID or text id of the project in the projects table."
+    },
+    "overall_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "MUST equal the sum of the five pillar scores."
+    },
+    "rating": {
+      "type": "string",
+      "enum": ["Strong Buy", "Good Buy", "Moderate", "Caution"],
+      "description": "Must match the band implied by overall_score. 80-100 Strong Buy, 60-79 Good Buy, 40-59 Moderate, 0-39 Caution."
+    },
+    "headline": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 280,
+      "description": "One or two sentences summarising the project's overall position. No em-dashes, no hype."
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 100,
+      "description": "Overall assessment paragraph. Confident, institutional tone."
+    },
+    "population": { "$ref": "#/$defs/pillar" },
+    "economic": { "$ref": "#/$defs/pillar" },
+    "supply_demand": { "$ref": "#/$defs/pillar" },
+    "affordability": { "$ref": "#/$defs/pillar" },
+    "scarcity": { "$ref": "#/$defs/scarcity_pillar" },
+    "trust_governance": {
+      "type": "object",
+      "required": [
+        "developer_name",
+        "developer_detail",
+        "track_record",
+        "track_record_detail",
+        "project_stage",
+        "project_stage_detail",
+        "warranties",
+        "memberships"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "developer_name": { "type": "string", "minLength": 1 },
+        "developer_detail": { "type": "string", "minLength": 1 },
+        "track_record": { "type": "string", "minLength": 1 },
+        "track_record_detail": { "type": "string", "minLength": 1 },
+        "project_stage": { "type": "string", "minLength": 1 },
+        "project_stage_detail": { "type": "string", "minLength": 1 },
+        "warranties": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Actual warranty details or the literal string 'Data unavailable'. Never null."
+        },
+        "memberships": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Industry memberships, UDIA/MBA/HIA status, or the literal string 'Data unavailable'. Never null."
+        }
+      }
+    },
+    "tpch_assessment": {
+      "type": "string",
+      "minLength": 200,
+      "description": "The marketer's brief. Names the single strongest selling angle and gives the honest answer to the obvious risk. No em-dashes. No jargon unless described."
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["label"],
+        "additionalProperties": false,
+        "properties": {
+          "label": { "type": "string", "minLength": 3 },
+          "url": { "type": "string", "format": "uri" }
+        }
+      },
+      "description": "Flat list of sources referenced anywhere in the narrative. Every inline source citation should appear here."
+    },
+    "limitations": {
+      "type": "array",
+      "description": "Optional but strongly encouraged. Honest disclosure of data that could not be verified (e.g. ABS ERP SA2 vintage not surfaced, competitor floor areas not public).",
+      "items": { "type": "string", "minLength": 10 }
+    }
+  },
+  "$defs": {
+    "pillar": {
+      "type": "object",
+      "required": [
+        "score",
+        "score_reasoning",
+        "headline",
+        "stats",
+        "narrative"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "score_reasoning": {
+          "type": "string",
+          "minLength": 120,
+          "description": "Two or three sentences. Must (a) say why THIS specific number, (b) name the data point or project characteristic pushing it up/down, (c) say what would change it."
+        },
+        "headline": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 240
+        },
+        "stats": {
+          "type": "object",
+          "description": "Exactly three stat keys per pillar, locked to the pillar-specific keys documented in SKILL.md. Validation of key names happens at the consumer level.",
+          "minProperties": 3,
+          "maxProperties": 3,
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "narrative": {
+          "type": "string",
+          "minLength": 400,
+          "description": "Two or three paragraphs. Every factual claim carries an inline (Source: ...) citation."
+        }
+      }
+    },
+    "scarcity_pillar": {
+      "allOf": [
+        { "$ref": "#/$defs/pillar" },
+        {
+          "type": "object",
+          "required": ["scarcity_narrative"],
+          "properties": {
+            "scarcity_narrative": {
+              "type": "string",
+              "minLength": 300,
+              "description": "MUST explicitly name at least two currently-selling comparable new developments with individual $/sqm figures (or flag the floor-area limitation honestly where the figure is indicative). An aggregate benchmark alone is insufficient."
+            }
+          }
+        }
+      ]
+    }
+  },
+  "x-pre-flight-self-check": {
+    "description": "Non-standard extension. The agent should self-verify these rules before emitting the JSON. Enforcement is at prompt level; validation below the schema should also catch the structural issues.",
+    "rules": [
+      "All five pillars present and keyed: population, economic, supply_demand, affordability, scarcity.",
+      "overall_score equals population.score + economic.score + supply_demand.score + affordability.score + scarcity.score.",
+      "rating band matches overall_score (80+ Strong Buy, 60-79 Good Buy, 40-59 Moderate, 0-39 Caution).",
+      "No em-dash character (U+2014) anywhere in narrative, score_reasoning, headline, summary, or tpch_assessment.",
+      "No banned jargon without description: institutional-grade, institutional specification, institutional quality, prime, blue-chip, investment-grade, premium offering, boutique, exclusive.",
+      "No XML tags around citations (e.g. <cite>). Citations are inline in plain prose as (Source: ...).",
+      "scarcity.scarcity_narrative names at least two specific currently-selling comparable developments with individual $/sqm (or flags floor-area limitation).",
+      "affordability.narrative produces per-bedroom like-for-like comparisons (2-bed vs 2-bed, 3-bed vs 3-bed). No mixed-bedroom average vs mixed-suburb median.",
+      "trust_governance.warranties and trust_governance.memberships are non-null strings (use 'Data unavailable' if unknown).",
+      "Population narrative quotes ABS ERP cat. 3218.0 at SA2 level with vintage explicitly stated, or flags the limitation if the current-vintage figure could not be retrieved."
+    ]
+  }
+}

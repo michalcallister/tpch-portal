@@ -190,8 +190,33 @@ Each pillar renders a 3-stat strip. Locked keys:
 5. Assemble the output in the requested mode (JSON or Presentation).
 6. Show the user the draft and flag any research limitations honestly at the bottom (e.g. "ABS ERP SA2 figure 2024 vintage not surfaced via public search; relied on id.com.au 2023 figure as nearest available").
 
+## Canonical files — do not duplicate, reference
+
+To stop drift between the portal edge function and this local skill, the following files are the single source of truth:
+
+| File | Role |
+|---|---|
+| `supabase/functions/run-agent/prompt.ts` | Canonical `SYSTEM_PROMPT` string. The edge function imports it directly. When producing output inside this skill, treat that file as the authoritative voice and rules. If it changes, update this SKILL.md in the same commit. |
+| `.claude/skills/investment-analyst/reference-melbourne-square.md` | Gold-standard worked example. Opus 4.7 output on Melbourne Square, approved by Mick 20 April 2026. Re-read before producing any new analysis to calibrate tone, structure, stat-strip format, score-reasoning depth, sourcing density, and limitation-disclosure style. |
+| `.claude/skills/investment-analyst/output-schema.json` | Strict JSON Schema for the portal payload. JSON-mode output MUST validate against this. Structural rules (score sum, rating band match, five-pillar presence, required T&G fields) are encoded here. |
+
+## Pre-flight self-check (mandatory, before emitting output)
+
+Work through this ten-item check against your draft. If any item fails, fix the draft before submitting — do not paper over it in the narrative.
+
+1. **All five pillars present and keyed:** population, economic, supply_demand, affordability, scarcity.
+2. **Score arithmetic:** `overall_score == population.score + economic.score + supply_demand.score + affordability.score + scarcity.score`.
+3. **Rating matches band:** 80–100 Strong Buy · 60–79 Good Buy · 40–59 Moderate · 0–39 Caution.
+4. **No em-dash character (U+2014) anywhere.** Not in narrative, headline, summary, score_reasoning, scarcity_narrative, or tpch_assessment. Search the draft for the exact character before submitting.
+5. **No banned jargon undescribed:** `institutional-grade`, `institutional specification`, `institutional quality`, `prime`, `blue-chip`, `investment-grade`, `premium offering`, `boutique`, `exclusive`. If the word appears, the sentence must also say what specific feature makes the product that.
+6. **No XML citation tags.** Never wrap citations in `<cite>…</cite>` or similar. Citations are inline in plain prose: `(Source: Publisher, Date)`.
+7. **Scarcity names at least two specific currently-selling comparable developments** with individual $/sqm figures, or honestly flags the floor-area limitation where the figure is indicative. Aggregate benchmark alone is insufficient.
+8. **Affordability produces per-bedroom like-for-like comparisons.** 2-bed project stock compared against 2-bed comparables; 3-bed against 3-bed. Never a mixed-bedroom project average against a mixed-suburb median.
+9. **Trust & Governance has no null fields.** `warranties` and `memberships` must be genuine strings; use the literal `"Data unavailable"` (or `"To be reconfirmed"`) when the figure is genuinely unknown rather than emitting null.
+10. **Population quotes ABS ERP cat. 3218.0 at SA2 level with vintage stated,** or flags the limitation if the current-vintage figure could not be retrieved via public search.
+
 ## Tie-back to the portal
 
-This skill is the local/offline equivalent of the `investment-analysis` agent in `supabase/functions/run-agent/index.ts`. The edge function runs on Claude Opus 4.7 (production) or Haiku 4.5 (test mode) via the Anthropic API with `web_search_20250305` enabled. The same system prompt, sourcing rules, and scoring bands are enforced in both places — this skill is the human-readable reference, the edge function is the automated execution path.
+This skill is the local/offline equivalent of the `investment-analysis` agent in `supabase/functions/run-agent/index.ts`. The edge function runs on Claude Opus 4.7 (production) or Haiku 4.5 (test mode) via the Anthropic API with `web_search_20250305` enabled, loading its system prompt from `supabase/functions/run-agent/prompt.ts`. The same rules, sourcing requirements, and scoring bands apply in both places: this skill is the human-readable reference; the edge function is the automated execution path.
 
-When the edge function's prompt is updated, update this SKILL.md in the same commit. Drift between the two breaks trust.
+When `prompt.ts` is updated, update this SKILL.md and the `output-schema.json` in the same commit. Drift between the three breaks trust.
