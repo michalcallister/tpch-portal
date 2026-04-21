@@ -94,7 +94,8 @@
       "mcp__plugin_supabase_supabase__list_projects",
       "Bash(node -e \"const fs=require\\('fs'\\); const idx=fs.readFileSync\\('C:/Users/micha/Claude/tpch/tpch-portal/supabase/functions/run-agent/index.ts','utf8'\\); const pr=fs.readFileSync\\('C:/Users/micha/Claude/tpch/tpch-portal/supabase/functions/run-agent/prompt.ts','utf8'\\); console.log\\('index.ts length:',idx.length\\); console.log\\('prompt.ts length:',pr.length\\);\")",
       "Bash(node -e ' *)",
-      "Bash(node -e \"const p=require\\('C:/Users/micha/Claude/tpch/tpch-portal/.deploy-payload.json'\\); console.log\\(JSON.stringify\\(p.files.map\\(f=>\\({name:f.name,len:f.content.length}\\)\\)\\)\\);\")"
+      "Bash(node -e \"const p=require\\('C:/Users/micha/Claude/tpch/tpch-portal/.deploy-payload.json'\\); console.log\\(JSON.stringify\\(p.files.map\\(f=>\\({name:f.name,len:f.content.length}\\)\\)\\)\\);\")",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('hex'\\)\\)\")"
     ]
   }
 }

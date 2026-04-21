@@ -1,0 +1,14 @@
+# Local secrets — never commit
+.claude/.upload-secret
+.upload-secret
+.env
+.env.local
+
+# Build / deploy artefacts
+.deploy-payload.json
+
+# Editor / OS junk
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

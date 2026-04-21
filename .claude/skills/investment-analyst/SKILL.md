@@ -188,7 +188,74 @@ Each pillar renders a 3-stat strip. Locked keys:
 3. Run 6–10 targeted web searches covering: ERP at SA2, suburb forecast, economic drivers and infrastructure, SQM/REA/Domain vacancy and rents, named new-build comparables with per-sqm figures, developer track record.
 4. For the replacement cost comparable set, try to surface at least TWO named developments with both published price AND floor area. If floor areas aren't public, say so in the narrative and fall back to aggregate benchmarks with the limitation flagged. Do not make up per-sqm figures against assumed sqm.
 5. Assemble the output in the requested mode (JSON or Presentation).
-6. Show the user the draft and flag any research limitations honestly at the bottom (e.g. "ABS ERP SA2 figure 2024 vintage not surfaced via public search; relied on id.com.au 2023 figure as nearest available").
+6. Show the user the draft in Presentation mode first and flag any research limitations honestly at the bottom (e.g. "ABS ERP SA2 figure 2024 vintage not surfaced via public search; relied on id.com.au 2023 figure as nearest available").
+7. Run the ten-item pre-flight self-check (above). If anything fails, fix before offering to upload.
+8. **Ask the user explicitly whether to upload the analysis to the portal.** Never upload silently. Exact wording to use: *"Would you like me to upload this analysis to the portal as a draft for admin review?"* If yes, proceed to the upload step. If no, stop.
+
+## Uploading to the portal (Option B handshake)
+
+The portal's `upload-analysis` edge function accepts a validated JSON payload and writes it to `project_analysis` with `status: 'draft'`. The draft appears in the admin view alongside any portal-produced runs and waits for review before it goes live.
+
+**Endpoint:** `POST https://oreklvbzwgbufbkvvzny.supabase.co/functions/v1/upload-analysis`
+
+**Required headers:**
+- `apikey: <SUPABASE_ANON_KEY>` — the publishable key from the portal.
+- `Authorization: Bearer <SUPABASE_ANON_KEY>` — same key.
+- `x-tpch-upload-secret: <UPLOAD_SECRET>` — shared secret stored at `C:\Users\micha\Claude\tpch\tpch-portal\.claude\.upload-secret` (gitignored).
+- `Content-Type: application/json`.
+
+**Body:**
+
+```json
+{
+  "project_id": "<project.id as string>",
+  "model_used": "claude-opus-4-7",
+  "triggered_by": "mick@local-skill",
+  "analysis": { ...full JSON matching output-schema.json... }
+}
+```
+
+**Server-side validation (the function will reject with 422 if any fails):**
+- Five pillar scores integer 0–20.
+- `overall_score` equals sum of five pillar scores.
+- `overall_rating` matches the band.
+- No em-dash character anywhere in the payload.
+- No `<cite>` or similar XML tags.
+- No banned jargon uncontextualised.
+- `scarcity_stats.replacement_cost_sqm` names at least two comparables with `$X/sqm` figures each.
+- `warranties` and `memberships` are non-empty strings (use `"Data unavailable"` if unknown).
+
+**Successful response (201):**
+
+```json
+{
+  "success": true,
+  "run_id": "uuid",
+  "analysis_id": "uuid",
+  "project_id": "...",
+  "project_name": "...",
+  "score": 70,
+  "rating": "Good Buy",
+  "status": "draft",
+  "portal_url": "https://portal.tpch.com.au/?project=...&tab=analysis"
+}
+```
+
+**One-liner the skill can run to upload** (PowerShell on Mick's Windows box):
+
+```powershell
+$secret = Get-Content "C:\Users\micha\Claude\tpch\tpch-portal\.claude\.upload-secret" -Raw
+$secret = $secret.Trim()
+$anon = "<SUPABASE_ANON_KEY>"
+$body = @{ project_id = "<id>"; model_used = "claude-opus-4-7"; triggered_by = "mick@local-skill"; analysis = $analysisObject } | ConvertTo-Json -Depth 20
+Invoke-RestMethod -Method Post -Uri "https://oreklvbzwgbufbkvvzny.supabase.co/functions/v1/upload-analysis" -Headers @{ "apikey" = $anon; "Authorization" = "Bearer $anon"; "x-tpch-upload-secret" = $secret; "Content-Type" = "application/json" } -Body $body
+```
+
+The anon key is embedded in `index.html` as `SUPABASE_ANON_KEY`; read that constant rather than hardcoding.
+
+**After upload, always:**
+- Show the user the response (score, rating, portal_url).
+- Remind the user the analysis is a draft and needs admin review before going live.
 
 ## Canonical files — do not duplicate, reference
 
