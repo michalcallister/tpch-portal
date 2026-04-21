@@ -34,6 +34,7 @@ The portal is a **single HTML file** (`index.html`) with all CSS and JavaScript 
 - `MONDAY_STOCK_BOARD_ID` — 6070412774
 - `MONDAY_DEALS_BOARD_ID` — 8393705891
 - `PORTAL_URL` — https://portal.tpch.com.au
+- `UPLOAD_SECRET` — shared secret for `upload-analysis` (local skill → portal draft handshake). Local copy at `.claude/.upload-secret` (gitignored).
 
 ---
 
@@ -43,6 +44,16 @@ The portal is a **single HTML file** (`index.html`) with all CSS and JavaScript 
 tpch-portal/
 ├── index.html                              ← Main portal (single HTML file, all CSS+JS inline)
 ├── PROJECT.md                              ← This file
+├── .gitignore                              ← Ignores .claude/.upload-secret, .env, build artefacts
+│
+├── .claude/
+│   ├── .upload-secret                      ← Local copy of UPLOAD_SECRET (gitignored)
+│   ├── settings.local.json                 ← Claude Code allowlist
+│   └── skills/
+│       └── investment-analyst/
+│           ├── SKILL.md                    ← Local Opus equivalent of run-agent
+│           ├── reference-melbourne-square.md ← Gold-standard approved output (20 Apr 2026)
+│           └── output-schema.json          ← JSON Schema for upload-analysis payload
 │
 ├── supabase-migration.sql                  ← research_reports + stock_listings tables
 ├── supabase-enquiry-migration.sql          ← pending_enquiries table
@@ -64,7 +75,14 @@ tpch-portal/
 ├── reserve-stock/index.ts                  ← Edge Function: create reservation
 ├── expire-reservations/index.ts            ← Edge Function: expire overdue reservations (cron)
 ├── cancel-reservation/index.ts             ← Edge Function: cancel reservation + revert Monday
-└── invite-partner/index.ts                 ← Edge Function: send partner/staff invite email
+├── invite-partner/index.ts                 ← Edge Function: send partner/staff invite email
+│
+└── supabase/functions/
+    ├── run-agent/
+    │   ├── index.ts                        ← Edge Function: Investment Analyst (portal path)
+    │   └── prompt.ts                       ← Canonical system prompt (single source of truth)
+    └── upload-analysis/
+        └── index.ts                        ← Edge Function: Option B upload handshake
 ```
 
 **Deploying edge functions** (from cmd, not PowerShell):
@@ -96,6 +114,9 @@ All SQL files are **fully idempotent** — safe to re-run.
 | `reservations` | 48-hour property holds by partners |
 | `shortlists` | Partner saved property lists |
 | `shortlist_items` | Individual items within a shortlist |
+| `agents` | Registry of AI agents (e.g. `investment-analysis`); FK target for `agent_runs.agent_id` |
+| `agent_runs` | Per-run log of agent executions (portal or local-skill); status, triggered_by, duration, logs |
+| `project_analysis` | Investment analysis output (5-pillar scoring, TPCH assessment); `status='draft'` until admin publishes |
 
 ---
 
@@ -109,8 +130,17 @@ All SQL files are **fully idempotent** — safe to re-run.
 | `expire-reservations` | Cron */15 min | Expire old reservations, revert Monday.com |
 | `cancel-reservation` | HTTP POST from portal | Cancel reservation, revert Monday.com |
 | `invite-partner` | HTTP POST from admin/settings panel | Send invite email to partner or staff (JWT verify OFF) |
+| `run-agent` | HTTP POST from admin Research panel | Investment Analyst agent (Claude API + web_search). Writes to `agent_runs` + `project_analysis` as draft. Opus 4.7 prod / Sonnet 4.6 default / Haiku 4.5 test. System prompt lives in `prompt.ts` (do not inline-edit `index.ts`). |
+| `upload-analysis` | HTTP POST from local Claude Code skill | Option B handshake: accepts a locally produced Investment Analyst JSON, validates against same rules as `run-agent` (em-dash ban, banned jargon, scarcity regex, score sum, rating band), inserts as `status='draft'`. Requires `x-tpch-upload-secret` header matching `UPLOAD_SECRET` env var. |
 
 **Important:** `invite-partner` has JWT verification turned OFF in Supabase dashboard (Edge Functions → invite-partner → Settings → Verify JWT: OFF). Required because partner tokens can be expired when resending invites.
+
+### Investment Analyst — two paths, one outcome
+
+Both paths write identical `project_analysis` rows with `status='draft'`, so the admin review and publish gate is the same either way:
+
+1. **Portal path (`run-agent`)** — admin clicks "Run Analyst" in the Research panel; the edge function calls Claude API directly. Good for Haiku test runs and quick Sonnet jobs. Bound by the 150s edge-function gateway timeout.
+2. **Local skill path (`upload-analysis`)** — for heavy Opus 4.7 runs, the skill at `.claude/skills/investment-analyst/` produces the JSON locally in a Claude Code session, then (only after asking Mick) POSTs it to `upload-analysis`. Not bound by the 150s timeout and uses Mick's Claude subscription rather than API credit.
 
 ---
 
@@ -170,6 +200,7 @@ Commission override applies in: all-stock table, project cards, project stock ta
 - **Dashboard** — stats, Leaflet map of research coverage, activity feed, latest research
 - **Research portal** — suburb reports with demand/supply analysis, area profiles
 - **AI Research Agent** — generates suburb research via Claude API, admin approves to push live
+- **Investment Analyst agent** — 5-pillar scoring (Population, Economic, Supply & Demand, Affordability, Scarcity) with TPCH Assessment and Trust & Governance sections. Runs via `run-agent` edge function (portal) or locally via the Claude Code skill + `upload-analysis` handshake. Same validator + draft review gate in both paths.
 - **Enquiries panel** — view applications, AI due diligence report, approve/decline
 - **Partners panel** — manage channel partners (active/inactive/suspended), resend invites, notes
 - **Team panel** — manage TPCH team members, set admin/super-admin access
