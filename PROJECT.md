@@ -131,7 +131,7 @@ All SQL files are **fully idempotent** — safe to re-run.
 | `cancel-reservation` | HTTP POST from portal | Cancel reservation, revert Monday.com |
 | `invite-partner` | HTTP POST from admin/settings panel | Send invite email to partner or staff (JWT verify OFF) |
 | `run-agent` | HTTP POST from admin Research panel | Investment Analyst agent (Claude API + web_search). Writes to `agent_runs` + `project_analysis` as draft. Opus 4.7 prod / Sonnet 4.6 default / Haiku 4.5 test. System prompt lives in `prompt.ts` (do not inline-edit `index.ts`). |
-| `upload-analysis` | HTTP POST from local Claude Code skill | Option B handshake: accepts a locally produced Investment Analyst JSON, validates against same rules as `run-agent` (em-dash ban, banned jargon, scarcity regex, score sum, rating band), inserts as `status='draft'`. Requires `x-tpch-upload-secret` header matching `UPLOAD_SECRET` env var. |
+| `upload-analysis` | HTTP POST from local Claude Code skill | Option B handshake: accepts a locally produced Investment Analyst JSON, validates against same rules as `run-agent` (em-dash ban, banned jargon, scarcity regex, score sum, rating band), inserts as `status='draft'`. Requires `x-tpch-upload-secret` header matching `UPLOAD_SECRET` env var. **Scarcity rule (updated Apr 2026):** the two-comparables `$X/sqm` regex now scans `scarcity_narrative`, not `scarcity_stats.replacement_cost_sqm`. The stat box is a short single-line verdict (≤60 chars, one data point); named comparables with sources live in the narrative. |
 
 **Important:** `invite-partner` has JWT verification turned OFF in Supabase dashboard (Edge Functions → invite-partner → Settings → Verify JWT: OFF). Required because partner tokens can be expired when resending invites.
 

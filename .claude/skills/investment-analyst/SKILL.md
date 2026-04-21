@@ -109,9 +109,9 @@ Produce separate comparisons for each bedroom configuration present in the avail
 4. **Match the property type.** Apartment replacement costs are completely different from house & land. High-rise inner-city apartments have very different $/sqm to suburban townhouses.
 5. **Sanity check:** the replacement cost figure should be the same order of magnitude as the project's $/sqm. If project is $12,000/sqm and your replacement figure is $3,000/sqm, you have wrong property type or data — re-search.
 
-**Replacement cost sourcing rule (mandatory):** The new-build $/sqm benchmark MUST be anchored by **at least TWO specific currently-selling comparable new developments named individually**, with each one's actual $/sqm drawn from current sale listings or published price lists. A market-summary or aggregate figure alone is INSUFFICIENT.
+**Replacement cost sourcing rule (mandatory):** The new-build $/sqm benchmark MUST be anchored by **at least TWO specific currently-selling comparable new developments named individually**, with each one's actual $/sqm drawn from current sale listings or published price lists. A market-summary or aggregate figure alone is INSUFFICIENT. **The named comparables live in `scarcity_narrative`, not in the stat box.** The stat (`scarcity_stats.replacement_cost_sqm`) is a short single-line verdict; the narrative carries the evidence.
 
-Format example:
+Narrative format example:
 
 > Development A ([Name], [Developer], [Suburb]) selling at $X/sqm; Development B ([Name], [Developer], [Suburb]) at $Y/sqm (Sources: apartments.com.au listing accessed [date], Urban Developer pricing [date], REA new apartments [date]).
 
@@ -168,7 +168,9 @@ Each pillar renders a 3-stat strip. Locked keys:
 | Affordability | price_to_income | gross_yield | price_per_sqm |
 | Scarcity & Intrinsic Value | differentiation | replacement_cost_sqm | intrinsic_value |
 
-`replacement_cost_sqm` must carry named comparables, e.g. `"Dev A (Name, Suburb) $X/sqm; Dev B (Name, Suburb) $Y/sqm. Avg $avg/sqm (Sources: listing/report, accessed [date])"`.
+**Stat-label brevity rule (mandatory):** Stat values are short labels. ≤60 characters. One data point per stat. No inline citations — those live in the narrative. Never pack multiple comparables into a single stat string; the box is a one-line verdict, not a list.
+
+`replacement_cost_sqm` is a short single-line verdict, e.g. `"Queens Place 3-bed $14,464/sqm"` or `"New-build band $13k to $15k/sqm"`. The named comparables and their per-sqm figures go in `scarcity_narrative`.
 
 `intrinsic_value` is one of `Below replacement cost` / `At replacement cost` / `Above replacement cost`.
 
@@ -222,7 +224,7 @@ The portal's `upload-analysis` edge function accepts a validated JSON payload an
 - No em-dash character anywhere in the payload.
 - No `<cite>` or similar XML tags.
 - No banned jargon uncontextualised.
-- `scarcity_stats.replacement_cost_sqm` names at least two comparables with `$X/sqm` figures each.
+- `scarcity_narrative` names at least two comparables with `$X/sqm` figures each. (The stat `scarcity_stats.replacement_cost_sqm` is a short one-line verdict; evidence lives in the narrative.)
 - `warranties` and `memberships` are non-empty strings (use `"Data unavailable"` if unknown).
 
 **Successful response (201):**
@@ -277,7 +279,7 @@ Work through this ten-item check against your draft. If any item fails, fix the 
 4. **No em-dash character (U+2014) anywhere.** Not in narrative, headline, summary, score_reasoning, scarcity_narrative, or tpch_assessment. Search the draft for the exact character before submitting.
 5. **No banned jargon undescribed:** `institutional-grade`, `institutional specification`, `institutional quality`, `prime`, `blue-chip`, `investment-grade`, `premium offering`, `boutique`, `exclusive`. If the word appears, the sentence must also say what specific feature makes the product that.
 6. **No XML citation tags.** Never wrap citations in `<cite>…</cite>` or similar. Citations are inline in plain prose: `(Source: Publisher, Date)`.
-7. **Scarcity names at least two specific currently-selling comparable developments** with individual $/sqm figures, or honestly flags the floor-area limitation where the figure is indicative. Aggregate benchmark alone is insufficient.
+7. **`scarcity_narrative` names at least two specific currently-selling comparable developments** with individual $/sqm figures, or honestly flags the floor-area limitation where the figure is indicative. Aggregate benchmark alone is insufficient. The stat `scarcity_stats.replacement_cost_sqm` stays short (≤60 chars, single data point, no inline citations) — the evidence lives in the narrative, not the stat box.
 8. **Affordability produces per-bedroom like-for-like comparisons.** 2-bed project stock compared against 2-bed comparables; 3-bed against 3-bed. Never a mixed-bedroom project average against a mixed-suburb median.
 9. **Trust & Governance has no null fields.** `warranties` and `memberships` must be genuine strings; use the literal `"Data unavailable"` (or `"To be reconfirmed"`) when the figure is genuinely unknown rather than emitting null.
 10. **Population quotes ABS ERP cat. 3218.0 at SA2 level with vintage stated,** or flags the limitation if the current-vintage figure could not be retrieved via public search.

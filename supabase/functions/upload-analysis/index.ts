@@ -115,11 +115,13 @@ function validateAnalysis(a: any): string | null {
     }
   }
 
-  // Scarcity must name at least two comparables. Weak heuristic: comma or semicolon + $ sign + 'sqm' twice.
-  const replacementCost = String(a.scarcity_stats?.replacement_cost_sqm || '')
-  const sqmMatches = replacementCost.match(/\$\s*[\d,]+\s*\/?\s*sqm/gi) || []
+  // Scarcity narrative must name at least two comparables with individual $/sqm figures.
+  // The stat (scarcity_stats.replacement_cost_sqm) is a short one-line verdict; the evidence
+  // lives in the narrative so the stat box stays legible.
+  const scarcityNarrative = String(a.scarcity_narrative || '')
+  const sqmMatches = scarcityNarrative.match(/\$\s*[\d,]+\s*\/?\s*sqm/gi) || []
   if (sqmMatches.length < 2) {
-    return 'scarcity_stats.replacement_cost_sqm must name at least two comparables with individual $/sqm figures'
+    return 'scarcity_narrative must name at least two comparables with individual $/sqm figures'
   }
 
   // T&G non-null check (use 'Data unavailable' not empty)
