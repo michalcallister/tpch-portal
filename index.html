@@ -3710,28 +3710,28 @@
           <div id="aad-avatar" style="font-size:40px;line-height:1;"></div>
           <div>
             <h2 id="aad-name" style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:600;color:var(--white);margin-bottom:2px;"></h2>
-            <p id="aad-desc" style="font-size:13px;color:var(--grey-mid);max-width:600px;"></p>
+            <p id="aad-desc" style="font-size:14px;color:var(--text-muted);line-height:1.55;max-width:680px;"></p>
           </div>
           <div id="aad-status-badge" style="margin-left:auto;"></div>
         </div>
 
         <!-- Run controls -->
         <div style="background:var(--black-card);border:1px solid var(--gold-border);border-radius:4px;padding:20px 24px;margin-bottom:24px;">
-          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--grey-mid);margin-bottom:14px;">Run Agent</div>
+          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px;">Run Agent</div>
           <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
             <select id="aad-project-select" class="form-input" style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.1);padding:10px 14px;border-radius:3px;font-size:13px;min-width:260px;">
               <option value="">Select a project...</option>
             </select>
-            <button id="aad-run-btn" onclick="aiAgentRun()" style="background:var(--gold);color:var(--black);border:none;padding:10px 20px;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;">
+            <button id="aad-run-btn" onclick="aiAgentRun()" style="background:var(--gold);color:var(--black);border:none;padding:11px 22px;border-radius:3px;font-size:13px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;">
               ▶ Run for Project
             </button>
-            <button id="aad-test-btn" onclick="aiAgentRun(true)" style="background:transparent;color:var(--grey-light);border:1px solid rgba(255,255,255,0.15);padding:10px 20px;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;" title="Runs with Haiku (cheap) to test prompt quality">
+            <button id="aad-test-btn" onclick="aiAgentRun(true)" style="background:transparent;color:var(--grey-pale);border:1px solid rgba(255,255,255,0.15);padding:11px 22px;border-radius:3px;font-size:13px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;" title="Runs with Haiku (cheap) to test prompt quality">
               🧪 Test (Haiku)
             </button>
-            <button id="aad-run-all-btn" onclick="aiAgentRunAll()" style="background:transparent;color:var(--gold);border:1px solid var(--gold-border);padding:10px 20px;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;">
+            <button id="aad-run-all-btn" onclick="aiAgentRunAll()" style="background:transparent;color:var(--gold);border:1px solid var(--gold-border);padding:11px 22px;border-radius:3px;font-size:13px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;">
               Run All Projects
             </button>
-            <div id="aad-run-status" style="font-size:12px;color:var(--grey-mid);margin-left:8px;"></div>
+            <div id="aad-run-status" style="font-size:13px;color:var(--text-muted);margin-left:8px;"></div>
           </div>
         </div>
 
@@ -3744,7 +3744,7 @@
         <!-- Results tab -->
         <div id="aad-tab-results" class="stk-tab-content" style="display:block;background:var(--black-card);border:1px solid rgba(255,255,255,0.06);border-radius:0 0 4px 4px;padding:20px 24px;">
           <div id="aad-results-list" style="display:flex;flex-direction:column;gap:12px;">
-            <div style="text-align:center;padding:40px;color:var(--grey-mid);font-size:13px;">No draft results yet. Run the agent on a project to generate analysis.</div>
+            <div style="text-align:center;padding:40px;color:var(--text-muted);font-size:14px;">No draft results yet. Run the agent on a project to generate analysis.</div>
           </div>
         </div>
 
@@ -7769,7 +7769,7 @@
       if (res.ok) drafts = await res.json();
       const el = document.getElementById('aad-results-list');
       if (!drafts.length) {
-        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--grey-mid);font-size:13px;">No draft results. Run the agent on a project to generate analysis.</div>';
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:14px;">No draft results. Run the agent on a project to generate analysis.</div>';
         return;
       }
       el.innerHTML = drafts.map(d => {
@@ -7777,63 +7777,63 @@
         const ratingClass = d.overall_rating === 'Strong Buy' ? 'strong' : d.overall_rating === 'Good Buy' ? 'good' : d.overall_rating === 'Moderate' ? 'moderate' : 'caution';
         const pillarNames = { population:'Population Growth', economic:'Economic Growth', supply:'Supply & Demand', affordability:'Affordability', scarcity:'Scarcity' };
         const pillarIcons = { population:'📈', economic:'💼', supply:'⚖️', affordability:'🏷️', scarcity:'💎' };
-        const fmtStats = (stats) => { if (!stats || typeof stats !== 'object') return ''; return Object.entries(stats).map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="color:var(--grey-mid);font-size:11px;">${k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</span><span style="color:var(--white);font-size:11px;font-weight:600;">${v}</span></div>`).join(''); };
+        const fmtStats = (stats) => { if (!stats || typeof stats !== 'object') return ''; return Object.entries(stats).map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);gap:8px;"><span style="color:var(--text-muted);font-size:12px;">${k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</span><span style="color:var(--white);font-size:13px;font-weight:600;">${v}</span></div>`).join(''); };
         return `
         <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
           <!-- Header -->
           <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.06);">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-              <div style="font-size:16px;font-weight:600;color:var(--white);flex:1;">${proj?.name || d.project_id}</div>
-              <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;font-weight:700;color:var(--gold);">${d.overall_score || '?'}<span style="font-size:13px;color:var(--grey-mid);font-weight:400;">/100</span></div>
+              <div style="font-size:17px;font-weight:600;color:var(--white);flex:1;">${proj?.name || d.project_id}</div>
+              <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--gold);">${d.overall_score || '?'}<span style="font-size:14px;color:var(--text-muted);font-weight:400;">/100</span></div>
               <div class="ia-key-badge ${ratingClass}">${d.overall_rating || 'Pending'}</div>
             </div>
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:14px;color:var(--grey-light);line-height:1.6;font-style:italic;margin-bottom:16px;">${d.thesis_text || '—'}</div>
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:16px;color:var(--grey-pale);line-height:1.65;font-style:italic;margin-bottom:18px;">${d.thesis_text || '—'}</div>
             <!-- Pillar score bar -->
             <div style="display:flex;gap:8px;">
               ${['population','economic','supply','affordability','scarcity'].map(p => `
                 <div style="flex:1;text-align:center;">
-                  <div style="font-size:8px;text-transform:uppercase;letter-spacing:1px;color:var(--grey-mid);margin-bottom:4px;">${pillarNames[p].split(' ')[0]}</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:18px;color:var(--gold);margin-bottom:4px;">${d[p+'_score'] ?? '—'}<span style="font-size:10px;color:var(--grey-mid);">/20</span></div>
-                  <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;"><div style="height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold-light),var(--gold));width:${d[p+'_score'] != null ? (d[p+'_score']/20*100) : 0}%;"></div></div>
+                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:6px;">${pillarNames[p].split(' ')[0]}</div>
+                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:20px;color:var(--gold);margin-bottom:6px;">${d[p+'_score'] ?? '—'}<span style="font-size:12px;color:var(--text-muted);">/20</span></div>
+                  <div style="height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;"><div style="height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold-light),var(--gold));width:${d[p+'_score'] != null ? (d[p+'_score']/20*100) : 0}%;"></div></div>
                 </div>`).join('')}
             </div>
           </div>
 
           <!-- Pillar details -->
           ${['population','economic','supply','affordability','scarcity'].map(p => `
-          <div style="padding:16px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
               <span>${pillarIcons[p]}</span>
-              <span style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--white);">${pillarNames[p]}</span>
-              <span style="font-family:'Playfair Display',Georgia,serif;font-size:14px;color:var(--gold);margin-left:auto;">${d[p+'_score'] ?? '—'}/20</span>
+              <span style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);">${pillarNames[p]}</span>
+              <span style="font-family:'Playfair Display',Georgia,serif;font-size:18px;color:var(--gold);margin-left:auto;">${d[p+'_score'] ?? '—'}/20</span>
             </div>
-            ${d[p+'_headline'] ? `<div style="font-size:12px;font-weight:600;color:var(--gold-light);margin-bottom:8px;">${d[p+'_headline']}</div>` : ''}
-            ${d[p+'_score_reasoning'] ? `<div style="font-size:11px;color:var(--grey-mid);line-height:1.5;margin-bottom:10px;padding:8px 12px;background:rgba(255,255,255,0.03);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;"><strong style="color:var(--gold-light);">Score reasoning:</strong> ${d[p+'_score_reasoning']}</div>` : ''}
-            <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;">
+            ${d[p+'_headline'] ? `<div style="font-size:15px;font-weight:600;color:var(--gold-light);line-height:1.55;margin-bottom:10px;">${d[p+'_headline']}</div>` : ''}
+            ${d[p+'_score_reasoning'] ? `<div style="font-size:13px;color:var(--grey-pale);line-height:1.65;margin-bottom:14px;padding:12px 16px;background:rgba(255,255,255,0.03);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;"><strong style="color:var(--gold-light);">Score reasoning:</strong> ${d[p+'_score_reasoning']}</div>` : ''}
+            <div style="display:grid;grid-template-columns:220px 1fr;gap:20px;">
               <div>${fmtStats(d[p+'_stats'])}</div>
-              <div style="font-size:12px;color:var(--grey-light);line-height:1.65;">${(d[p+'_narrative'] || 'No narrative available.').split('\\n\\n').map(para => '<p style="margin-bottom:8px;">'+para+'</p>').join('')}</div>
+              <div style="font-size:14px;color:var(--grey-pale);line-height:1.7;">${(d[p+'_narrative'] || 'No narrative available.').split('\\n\\n').map(para => '<p style="margin-bottom:10px;">'+para+'</p>').join('')}</div>
             </div>
           </div>`).join('')}
 
           <!-- Developer & Trust -->
-          <div style="padding:16px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
-            <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--white);margin-bottom:12px;">Developer & Trust</div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);margin-bottom:14px;">Developer & Trust</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
               ${[['Developer', d.developer_name, d.developer_detail], ['Track Record', d.track_record, d.track_record_detail], ['Project Stage', d.project_stage, d.project_stage_detail], ['Warranties', d.warranties, null], ['Memberships', d.memberships, null], ['TPCH Assessment', d.tpch_assessment, null]].map(([label, val, sub]) => `
-                <div style="background:rgba(255,255,255,0.03);border-radius:3px;padding:10px 12px;">
-                  <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);margin-bottom:4px;">${label}</div>
-                  <div style="font-size:12px;color:var(--white);line-height:1.4;">${val || '—'}</div>
-                  ${sub ? `<div style="font-size:11px;color:var(--grey-mid);margin-top:3px;line-height:1.4;">${sub}</div>` : ''}
+                <div style="background:rgba(255,255,255,0.03);border-radius:3px;padding:14px 16px;">
+                  <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">${label}</div>
+                  <div style="font-size:14px;color:var(--white);line-height:1.5;">${val || '—'}</div>
+                  ${sub ? `<div style="font-size:12px;color:var(--text-muted);margin-top:5px;line-height:1.5;">${sub}</div>` : ''}
                 </div>`).join('')}
             </div>
           </div>
 
           <!-- Actions -->
-          <div style="padding:16px 24px;display:flex;gap:10px;align-items:center;">
-            <button onclick="aiPublishAnalysis('${d.id}')" style="background:var(--green);color:var(--black);border:none;padding:10px 24px;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:0.5px;">Publish to Portal</button>
-            <button onclick="aiRejectAnalysis('${d.id}')" style="background:transparent;color:var(--red);border:1px solid rgba(201,76,76,0.3);padding:10px 24px;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>
+          <div style="padding:18px 24px;display:flex;gap:12px;align-items:center;">
+            <button onclick="aiPublishAnalysis('${d.id}')" style="background:var(--green);color:var(--black);border:none;padding:12px 26px;border-radius:3px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.5px;">Publish to Portal</button>
+            <button onclick="aiRejectAnalysis('${d.id}')" style="background:transparent;color:var(--red);border:1px solid rgba(201,76,76,0.3);padding:12px 26px;border-radius:3px;font-size:13px;font-weight:600;cursor:pointer;">Reject</button>
             <div style="flex:1;"></div>
-            <div style="font-size:10px;color:var(--grey-mid);">Generated ${new Date(d.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+            <div style="font-size:12px;color:var(--text-muted);">Generated ${new Date(d.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
           </div>
         </div>`;
       }).join('');
@@ -7849,7 +7849,7 @@
       const runs = await res.json();
       const el = document.getElementById('aad-history-list');
       if (!runs.length) {
-        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--grey-mid);font-size:13px;">No runs yet.</div>';
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:14px;">No runs yet.</div>';
         return;
       }
       el.innerHTML = runs.map(r => {
@@ -7858,18 +7858,18 @@
         const statusIcons = { completed:'◉', failed:'✕', running:'◌', queued:'○' };
         const duration = r.duration_ms ? (r.duration_ms/1000).toFixed(1) + 's' : '—';
         return `
-        <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:12px 16px;cursor:pointer;" onclick="this.querySelector('.aar-logs').style.display=this.querySelector('.aar-logs').style.display==='none'?'block':'none'">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <span style="color:${statusColors[r.status]||'var(--grey-mid)'};font-size:14px;">${statusIcons[r.status]||'○'}</span>
+        <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:14px 18px;cursor:pointer;" onclick="this.querySelector('.aar-logs').style.display=this.querySelector('.aar-logs').style.display==='none'?'block':'none'">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="color:${statusColors[r.status]||'var(--text-muted)'};font-size:16px;">${statusIcons[r.status]||'○'}</span>
             <div style="flex:1;">
-              <div style="font-size:13px;color:var(--white);">${proj?.name || r.project_id || '—'}</div>
-              <div style="font-size:10px;color:var(--grey-mid);">${new Date(r.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · ${duration} · by ${r.triggered_by || '—'}</div>
+              <div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:2px;">${proj?.name || r.project_id || '—'}</div>
+              <div style="font-size:12px;color:var(--text-muted);">${new Date(r.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · ${duration} · by ${r.triggered_by || '—'}</div>
             </div>
-            <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:${statusColors[r.status]||'var(--grey-mid)'};">${r.status}</div>
+            <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:${statusColors[r.status]||'var(--text-muted)'};">${r.status}</div>
           </div>
-          ${r.error ? `<div style="font-size:11px;color:var(--red);margin-top:6px;padding:6px 8px;background:rgba(201,76,76,0.08);border-radius:3px;">${r.error}</div>` : ''}
-          <div class="aar-logs" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
-            ${(r.logs||[]).map(l => `<div style="font-size:11px;color:var(--grey-light);padding:2px 0;font-family:'DM Mono',monospace;"><span style="color:var(--grey-mid);">${new Date(l.ts).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span> ${l.message}</div>`).join('')}
+          ${r.error ? `<div style="font-size:13px;color:var(--red);margin-top:8px;padding:8px 12px;background:rgba(201,76,76,0.08);border-radius:3px;line-height:1.5;">${r.error}</div>` : ''}
+          <div class="aar-logs" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
+            ${(r.logs||[]).map(l => `<div style="font-size:12px;color:var(--grey-pale);padding:3px 0;font-family:'DM Mono',monospace;line-height:1.5;"><span style="color:var(--text-muted);">${new Date(l.ts).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span> ${l.message}</div>`).join('')}
           </div>
         </div>`;
       }).join('');
