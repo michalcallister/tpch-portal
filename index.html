@@ -3119,7 +3119,7 @@
           <div class="stk-proj-stat-label">Developer</div>
           <div class="stk-proj-stat-value" id="spj-developer" style="font-size:13px">—</div>
         </div>
-        <div class="stk-proj-stat">
+        <div class="stk-proj-stat" id="spj-completion-stat">
           <div class="stk-proj-stat-label">Est. Completion</div>
           <div class="stk-proj-stat-value" id="spj-completion" style="font-size:13px">—</div>
         </div>
@@ -3147,9 +3147,9 @@
               <div class="stk-detail-row"><span class="stk-detail-key">Property Type</span><span class="stk-detail-val" id="spj-ov-devtype">—</span></div>
               <div class="stk-detail-row"><span class="stk-detail-key">Storeys</span><span class="stk-detail-val" id="spj-ov-levels">—</span></div>
               <div class="stk-detail-row"><span class="stk-detail-key">Year Constructed</span><span class="stk-detail-val" id="spj-ov-year">—</span></div>
-              <div class="stk-detail-row"><span class="stk-detail-key">Est. Start</span><span class="stk-detail-val" id="spj-ov-start">—</span></div>
-              <div class="stk-detail-row"><span class="stk-detail-key">Est. Completion</span><span class="stk-detail-val" id="spj-ov-finish">—</span></div>
+              <div class="stk-detail-row" id="spj-ov-finish-row"><span class="stk-detail-key">Est. Completion</span><span class="stk-detail-val" id="spj-ov-finish">—</span></div>
               <div class="stk-detail-row"><span class="stk-detail-key">Commission Terms</span><span class="stk-detail-val" id="spj-ov-comm">—</span></div>
+              <div class="stk-detail-row" id="spj-ov-commnotes-row" style="align-items:flex-start;"><span class="stk-detail-key">Commission Notes</span><span class="stk-detail-val" id="spj-ov-commnotes" style="white-space:pre-wrap;">—</span></div>
               <div class="stk-detail-row" style="align-items:flex-start;flex-direction:column;gap:8px;">
                 <span class="stk-detail-key">Documents</span>
                 <div id="spj-ov-docs"><div style="font-size:12px;color:var(--grey-mid);">No documents available.</div></div>
@@ -9214,9 +9214,12 @@ async function showStockProject(id) {
   document.getElementById('spj-developer').textContent    = p.developer || '—';
   document.getElementById('spj-avail-count').textContent  = '—';
   document.getElementById('spj-price-from').textContent   = '—';
-  document.getElementById('spj-completion').textContent   = p.est_construction_finish
-    ? new Date(p.est_construction_finish).toLocaleDateString('en-AU', { month:'short', year:'numeric' })
-    : (p.year_constructed || '—');
+  if (p.est_construction_finish) {
+    document.getElementById('spj-completion').textContent = new Date(p.est_construction_finish).toLocaleDateString('en-AU', { month:'short', year:'numeric' });
+    document.getElementById('spj-completion-stat').style.display = '';
+  } else {
+    document.getElementById('spj-completion-stat').style.display = 'none';
+  }
 
   // Overview tab
   document.getElementById('spj-ov-developer').textContent = p.developer || '—';
@@ -9224,11 +9227,20 @@ async function showStockProject(id) {
   document.getElementById('spj-ov-devtype').textContent   = p.property_type || p.development_type || '—';
   document.getElementById('spj-ov-levels').textContent    = p.levels ? p.levels + ' storeys' : '—';
   document.getElementById('spj-ov-year').textContent      = p.year_constructed || '—';
-  document.getElementById('spj-ov-start').textContent     = p.est_construction_start
-    ? new Date(p.est_construction_start).toLocaleDateString('en-AU', { month:'short', year:'numeric' }) : '—';
-  document.getElementById('spj-ov-finish').textContent    = p.est_construction_finish
-    ? new Date(p.est_construction_finish).toLocaleDateString('en-AU', { month:'short', year:'numeric' }) : '—';
+  if (p.est_construction_finish) {
+    document.getElementById('spj-ov-finish').textContent = new Date(p.est_construction_finish).toLocaleDateString('en-AU', { month:'short', year:'numeric' });
+    document.getElementById('spj-ov-finish-row').style.display = '';
+  } else {
+    document.getElementById('spj-ov-finish-row').style.display = 'none';
+  }
   document.getElementById('spj-ov-comm').textContent      = p.commission_payment_terms || '—';
+  const commNotesRow = document.getElementById('spj-ov-commnotes-row');
+  if (p.commission_notes && p.commission_notes.trim()) {
+    document.getElementById('spj-ov-commnotes').textContent = p.commission_notes;
+    commNotesRow.style.display = '';
+  } else {
+    commNotesRow.style.display = 'none';
+  }
   const descEl = document.getElementById('spj-ov-desc');
   descEl.innerHTML = p.description || '<p style="color:var(--grey-mid);">No description available.</p>';
   const editBtn = document.getElementById('spj-edit-desc-btn');

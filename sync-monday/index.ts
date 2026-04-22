@@ -60,7 +60,7 @@ const PROJECT_COLS = {
   estStart:           'date1',
   estFinish:          'date11',
   developer:          'connect_boards4',
-  commPaymentTerms:   'status4',
+  commPaymentTerms:   'text_mm2npnrb',  // "Commission Terms" text column
   commNotes:          'long_text',
   smsfEligible:       'color_mm147z5a',
   brochure:           'link_mm14z0cp',
