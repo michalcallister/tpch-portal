@@ -219,6 +219,28 @@
   .form-input:focus { border-color: var(--gold); }
   .form-input::placeholder { color: var(--grey-mid); }
 
+  /* Empty <select> reads as muted, like a placeholder */
+  select.form-input:has(option[value=""]:checked),
+  .form-select:has(option[value=""]:checked),
+  .prt-edit-select:has(option[value=""]:checked),
+  .tm-edit-select:has(option[value=""]:checked) {
+    color: var(--grey-mid);
+  }
+  /* But keep the dropdown options themselves readable */
+  select.form-input option,
+  .form-select option,
+  .prt-edit-select option,
+  .tm-edit-select option {
+    color: var(--white);
+    background: var(--black-card);
+  }
+  select.form-input option[value=""],
+  .form-select option[value=""],
+  .prt-edit-select option[value=""],
+  .tm-edit-select option[value=""] {
+    color: var(--grey-mid);
+  }
+
   .btn-login {
     width: 100%; padding: 17px;
     background: var(--gold);
@@ -3697,7 +3719,7 @@
         <div style="background:var(--black-card);border:1px solid var(--gold-border);border-radius:4px;padding:20px 24px;margin-bottom:24px;">
           <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--grey-mid);margin-bottom:14px;">Run Agent</div>
           <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-            <select id="aad-project-select" style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.1);color:var(--white);padding:10px 14px;border-radius:3px;font-size:13px;min-width:260px;">
+            <select id="aad-project-select" class="form-input" style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.1);padding:10px 14px;border-radius:3px;font-size:13px;min-width:260px;">
               <option value="">Select a project...</option>
             </select>
             <button id="aad-run-btn" onclick="aiAgentRun()" style="background:var(--gold);color:var(--black);border:none;padding:10px 20px;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;">
