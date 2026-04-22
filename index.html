@@ -576,22 +576,22 @@
   }
 
   .ri-info { flex: 1; }
-  .ri-name { font-size: 14px; font-weight: 500; color: var(--white); }
-  .ri-meta { font-size: 12px; color: var(--grey-light); margin-top: 3px; }
+  .ri-name { font-size: 16px; font-weight: 600; color: var(--white); }
+  .ri-meta { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
 
   .ri-score {
     display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
   }
 
   .score-badge {
-    padding: 3px 10px; font-size: 12px; font-weight: 600;
+    padding: 4px 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.3px;
   }
 
   .score-badge.high { background: rgba(76,175,122,0.15); color: var(--green); }
   .score-badge.med { background: rgba(201,168,76,0.15); color: var(--gold); }
   .score-badge.low { background: rgba(201,76,76,0.15); color: var(--red); }
 
-  .ri-date { font-size: 11px; color: var(--grey-mid); }
+  .ri-date { font-size: 12px; color: var(--text-muted); }
 
   /* ACTIVITY FEED */
   .activity-feed {
@@ -913,7 +913,7 @@
   .metric-card {
     background: var(--black-card);
     border: 1px solid var(--gold-border);
-    padding: 18px 20px;
+    padding: 20px 22px;
     animation: fadeUp 0.4s ease both;
   }
 
@@ -923,18 +923,18 @@
   .metric-card:nth-child(4) { animation-delay: 0.2s; }
 
   .metric-label {
-    font-size: 11px; text-transform: uppercase;
-    letter-spacing: 1.5px; color: var(--grey-mid);
-    margin-bottom: 10px; font-weight: 500;
+    font-size: 12px; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--text-muted);
+    margin-bottom: 10px; font-weight: 600;
   }
 
   .metric-value {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 28px; font-weight: 600; color: var(--gold);
+    font-size: 30px; font-weight: 600; color: var(--gold);
   }
 
   .metric-change {
-    font-size: 12px; margin-top: 6px;
+    font-size: 13px; margin-top: 8px;
   }
 
   .metric-change.up { color: var(--green); }
@@ -948,21 +948,21 @@
   .content-card {
     background: var(--black-card);
     border: 1px solid var(--gold-border);
-    padding: 24px; margin-bottom: 16px;
+    padding: 26px 28px; margin-bottom: 18px;
     animation: fadeUp 0.5s ease both;
   }
 
   .content-card-title {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 16px; font-weight: 600;
-    color: var(--gold); margin-bottom: 14px;
-    padding-bottom: 10px;
+    font-size: 18px; font-weight: 600;
+    color: var(--gold); margin-bottom: 16px;
+    padding-bottom: 12px;
     border-bottom: 1px solid var(--gold-border);
   }
 
   .content-card p {
-    font-size: 14px; line-height: 1.8;
-    color: var(--grey-pale); margin-bottom: 12px;
+    font-size: 15px; line-height: 1.75;
+    color: var(--grey-pale); margin-bottom: 14px;
   }
 
   .content-card p:last-child { margin-bottom: 0; }
@@ -970,9 +970,9 @@
   .bullet-list { list-style: none; }
 
   .bullet-list li {
-    font-size: 14px; color: var(--grey-pale);
-    padding: 6px 0; padding-left: 16px; position: relative;
-    line-height: 1.6;
+    font-size: 15px; color: var(--grey-pale);
+    padding: 9px 0; padding-left: 18px; position: relative;
+    line-height: 1.7;
     border-bottom: 1px solid rgba(201,168,76,0.06);
   }
 
@@ -980,14 +980,14 @@
 
   .bullet-list li::before {
     content: '→'; position: absolute;
-    left: 0; color: var(--gold); font-size: 11px;
-    top: 8px;
+    left: 0; color: var(--gold); font-size: 14px; font-weight: 700;
+    top: 10px;
   }
 
   .insight-tag {
-    display: inline-block; padding: 4px 10px;
-    font-size: 11px; font-weight: 600;
-    letter-spacing: 0.5px; margin: 3px 3px 0 0;
+    display: inline-block; padding: 5px 12px;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.5px; margin: 4px 4px 0 0;
   }
 
   .insight-tag.bull { background: rgba(76,175,122,0.12); color: var(--green); }
@@ -1002,62 +1002,62 @@
 
   .sidebar-card-header {
     background: var(--gold-dim);
-    padding: 12px 16px;
-    font-size: 11px; font-weight: 700;
+    padding: 14px 18px;
+    font-size: 12px; font-weight: 700;
     letter-spacing: 1.5px; text-transform: uppercase;
     color: var(--gold); border-bottom: 1px solid var(--gold-border);
   }
 
-  .sidebar-card-body { padding: 16px; }
+  .sidebar-card-body { padding: 18px; }
 
   .data-row {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 0;
+    padding: 10px 0;
     border-bottom: 1px solid rgba(201,168,76,0.06);
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .data-row:last-child { border-bottom: none; }
-  .data-row .dr-label { color: var(--grey-light); }
-  .data-row .dr-value { color: var(--white); font-weight: 500; font-family: 'DM Mono', monospace; font-size: 12px; }
+  .data-row .dr-label { color: var(--text-muted); }
+  .data-row .dr-value { color: var(--white); font-weight: 600; font-family: 'DM Mono', monospace; font-size: 13px; }
 
   .download-list { padding: 0; }
   .download-item {
     display: flex; align-items: center; gap: 10px;
-    padding: 10px 16px;
+    padding: 12px 16px;
     border-bottom: 1px solid rgba(201,168,76,0.06);
     cursor: pointer; transition: background 0.15s;
-    font-size: 13px; color: var(--grey-light);
+    font-size: 14px; color: var(--grey-pale);
   }
 
   .download-item:last-child { border-bottom: none; }
   .download-item:hover { background: var(--black-hover); color: var(--white); }
-  .download-icon { color: var(--gold); font-size: 14px; }
+  .download-icon { color: var(--gold); font-size: 15px; }
 
   .updated-tag {
     display: flex; align-items: center; gap: 6px;
-    font-size: 11px; color: var(--green);
-    margin-top: 12px; padding: 6px 10px;
+    font-size: 12px; color: var(--green); font-weight: 600;
+    margin-top: 12px; padding: 7px 12px;
     background: rgba(76,175,122,0.08);
     border: 1px solid rgba(76,175,122,0.2);
   }
 
   /* ─── MINI CHART ────────────────────────────────────── */
-  .mini-chart { margin-top: 8px; }
+  .mini-chart { margin-top: 10px; }
   .chart-bar-row {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 8px; font-size: 12px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px; font-size: 13px;
   }
-  .chart-bar-label { width: 80px; color: var(--grey-light); flex-shrink: 0; }
+  .chart-bar-label { width: 90px; color: var(--grey-pale); font-weight: 600; flex-shrink: 0; }
   .chart-bar-track {
-    flex: 1; height: 6px;
+    flex: 1; height: 8px;
     background: rgba(201,168,76,0.1); position: relative;
   }
   .chart-bar-fill {
     height: 100%; background: var(--gold);
     transition: width 0.8s ease;
   }
-  .chart-bar-val { width: 50px; text-align: right; color: var(--gold); font-family: 'DM Mono', monospace; }
+  .chart-bar-val { width: 70px; text-align: right; color: var(--gold); font-family: 'DM Mono', monospace; font-weight: 600; }
 
   /* ─── RESPONSIVE MODAL ──────────────────────────────── */
   .modal-overlay {
@@ -2506,18 +2506,18 @@
     <div id="page-research" class="page-view" style="padding:0; overflow-y:auto; max-height:calc(100vh - 61px)">
 
       <!-- STICKY REPORT HEADER -->
-      <div style="background:var(--black-card);border-bottom:1px solid var(--gold-border);padding:20px 36px;position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:20px;">
+      <div style="background:var(--black-card);border-bottom:1px solid var(--gold-border);padding:22px 36px;position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:20px;">
         <div style="display:flex;align-items:center;gap:16px;min-width:0;">
           <button class="back-btn" onclick="goBack()" style="margin:0;flex-shrink:0;">← Back</button>
           <div style="min-width:0;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--grey-mid);margin-bottom:2px;" id="rd-badge">◈ VIC · Melbourne</div>
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="rd-title">Melbourne CBD & Surrounds</div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px;" id="rd-badge">◈ VIC · Melbourne</div>
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="rd-title">Melbourne CBD & Surrounds</div>
           </div>
         </div>
         <div style="display:flex;gap:10px;flex-shrink:0;">
-          <button class="btn-outline" onclick="downloadReport('tpch')" style="font-size:12px;padding:8px 14px;">⬇ TPCH Report</button>
-          <button class="btn-outline" onclick="downloadReport('branded')" style="font-size:12px;padding:8px 14px;color:var(--white);border-color:rgba(255,255,255,0.2);">⬇ White-Label</button>
-          <button class="btn-primary" onclick="showModal('stock')" style="font-size:12px;padding:8px 14px;">View Stock →</button>
+          <button class="btn-outline" onclick="downloadReport('tpch')" style="font-size:13px;padding:10px 16px;">⬇ TPCH Report</button>
+          <button class="btn-outline" onclick="downloadReport('branded')" style="font-size:13px;padding:10px 16px;color:var(--white);border-color:rgba(255,255,255,0.2);">⬇ White-Label</button>
+          <button class="btn-primary" onclick="showModal('stock')" style="font-size:13px;padding:10px 16px;">View Stock →</button>
         </div>
       </div>
 
@@ -2564,13 +2564,13 @@
               <div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;"><svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/><polygon points="21,10 8,22 34,22" fill="#F5F3EE"/><rect x="10" y="21" width="24" height="18" fill="#F5F3EE"/><rect x="16" y="30" width="10" height="9" fill="#C8A951"/></svg></div>
             </div>
             <div style="flex:1;">
-              <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">TPCH Perspective — Our View</div>
-              <div style="font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:500;color:var(--white);line-height:1.5;margin-bottom:12px;" id="rd-tpch-headline">Melbourne is the standout contrarian opportunity in Australia right now.</div>
-              <div style="font-size:13px;color:var(--grey-pale);line-height:1.85;" id="rd-tpch-view">While Sydney commands headlines, Melbourne has quietly been building the conditions for a significant re-rating. The pandemic hangover suppressed prices artificially — extended lockdowns and investor exodus created a buying window that is now closing. With net overseas migration at decade highs, a 60% pipeline shortfall confirmed by Urbis, and Melbourne priced 41% below Sydney at a 20-year discount, the fundamentals are as compelling as we've seen in any market. We're not just watching this market — we're actively presenting it to clients who want income now and capital growth on a 3–5 year horizon. The supply cliff is real and confirmed by multiple independent sources. We believe Melbourne CBD and inner suburbs will be one of the top performing markets in Australia by 2028.</div>
-              <div style="margin-top:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-                <div id="rd-conviction" style="display:flex;align-items:center;gap:8px;">
-                  <span style="font-size:11px;color:var(--grey-mid);text-transform:uppercase;letter-spacing:1px;">Conviction</span>
-                  <span style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:600;color:var(--green);">Strong Buy</span>
+              <div style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">TPCH Perspective — Our View</div>
+              <div style="font-family:'Playfair Display',Georgia,serif;font-size:21px;font-weight:500;color:var(--white);line-height:1.45;margin-bottom:14px;" id="rd-tpch-headline">Melbourne is the standout contrarian opportunity in Australia right now.</div>
+              <div style="font-size:15px;color:var(--grey-pale);line-height:1.8;" id="rd-tpch-view">While Sydney commands headlines, Melbourne has quietly been building the conditions for a significant re-rating. The pandemic hangover suppressed prices artificially — extended lockdowns and investor exodus created a buying window that is now closing. With net overseas migration at decade highs, a 60% pipeline shortfall confirmed by Urbis, and Melbourne priced 41% below Sydney at a 20-year discount, the fundamentals are as compelling as we've seen in any market. We're not just watching this market — we're actively presenting it to clients who want income now and capital growth on a 3–5 year horizon. The supply cliff is real and confirmed by multiple independent sources. We believe Melbourne CBD and inner suburbs will be one of the top performing markets in Australia by 2028.</div>
+              <div style="margin-top:16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+                <div id="rd-conviction" style="display:flex;align-items:center;gap:10px;">
+                  <span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Conviction</span>
+                  <span style="font-family:'Playfair Display',Georgia,serif;font-size:24px;font-weight:600;color:var(--green);">Strong Buy</span>
                 </div>
                 <div style="display:flex;gap:6px;flex-wrap:wrap;" id="rd-tags">
                   <span class="insight-tag bull">Low vacancy</span>
@@ -2601,40 +2601,40 @@
             <div class="content-card">
               <div class="content-card-title" style="display:flex;justify-content:space-between;align-items:center;">
                 Supply vs. Demand
-                <span id="rd-supply-source-badge" style="font-size:11px;font-weight:600;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:4px 10px;border:1px solid var(--gold-border);">Source: Urbis · City of Melbourne</span>
+                <span id="rd-supply-source-badge" style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: Urbis · City of Melbourne</span>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-                <div style="background:var(--black-soft);padding:16px;border:1px solid var(--gold-border);">
-                  <div id="rd-pipeline-period" style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--grey-pale);margin-bottom:8px;">Pipeline (2024–28)</div>
-                  <div id="rd-pipeline-total" style="font-family:'Playfair Display',Georgia,serif;font-size:28px;color:var(--gold);font-weight:600;">8,900</div>
-                  <div id="rd-pipeline-label" style="font-size:11px;color:var(--grey-light);margin-top:4px;">apartments in central Melbourne pipeline</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+                <div style="background:var(--black-soft);padding:18px;border:1px solid var(--gold-border);">
+                  <div id="rd-pipeline-period" style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:8px;font-weight:600;">Pipeline (2024–28)</div>
+                  <div id="rd-pipeline-total" style="font-family:'Playfair Display',Georgia,serif;font-size:32px;color:var(--gold);font-weight:600;">8,900</div>
+                  <div id="rd-pipeline-label" style="font-size:13px;color:var(--grey-pale);margin-top:6px;">apartments in central Melbourne pipeline</div>
                 </div>
-                <div style="background:var(--black-soft);padding:16px;border:1px solid rgba(201,76,76,0.4);">
-                  <div id="rd-demand-period" style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--grey-pale);margin-bottom:8px;">Demand (2024–28)</div>
-                  <div id="rd-demand-total" style="font-family:'Playfair Display',Georgia,serif;font-size:28px;color:var(--red);font-weight:600;">21,600</div>
-                  <div id="rd-demand-label" style="font-size:11px;color:var(--grey-light);margin-top:4px;">dwellings needed — a 60% shortfall</div>
+                <div style="background:var(--black-soft);padding:18px;border:1px solid rgba(201,76,76,0.4);">
+                  <div id="rd-demand-period" style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:8px;font-weight:600;">Demand (2024–28)</div>
+                  <div id="rd-demand-total" style="font-family:'Playfair Display',Georgia,serif;font-size:32px;color:var(--red);font-weight:600;">21,600</div>
+                  <div id="rd-demand-label" style="font-size:13px;color:var(--grey-pale);margin-top:6px;">dwellings needed — a 60% shortfall</div>
                 </div>
               </div>
-              <div id="rd-supply-paragraph" style="font-size:12px;color:var(--grey-pale);line-height:1.7;margin-bottom:12px;">The Victorian Government's target of 80,000 homes per year is already falling short by 20,000 annually. Roughly 48% of the apartment pipeline is stalled due to labour shortages and a 20–30% surge in material costs. This is not a short-term correction — it is a structural supply deficit locked in for the medium term.</div>
+              <div id="rd-supply-paragraph" style="font-size:15px;color:var(--grey-pale);line-height:1.75;margin-bottom:16px;">The Victorian Government's target of 80,000 homes per year is already falling short by 20,000 annually. Roughly 48% of the apartment pipeline is stalled due to labour shortages and a 20–30% surge in material costs. This is not a short-term correction — it is a structural supply deficit locked in for the medium term.</div>
               <!-- Pipeline bar chart -->
-              <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--grey-mid);margin-bottom:10px;">Annual Pipeline vs. Demand (units)</div>
+              <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;">Annual Pipeline vs. Demand (units)</div>
               <div id="rd-supply-chart"></div>
-              <div id="rd-supply-source-footer" style="font-size:11px;color:var(--grey-mid);margin-top:8px;">Source: City of Melbourne, Apartment Essentials, Urbis — Feb 2025</div>
+              <div id="rd-supply-source-footer" style="font-size:12px;color:var(--text-muted);margin-top:10px;">Source: City of Melbourne, Apartment Essentials, Urbis — Feb 2025</div>
             </div>
 
             <!-- KEY DEMAND DRIVERS -->
             <div class="content-card">
               <div class="content-card-title" style="display:flex;justify-content:space-between;align-items:center;">
                 Key Demand Drivers
-                <span style="font-size:11px;font-weight:600;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:4px 10px;border:1px solid var(--gold-border);">Source: ABS · Urbis · SQM</span>
+                <span style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: ABS · Urbis · SQM</span>
               </div>
               <ul class="bullet-list" id="rd-drivers">
-                <li>Net overseas migration into Victoria at decade highs — 140,000+ per annum, with Melbourne on track to surpass Sydney as Australia's largest city by 2032. <em style="color:var(--grey-mid);font-size:11px;">Source: ABS, VIF23</em></li>
-                <li>FY2025 apartment completions will be the lowest on record — just 3,070 BTS apartments, a 50% drop from the prior year. <em style="color:var(--grey-mid);font-size:11px;">Source: Urbis</em></li>
-                <li>Melbourne median house prices are currently 41% cheaper than Sydney's — the largest discount in 20 years, creating exceptional relative value. <em style="color:var(--grey-mid);font-size:11px;">Source: TPCH Research</em></li>
-                <li>International student enrolments recovering strongly — University of Melbourne and Monash both ranked top 3% globally, sustaining inner-city rental demand. <em style="color:var(--grey-mid);font-size:11px;">Source: Urbis</em></li>
-                <li>$107 billion Victorian Infrastructure Plan confirmed — including Suburban Rail Loop, Melbourne Greenline ($224m), and Queen Victoria Market renewal ($268m). <em style="color:var(--grey-mid);font-size:11px;">Source: Urbis</em></li>
-                <li>Major banks forecasting RBA cash rate to drop to 3.35–3.85% by Dec 2025, expected to materially stimulate apartment demand and price growth. <em style="color:var(--grey-mid);font-size:11px;">Source: ANZ, NAB, CBA, Westpac via Urbis</em></li>
+                <li>Net overseas migration into Victoria at decade highs — 140,000+ per annum, with Melbourne on track to surpass Sydney as Australia's largest city by 2032. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: ABS, VIF23</em></li>
+                <li>FY2025 apartment completions will be the lowest on record — just 3,070 BTS apartments, a 50% drop from the prior year. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: Urbis</em></li>
+                <li>Melbourne median house prices are currently 41% cheaper than Sydney's — the largest discount in 20 years, creating exceptional relative value. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: TPCH Research</em></li>
+                <li>International student enrolments recovering strongly — University of Melbourne and Monash both ranked top 3% globally, sustaining inner-city rental demand. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: Urbis</em></li>
+                <li>$107 billion Victorian Infrastructure Plan confirmed — including Suburban Rail Loop, Melbourne Greenline ($224m), and Queen Victoria Market renewal ($268m). <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: Urbis</em></li>
+                <li>Major banks forecasting RBA cash rate to drop to 3.35–3.85% by Dec 2025, expected to materially stimulate apartment demand and price growth. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: ANZ, NAB, CBA, Westpac via Urbis</em></li>
               </ul>
             </div>
 
@@ -2642,24 +2642,24 @@
             <div class="content-card">
               <div class="content-card-title" style="display:flex;justify-content:space-between;align-items:center;">
                 The Intrinsic Value Case
-                <span style="font-size:11px;font-weight:600;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:4px 10px;border:1px solid var(--gold-border);">Source: TPCH · Cordell CCCI</span>
+                <span style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: TPCH · Cordell CCCI</span>
               </div>
-              <p style="font-size:13px;color:var(--grey-pale);line-height:1.8;margin-bottom:14px;">New apartments in 2025 must be priced <strong style="color:var(--gold)">30% higher</strong> than those in 2020 just to break even on construction costs. Victorian construction costs have increased 25.5% between 2019–20 and 2023–24. Buying existing stock today means purchasing <em>below replacement cost</em> — a rare condition where market prices are structurally forced to catch up over time.</p>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-                <div style="background:var(--black-soft);padding:14px;border:1px solid var(--gold-border);text-align:center;">
-                  <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--grey-mid);margin-bottom:6px;">Yield vs Sydney</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:22px;color:var(--green);font-weight:600;">5.1%</div>
-                  <div style="font-size:11px;color:var(--grey-mid);margin-top:3px;">vs. Sydney 2.9%</div>
+              <p style="font-size:15px;color:var(--grey-pale);line-height:1.75;margin-bottom:18px;">New apartments in 2025 must be priced <strong style="color:var(--gold)">30% higher</strong> than those in 2020 just to break even on construction costs. Victorian construction costs have increased 25.5% between 2019–20 and 2023–24. Buying existing stock today means purchasing <em>below replacement cost</em> — a rare condition where market prices are structurally forced to catch up over time.</p>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+                <div style="background:var(--black-soft);padding:16px 14px;border:1px solid var(--gold-border);text-align:center;">
+                  <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;font-weight:600;">Yield vs Sydney</div>
+                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;color:var(--green);font-weight:600;">5.1%</div>
+                  <div style="font-size:13px;color:var(--text-muted);margin-top:5px;">vs. Sydney 2.9%</div>
                 </div>
-                <div style="background:var(--black-soft);padding:14px;border:1px solid var(--gold-border);text-align:center;">
-                  <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--grey-mid);margin-bottom:6px;">Const. Cost Rise</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:22px;color:var(--gold);font-weight:600;">+25.5%</div>
-                  <div style="font-size:11px;color:var(--grey-mid);margin-top:3px;">Victoria 2019–24</div>
+                <div style="background:var(--black-soft);padding:16px 14px;border:1px solid var(--gold-border);text-align:center;">
+                  <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;font-weight:600;">Const. Cost Rise</div>
+                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;color:var(--gold);font-weight:600;">+25.5%</div>
+                  <div style="font-size:13px;color:var(--text-muted);margin-top:5px;">Victoria 2019–24</div>
                 </div>
-                <div style="background:var(--black-soft);padding:14px;border:1px solid var(--gold-border);text-align:center;">
-                  <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--grey-mid);margin-bottom:6px;">Growth Forecast</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:22px;color:var(--green);font-weight:600;">28–30%</div>
-                  <div style="font-size:11px;color:var(--grey-mid);margin-top:3px;">by 2030 (analyst consensus)</div>
+                <div style="background:var(--black-soft);padding:16px 14px;border:1px solid var(--gold-border);text-align:center;">
+                  <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;font-weight:600;">Growth Forecast</div>
+                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;color:var(--green);font-weight:600;">28–30%</div>
+                  <div style="font-size:13px;color:var(--text-muted);margin-top:5px;">by 2030 (analyst consensus)</div>
                 </div>
               </div>
             </div>
@@ -2668,11 +2668,11 @@
             <div class="content-card">
               <div class="content-card-title" style="display:flex;justify-content:space-between;align-items:center;">
                 Rental Market Performance
-                <span style="font-size:11px;font-weight:600;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:4px 10px;border:1px solid var(--gold-border);">Source: SQM · Apartment Essentials · Urbis</span>
+                <span style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: SQM · Apartment Essentials · Urbis</span>
               </div>
-              <div style="font-size:13px;color:var(--grey-pale);line-height:1.7;margin-bottom:16px;">CBD apartment median weekly rent reached <strong style="color:var(--gold)">$750</strong> in the year to November 2024, up from $690 the prior year. CBD apartments command an average premium of 5%+ over broader inner Melbourne, with higher premiums for 1–2 bed units. Vacancy averaged 2.4% across 2024, hitting a low of 1.6% in March.</div>
+              <div style="font-size:15px;color:var(--grey-pale);line-height:1.75;margin-bottom:18px;">CBD apartment median weekly rent reached <strong style="color:var(--gold)">$750</strong> in the year to November 2024, up from $690 the prior year. CBD apartments command an average premium of 5%+ over broader inner Melbourne, with higher premiums for 1–2 bed units. Vacancy averaged 2.4% across 2024, hitting a low of 1.6% in March.</div>
               <!-- Rent comparison chart -->
-              <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--grey-mid);margin-bottom:10px;">Weekly Rents by Typology — CBD vs Inner Melbourne</div>
+              <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;">Weekly Rents by Typology — CBD vs Inner Melbourne</div>
               <div class="mini-chart" id="rd-rent-chart">
                 <div class="chart-bar-row">
                   <div class="chart-bar-label">1BR CBD</div>
@@ -2700,76 +2700,76 @@
                   <div class="chart-bar-val">$1,230/wk</div>
                 </div>
               </div>
-              <div style="font-size:11px;color:var(--grey-mid);margin-top:8px;">Source: Apartment Essentials, Urbis — Year to Nov 2024</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:10px;">Source: Apartment Essentials, Urbis — Year to Nov 2024</div>
             </div>
 
             <!-- ECONOMIC ENVIRONMENT -->
             <div class="content-card">
               <div class="content-card-title" style="display:flex;justify-content:space-between;align-items:center;">
                 Economic Environment
-                <span style="font-size:11px;font-weight:600;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:4px 10px;border:1px solid var(--gold-border);">Source: ABS · RBA · Urbis</span>
+                <span style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: ABS · RBA · Urbis</span>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-                <div style="background:var(--black-soft);padding:12px 14px;border:1px solid var(--gold-border);">
-                  <div style="font-size:11px;color:var(--grey-mid);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">Unemployment</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:20px;color:var(--gold);">4.0%</div>
-                  <div style="font-size:11px;color:var(--green);margin-top:2px;">Below 10yr avg of 5.3%</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+                <div style="background:var(--black-soft);padding:14px 16px;border:1px solid var(--gold-border);">
+                  <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Unemployment</div>
+                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--gold);font-weight:600;">4.0%</div>
+                  <div style="font-size:13px;color:var(--green);margin-top:4px;">Below 10yr avg of 5.3%</div>
                 </div>
-                <div style="background:var(--black-soft);padding:12px 14px;border:1px solid var(--gold-border);">
-                  <div style="font-size:11px;color:var(--grey-mid);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">Inflation (CPI)</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:20px;color:var(--gold);">2.8%</div>
-                  <div style="font-size:11px;color:var(--green);margin-top:2px;">Down from 5.4% — 3.5yr low</div>
+                <div style="background:var(--black-soft);padding:14px 16px;border:1px solid var(--gold-border);">
+                  <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Inflation (CPI)</div>
+                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--gold);font-weight:600;">2.8%</div>
+                  <div style="font-size:13px;color:var(--green);margin-top:4px;">Down from 5.4% — 3.5yr low</div>
                 </div>
-                <div style="background:var(--black-soft);padding:12px 14px;border:1px solid var(--gold-border);">
-                  <div style="font-size:11px;color:var(--grey-mid);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">Net Migration (2024)</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:20px;color:var(--gold);">+446,000</div>
-                  <div style="font-size:11px;color:var(--grey-light);margin-top:2px;">Persons — year ending Jun 2024</div>
+                <div style="background:var(--black-soft);padding:14px 16px;border:1px solid var(--gold-border);">
+                  <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Net Migration (2024)</div>
+                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--gold);font-weight:600;">+446,000</div>
+                  <div style="font-size:13px;color:var(--grey-pale);margin-top:4px;">Persons — year ending Jun 2024</div>
                 </div>
-                <div style="background:var(--black-soft);padding:12px 14px;border:1px solid var(--gold-border);">
-                  <div style="font-size:11px;color:var(--grey-mid);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">Consumer Confidence</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:20px;color:var(--gold);">+12pts</div>
-                  <div style="font-size:11px;color:var(--green);margin-top:2px;">YoY improvement Dec 2024</div>
+                <div style="background:var(--black-soft);padding:14px 16px;border:1px solid var(--gold-border);">
+                  <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Consumer Confidence</div>
+                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--gold);font-weight:600;">+12pts</div>
+                  <div style="font-size:13px;color:var(--green);margin-top:4px;">YoY improvement Dec 2024</div>
                 </div>
               </div>
-              <div style="font-size:11px;color:var(--grey-mid);">Sources: ABS, RBA, ANZ–Roy Morgan Consumer Confidence — Dec 2024</div>
+              <div style="font-size:12px;color:var(--text-muted);">Sources: ABS, RBA, ANZ–Roy Morgan Consumer Confidence — Dec 2024</div>
             </div>
 
             <!-- INFRASTRUCTURE PIPELINE -->
             <div class="content-card">
               <div class="content-card-title" style="display:flex;justify-content:space-between;align-items:center;">
                 Infrastructure Pipeline
-                <span style="font-size:11px;font-weight:600;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:4px 10px;border:1px solid var(--gold-border);">Source: Urbis · Vic Govt.</span>
+                <span style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: Urbis · Vic Govt.</span>
               </div>
-              <div style="display:flex;flex-direction:column;gap:10px;">
-                <div style="display:flex;gap:14px;padding:12px 14px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
-                  <div style="background:var(--gold);color:var(--black);padding:4px 8px;font-size:11px;font-weight:700;flex-shrink:0;white-space:nowrap;">2025</div>
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;gap:16px;padding:14px 16px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
+                  <div style="background:var(--gold);color:var(--black);padding:6px 10px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;letter-spacing:0.5px;">2025</div>
                   <div>
-                    <div style="font-size:13px;font-weight:500;color:var(--white);margin-bottom:3px;">Melbourne Greenline — Stage 1</div>
-                    <div style="font-size:11px;color:var(--grey-light);line-height:1.6;">$224m project delivering a 4km riverside public space along the Yarra in CBD. Enhances liveability and walkability of inner precincts.</div>
+                    <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:5px;">Melbourne Greenline — Stage 1</div>
+                    <div style="font-size:14px;color:var(--grey-pale);line-height:1.65;">$224m project delivering a 4km riverside public space along the Yarra in CBD. Enhances liveability and walkability of inner precincts.</div>
                   </div>
                 </div>
-                <div style="display:flex;gap:14px;padding:12px 14px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
-                  <div style="background:var(--gold);color:var(--black);padding:4px 8px;font-size:11px;font-weight:700;flex-shrink:0;white-space:nowrap;">2025</div>
+                <div style="display:flex;gap:16px;padding:14px 16px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
+                  <div style="background:var(--gold);color:var(--black);padding:6px 10px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;letter-spacing:0.5px;">2025</div>
                   <div>
-                    <div style="font-size:13px;font-weight:500;color:var(--white);margin-bottom:3px;">Melbourne Walk — Bourke Street Mall</div>
-                    <div style="font-size:11px;color:var(--grey-light);line-height:1.6;">First major delivery in 50 years — 37,000 sqm commercial space, 6,000 sqm retail across 45 tenancies. Activates the CBD core.</div>
+                    <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:5px;">Melbourne Walk — Bourke Street Mall</div>
+                    <div style="font-size:14px;color:var(--grey-pale);line-height:1.65;">First major delivery in 50 years — 37,000 sqm commercial space, 6,000 sqm retail across 45 tenancies. Activates the CBD core.</div>
                   </div>
                 </div>
-                <div style="display:flex;gap:14px;padding:12px 14px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
-                  <div style="background:rgba(201,168,76,0.3);color:var(--gold);padding:4px 8px;font-size:11px;font-weight:700;flex-shrink:0;white-space:nowrap;">2029</div>
+                <div style="display:flex;gap:16px;padding:14px 16px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
+                  <div style="background:rgba(201,168,76,0.3);color:var(--gold);padding:6px 10px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;letter-spacing:0.5px;">2029</div>
                   <div>
-                    <div style="font-size:13px;font-weight:500;color:var(--white);margin-bottom:3px;">Queen Victoria Market Renewal</div>
-                    <div style="font-size:11px;color:var(--grey-light);line-height:1.6;">$268m restoration creating new open spaces, restaurants, bars, events — strengthening the market's precinct as a lifestyle destination.</div>
+                    <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:5px;">Queen Victoria Market Renewal</div>
+                    <div style="font-size:14px;color:var(--grey-pale);line-height:1.65;">$268m restoration creating new open spaces, restaurants, bars, events — strengthening the market's precinct as a lifestyle destination.</div>
                   </div>
                 </div>
-                <div style="display:flex;gap:14px;padding:12px 14px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
-                  <div style="background:rgba(201,168,76,0.15);color:var(--grey-light);padding:4px 8px;font-size:11px;font-weight:700;flex-shrink:0;white-space:nowrap;">2035</div>
+                <div style="display:flex;gap:16px;padding:14px 16px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
+                  <div style="background:rgba(201,168,76,0.15);color:var(--text-muted);padding:6px 10px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;letter-spacing:0.5px;">2035</div>
                   <div>
-                    <div style="font-size:13px;font-weight:500;color:var(--white);margin-bottom:3px;">Suburban Rail Loop — SRL East</div>
-                    <div style="font-size:11px;color:var(--grey-light);line-height:1.6;">Connects Frankston to Werribee via Melbourne Airport. Reduces travel times across middle suburbs and supports new housing precincts at Clayton, Broadmeadows and Sunshine.</div>
+                    <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:5px;">Suburban Rail Loop — SRL East</div>
+                    <div style="font-size:14px;color:var(--grey-pale);line-height:1.65;">Connects Frankston to Werribee via Melbourne Airport. Reduces travel times across middle suburbs and supports new housing precincts at Clayton, Broadmeadows and Sunshine.</div>
                   </div>
                 </div>
-                <div style="font-size:11px;color:var(--grey-mid);padding:8px 0;">Total Victorian Infrastructure Plan: <strong style="color:var(--gold)">$107 billion</strong> committed for Melbourne and surrounding regions. Source: Urbis</div>
+                <div style="font-size:13px;color:var(--text-muted);padding:10px 0;">Total Victorian Infrastructure Plan: <strong style="color:var(--gold)">$107 billion</strong> committed for Melbourne and surrounding regions. Source: Urbis</div>
               </div>
             </div>
 
@@ -2777,10 +2777,10 @@
             <div class="content-card" style="border-color:rgba(201,76,76,0.3);">
               <div class="content-card-title" style="color:var(--red);">Risk Factors to Monitor</div>
               <ul class="bullet-list">
-                <li style="color:var(--grey-pale);">Victorian land tax environment remains elevated — confirm impact on holding costs for investor clients before presentation. <em style="color:var(--grey-mid);font-size:11px;">Source: SRO Victoria</em></li>
-                <li style="color:var(--grey-pale);">Heated developer environment — stalled projects may resume if costs ease, adding supply risk in 2026–27. <em style="color:var(--grey-mid);font-size:11px;">Source: TPCH</em></li>
-                <li style="color:var(--grey-pale);">Body corporate levies for large-amenity towers can be material — always confirm OC fees with client before signing. <em style="color:var(--grey-mid);font-size:11px;">Source: TPCH</em></li>
-                <li style="color:var(--grey-pale);">Interest rate path remains uncertain — while consensus is downward, any delay will defer price recovery. <em style="color:var(--grey-mid);font-size:11px;">Source: RBA</em></li>
+                <li style="color:var(--grey-pale);">Victorian land tax environment remains elevated — confirm impact on holding costs for investor clients before presentation. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: SRO Victoria</em></li>
+                <li style="color:var(--grey-pale);">Heated developer environment — stalled projects may resume if costs ease, adding supply risk in 2026–27. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: TPCH</em></li>
+                <li style="color:var(--grey-pale);">Body corporate levies for large-amenity towers can be material — always confirm OC fees with client before signing. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: TPCH</em></li>
+                <li style="color:var(--grey-pale);">Interest rate path remains uncertain — while consensus is downward, any delay will defer price recovery. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: RBA</em></li>
               </ul>
             </div>
 
@@ -2811,27 +2811,27 @@
             <!-- TPCH RECOMMENDATION -->
             <div class="sidebar-card" style="border-color:var(--gold);">
               <div class="sidebar-card-header" style="background:var(--gold);color:var(--black);">TPCH Recommendation</div>
-              <div class="sidebar-card-body" style="text-align:center;padding:20px 16px;">
-                <div id="rd-rec-rating" style="font-family:'Playfair Display',Georgia,serif;font-size:32px;color:var(--green);font-weight:600;line-height:1;">Strong Buy</div>
-                <div style="width:60px;height:2px;background:var(--green);margin:10px auto;"></div>
-                <div id="rd-rec-text" style="font-size:12px;color:var(--grey-light);line-height:1.7;">Prioritised stock for immediate presentation to SMSF and investor clients. Active market with available stock.</div>
+              <div class="sidebar-card-body" style="text-align:center;padding:22px 18px;">
+                <div id="rd-rec-rating" style="font-family:'Playfair Display',Georgia,serif;font-size:34px;color:var(--green);font-weight:600;line-height:1;">Strong Buy</div>
+                <div style="width:60px;height:2px;background:var(--green);margin:12px auto;"></div>
+                <div id="rd-rec-text" style="font-size:14px;color:var(--grey-pale);line-height:1.7;">Prioritised stock for immediate presentation to SMSF and investor clients. Active market with available stock.</div>
               </div>
             </div>
 
             <!-- DOWNLOADS -->
             <div class="sidebar-card">
               <div class="sidebar-card-header">Download Reports</div>
-              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
-                <button onclick="downloadReport('tpch')" style="width:100%;padding:11px 14px;background:var(--gold);color:var(--black);border:none;cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;transition:background 0.15s;" onmouseover="this.style.background='var(--gold-light)'" onmouseout="this.style.background='var(--gold)'">
+              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px;">
+                <button onclick="downloadReport('tpch')" style="width:100%;padding:13px 16px;background:var(--gold);color:var(--black);border:none;cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;transition:background 0.15s;" onmouseover="this.style.background='var(--gold-light)'" onmouseout="this.style.background='var(--gold)'">
                   ⬇ TPCH Branded Report
                 </button>
-                <button onclick="downloadReport('branded')" style="width:100%;padding:11px 14px;background:none;color:var(--white);border:1px solid var(--gold-border);cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;text-align:left;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--gold-border)';this.style.color='var(--white)'">
+                <button onclick="downloadReport('branded')" style="width:100%;padding:13px 16px;background:none;color:var(--white);border:1px solid var(--gold-border);cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;text-align:left;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--gold-border)';this.style.color='var(--white)'">
                   ⬇ White-Label (Your Brand)
                 </button>
-                <div style="padding:10px 0;border-top:1px solid var(--gold-border);margin-top:4px;">
-                  <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--grey-mid);margin-bottom:8px;">Additional Resources</div>
-                  <div style="font-size:11px;color:var(--grey-light);padding:6px 0;border-bottom:1px solid rgba(201,168,76,0.06);cursor:pointer;" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--grey-light)'">⬇ Suburb Data Sheet (CSV)</div>
-                  <div style="font-size:11px;color:var(--grey-light);padding:6px 0;cursor:pointer;" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--grey-light)'">⬇ Share via Email</div>
+                <div style="padding:12px 0;border-top:1px solid var(--gold-border);margin-top:6px;">
+                  <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600;">Additional Resources</div>
+                  <div style="font-size:14px;color:var(--grey-pale);padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.06);cursor:pointer;" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--grey-pale)'">⬇ Suburb Data Sheet (CSV)</div>
+                  <div style="font-size:14px;color:var(--grey-pale);padding:8px 0;cursor:pointer;" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--grey-pale)'">⬇ Share via Email</div>
                 </div>
               </div>
             </div>
@@ -2839,16 +2839,16 @@
             <!-- DATA SOURCES -->
             <div class="sidebar-card">
               <div class="sidebar-card-header">Data Sources</div>
-              <div class="sidebar-card-body" style="padding:12px 16px;">
-                <div style="font-size:11px;color:var(--grey-light);line-height:1.9;" id="rd-sources">
-                  <div style="padding:5px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;margin-right:8px;">URBIS</span>Melbourne CBD Market Outlook, Feb 2025</div>
-                  <div style="padding:5px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;margin-right:8px;">SQM</span>Vacancy Rate & Rental Data</div>
-                  <div style="padding:5px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;margin-right:8px;">ABS</span>Population & Migration Statistics</div>
-                  <div style="padding:5px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;margin-right:8px;">APTE</span>Apartment Essentials Rent Data</div>
-                  <div style="padding:5px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;margin-right:8px;">RBA</span>Cash Rate Forecasts</div>
-                  <div style="padding:5px 0;"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;margin-right:8px;">TPCH</span>Editorial & Investment Perspective</div>
+              <div class="sidebar-card-body" style="padding:14px 18px;">
+                <div style="font-size:13px;color:var(--grey-pale);line-height:1.7;" id="rd-sources">
+                  <div style="padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;margin-right:10px;">URBIS</span>Melbourne CBD Market Outlook, Feb 2025</div>
+                  <div style="padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;margin-right:10px;">SQM</span>Vacancy Rate & Rental Data</div>
+                  <div style="padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;margin-right:10px;">ABS</span>Population & Migration Statistics</div>
+                  <div style="padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;margin-right:10px;">APTE</span>Apartment Essentials Rent Data</div>
+                  <div style="padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;margin-right:10px;">RBA</span>Cash Rate Forecasts</div>
+                  <div style="padding:8px 0;"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;margin-right:10px;">TPCH</span>Editorial & Investment Perspective</div>
                 </div>
-                <div style="font-size:11px;color:var(--grey-mid);margin-top:10px;line-height:1.6;padding-top:10px;border-top:1px solid var(--gold-border);">All data as at Feb 2025. TPCH research is for channel partner use only and does not constitute financial advice.</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:12px;line-height:1.65;padding-top:12px;border-top:1px solid var(--gold-border);">All data as at Feb 2025. TPCH research is for channel partner use only and does not constitute financial advice.</div>
               </div>
             </div>
 
