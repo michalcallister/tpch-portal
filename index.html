@@ -1957,6 +1957,10 @@
             <input class="form-input" type="text" id="eq-afsl" placeholder="e.g. 123456">
           </div>
           <div class="form-group full">
+            <label class="form-label">Registered Business Address</label>
+            <input class="form-input" type="text" id="eq-address" placeholder="Street, Suburb, State, Postcode">
+          </div>
+          <div class="form-group full">
             <label class="form-label">Business Website</label>
             <input class="form-input" type="url" id="eq-website" placeholder="https://www.yourfirm.com.au">
           </div>
@@ -3871,6 +3875,11 @@
               <label class="form-label">Role / Title</label>
               <input class="form-input" type="text" id="pset-role" placeholder="e.g. Director">
             </div>
+            <div class="form-group" style="grid-column:1/-1;">
+              <label class="form-label">Registered Business Address</label>
+              <input class="form-input" type="text" id="pset-address" placeholder="Street, Suburb, State, Postcode">
+              <p style="font-size:11px;color:var(--grey-mid);margin-top:5px;">Used in the Parties block of the Marketing Agreement.</p>
+            </div>
           </div>
 
           <div class="prt-section-title">Branding</div>
@@ -3980,15 +3989,13 @@
 
         <h2 class="mag-h2">1. Parties</h2>
         <p>This Marketing Agreement ("Agreement") is entered into as of the date last signed below ("Effective Date") between:</p>
-        <table class="mag-table">
-          <tr><td>Company / Entity Name</td><td>&nbsp;</td></tr>
-          <tr><td>ABN / ACN</td><td>&nbsp;</td></tr>
-          <tr><td>Registered Address</td><td>&nbsp;</td></tr>
-          <tr><td>Primary Contact Name</td><td>&nbsp;</td></tr>
-          <tr><td>Primary Contact Email</td><td>&nbsp;</td></tr>
-          <tr><td>Primary Contact Phone</td><td>&nbsp;</td></tr>
-          <tr><td>Trading Name (if different)</td><td>&nbsp;</td></tr>
-          <tr><td>Postal Address (if different from above)</td><td>&nbsp;</td></tr>
+        <table class="mag-table mag-parties">
+          <tr><td>Company / Entity Name</td><td data-partyfield="company_name">&nbsp;</td></tr>
+          <tr><td>ABN / ACN</td><td data-partyfield="abn">&nbsp;</td></tr>
+          <tr><td>Registered Address</td><td data-partyfield="registered_address">&nbsp;</td></tr>
+          <tr><td>Primary Contact Name</td><td data-partyfield="full_name">&nbsp;</td></tr>
+          <tr><td>Primary Contact Email</td><td data-partyfield="email">&nbsp;</td></tr>
+          <tr><td>Primary Contact Phone</td><td data-partyfield="phone">&nbsp;</td></tr>
         </table>
         <p>(collectively, the "Channel Partner")</p>
         <p>AND</p>
@@ -4176,6 +4183,11 @@
         </div>
         <div id="modal-agreement-blocker-body" class="mag-scroll" style="overflow-y:auto;padding:22px 28px;flex:1;"></div>
         <div style="border-top:1px solid var(--gold-border);padding:16px 28px;">
+          <div id="blocker-address-wrap" style="display:none;margin-bottom:14px;padding:12px 14px;background:rgba(200,169,81,0.06);border:1px solid var(--gold-border);border-radius:4px;">
+            <label class="form-label" style="margin-bottom:6px;">Confirm Registered Business Address</label>
+            <p style="font-size:11px;color:var(--grey-mid);margin:0 0 8px;">Required for the Parties block of the Marketing Agreement. Saved against your partner profile.</p>
+            <input class="form-input" type="text" id="blocker-address-input" placeholder="Street, Suburb, State, Postcode" oninput="onBlockerAddressInput()">
+          </div>
           <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;margin-bottom:14px;">
             <input type="checkbox" id="blocker-agreement-check" onchange="onBlockerAgreementCheck()" style="width:18px;height:18px;margin-top:2px;accent-color:var(--gold);flex-shrink:0;">
             <span style="font-size:13px;color:var(--white);line-height:1.55;">
@@ -5412,6 +5424,7 @@
             company_name:          enq.company_name,
             abn:                   enq.abn,
             afsl_acl:              enq.afsl_acl,
+            registered_address:    enq.registered_address,
             website:               enq.website,
             linkedin_url:          enq.linkedin_url,
             role_type:             enq.role_type,
@@ -6211,6 +6224,7 @@
       company_name:     document.getElementById('eq-company').value.trim(),
       abn:              document.getElementById('eq-abn').value.trim().replace(/\s/g,''),
       afsl_acl:         document.getElementById('eq-afsl').value.trim(),
+      registered_address: document.getElementById('eq-address').value.trim(),
       website:          document.getElementById('eq-website').value.trim(),
       linkedin_url:     document.getElementById('eq-linkedin').value.trim(),
       role_type:        document.getElementById('eq-role').value,
@@ -6223,7 +6237,7 @@
     const checkboxText = (document.querySelector('#eq-agreement-check')?.parentElement?.querySelector('span')?.innerText || '').trim();
 
     // Validate required fields
-    const required = { full_name:'Full name', email:'Email', phone:'Phone', company_name:'Company name', abn:'ABN', role_type:'Role', state:'State' };
+    const required = { full_name:'Full name', email:'Email', phone:'Phone', company_name:'Company name', abn:'ABN', registered_address:'Registered Business Address', role_type:'Role', state:'State' };
     for (const [key, label] of Object.entries(required)) {
       if (!data[key]) {
         errEl.textContent = label + ' is required.';
@@ -6276,7 +6290,15 @@
           enquiry_id: enquiryId,
           email: data.email,
           agreement_version: AGREEMENT_VERSION,
-          checkbox_text: checkboxText
+          checkbox_text: checkboxText,
+          parties_snapshot: {
+            company_name:       data.company_name,
+            abn:                data.abn,
+            registered_address: data.registered_address,
+            full_name:          data.full_name,
+            email:              data.email,
+            phone:              data.phone
+          }
         })
       });
       if (!ackRes.ok) {
@@ -6605,11 +6627,62 @@
     return document.getElementById('agreement-body-template').innerHTML;
   }
 
-  function showAgreementModal(which) {
+  // Pull Parties data from the open enquiry form (for new applicants).
+  function collectPartiesFromForm() {
+    const v = id => (document.getElementById(id)?.value || '').trim();
+    return {
+      company_name:       v('eq-company'),
+      abn:                v('eq-abn'),
+      registered_address: v('eq-address'),
+      full_name:          v('eq-name'),
+      email:              (document.getElementById('eq-email')?.value || '').trim().toLowerCase(),
+      phone:              v('eq-phone'),
+    };
+  }
+
+  // Pull Parties data from the logged-in partner record (for existing partners).
+  function collectPartiesFromRecord() {
+    const r = currentPartnerRecord || {};
+    return {
+      company_name:       r.company_name       || '',
+      abn:                r.abn                || '',
+      registered_address: r.registered_address || (document.getElementById('blocker-address-input')?.value || '').trim(),
+      full_name:          r.full_name          || '',
+      email:              r.email              || '',
+      phone:              r.phone              || '',
+    };
+  }
+
+  // Stamp the parties object into all [data-partyfield] cells in a rendered agreement body.
+  function fillPartiesTable(container, parties) {
+    if (!container || !parties) return;
+    container.querySelectorAll('[data-partyfield]').forEach(cell => {
+      const key = cell.getAttribute('data-partyfield');
+      const val = (parties[key] || '').trim();
+      cell.textContent = val || '—';
+      if (!val) cell.style.color = 'var(--red,#C94C4C)';
+      else cell.style.color = '';
+    });
+  }
+
+  function showAgreementModal(which, partiesOverride) {
     // which: 'view' (read-only) or 'blocker'
     const id = which === 'blocker' ? 'modal-agreement-blocker-body' : 'modal-agreement-view-body';
     const modal = document.getElementById(which === 'blocker' ? 'modal-agreement-blocker' : 'modal-agreement-view');
-    document.getElementById(id).innerHTML = _agreementHtml();
+    const body = document.getElementById(id);
+    body.innerHTML = _agreementHtml();
+
+    // Decide which data source fills the Parties block.
+    let parties = partiesOverride;
+    if (!parties) {
+      if (which === 'view' && document.getElementById('screen-enquiry')?.classList.contains('active')) {
+        parties = collectPartiesFromForm();
+      } else if (currentPartnerRecord) {
+        parties = collectPartiesFromRecord();
+      }
+    }
+    fillPartiesTable(body, parties);
+
     modal.style.display = 'flex';
   }
 
@@ -6626,12 +6699,23 @@
     btn.style.cursor = checked ? 'pointer' : 'not-allowed';
   }
 
-  function onBlockerAgreementCheck() {
+  function onBlockerAgreementCheck() { updateBlockerAcceptState(); }
+  function onBlockerAddressInput() {
+    // Re-render the Parties block live as the user types.
+    const body = document.getElementById('modal-agreement-blocker-body');
+    if (body) fillPartiesTable(body, collectPartiesFromRecord());
+    updateBlockerAcceptState();
+  }
+  function updateBlockerAcceptState() {
     const btn = document.getElementById('blocker-accept-btn');
     const checked = document.getElementById('blocker-agreement-check').checked;
-    btn.disabled = !checked;
-    btn.style.opacity = checked ? '1' : '0.5';
-    btn.style.cursor = checked ? 'pointer' : 'not-allowed';
+    const addrWrap = document.getElementById('blocker-address-wrap');
+    const addrNeeded = addrWrap && addrWrap.style.display !== 'none';
+    const addrOk = !addrNeeded || (document.getElementById('blocker-address-input').value.trim().length >= 5);
+    const ok = checked && addrOk;
+    btn.disabled = !ok;
+    btn.style.opacity = ok ? '1' : '0.5';
+    btn.style.cursor  = ok ? 'pointer' : 'not-allowed';
   }
 
   function loadAgreementTab() {
@@ -6664,6 +6748,18 @@
     const btn = document.getElementById('blocker-accept-btn');
     if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.style.cursor = 'not-allowed'; }
     document.getElementById('blocker-msg').style.display = 'none';
+    // Show address-collection step only if we don't already have one on file.
+    const addrWrap = document.getElementById('blocker-address-wrap');
+    const addrInput = document.getElementById('blocker-address-input');
+    if (addrWrap && addrInput) {
+      if (!r.registered_address) {
+        addrWrap.style.display = 'block';
+        addrInput.value = '';
+      } else {
+        addrWrap.style.display = 'none';
+        addrInput.value = r.registered_address;
+      }
+    }
     showAgreementModal('blocker');
   }
 
@@ -6674,6 +6770,8 @@
     const msg = document.getElementById('blocker-msg');
     btn.disabled = true; btn.textContent = 'Recording…';
     const checkboxText = (document.querySelector('#blocker-agreement-check')?.parentElement?.querySelector('span')?.innerText || '').trim();
+    const parties = collectPartiesFromRecord();
+    const enteredAddr = (document.getElementById('blocker-address-input')?.value || '').trim();
     try {
       const res = await fetch(SUPABASE_URL + '/functions/v1/accept-agreement', {
         method: 'POST',
@@ -6687,7 +6785,9 @@
           partner_id: r.partner_id,
           email: r.email,
           agreement_version: AGREEMENT_VERSION,
-          checkbox_text: checkboxText
+          checkbox_text: checkboxText,
+          parties_snapshot: parties,
+          registered_address: enteredAddr || undefined
         }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -6695,6 +6795,7 @@
       currentPartnerRecord.agreement_version       = out.agreement_version || AGREEMENT_VERSION;
       currentPartnerRecord.agreement_accepted_at   = out.accepted_at;
       currentPartnerRecord.agreement_acceptance_id = out.acceptance_id;
+      if (enteredAddr) currentPartnerRecord.registered_address = enteredAddr;
       closeAgreementModal('blocker');
     } catch(e) {
       msg.textContent = 'Could not record acceptance: ' + (e.message || 'unknown error') + '. Please retry or contact admin@tpch.com.au.';
@@ -6715,6 +6816,7 @@
     document.getElementById('pset-state').value   = r.state || '';
     document.getElementById('pset-name').value    = r.full_name || '';
     document.getElementById('pset-role').value    = r.job_role || '';
+    document.getElementById('pset-address').value = r.registered_address || '';
     document.getElementById('pset-website').value = r.website  || '';
     // Logo preview
     if (r.logo_url) {
@@ -6732,10 +6834,11 @@
     if (!currentPartnerRecord) return;
     const partnerId = currentPartnerRecord.partner_id;
     const body = {
-      company_name: document.getElementById('pset-company').value.trim(),
-      state:        document.getElementById('pset-state').value,
-      full_name:    document.getElementById('pset-name').value.trim(),
-      website:      document.getElementById('pset-website').value.trim() || null,
+      company_name:       document.getElementById('pset-company').value.trim(),
+      state:              document.getElementById('pset-state').value,
+      full_name:          document.getElementById('pset-name').value.trim(),
+      registered_address: document.getElementById('pset-address').value.trim() || null,
+      website:            document.getElementById('pset-website').value.trim() || null,
     };
     const msg = document.getElementById('pset-profile-msg');
     try {

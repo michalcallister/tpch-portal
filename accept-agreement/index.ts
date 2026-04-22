@@ -43,7 +43,7 @@ const corsHeaders = {
 // (TPCH_Marketing_Agreement_v1.docx at the repo root / portal.tpch.com.au).
 // Bumping the agreement requires a new version key here.
 const KNOWN_VERSIONS: Record<string, string> = {
-  '1.0': '514c95dac71e6de1f64f1714afe5bd8c5f30b3075b4684475956f51b9f1e9acb',
+  '1.0': 'eb6e9a4f145a6c011f1686a09063a6b82a1995ea7684008e4b1963d8d0fa307a',
 }
 
 Deno.serve(async (req) => {
@@ -64,6 +64,8 @@ Deno.serve(async (req) => {
       email,
       agreement_version,
       checkbox_text,
+      parties_snapshot,
+      registered_address,
     } = body || {}
 
     // ── Validate input ──────────────────────────────────────
@@ -124,6 +126,16 @@ Deno.serve(async (req) => {
       rawHeaders[k] = v
     }
 
+    // ── If the client supplied a new registered_address (blocker flow),
+    //    persist it on the partner row before snapshotting. ────────
+    if (registered_address && (context === 'blocker' || context === 'admin_invite') && partner_id) {
+      const { error } = await supabase
+        .from('channel_partners')
+        .update({ registered_address: String(registered_address).trim() })
+        .eq('id', partner_id)
+      if (error) console.error('registered_address update failed:', error.message)
+    }
+
     // ── Insert audit row (legal source of truth) ────────────
     const { data: ack, error: ackErr } = await supabase
       .from('agreement_acceptances')
@@ -138,6 +150,7 @@ Deno.serve(async (req) => {
         method: context,
         checkbox_text,
         raw_headers: rawHeaders,
+        parties_snapshot: parties_snapshot || null,
       })
       .select('id, accepted_at')
       .single()
