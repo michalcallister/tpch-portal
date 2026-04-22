@@ -117,6 +117,7 @@ All SQL files are **fully idempotent** — safe to re-run.
 | `agents` | Registry of AI agents (e.g. `investment-analysis`); FK target for `agent_runs.agent_id` |
 | `agent_runs` | Per-run log of agent executions (portal or local-skill); status, triggered_by, duration, logs |
 | `project_analysis` | Investment analysis output (5-pillar scoring, TPCH assessment); `status='draft'` until admin publishes |
+| `agreement_acceptances` | Append-only audit log of Marketing Agreement acceptances (legal source of truth). RLS denies all reads/writes from anon + authenticated; only the `accept-agreement` edge function (service role) writes. Captures server-side IP, UA, timestamp, document SHA-256, exact checkbox text, and a `parties_snapshot` jsonb. |
 
 ---
 
@@ -132,6 +133,7 @@ All SQL files are **fully idempotent** — safe to re-run.
 | `invite-partner` | HTTP POST from admin/settings panel | Send invite email to partner or staff (JWT verify OFF) |
 | `run-agent` | HTTP POST from admin Research panel | Investment Analyst agent (Claude API + web_search). Writes to `agent_runs` + `project_analysis` as draft. Opus 4.7 prod / Sonnet 4.6 default / Haiku 4.5 test. System prompt lives in `prompt.ts` (do not inline-edit `index.ts`). |
 | `upload-analysis` | HTTP POST from local Claude Code skill | Option B handshake: accepts a locally produced Investment Analyst JSON, validates against same rules as `run-agent` (em-dash ban, banned jargon, scarcity regex, score sum, rating band), inserts as `status='draft'`. Requires `x-tpch-upload-secret` header matching `UPLOAD_SECRET` env var. **Scarcity rule (updated Apr 2026):** the two-comparables `$X/sqm` regex now scans `scarcity_narrative`, not `scarcity_stats.replacement_cost_sqm`. The stat box is a short single-line verdict (≤60 chars, one data point); named comparables with sources live in the narrative. |
+| `accept-agreement` | HTTP POST from portal (enquiry submit, blocker modal, admin invite) | Records partner acceptance of the Marketing Agreement. Captures IP / UA / timestamp server-side, validates the requested version against the canonical SHA-256 (`KNOWN_VERSIONS` map), inserts to `agreement_acceptances`, then updates the denormalised summary fields on `pending_enquiries` or `channel_partners`. Also persists `registered_address` on the partner row when supplied (blocker flow) and snapshots the filled Parties block to the audit row as `parties_snapshot`. JWT verify OFF (anonymous applicants need to call it from the public enquiry form). Sends a Certificate of Acceptance email via Resend on success. |
 
 **Important:** `invite-partner` has JWT verification turned OFF in Supabase dashboard (Edge Functions → invite-partner → Settings → Verify JWT: OFF). Required because partner tokens can be expired when resending invites.
 
@@ -141,6 +143,29 @@ Both paths write identical `project_analysis` rows with `status='draft'`, so the
 
 1. **Portal path (`run-agent`)** — admin clicks "Run Analyst" in the Research panel; the edge function calls Claude API directly. Good for Haiku test runs and quick Sonnet jobs. Bound by the 150s edge-function gateway timeout.
 2. **Local skill path (`upload-analysis`)** — for heavy Opus 4.7 runs, the skill at `.claude/skills/investment-analyst/` produces the JSON locally in a Claude Code session, then (only after asking Mick) POSTs it to `upload-analysis`. Not bound by the 150s timeout and uses Mick's Claude subscription rather than API credit.
+
+---
+
+## Marketing Agreement Acceptance Flow
+
+Three entry points, one audit row per acceptance.
+
+| Trigger | Context | Who |
+|---|---|---|
+| Public enquiry form (Become a Channel Partner) | `enquiry` | New applicants — checkbox required to submit |
+| Blocker modal on partner login | `blocker` | Existing partners with no acceptance on record |
+| Admin invite handshake (placeholder) | `admin_invite` | Reserved for future admin-side invite path |
+
+**Architecture**
+- `agreement_acceptances` is the legal source of truth. RLS denies all writes from `anon` + `authenticated`; only the `accept-agreement` edge function (service role) can insert.
+- `pending_enquiries` and `channel_partners` carry denormalised summary fields (`agreement_version`, `agreement_accepted_at`, `agreement_acceptance_id`) for fast UI lookups. The audit row is canonical.
+- Each audit row stores a `parties_snapshot` jsonb of the filled Parties block at the moment of acceptance — so later edits to the partner profile cannot change what was actually accepted.
+- The edge function captures IP / User-Agent / timestamp server-side (not trusted from the client) and validates the requested version against `KNOWN_VERSIONS` (a hard-coded `version → SHA-256` map of the canonical `.docx` artefact).
+- Resend sends a Certificate of Acceptance email on success (BCC to admin).
+
+**Parties block auto-fill** — the read-only agreement viewer and blocker modal stamp the Parties table from either the live enquiry form values (new applicants) or the partner record (existing partners). Fields used: company_name, abn, registered_address, full_name, email, phone. Staff inherit their owner firm's acceptance — the blocker only fires for `role === 'partner'`.
+
+**Bumping the agreement version** — regenerate the .docx via the `tpch-doc` skill (`marketing-agreement.json` config), recompute its SHA-256, add a new entry to `KNOWN_VERSIONS` in `accept-agreement/index.ts` (do not delete old keys — old acceptances must still validate), update the version label in the portal HTML, and redeploy the edge function. Branded .docx generation is handled by `.claude/skills/tpch-doc/` (Node + `docx` package) — re-run with `node .claude/skills/tpch-doc/build.js .claude/skills/tpch-doc/marketing-agreement.json`.
 
 ---
 
@@ -202,7 +227,7 @@ Commission override applies in: all-stock table, project cards, project stock ta
 - **AI Research Agent** — generates suburb research via Claude API, admin approves to push live
 - **Investment Analyst agent** — 5-pillar scoring (Population, Economic, Supply & Demand, Affordability, Scarcity) with TPCH Assessment and Trust & Governance sections. Runs via `run-agent` edge function (portal) or locally via the Claude Code skill + `upload-analysis` handshake. Same validator + draft review gate in both paths.
 - **Enquiries panel** — view applications, AI due diligence report, approve/decline
-- **Partners panel** — manage channel partners (active/inactive/suspended), resend invites, notes
+- **Partners panel** — table view of all partners with status dot, last sign-in (relative), agreement version + acceptance date, downloadable .docx; powered by `get_partners_admin()` SECURITY DEFINER RPC (joins `auth.users.last_sign_in_at` by lower(email))
 - **Team panel** — manage TPCH team members, set admin/super-admin access
 - **Sync Now** button — manually trigger Monday.com → Supabase sync
 
@@ -215,7 +240,8 @@ Commission override applies in: all-stock table, project cards, project stock ta
 - **My Lists** — save properties to named lists, persistent in Supabase
 - **Investor Kit** — generate branded PDF (via window.print()) with property details + area research
 - **Team Deals** — full pipeline from Monday.com; columns: Stage, Property, Client, COS Executed, Exp. Approval, Exp. Settlement, Paid to Date, Outstanding (commission minus paid); all sortable; stage filters; deal assignment (admin only)
-- **Partner Settings** — profile, logo upload, website URL, invite + manage staff, set staff commission display
+- **Partner Settings** — profile, logo upload, website URL, registered business address, invite + manage staff, set staff commission display
+- **Marketing Agreement** — read-only viewer + downloadable branded `TPCH_Marketing_Agreement_v1.docx`; current acceptance state shown on the Settings page. Blocker modal fires on first login after rollout if the firm has no acceptance on record (also collects registered address inline when missing).
 - **Team view** — shows owner + all staff members, status (Active/Invited), commission setting per staff
 
 ### What's New / Changelog
