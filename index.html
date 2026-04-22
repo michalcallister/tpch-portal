@@ -1225,7 +1225,7 @@
   #page-partners { padding: 0 !important; display: none; height: calc(100vh - 61px); overflow: hidden; }
   #page-partners.active { display: flex; }
 
-  .prt-layout { display: grid; grid-template-columns: 340px 1fr; width: 100%; overflow: hidden; }
+  .prt-layout { display: grid; grid-template-columns: 620px 1fr; width: 100%; overflow: hidden; }
 
   .prt-sidebar {
     border-right: 1px solid var(--gold-border); display: flex; flex-direction: column; overflow: hidden;
@@ -1262,6 +1262,38 @@
   .prt-status-dot.inactive { background: var(--grey-mid); }
   .prt-status-dot.suspended { background: var(--gold); }
   .prt-card-date { font-size: 11px; color: var(--grey-mid); margin-left: auto; }
+
+  /* Partners table */
+  .prt-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .prt-table thead th {
+    position: sticky; top: 0; background: var(--black);
+    text-align: left; font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--gold); padding: 10px 12px; border-bottom: 1px solid var(--gold-border);
+    font-weight: 600;
+  }
+  .prt-table tbody tr {
+    cursor: pointer; border-bottom: 1px solid rgba(201,168,76,0.08); transition: background 0.15s;
+  }
+  .prt-table tbody tr:hover { background: rgba(201,168,76,0.04); }
+  .prt-table tbody tr.active { background: rgba(201,168,76,0.10); border-left: 2px solid var(--gold); }
+  .prt-table td { padding: 11px 12px; vertical-align: middle; color: var(--grey-light); }
+  .prt-table td.col-partner { color: var(--white); }
+  .prt-table .pt-name  { font-size: 13px; font-weight: 600; color: var(--white); line-height: 1.3; }
+  .prt-table .pt-firm  { font-size: 11px; color: var(--grey-mid); margin-top: 2px; }
+  .prt-table .pt-status {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11px;
+    text-transform: capitalize; color: var(--grey-light);
+  }
+  .prt-table .pt-login-date { font-size: 12px; color: var(--white); }
+  .prt-table .pt-login-rel  { font-size: 10px; color: var(--grey-mid); margin-top: 1px; }
+  .prt-table .pt-login-never { font-size: 11px; color: var(--grey-mid); font-style: italic; }
+  .prt-table .pt-agree-link {
+    color: var(--gold); text-decoration: none; font-size: 11px; letter-spacing: 0.3px; white-space: nowrap;
+  }
+  .prt-table .pt-agree-link:hover { text-decoration: underline; }
+  .prt-table .pt-agree-meta { font-size: 10px; color: var(--grey-mid); margin-top: 2px; }
+  .prt-table .pt-agree-none { font-size: 11px; color: var(--red); }
 
   .prt-detail { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
   .prt-detail-empty {
@@ -2014,8 +2046,28 @@
         </div>
       </div>
 
-      <button class="enquiry-submit" id="enquiry-submit-btn" onclick="submitEnquiry()">Submit Application →</button>
-      <p class="login-hint" style="margin-top:16px;">By submitting this form you agree to TPCH reviewing your details. Your information is kept confidential.</p>
+      <!-- Section 5: Marketing Agreement -->
+      <div class="enquiry-section">
+        <div class="enquiry-section-title">Channel Partner Marketing Agreement</div>
+        <div style="border:1px solid var(--gold-border);background:rgba(200,169,81,0.04);padding:18px 20px;border-radius:4px;">
+          <p style="font-size:13px;color:var(--grey-light);line-height:1.65;margin:0 0 14px;">
+            Before submitting, please review the <strong style="color:var(--white);">TPCH Channel Partner Marketing Agreement (Version 1.0)</strong>. It governs your access to the Portal, commission entitlements, confidentiality, and data-use obligations. You must read and agree to these terms in order to apply.
+          </p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+            <button type="button" class="btn-outline" style="padding:8px 16px;font-size:12px;" onclick="showAgreementModal('view')">Review Agreement</button>
+            <a href="TPCH_Marketing_Agreement_v1.docx" download style="display:inline-block;padding:8px 16px;font-size:12px;color:var(--gold);border:1px solid var(--gold-border);text-decoration:none;border-radius:3px;letter-spacing:0.5px;">Download .docx</a>
+          </div>
+          <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;">
+            <input type="checkbox" id="eq-agreement-check" onchange="onAgreementCheck()" style="width:18px;height:18px;margin-top:2px;accent-color:var(--gold);flex-shrink:0;">
+            <span style="font-size:13px;color:var(--white);line-height:1.55;">
+              I have read and agree to the <strong style="color:var(--gold);">TPCH Channel Partner Marketing Agreement (Version 1.0)</strong>. I understand this acceptance will be recorded against our firm's partner profile.
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <button class="enquiry-submit" id="enquiry-submit-btn" onclick="submitEnquiry()" disabled style="opacity:0.5;cursor:not-allowed;">Submit Application →</button>
+      <p class="login-hint" style="margin-top:16px;">Your information is kept confidential. Submission records your acceptance of the Marketing Agreement with a timestamp.</p>
     </div>
 
     <!-- Success view (hidden until submission) -->
@@ -3790,6 +3842,7 @@
           <button class="stk-tab-btn active" onclick="switchPartnerTab('profile',this)">Profile</button>
           <button class="stk-tab-btn" onclick="switchPartnerTab('team',this)">Team</button>
           <button class="stk-tab-btn" onclick="switchPartnerTab('notifications',this)">Notifications</button>
+          <button class="stk-tab-btn" onclick="switchPartnerTab('agreement',this)">Agreement</button>
         </div>
 
         <!-- ── Profile Tab ── -->
@@ -3889,8 +3942,273 @@
           <button class="btn-primary" style="margin-top:20px;" onclick="saveNotifPrefs()">Save Preferences</button>
         </div>
 
+        <!-- ── Agreement Tab ── -->
+        <div id="pset-tab-agreement" style="display:none;">
+          <div class="prt-section-title">Marketing Agreement</div>
+          <p style="font-size:13px;color:var(--grey-light);line-height:1.6;margin-bottom:20px;max-width:620px;">
+            The Channel Partner Marketing Agreement governs your firm's access to the TPCH Portal, commission entitlements, confidentiality and data-use obligations. The version and acceptance record for your firm are shown below.
+          </p>
+
+          <div style="border:1px solid var(--gold-border);background:var(--black-soft);padding:22px 24px;border-radius:4px;max-width:620px;margin-bottom:20px;">
+            <div style="display:grid;grid-template-columns:140px 1fr;gap:12px 24px;font-size:13px;">
+              <div style="color:var(--grey-light);">Version</div>
+              <div id="pset-agree-version" style="color:var(--white);font-family:'Courier New',monospace;">—</div>
+              <div style="color:var(--grey-light);">Accepted</div>
+              <div id="pset-agree-date" style="color:var(--white);">—</div>
+              <div style="color:var(--grey-light);">Status</div>
+              <div id="pset-agree-status" style="color:var(--white);">—</div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <button class="btn-outline" onclick="showAgreementModal('view')">View Agreement</button>
+            <a href="TPCH_Marketing_Agreement_v1.docx" download style="display:inline-block;padding:10px 20px;font-size:13px;color:var(--gold);border:1px solid var(--gold-border);text-decoration:none;border-radius:3px;letter-spacing:0.5px;">Download .docx</a>
+          </div>
+          <p style="font-size:11px;color:var(--grey-mid);margin-top:18px;max-width:620px;">
+            If this agreement is amended, TPCH will notify you in writing at least 30 days before new terms take effect, per clause 16 of the Agreement.
+          </p>
+        </div>
+
       </div>
     </div>
+
+    <!-- ── Marketing Agreement: Inline Content Template (hidden) ── -->
+    <div id="agreement-body-template" style="display:none;">
+      <div class="mag-doc">
+        <div class="mag-overline">The Property Clearing House Pty Ltd  ·  Version 1.0  ·  Confidential</div>
+        <h1 class="mag-title">Marketing Agreement</h1>
+
+        <h2 class="mag-h2">1. Parties</h2>
+        <p>This Marketing Agreement ("Agreement") is entered into as of the date last signed below ("Effective Date") between:</p>
+        <table class="mag-table">
+          <tr><td>Company / Entity Name</td><td>&nbsp;</td></tr>
+          <tr><td>ABN / ACN</td><td>&nbsp;</td></tr>
+          <tr><td>Registered Address</td><td>&nbsp;</td></tr>
+          <tr><td>Primary Contact Name</td><td>&nbsp;</td></tr>
+          <tr><td>Primary Contact Email</td><td>&nbsp;</td></tr>
+          <tr><td>Primary Contact Phone</td><td>&nbsp;</td></tr>
+          <tr><td>Trading Name (if different)</td><td>&nbsp;</td></tr>
+          <tr><td>Postal Address (if different from above)</td><td>&nbsp;</td></tr>
+        </table>
+        <p>(collectively, the "Channel Partner")</p>
+        <p>AND</p>
+        <p>The Property Clearing House Pty Ltd (ABN: 50 658 406 903), a company registered in Australia ("TPCH").</p>
+        <p>Each of TPCH and the Channel Partner may be referred to individually as a "Party" and together as the "Parties".</p>
+
+        <h2 class="mag-h2">2. Background</h2>
+        <p>TPCH operates a property sales order facilitation business, connecting property developers ("Developers") who wish to sell residential or commercial stock with channel partners whose clients wish to purchase that stock. TPCH is not a buyers' agent, real estate agent, or licensed property intermediary. TPCH's role is limited to receiving Expressions of Interest from Channel Partners on behalf of their clients, ordering contracts from Developers, and facilitating the commission payment process. TPCH does not communicate directly with Buyers at any stage. TPCH maintains a secure online portal (the "Portal") through which project listings, commission schedules, EOI submissions, and related communications are managed.</p>
+        <p>The Channel Partner wishes to participate in TPCH's network on the terms set out in this Agreement, which governs all projects and listings made available to the Channel Partner through the Portal, now and in the future, without the need for a separate agreement per project.</p>
+
+        <h2 class="mag-h2">3. Term</h2>
+        <p>This Agreement commences on the Effective Date and continues until terminated by either Party in accordance with clause 13. It applies to all projects accessible to the Channel Partner through the Portal during the term.</p>
+
+        <h2 class="mag-h2">4. Appointment &amp; Scope</h2>
+        <p>TPCH appoints the Channel Partner as a non-exclusive network participant for the purpose of submitting signed EOIs on behalf of their clients ("Buyers") for stock listed in the Portal. This appointment does not create an employment, partnership, joint venture, or agency relationship, and does not authorise the Channel Partner to make representations or commitments on behalf of TPCH or any Developer. It is limited to projects accessible in the Portal.</p>
+
+        <h2 class="mag-h2">5. Portal Access &amp; Use</h2>
+        <h3 class="mag-h3">5.1  Access</h3>
+        <p>TPCH will provide the Channel Partner with individual login credentials for the Portal. The Channel Partner is solely responsible for:</p>
+        <ul>
+          <li>maintaining the confidentiality of login credentials;</li>
+          <li>ensuring only authorised representatives of the Channel Partner access the Portal;</li>
+          <li>notifying TPCH promptly if credentials are lost, compromised, or if an authorised user leaves the Channel Partner's organisation.</li>
+        </ul>
+        <h3 class="mag-h3">5.2  Project Information</h3>
+        <p>The Portal contains, for each available project:</p>
+        <ul>
+          <li>project details, floor plans, pricing, and available stock;</li>
+          <li>commission rates and commission structures applicable to that project;</li>
+          <li>expected payment timelines from the Developer;</li>
+          <li>EOI submission forms for lodging signed Expressions of Interest on behalf of Buyers.</li>
+        </ul>
+        <p>Commission amounts and Developer payment timelines vary by project and are set out in the Portal on a project-by-project basis. The Channel Partner acknowledges that this information may be updated from time to time and agrees to refer to the Portal for current details before making any representations to prospective Buyers.</p>
+        <h3 class="mag-h3">5.3  Acceptable Use</h3>
+        <p>The Channel Partner must:</p>
+        <ul>
+          <li>use the Portal only for purposes contemplated by this Agreement;</li>
+          <li>not share, transfer, or sub-licence Portal access to any third party outside the Channel Partner's organisation;</li>
+          <li>not attempt to access, copy, scrape, or reverse-engineer any part of the Portal or its underlying data;</li>
+          <li>comply with any reasonable usage policies notified by TPCH from time to time.</li>
+        </ul>
+
+        <h2 class="mag-h2">6. Channel Partner Obligations</h2>
+        <h3 class="mag-h3">6.1  EOI Submissions</h3>
+        <p>The Channel Partner must:</p>
+        <ul>
+          <li>only submit EOIs for Buyers who have signed the EOI form and are genuinely interested in purchasing the relevant stock;</li>
+          <li>submit each EOI through the Portal, including a signed Expression of Interest from the Buyer for the specific stock being reserved, prior to any order being placed with the Developer;</li>
+          <li>provide accurate and complete Buyer information as required by the EOI form and the Portal;</li>
+          <li>comply with all applicable laws when marketing or promoting projects to prospective Buyers, including the Australian Consumer Law and any licensing requirements applicable to the Channel Partner in its own jurisdiction. For the avoidance of doubt, TPCH does not hold a real estate agent's licence and does not act as a buyers' agent; nothing in this Agreement requires the Channel Partner to treat TPCH as such.</li>
+        </ul>
+        <h3 class="mag-h3">6.2  No Direct Developer Contact</h3>
+        <p>The Channel Partner must not, at any time during or after the term of this Agreement, directly approach, contact, or deal with any Developer listed on the Portal (or any related entity or representative of such Developer) for the purpose of:</p>
+        <ul>
+          <li>negotiating or entering into a commission or referral arrangement that bypasses TPCH;</li>
+          <li>obtaining project stock, pricing, or marketing materials outside the Portal;</li>
+          <li>facilitating a sale or EOI submission that would otherwise be processed through TPCH.</li>
+        </ul>
+        <p>This restriction applies to all Developers whose stock is or has been listed in the Portal and to whom the Channel Partner was granted access through TPCH, and survives termination of this Agreement for a period of twenty-four (24) months. This clause does not apply to arrangements between the Channel Partner and a Developer that were entered into prior to the date of this Agreement, provided the Channel Partner notifies TPCH in writing of any such pre-existing arrangement within 14 days of signing.</p>
+        <h3 class="mag-h3">6.3  Licensing &amp; Compliance</h3>
+        <p>The Channel Partner warrants that it holds all licences, registrations, and authorisations required by applicable law to carry out the activities contemplated by this Agreement in its own dealings with Buyers. The Channel Partner must immediately notify TPCH if any relevant licence is suspended, cancelled, or subject to regulatory action. The Channel Partner acknowledges that TPCH does not hold a real estate agent's licence or buyers' agent licence, and that TPCH's facilitation role under this Agreement does not constitute the carrying on of a real estate agency business.</p>
+        <h3 class="mag-h3">6.4  Conduct</h3>
+        <p>The Channel Partner must not make any representation about a project, Developer, or TPCH that is misleading, deceptive, or inconsistent with information provided in the Portal. All marketing materials relating to Portal projects must be approved by TPCH or the relevant Developer before use.</p>
+
+        <h2 class="mag-h2">7. TPCH Obligations</h2>
+        <p>TPCH will maintain the Portal with reasonably current project information and commission schedules, act as the liaison between Developers and the Channel Partner on all commission and payment matters, and pay commissions in accordance with clause 8.</p>
+
+        <h2 class="mag-h2">8. Commissions &amp; Payment</h2>
+        <h3 class="mag-h3">8.1  Entitlement</h3>
+        <p>The Channel Partner is entitled to a commission for each sale where:</p>
+        <ol>
+          <li>the Channel Partner submitted a valid, signed EOI through the Portal for the relevant Buyer and stock prior to the order being placed with the Developer;</li>
+          <li>TPCH orders and the Developer issues contracts for the relevant stock to the Buyer, and the Buyer enters into an unconditional contract of sale with the Developer;</li>
+          <li>the contract proceeds to settlement (or such earlier trigger as specified in the Portal for that project);</li>
+          <li>no breach of this Agreement (including clause 6.2) has occurred in relation to that sale.</li>
+        </ol>
+        <h3 class="mag-h3">8.2  Commission Rate</h3>
+        <p>Commission rates vary by project and are set out in the Portal for each project at the time of listing. The Channel Partner acknowledges that commission rates may differ across projects and that TPCH makes no representation as to minimum or guaranteed commission levels.</p>
+        <h3 class="mag-h3">8.3  Payment Timeline</h3>
+        <p>TPCH will pay the Channel Partner the commission due within seven (7) calendar days of both: (a) TPCH receiving the corresponding cleared funds from the Developer for that sale; and (b) TPCH receiving a valid tax invoice from the Channel Partner. The Channel Partner acknowledges that:</p>
+        <ul>
+          <li>Developer payment timelines vary by project and are indicated in the Portal;</li>
+          <li>TPCH has no obligation to pay commission before it has received cleared funds from the Developer;</li>
+          <li>delays caused by the Developer, settlement disputes, or contract rescissions are outside TPCH's control.</li>
+        </ul>
+        <h3 class="mag-h3">8.4  Payment Method</h3>
+        <p>Commissions will be paid by electronic funds transfer to the bank account specified on the Channel Partner's tax invoice. Banking details are not stored in the Portal and it is the Channel Partner's responsibility to ensure correct account details appear on each invoice submitted. TPCH is not liable for payments made to an incorrect account as a result of the Channel Partner's error.</p>
+        <h3 class="mag-h3">8.5  GST</h3>
+        <p>All commission amounts displayed in the Portal are inclusive of GST. The Channel Partner must provide a valid tax invoice to TPCH before payment will be processed. The Channel Partner is responsible for ensuring its invoices comply with the requirements of the A New Tax System (Goods and Services Tax) Act 1999 (Cth).</p>
+        <h3 class="mag-h3">8.6  Disputes</h3>
+        <p>Any commission dispute must be raised in writing within thirty (30) days of the relevant payment date (or expected payment date). Failure to raise a dispute within this period constitutes acceptance of the payment or non-payment.</p>
+
+        <h2 class="mag-h2">9. Confidentiality</h2>
+        <p>Each Party must keep confidential all non-public information received from the other Party ("Confidential Information"), including Portal content, commission rates, Developer details, and Buyer data. Each Party must use Confidential Information only for the purposes of this Agreement, not disclose it to third parties without prior written consent (except to employees or advisers who need to know and are bound by equivalent obligations), and take reasonable steps to prevent unauthorised access. These obligations survive termination for three (3) years.</p>
+
+        <h2 class="mag-h2">10. Intellectual Property</h2>
+        <p>All intellectual property in the Portal, TPCH's branding, project materials, and related content remains the exclusive property of TPCH or the relevant Developer. The Channel Partner is granted a limited, non-exclusive, non-transferable licence to use such materials solely for the purpose of marketing available stock to prospective Buyers and submitting EOIs in accordance with this Agreement. This licence terminates automatically upon termination of the Agreement.</p>
+
+        <h2 class="mag-h2">11. Portal Access Tiers, Minimum Activity &amp; Data Use</h2>
+        <h3 class="mag-h3">11.1  TPCH Portal Resources</h3>
+        <p>The Channel Partner acknowledges that the Portal contains proprietary research, market data, suburb and project analysis, and white-label marketing materials (collectively, "Portal Resources") developed and maintained by TPCH at significant cost. Portal Resources are made available to the Channel Partner solely to facilitate EOI submissions and sales of Developer stock through TPCH. Portal Resources may not be used for any other commercial purpose, including to support sales through other platforms, competing facilitators, or direct Developer arrangements.</p>
+        <h3 class="mag-h3">11.2  Minimum Activity Requirements</h3>
+        <p>TPCH may, from time to time, set minimum activity thresholds ("Minimum Activity Requirements") as a condition of continued Portal access. Minimum Activity Requirements may be expressed as a minimum number of settled sales or submitted EOIs per calendar month or quarter, and will be notified to the Channel Partner in writing with reasonable notice before taking effect. If the Channel Partner fails to meet the applicable Minimum Activity Requirements in any measurement period, TPCH may, at its discretion:</p>
+        <ul>
+          <li>suspend or restrict the Channel Partner's Portal access, including access to Portal Resources;</li>
+          <li>downgrade the Channel Partner to a lower access tier (see clause 11.3); or</li>
+          <li>terminate this Agreement in accordance with clause 13.</li>
+        </ul>
+        <p>Suspension or restriction of Portal access under this clause does not constitute a breach of this Agreement by TPCH and does not affect any commission entitlements already accrued by the Channel Partner.</p>
+        <h3 class="mag-h3">11.3  Access Tiers</h3>
+        <p>TPCH may, from time to time, introduce a tiered access structure for the Portal, under which different levels of Portal Resources, features, and functionality are made available to Channel Partners based on their activity levels and compliance with applicable Minimum Activity Requirements ("Access Tiers"). TPCH will notify the Channel Partner of any Access Tier structure and the applicable thresholds before it takes effect. The Channel Partner acknowledges that:</p>
+        <ul>
+          <li>access to advanced Portal features and resources is a privilege, not a right, and is conditional on meeting the relevant tier's activity requirements;</li>
+          <li>TPCH may modify, expand, or discontinue any Access Tier or its associated features at any time on reasonable written notice; and</li>
+          <li>all Portal Resources accessible at any tier remain the exclusive intellectual property of TPCH and are subject to the restrictions in clause 10 and this clause 11 regardless of which tier the Channel Partner occupies.</li>
+        </ul>
+        <h3 class="mag-h3">11.4  Restrictions on Data Use</h3>
+        <p>The Channel Partner must not, during or after the term of this Agreement:</p>
+        <ul>
+          <li>reproduce, store, distribute, or commercialise Portal Resources outside of the permitted use in clause 10;</li>
+          <li>use Portal Resources, white-label materials, or research data to support property sales or investment recommendations made through any platform, facilitator, or arrangement other than TPCH; or</li>
+          <li>retain copies of Portal Resources following suspension or termination of Portal access, and must promptly delete or destroy any such materials upon request by TPCH.</li>
+        </ul>
+
+        <h2 class="mag-h2">12. Privacy</h2>
+        <p>Each Party must comply with the Privacy Act 1988 (Cth) and the Australian Privacy Principles in relation to any personal information collected or handled under this Agreement. The Channel Partner must obtain all necessary consents from Buyers before submitting their personal information via the Portal, and must not use Buyer data for any purpose other than submitting EOIs through TPCH. TPCH will not use Buyer personal information to communicate directly with Buyers.</p>
+
+        <h2 class="mag-h2">13. Termination</h2>
+        <h3 class="mag-h3">13.1  Termination for Convenience</h3>
+        <p>Either Party may terminate this Agreement by providing thirty (30) days' written notice to the other Party. Termination does not affect commission entitlements arising from sales where a valid EOI was submitted and contracts were ordered prior to the termination date, provided settlement occurs within twenty-four (24) months of termination, or such longer period as may be agreed in writing by the Parties.</p>
+        <h3 class="mag-h3">13.2  Immediate Termination</h3>
+        <p>TPCH may terminate this Agreement immediately by written notice if the Channel Partner:</p>
+        <ul>
+          <li>breaches clause 6.2 (no direct Developer contact) or any other material obligation;</li>
+          <li>becomes insolvent, bankrupt, or enters administration;</li>
+          <li>engages in conduct that, in TPCH's reasonable opinion, is likely to bring TPCH or any Developer into disrepute;</li>
+          <li>has a licence required to carry out its activities under this Agreement suspended or cancelled.</li>
+        </ul>
+        <h3 class="mag-h3">13.3  Effect of Termination</h3>
+        <p>Upon termination, the Channel Partner must immediately cease using the Portal and return or destroy any Confidential Information held. TPCH will revoke Portal access credentials on the termination date.</p>
+
+        <h2 class="mag-h2">14. Limitation of Liability</h2>
+        <p>To the maximum extent permitted by law, TPCH's total liability is limited to commissions paid to the Channel Partner in the three (3) months preceding the relevant event. Neither Party is liable for indirect, consequential, or special loss. TPCH is not liable for any act or omission of a Developer, including failure to settle, pay commissions, or honour contracts.</p>
+
+        <h2 class="mag-h2">15. Dispute Resolution</h2>
+        <p>Disputes must first be addressed by good-faith negotiation within fourteen (14) days of written notice. If unresolved, either Party may refer the matter to mediation (administered by a mutually agreed mediator or the Australian Disputes Centre). If mediation fails, either Party may commence legal proceedings. Nothing in this clause prevents a Party from seeking urgent injunctive relief.</p>
+
+        <h2 class="mag-h2">16. General</h2>
+        <p>This Agreement is governed by the laws of Queensland, Australia. It constitutes the entire agreement between the Parties on its subject matter and supersedes all prior arrangements. TPCH may amend this Agreement on thirty (30) days' written notice; continued Portal use after that period constitutes acceptance.</p>
+        <p>The Channel Partner may not assign this Agreement without TPCH's prior written consent; TPCH may assign to a related entity without consent. If any provision is unenforceable it will be severed without affecting the remainder. A failure to exercise a right is not a waiver of it. Notices must be in writing by email to the address in this Agreement and are effective on sending unless a delivery failure is received.</p>
+
+        <h2 class="mag-h2">17. Execution</h2>
+        <p>By signing below, each Party agrees to be bound by the terms of this Agreement.</p>
+        <p style="color:var(--grey-mid);font-size:12px;font-style:italic;margin-top:18px;">The signed .docx version of this Agreement is available for download and is the execution artefact. In-portal acceptance via the application form or the acceptance prompt records a timestamped electronic acknowledgement that has the same effect as signing for the purposes of this Agreement.</p>
+      </div>
+    </div>
+
+    <!-- ── Agreement Viewer Modal (read-only) ── -->
+    <div id="modal-agreement-view" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:1100;align-items:center;justify-content:center;">
+      <div style="background:var(--black-soft);border:1px solid var(--gold-border);border-radius:6px;width:860px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--gold-border);">
+          <div>
+            <div style="font-family:'Courier New',monospace;font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;">Confidential · Version 1.0</div>
+            <h3 style="font-size:18px;color:var(--white);margin:2px 0 0;">Channel Partner Marketing Agreement</h3>
+          </div>
+          <button class="btn-outline" style="padding:6px 14px;font-size:12px;" onclick="closeAgreementModal('view')">Close</button>
+        </div>
+        <div id="modal-agreement-view-body" class="mag-scroll" style="overflow-y:auto;padding:28px 32px;flex:1;"></div>
+        <div style="border-top:1px solid var(--gold-border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+          <a href="TPCH_Marketing_Agreement_v1.docx" download style="font-size:12px;color:var(--gold);text-decoration:none;">Download signed .docx →</a>
+          <button class="btn-primary" onclick="closeAgreementModal('view')">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Agreement Blocker (legacy partners — first login after rollout) ── -->
+    <div id="modal-agreement-blocker" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,0.94);z-index:1200;align-items:center;justify-content:center;">
+      <div style="background:var(--black-soft);border:1px solid var(--gold-border);border-radius:6px;width:860px;max-width:95vw;max-height:92vh;display:flex;flex-direction:column;">
+        <div style="padding:22px 28px 18px;border-bottom:1px solid var(--gold-border);">
+          <div style="font-family:'Courier New',monospace;font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Action Required · Version 1.0</div>
+          <h3 style="font-size:22px;color:var(--white);margin:0 0 6px;font-family:'Playfair Display',Georgia,serif;font-weight:600;">Please review and accept the Marketing Agreement</h3>
+          <p style="font-size:13px;color:var(--grey-light);line-height:1.6;margin:0;">
+            TPCH now records electronic acceptance of the Channel Partner Marketing Agreement against each partner profile. Please review the terms below and confirm acceptance to continue using the Portal.
+          </p>
+        </div>
+        <div id="modal-agreement-blocker-body" class="mag-scroll" style="overflow-y:auto;padding:22px 28px;flex:1;"></div>
+        <div style="border-top:1px solid var(--gold-border);padding:16px 28px;">
+          <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;margin-bottom:14px;">
+            <input type="checkbox" id="blocker-agreement-check" onchange="onBlockerAgreementCheck()" style="width:18px;height:18px;margin-top:2px;accent-color:var(--gold);flex-shrink:0;">
+            <span style="font-size:13px;color:var(--white);line-height:1.55;">
+              I confirm I have read the <strong style="color:var(--gold);">TPCH Channel Partner Marketing Agreement (Version 1.0)</strong> and accept its terms on behalf of our firm. This acceptance will be timestamped against our partner profile.
+            </span>
+          </label>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+            <div style="display:flex;gap:10px;">
+              <a href="TPCH_Marketing_Agreement_v1.docx" download style="font-size:12px;color:var(--gold);text-decoration:none;align-self:center;">Download .docx</a>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn-outline" onclick="blockerSignOut()">Sign Out</button>
+              <button class="btn-primary" id="blocker-accept-btn" onclick="acceptAgreementBlocker()" disabled style="opacity:0.5;cursor:not-allowed;">Accept &amp; Continue</button>
+            </div>
+          </div>
+          <div id="blocker-msg" style="display:none;font-size:12px;margin-top:10px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .mag-scroll .mag-doc { color:var(--cream,#F5F3EE); font-family:'Outfit',system-ui,sans-serif; font-size:13px; line-height:1.65; }
+      .mag-scroll .mag-overline { font-family:'Courier New',monospace; font-size:10px; color:var(--gold); letter-spacing:3px; text-transform:uppercase; margin-bottom:10px; }
+      .mag-scroll .mag-title { font-family:'Playfair Display',Georgia,serif; font-size:26px; color:var(--white); font-weight:600; margin:0 0 8px; }
+      .mag-scroll .mag-h2 { font-family:'Playfair Display',Georgia,serif; font-size:17px; color:var(--gold); margin:26px 0 8px; padding-bottom:4px; border-bottom:1px solid var(--gold-border); font-weight:600; }
+      .mag-scroll .mag-h3 { font-family:'Outfit',system-ui,sans-serif; font-size:13px; color:var(--white); margin:14px 0 4px; font-weight:600; letter-spacing:0.3px; }
+      .mag-scroll p { margin:0 0 10px; color:var(--grey-light); }
+      .mag-scroll ul, .mag-scroll ol { margin:4px 0 12px 20px; padding:0; color:var(--grey-light); }
+      .mag-scroll li { margin-bottom:5px; }
+      .mag-scroll .mag-table { width:100%; border-collapse:collapse; margin:10px 0 14px; }
+      .mag-scroll .mag-table td { border:1px solid var(--gold-border); padding:8px 12px; font-size:12px; color:var(--grey-light); }
+      .mag-scroll .mag-table td:first-child { width:42%; color:var(--white); }
+    </style>
 
     <!-- Admin: Direct Partner Invite Modal -->
     <div id="modal-admin-invite" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
@@ -4763,6 +5081,8 @@
     loadSupabaseData();
     setTimeout(initLeafletMap, 150);
     if (currentUserIsAdmin) refreshEnqBadge();
+    // Partner owners without a recorded agreement acceptance must accept before use
+    if (!currentUserIsAdmin) maybeShowAgreementBlocker();
   }
 
   async function doLogin() {
@@ -5085,20 +5405,23 @@
             'Content-Type': 'application/json', 'Prefer': 'resolution=ignore-duplicates'
           },
           body: JSON.stringify({
-            enquiry_id:       enq.id,
-            full_name:        enq.full_name,
-            email:            enq.email,
-            phone:            enq.phone,
-            company_name:     enq.company_name,
-            abn:              enq.abn,
-            afsl_acl:         enq.afsl_acl,
-            website:          enq.website,
-            linkedin_url:     enq.linkedin_url,
-            role_type:        enq.role_type,
-            state:            enq.state,
-            years_in_business:enq.years_in_business,
-            num_clients:      enq.num_clients,
-            status:           'active'
+            enquiry_id:            enq.id,
+            full_name:             enq.full_name,
+            email:                 enq.email,
+            phone:                 enq.phone,
+            company_name:          enq.company_name,
+            abn:                   enq.abn,
+            afsl_acl:              enq.afsl_acl,
+            website:               enq.website,
+            linkedin_url:          enq.linkedin_url,
+            role_type:             enq.role_type,
+            state:                 enq.state,
+            years_in_business:     enq.years_in_business,
+            num_clients:           enq.num_clients,
+            status:                'active',
+            agreement_version:       enq.agreement_version,
+            agreement_accepted_at:   enq.agreement_accepted_at,
+            agreement_acceptance_id: enq.agreement_acceptance_id
           })
         });
       }
@@ -5108,20 +5431,51 @@
   // ─── PARTNERS PANEL ───────────────────────────────────
   let allPartners = [], currentPrtFilter = 'all', currentPrtId = null;
 
+  // Map agreement version → published .docx filename (one canonical file per version).
+  const AGREEMENT_DOWNLOADS = {
+    '1.0': 'TPCH_Marketing_Agreement_v1.docx'
+  };
+
   async function loadPartners() {
     try {
-      const res = await fetch(
-        SUPABASE_URL + '/rest/v1/channel_partners?order=joined_at.desc',
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
-      );
-      if (!res.ok) throw new Error('Failed to load partners');
-      allPartners = await res.json();
+      // Use the admin RPC so we can join auth.users.last_sign_in_at.
+      const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_partners_admin', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
+          'Content-Type': 'application/json'
+        },
+        body: '{}'
+      });
+      if (!res.ok) throw new Error('Failed to load partners (' + res.status + ')');
+      allPartners = (await res.json()) || [];
       renderPrtList();
       updatePrtStats();
     } catch(err) {
       document.getElementById('prt-list').innerHTML =
         '<div class="prt-empty">Could not load partners.<br>' + err.message + '</div>';
     }
+  }
+
+  function fmtRelativeAgo(iso) {
+    if (!iso) return '';
+    const then = new Date(iso).getTime();
+    const diff = Date.now() - then;
+    if (diff < 60_000) return 'just now';
+    const mins = Math.floor(diff / 60_000);
+    if (mins < 60) return mins + 'm ago';
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return days + 'd ago';
+    const months = Math.floor(days / 30);
+    if (months < 12) return months + 'mo ago';
+    return Math.floor(months / 12) + 'y ago';
+  }
+  function fmtShortDate(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
   }
 
   function updatePrtStats() {
@@ -5192,22 +5546,59 @@
       list.innerHTML = '<div class="prt-empty">No partners</div>';
       return;
     }
-    list.innerHTML = filtered.map(p => {
-      const roleShort = roleLabelsEnq[p.role_type] || p.role_type || '—';
-      const date = new Date(p.joined_at).toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'});
-      return `<div class="prt-card${currentPrtId === p.id ? ' active' : ''}" onclick="showPrtDetail('${p.id}')">
-        <div class="prt-card-top">
-          <div class="prt-card-name">${p.full_name}</div>
-          <div class="prt-role-badge">${roleShort}</div>
-        </div>
-        <div class="prt-card-company">${p.company_name}${p.state ? ' · ' + p.state : ''}</div>
-        <div class="prt-card-meta">
-          <div class="prt-status-dot ${p.status}"></div>
-          <span style="font-size:11px;color:var(--grey-mid);text-transform:capitalize;">${p.status}</span>
-          <div class="prt-card-date">${date}</div>
-        </div>
-      </div>`;
+
+    const rows = filtered.map(p => {
+      const activeCls = currentPrtId === p.id ? ' active' : '';
+      const firmLine  = (p.company_name || '') + (p.state ? ' · ' + p.state : '');
+
+      // Last login
+      let loginCell;
+      if (p.last_sign_in_at) {
+        loginCell = `<div class="pt-login-date">${fmtShortDate(p.last_sign_in_at)}</div>
+                     <div class="pt-login-rel">${fmtRelativeAgo(p.last_sign_in_at)}</div>`;
+      } else {
+        loginCell = `<span class="pt-login-never">Never signed in</span>`;
+      }
+
+      // Agreement
+      let agreeCell;
+      if (p.agreement_version && p.agreement_accepted_at) {
+        const file = AGREEMENT_DOWNLOADS[p.agreement_version] || AGREEMENT_DOWNLOADS['1.0'];
+        agreeCell = `<a class="pt-agree-link" href="${file}" download
+                       onclick="event.stopPropagation();"
+                       title="Download agreement v${p.agreement_version} accepted by ${p.full_name}">
+                       v${p.agreement_version} ⬇</a>
+                     <div class="pt-agree-meta">${fmtShortDate(p.agreement_accepted_at)}</div>`;
+      } else {
+        agreeCell = `<span class="pt-agree-none">Not accepted</span>`;
+      }
+
+      return `<tr class="${activeCls.trim()}" onclick="showPrtDetail('${p.id}')">
+        <td class="col-partner">
+          <div class="pt-name">${p.full_name || '—'}</div>
+          <div class="pt-firm">${firmLine || '&nbsp;'}</div>
+        </td>
+        <td>
+          <span class="pt-status">
+            <span class="prt-status-dot ${p.status}"></span>${p.status || '—'}
+          </span>
+        </td>
+        <td>${loginCell}</td>
+        <td>${agreeCell}</td>
+      </tr>`;
     }).join('');
+
+    list.innerHTML = `<table class="prt-table">
+      <thead>
+        <tr>
+          <th style="min-width:180px;">Partner / Firm</th>
+          <th style="width:100px;">Status</th>
+          <th style="width:130px;">Last Login</th>
+          <th style="width:140px;">Agreement</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
   }
 
   function showPrtDetail(id) {
@@ -5805,6 +6196,13 @@
     const errEl = document.getElementById('enquiry-error');
     errEl.style.display = 'none';
 
+    // Agreement must be ticked (button is disabled otherwise, but double-check)
+    if (!document.getElementById('eq-agreement-check').checked) {
+      errEl.textContent = 'You must review and accept the Marketing Agreement before submitting.';
+      errEl.style.display = 'block';
+      return;
+    }
+
     // Collect values
     const data = {
       full_name:        document.getElementById('eq-name').value.trim(),
@@ -5822,6 +6220,7 @@
       referral_source:  document.getElementById('eq-referral').value,
       message:          document.getElementById('eq-message').value.trim()
     };
+    const checkboxText = (document.querySelector('#eq-agreement-check')?.parentElement?.querySelector('span')?.innerText || '').trim();
 
     // Validate required fields
     const required = { full_name:'Full name', email:'Email', phone:'Phone', company_name:'Company name', abn:'ABN', role_type:'Role', state:'State' };
@@ -5847,17 +6246,45 @@
     btn.textContent = 'Submitting...';
 
     try {
+      // 1. Insert the enquiry row (without agreement fields — those are written by the edge function)
       const res = await fetch(SUPABASE_URL + '/rest/v1/pending_enquiries', {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
           'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
+          'Prefer': 'return=representation'
         },
         body: JSON.stringify(data)
       });
       if (!res.ok) throw new Error('Submission failed: ' + res.status);
+      const inserted = await res.json();
+      const enquiryId = Array.isArray(inserted) ? inserted[0]?.id : inserted?.id;
+      if (!enquiryId) throw new Error('Submission failed: no enquiry id returned');
+
+      // 2. Record the agreement acceptance via the audit-trail edge function.
+      //    Server-side captures IP, user-agent, timestamp, and document SHA-256.
+      const ackRes = await fetch(SUPABASE_URL + '/functions/v1/accept-agreement', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          context: 'enquiry',
+          enquiry_id: enquiryId,
+          email: data.email,
+          agreement_version: AGREEMENT_VERSION,
+          checkbox_text: checkboxText
+        })
+      });
+      if (!ackRes.ok) {
+        const t = await ackRes.text();
+        console.error('accept-agreement failed:', t);
+        // Enquiry is in; surface a soft warning but proceed to success
+      }
+
       // Show success
       document.getElementById('enquiry-form-wrap').style.display = 'none';
       document.getElementById('enquiry-success-wrap').style.display = 'block';
@@ -6145,12 +6572,140 @@
   // ─── PARTNER SETTINGS ─────────────────────────────────
 
   function switchPartnerTab(tab, btn) {
-    ['profile','team','notifications'].forEach(t => {
+    ['profile','team','notifications','agreement'].forEach(t => {
       document.getElementById('pset-tab-' + t).style.display = t === tab ? '' : 'none';
     });
     document.querySelectorAll('#page-partner-settings .stk-tab-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
     if (tab === 'team') loadPartnerStaff();
+    if (tab === 'agreement') loadAgreementTab();
+  }
+
+  // ─── MARKETING AGREEMENT ─────────────────────────────────
+  const AGREEMENT_VERSION = '1.0';
+
+  // Relocate agreement template + modals to document.body so they render
+  // regardless of which screen is active (they're authored inside screen-portal
+  // for proximity, but need to be globally reachable).
+  (function relocateAgreementShells() {
+    function run() {
+      ['agreement-body-template', 'modal-agreement-view', 'modal-agreement-blocker'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentNode !== document.body) document.body.appendChild(el);
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', run);
+    } else {
+      run();
+    }
+  })();
+
+  function _agreementHtml() {
+    return document.getElementById('agreement-body-template').innerHTML;
+  }
+
+  function showAgreementModal(which) {
+    // which: 'view' (read-only) or 'blocker'
+    const id = which === 'blocker' ? 'modal-agreement-blocker-body' : 'modal-agreement-view-body';
+    const modal = document.getElementById(which === 'blocker' ? 'modal-agreement-blocker' : 'modal-agreement-view');
+    document.getElementById(id).innerHTML = _agreementHtml();
+    modal.style.display = 'flex';
+  }
+
+  function closeAgreementModal(which) {
+    const modal = document.getElementById(which === 'blocker' ? 'modal-agreement-blocker' : 'modal-agreement-view');
+    modal.style.display = 'none';
+  }
+
+  function onAgreementCheck() {
+    const btn = document.getElementById('enquiry-submit-btn');
+    const checked = document.getElementById('eq-agreement-check').checked;
+    btn.disabled = !checked;
+    btn.style.opacity = checked ? '1' : '0.5';
+    btn.style.cursor = checked ? 'pointer' : 'not-allowed';
+  }
+
+  function onBlockerAgreementCheck() {
+    const btn = document.getElementById('blocker-accept-btn');
+    const checked = document.getElementById('blocker-agreement-check').checked;
+    btn.disabled = !checked;
+    btn.style.opacity = checked ? '1' : '0.5';
+    btn.style.cursor = checked ? 'pointer' : 'not-allowed';
+  }
+
+  function loadAgreementTab() {
+    const r = currentPartnerRecord;
+    if (!r) return;
+    const ver  = r.agreement_version || AGREEMENT_VERSION;
+    const when = r.agreement_accepted_at ? new Date(r.agreement_accepted_at) : null;
+    document.getElementById('pset-agree-version').textContent = ver;
+    document.getElementById('pset-agree-date').textContent = when
+      ? when.toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' }) + ' at ' + when.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' })
+      : 'Not on file';
+    const statusEl = document.getElementById('pset-agree-status');
+    if (when) {
+      statusEl.innerHTML = '<span style="color:var(--green,#4CAF7A);">● Accepted</span>';
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--gold);">● Pending electronic acceptance</span>';
+    }
+  }
+
+  // ─── AGREEMENT BLOCKER (legacy partners, first login after rollout) ──
+  function maybeShowAgreementBlocker() {
+    const r = currentPartnerRecord;
+    if (!r) return;
+    // Only partner owners accept on behalf of the firm — staff are covered by their firm's acceptance
+    if (r.role !== 'partner') return;
+    if (r.agreement_accepted_at) return;
+    // Reset checkbox/button state each time
+    const cb = document.getElementById('blocker-agreement-check');
+    if (cb) cb.checked = false;
+    const btn = document.getElementById('blocker-accept-btn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.style.cursor = 'not-allowed'; }
+    document.getElementById('blocker-msg').style.display = 'none';
+    showAgreementModal('blocker');
+  }
+
+  async function acceptAgreementBlocker() {
+    const r = currentPartnerRecord;
+    if (!r || !r.partner_id) return;
+    const btn = document.getElementById('blocker-accept-btn');
+    const msg = document.getElementById('blocker-msg');
+    btn.disabled = true; btn.textContent = 'Recording…';
+    const checkboxText = (document.querySelector('#blocker-agreement-check')?.parentElement?.querySelector('span')?.innerText || '').trim();
+    try {
+      const res = await fetch(SUPABASE_URL + '/functions/v1/accept-agreement', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + currentAuthToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          context: 'blocker',
+          partner_id: r.partner_id,
+          email: r.email,
+          agreement_version: AGREEMENT_VERSION,
+          checkbox_text: checkboxText
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const out = await res.json();
+      currentPartnerRecord.agreement_version       = out.agreement_version || AGREEMENT_VERSION;
+      currentPartnerRecord.agreement_accepted_at   = out.accepted_at;
+      currentPartnerRecord.agreement_acceptance_id = out.acceptance_id;
+      closeAgreementModal('blocker');
+    } catch(e) {
+      msg.textContent = 'Could not record acceptance: ' + (e.message || 'unknown error') + '. Please retry or contact admin@tpch.com.au.';
+      msg.style.color = 'var(--red)'; msg.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Accept & Continue';
+    }
+  }
+
+  function blockerSignOut() {
+    closeAgreementModal('blocker');
+    if (typeof doLogout === 'function') { doLogout(); } else { location.reload(); }
   }
 
   function loadPartnerSettings() {
