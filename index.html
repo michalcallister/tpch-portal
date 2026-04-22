@@ -25,6 +25,7 @@
     --grey-mid: #5A6878;
     --grey-light: #98A5B3;
     --grey-pale: #C8D8E8;
+    --text-muted: #B8C2CC;
     --white: #F5F3EE;
     --red: #C94C4C;
     --green: #4CAF7A;
@@ -3348,7 +3349,7 @@
                     <div class="ia-pending-block"><div class="ia-pending-dot"></div>Research pending — population and demographic data will be sourced from ABS and council planning documents.</div>
                   </div>
                 </div>
-                <div class="ia-score-reasoning" style="display:none;padding:8px 12px;background:rgba(255,255,255,0.03);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;font-size:11px;color:var(--grey-mid);line-height:1.5;"><strong style="color:var(--gold-light);">Score reasoning:</strong> <span id="ia-reasoning-population"></span></div>
+                <div class="ia-score-reasoning" style="display:none;"><strong>Score reasoning:</strong> <span id="ia-reasoning-population"></span></div>
               </div>
             </div>
 
@@ -3368,7 +3369,7 @@
                     <div class="ia-pending-block"><div class="ia-pending-dot"></div>Research pending — economic drivers, infrastructure pipeline, and employment data will be compiled for this location.</div>
                   </div>
                 </div>
-                <div class="ia-score-reasoning" style="display:none;padding:8px 12px;background:rgba(255,255,255,0.03);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;font-size:11px;color:var(--grey-mid);line-height:1.5;"><strong style="color:var(--gold-light);">Score reasoning:</strong> <span id="ia-reasoning-economic"></span></div>
+                <div class="ia-score-reasoning" style="display:none;"><strong>Score reasoning:</strong> <span id="ia-reasoning-economic"></span></div>
               </div>
             </div>
 
@@ -3388,7 +3389,7 @@
                     <div class="ia-pending-block"><div class="ia-pending-dot"></div>Research pending — vacancy rates, days on market, and new supply pipeline will be sourced for this market.</div>
                   </div>
                 </div>
-                <div class="ia-score-reasoning" style="display:none;padding:8px 12px;background:rgba(255,255,255,0.03);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;font-size:11px;color:var(--grey-mid);line-height:1.5;"><strong style="color:var(--gold-light);">Score reasoning:</strong> <span id="ia-reasoning-supply"></span></div>
+                <div class="ia-score-reasoning" style="display:none;"><strong>Score reasoning:</strong> <span id="ia-reasoning-supply"></span></div>
               </div>
             </div>
 
@@ -3408,7 +3409,7 @@
                     <div class="ia-pending-block"><div class="ia-pending-dot"></div>Research pending — affordability metrics relative to local incomes and comparable markets will be assessed.</div>
                   </div>
                 </div>
-                <div class="ia-score-reasoning" style="display:none;padding:8px 12px;background:rgba(255,255,255,0.03);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;font-size:11px;color:var(--grey-mid);line-height:1.5;"><strong style="color:var(--gold-light);">Score reasoning:</strong> <span id="ia-reasoning-affordability"></span></div>
+                <div class="ia-score-reasoning" style="display:none;"><strong>Score reasoning:</strong> <span id="ia-reasoning-affordability"></span></div>
               </div>
             </div>
 
@@ -3428,7 +3429,7 @@
                     <div class="ia-pending-block"><div class="ia-pending-dot"></div>Research pending — land constraints, zoning, and competing project pipeline will be mapped for this area.</div>
                   </div>
                 </div>
-                <div class="ia-score-reasoning" style="display:none;padding:8px 12px;background:rgba(255,255,255,0.03);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;font-size:11px;color:var(--grey-mid);line-height:1.5;"><strong style="color:var(--gold-light);">Score reasoning:</strong> <span id="ia-reasoning-scarcity"></span></div>
+                <div class="ia-score-reasoning" style="display:none;"><strong>Score reasoning:</strong> <span id="ia-reasoning-scarcity"></span></div>
               </div>
             </div>
           </div>
@@ -3462,12 +3463,14 @@
                 <div class="ia-trust-value" id="ia-trust-memberships">—</div>
                 <div class="ia-trust-sub">HIA, MBA, UDIA memberships</div>
               </div>
-              <div class="ia-trust-card">
-                <div class="ia-trust-label">TPCH Assessment</div>
-                <div class="ia-trust-value" id="ia-trust-tpch">—</div>
-                <div class="ia-trust-sub">Our due diligence summary</div>
-              </div>
             </div>
+          </div>
+
+          <!-- TPCH Assessment (featured callout) -->
+          <div class="ia-tpch-callout">
+            <div class="ia-tpch-label">TPCH Assessment</div>
+            <div class="ia-tpch-value" id="ia-trust-tpch">—</div>
+            <div class="ia-tpch-sub">Our due diligence summary</div>
           </div>
 
           <!-- Suburb CTA -->
@@ -11103,34 +11106,34 @@ function buildKitHtml(s, research, brand) {
 .ia-wrap { padding: 32px 36px 48px; display: flex; flex-direction: column; gap: 32px; }
 
 /* Header row: score + thesis */
-.ia-header { display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: stretch; }
+.ia-header { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: stretch; }
 
 .ia-score-card {
   background: var(--black-card);
   border: 1px solid var(--gold-border);
   border-radius: 4px;
   padding: 28px 24px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
   text-align: center;
 }
 .ia-score-label {
   font-family: 'DM Mono', monospace;
-  font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--grey-mid);
+  font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted);
 }
 .ia-score-number {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 64px; font-weight: 700; line-height: 1;
   color: var(--gold);
 }
-.ia-score-number span { font-size: 24px; color: var(--grey-mid); font-weight: 400; }
+.ia-score-number span { font-size: 24px; color: var(--text-muted); font-weight: 400; }
 .ia-score-rating {
-  font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
-  padding: 5px 14px; border-radius: 20px;
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 6px 16px; border-radius: 20px;
   background: rgba(200,169,81,0.12); color: var(--gold);
   border: 1px solid var(--gold-border);
 }
 .ia-score-pending {
-  font-size: 11px; color: var(--grey-mid); margin-top: 4px;
+  font-size: 14px; color: var(--text-muted); margin-top: 4px;
 }
 
 .ia-thesis-card {
@@ -11138,24 +11141,24 @@ function buildKitHtml(s, research, brand) {
   border: 1px solid var(--gold-border);
   border-radius: 4px;
   padding: 28px 28px;
-  display: flex; flex-direction: column; gap: 12px;
+  display: flex; flex-direction: column; gap: 14px;
 }
 .ia-thesis-heading {
   font-family: 'DM Mono', monospace;
-  font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--grey-mid);
+  font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted);
 }
 .ia-thesis-text {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 17px; line-height: 1.65; color: var(--white);
-  font-style: italic;
+  font-size: 20px; line-height: 1.6; color: var(--white);
+  font-style: normal;
 }
 .ia-thesis-pending {
   display: flex; align-items: center; gap: 10px;
-  color: var(--grey-mid); font-size: 13px;
+  color: var(--text-muted); font-size: 15px;
 }
 .ia-pending-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--gold); opacity: 0.4;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--gold); opacity: 0.5;
   animation: pulse 2.5s ease-in-out infinite;
   flex-shrink: 0;
 }
@@ -11168,62 +11171,62 @@ function buildKitHtml(s, research, brand) {
   background: var(--black-card);
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: 4px;
-  padding: 20px 16px 18px;
+  padding: 22px 18px 20px;
   display: flex; flex-direction: column; gap: 12px;
 }
-.ia-pillar-icon { font-size: 20px; line-height: 1; }
+.ia-pillar-icon { font-size: 22px; line-height: 1; }
 .ia-pillar-name {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
-  color: var(--grey-light); text-transform: uppercase;
-  font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; font-weight: 600; letter-spacing: 2px;
+  color: var(--text-muted); text-transform: uppercase;
 }
 .ia-pillar-score-row { display: flex; align-items: baseline; gap: 4px; }
 .ia-pillar-score-num {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 28px; font-weight: 700; color: var(--gold);
+  font-size: 32px; font-weight: 700; color: var(--gold);
   line-height: 1;
 }
-.ia-pillar-score-den { font-size: 13px; color: var(--grey-mid); }
+.ia-pillar-score-den { font-size: 15px; color: var(--text-muted); }
 .ia-pillar-bar-track {
-  height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden;
+  height: 6px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden;
 }
 .ia-pillar-bar-fill {
-  height: 100%; border-radius: 2px;
+  height: 100%; border-radius: 3px;
   background: linear-gradient(90deg, var(--gold-light), var(--gold));
   width: 0%;
   transition: width 0.6s ease;
 }
 .ia-pillar-headline {
-  font-size: 11px; color: var(--grey-mid); line-height: 1.45;
+  font-size: 15px; color: var(--grey-pale); line-height: 1.55;
 }
 
 /* Score key */
 .ia-key-section {}
 .ia-key-heading {
   font-family: 'DM Mono', monospace;
-  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
-  color: var(--grey-mid); margin-bottom: 12px;
+  font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 12px;
 }
 .ia-key-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .ia-key-item {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 14px;
   background: var(--black-card);
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: 4px;
-  padding: 12px 16px;
-  flex: 1; min-width: 160px;
+  padding: 18px 22px;
+  flex: 1; min-width: 240px;
 }
 .ia-key-badge {
-  font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
-  padding: 4px 10px; border-radius: 12px; white-space: nowrap; flex-shrink: 0;
+  font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  padding: 6px 14px; border-radius: 14px; white-space: nowrap; flex-shrink: 0;
 }
 .ia-key-badge.strong  { background: rgba(76,175,122,0.15); color: #4CAF7A; border: 1px solid rgba(76,175,122,0.25); }
 .ia-key-badge.good    { background: rgba(200,169,81,0.15); color: var(--gold); border: 1px solid var(--gold-border); }
 .ia-key-badge.moderate{ background: rgba(255,193,7,0.12);  color: #FFC107; border: 1px solid rgba(255,193,7,0.25); }
 .ia-key-badge.caution { background: rgba(201,76,76,0.12);  color: #E07070; border: 1px solid rgba(201,76,76,0.25); }
-.ia-key-info { display: flex; flex-direction: column; gap: 2px; }
-.ia-key-range { font-size: 11px; font-weight: 600; color: var(--white); }
-.ia-key-desc  { font-size: 11px; color: var(--grey-mid); line-height: 1.4; }
+.ia-key-info { display: flex; flex-direction: column; gap: 4px; }
+.ia-key-range { font-size: 16px; font-weight: 600; color: var(--white); }
+.ia-key-desc  { font-size: 15px; color: var(--text-muted); line-height: 1.5; }
 
 /* Detail sections */
 .ia-detail-section {
@@ -11237,44 +11240,85 @@ function buildKitHtml(s, research, brand) {
   padding: 16px 20px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-.ia-detail-icon { font-size: 16px; }
+.ia-detail-icon { font-size: 18px; }
 .ia-detail-title {
-  font-size: 12px; font-weight: 600; letter-spacing: 0.5px; color: var(--white);
-  text-transform: uppercase; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2.5px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; font-weight: 600; letter-spacing: 2px;
+  color: var(--white); text-transform: uppercase;
 }
-.ia-detail-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
-.ia-detail-row { display: flex; gap: 24px; }
+.ia-detail-body { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+.ia-detail-row { display: flex; gap: 28px; }
 .ia-detail-stats {
-  display: flex; flex-direction: column; gap: 10px;
-  min-width: 180px; flex-shrink: 0;
+  display: flex; flex-direction: column; gap: 12px;
+  min-width: 200px; flex-shrink: 0;
 }
-.ia-detail-stat { display: flex; flex-direction: column; gap: 2px; }
-.ia-detail-stat-label { font-size: 10px; color: var(--grey-mid); text-transform: uppercase; letter-spacing: 1px; }
-.ia-detail-stat-val { font-size: 14px; font-weight: 600; color: var(--white); }
+.ia-detail-stat { display: flex; flex-direction: column; gap: 3px; }
+.ia-detail-stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.ia-detail-stat-val { font-size: 17px; font-weight: 600; color: var(--white); }
 .ia-detail-narrative {
-  font-size: 13px; color: var(--grey-light); line-height: 1.7;
+  font-size: 16px; color: var(--grey-pale); line-height: 1.7;
   flex: 1;
 }
 .ia-pending-block {
   display: flex; align-items: center; gap: 10px;
-  color: var(--grey-mid); font-size: 12px; font-style: italic;
+  color: var(--text-muted); font-size: 15px; font-style: italic;
 }
+.ia-score-reasoning {
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.03);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 3px 3px 0;
+  font-size: 16px;
+  color: var(--grey-pale);
+  line-height: 1.65;
+}
+.ia-score-reasoning strong { color: var(--gold-light); }
 
 /* Developer / Trust section */
-.ia-trust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.ia-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
 .ia-trust-card {
   background: var(--black-card);
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: 4px;
-  padding: 20px;
-  display: flex; flex-direction: column; gap: 8px;
+  padding: 22px;
+  display: flex; flex-direction: column; gap: 10px;
 }
 .ia-trust-label {
   font-family: 'DM Mono', monospace;
-  font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--grey-mid);
+  font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted);
 }
-.ia-trust-value { font-size: 14px; font-weight: 600; color: var(--white); line-height: 1.4; }
-.ia-trust-sub { font-size: 11px; color: var(--grey-mid); }
+.ia-trust-value { font-size: 17px; font-weight: 600; color: var(--white); line-height: 1.45; }
+.ia-trust-sub { font-size: 14px; color: var(--text-muted); line-height: 1.55; margin-top: auto; }
+
+/* TPCH Assessment featured callout */
+.ia-tpch-callout {
+  background: linear-gradient(135deg, var(--black-card) 0%, rgba(200,169,81,0.04) 100%);
+  border: 1px solid var(--gold-border);
+  border-left: 3px solid var(--gold);
+  border-radius: 4px;
+  padding: 28px 32px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.ia-tpch-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--gold);
+}
+.ia-tpch-value {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px; line-height: 1.7; color: var(--white);
+  font-weight: 400;
+}
+.ia-tpch-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text-muted);
+}
 
 /* Suburb CTA */
 .ia-suburb-cta {
@@ -11284,15 +11328,15 @@ function buildKitHtml(s, research, brand) {
   padding: 24px 28px;
   display: flex; align-items: center; justify-content: space-between; gap: 24px;
 }
-.ia-suburb-cta-text { display: flex; flex-direction: column; gap: 4px; }
-.ia-suburb-cta-title { font-size: 14px; font-weight: 600; color: var(--white); }
-.ia-suburb-cta-sub { font-size: 12px; color: var(--grey-mid); }
+.ia-suburb-cta-text { display: flex; flex-direction: column; gap: 5px; }
+.ia-suburb-cta-title { font-size: 17px; font-weight: 600; color: var(--white); }
+.ia-suburb-cta-sub { font-size: 14px; color: var(--text-muted); }
 .ia-suburb-cta-btn {
   background: transparent;
   border: 1px solid var(--gold-border);
   color: var(--gold);
-  font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
-  padding: 10px 20px; border-radius: 3px;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
+  padding: 12px 24px; border-radius: 3px;
   cursor: pointer; white-space: nowrap;
   transition: background 0.2s, color 0.2s;
 }
