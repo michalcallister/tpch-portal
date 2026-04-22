@@ -2741,6 +2741,10 @@
                 <span style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: Urbis · Vic Govt.</span>
               </div>
               <div style="display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;gap:18px;align-items:center;font-size:12px;color:var(--text-muted);margin-bottom:4px;">
+                  <div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--gold);color:var(--black);padding:3px 8px;font-size:11px;font-weight:700;letter-spacing:0.5px;">YEAR</span>Confirmed / under way</div>
+                  <div style="display:flex;align-items:center;gap:8px;"><span style="background:rgba(201,168,76,0.3);color:var(--gold);padding:3px 8px;font-size:11px;font-weight:700;letter-spacing:0.5px;">YEAR</span>Planned / proposed</div>
+                </div>
                 <div style="display:flex;gap:16px;padding:14px 16px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
                   <div style="background:var(--gold);color:var(--black);padding:6px 10px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;letter-spacing:0.5px;">2025</div>
                   <div>
@@ -7255,7 +7259,12 @@
       if (infraData && infraData.length) {
         const infraList = infraSection.querySelector('[style*="flex-direction:column"]');
         if (infraList) {
-          infraList.innerHTML = infraData.map(item => {
+          const legend =
+            '<div style="display:flex;gap:18px;align-items:center;font-size:12px;color:var(--text-muted);margin-bottom:14px;">' +
+              '<div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--gold);color:var(--black);padding:3px 8px;font-size:11px;font-weight:700;letter-spacing:0.5px;">YEAR</span>Confirmed / under way</div>' +
+              '<div style="display:flex;align-items:center;gap:8px;"><span style="background:rgba(201,168,76,0.3);color:var(--gold);padding:3px 8px;font-size:11px;font-weight:700;letter-spacing:0.5px;">YEAR</span>Planned / proposed</div>' +
+            '</div>';
+          infraList.innerHTML = legend + infraData.map(item => {
             const bg = item.status==='confirmed' ? 'background:var(--gold);color:var(--black)' : 'background:rgba(201,168,76,0.3);color:var(--gold)';
             return '<div style="display:flex;gap:16px;padding:14px 16px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;margin-bottom:10px;">' +
               '<div style="' + bg + ';padding:6px 10px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;letter-spacing:0.5px;">' + item.year + '</div>' +
