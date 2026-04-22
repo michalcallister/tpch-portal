@@ -7123,8 +7123,8 @@
     // ── Conviction / tags ──
     const col = d.rating === 'Strong Buy' ? 'var(--green)' : d.rating === 'Watch' ? 'var(--gold)' : 'var(--grey-light)';
     document.getElementById('rd-conviction').innerHTML =
-      `<span style="font-size:11px;color:var(--grey-mid);text-transform:uppercase;letter-spacing:1px;">Conviction</span>
-       <span style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:600;color:${col};">${d.rating || 'Pending'}</span>`;
+      `<span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Conviction</span>
+       <span style="font-family:'Playfair Display',Georgia,serif;font-size:24px;font-weight:600;color:${col};">${d.rating || 'Pending'}</span>`;
     let tags = '';
     if (d.smsf_eligible)          tags += '<span class="insight-tag bull">SMSF eligible</span>';
     if (d.is_exclusive)           tags += '<span class="insight-tag bull">TPCH Exclusive</span>';
@@ -7153,26 +7153,26 @@
       const pipelineData = Array.isArray(d.supply_pipeline) ? d.supply_pipeline : null;
       if (pipelineData && pipelineData.length) {
         const maxD = Math.max(...pipelineData.map(r => r.demand));
-        supplyChartEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px;">` +
+        supplyChartEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;">` +
           pipelineData.map(row => `
-            <div style="display:grid;grid-template-columns:40px 1fr 80px;align-items:center;gap:8px;">
-              <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--grey-mid);">${row.year}</div>
-              <div style="display:flex;flex-direction:column;gap:3px;">
-                <div style="width:${Math.round(row.pipeline/maxD*100)}%;max-width:100%;height:8px;background:var(--gold);min-width:2px;transition:width 0.6s ease;"></div>
-                <div style="width:${Math.round(row.demand/maxD*100)}%;max-width:100%;height:8px;background:rgba(201,76,76,0.6);min-width:2px;"></div>
+            <div style="display:grid;grid-template-columns:48px 1fr 96px;align-items:center;gap:10px;">
+              <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted);font-weight:600;">${row.year}</div>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <div style="width:${Math.round(row.pipeline/maxD*100)}%;max-width:100%;height:9px;background:var(--gold);min-width:2px;transition:width 0.6s ease;"></div>
+                <div style="width:${Math.round(row.demand/maxD*100)}%;max-width:100%;height:9px;background:rgba(201,76,76,0.6);min-width:2px;"></div>
               </div>
-              <div style="font-size:11px;color:var(--grey-light);line-height:1.6;">
+              <div style="font-size:13px;line-height:1.5;font-family:'DM Mono',monospace;font-weight:600;">
                 <div style="color:var(--gold);">${row.pipeline.toLocaleString()}</div>
                 <div style="color:var(--red)">${row.demand.toLocaleString()}</div>
               </div>
             </div>`).join('') +
           `</div>
-          <div style="display:flex;gap:16px;margin-top:10px;">
-            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--grey-light);"><div style="width:12px;height:8px;background:var(--gold);"></div>Pipeline (supply)</div>
-            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--grey-light);"><div style="width:12px;height:8px;background:rgba(201,76,76,0.6);"></div>Dwelling demand</div>
+          <div style="display:flex;gap:20px;margin-top:14px;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--grey-pale);"><div style="width:14px;height:9px;background:var(--gold);"></div>Pipeline (supply)</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--grey-pale);"><div style="width:14px;height:9px;background:rgba(201,76,76,0.6);"></div>Dwelling demand</div>
           </div>`;
       } else {
-        supplyChartEl.innerHTML = '<div style="font-size:12px;color:var(--grey-mid);padding:10px 0;">Supply/demand chart data not yet available for this market.</div>';
+        supplyChartEl.innerHTML = '<div style="font-size:14px;color:var(--text-muted);padding:12px 0;">Supply/demand chart data not yet available for this market.</div>';
       }
     }
 
@@ -7211,7 +7211,7 @@
       rentChartEl.innerHTML = d.comparable_rents.map((r, i) =>
         `<div class="chart-bar-row">
           <div class="chart-bar-label">${r.label}</div>
-          <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round(r.weekly/maxRent*100)}%;${i%2===1?'background:var(--grey-mid)':''}"></div></div>
+          <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round(r.weekly/maxRent*100)}%;${i%2===1?'background:var(--grey-pale)':''}"></div></div>
           <div class="chart-bar-val">$${r.weekly}/wk</div>
         </div>`).join('');
     }
@@ -7227,7 +7227,7 @@
     setEl('rd-medprice',  fmtFull(d.median_price));
     setEl('rd-smsf',      d.smsf_eligible ? '✓ Yes' : 'Confirm');
     const smsfEl = document.getElementById('rd-smsf');
-    if (smsfEl) smsfEl.style.color = d.smsf_eligible ? 'var(--green)' : 'var(--grey-light)';
+    if (smsfEl) smsfEl.style.color = d.smsf_eligible ? 'var(--green)' : 'var(--text-muted)';
     setEl('rd-updated',   (d.ai_generated ? 'AI-updated ' : 'Updated ') + updDate);
 
     // ── Recommendation panel ──
@@ -7256,12 +7256,12 @@
         const infraList = infraSection.querySelector('[style*="flex-direction:column"]');
         if (infraList) {
           infraList.innerHTML = infraData.map(item => {
-            const bg = item.status==='confirmed' ? 'background:var(--gold);color:var(--black)' : item.status==='planned' ? 'background:rgba(201,168,76,0.3);color:var(--gold)' : 'background:rgba(201,168,76,0.15);color:var(--grey-light)';
-            return '<div style="display:flex;gap:14px;padding:12px 14px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;margin-bottom:8px;">' +
-              '<div style="' + bg + ';padding:4px 8px;font-size:11px;font-weight:700;flex-shrink:0;white-space:nowrap;">' + item.year + '</div>' +
-              '<div><div style="font-size:13px;font-weight:500;color:var(--white);margin-bottom:3px;">' + item.project + '</div>' +
-              '<div style="font-size:11px;color:var(--grey-light);line-height:1.6;">' + item.detail + '</div></div></div>';
-          }).join('') + '<div style="font-size:11px;color:var(--grey-mid);padding:8px 0;">Source: State Government Infrastructure Plans</div>';
+            const bg = item.status==='confirmed' ? 'background:var(--gold);color:var(--black)' : item.status==='planned' ? 'background:rgba(201,168,76,0.3);color:var(--gold)' : 'background:rgba(201,168,76,0.15);color:var(--text-muted)';
+            return '<div style="display:flex;gap:16px;padding:14px 16px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;margin-bottom:10px;">' +
+              '<div style="' + bg + ';padding:6px 10px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;letter-spacing:0.5px;">' + item.year + '</div>' +
+              '<div><div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:5px;">' + item.project + '</div>' +
+              '<div style="font-size:14px;color:var(--grey-pale);line-height:1.65;">' + item.detail + '</div></div></div>';
+          }).join('') + '<div style="font-size:13px;color:var(--text-muted);padding:10px 0;">Source: State Government Infrastructure Plans</div>';
         }
       }
     }
@@ -7276,10 +7276,10 @@
         const econGrid = econSection.querySelector('[style*="grid-template-columns:1fr 1fr"]');
         if (econGrid) {
           econGrid.innerHTML = econData.map(item =>
-            '<div style="background:var(--black-soft);padding:12px 14px;border:1px solid var(--gold-border);">' +
-            '<div style="font-size:11px;color:var(--grey-mid);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">' + item.label + '</div>' +
-            '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:20px;color:var(--gold);">' + item.value + '</div>' +
-            '<div style="font-size:11px;color:var(--green);margin-top:2px;">' + item.context + '</div></div>'
+            '<div style="background:var(--black-soft);padding:14px 16px;border:1px solid var(--gold-border);">' +
+            '<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">' + item.label + '</div>' +
+            '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:24px;color:var(--gold);font-weight:600;">' + item.value + '</div>' +
+            '<div style="font-size:13px;color:var(--grey-pale);margin-top:4px;line-height:1.55;">' + item.context + '</div></div>'
           ).join('');
         }
       }
@@ -7293,16 +7293,19 @@
       const ivCards = intrinsicSection.querySelectorAll('[style*="border:1px solid var(--gold-border)"][style*="text-align:center"]');
       if (d.yield_vs_comparison && ivCards[0]) {
         const parts = d.yield_vs_comparison.split('vs');
-        const v = ivCards[0].querySelector('[style*="font-size:22px"]'); if (v) v.textContent = parts[0]?.trim() || fmt(d.avg_yield);
-        const s = ivCards[0].querySelectorAll('[style*="font-size:10px"]')[1]; if (s && parts[1]) s.textContent = 'vs' + parts[1];
+        const v = ivCards[0].querySelector('[style*="font-size:26px"]'); if (v) v.textContent = parts[0]?.trim() || fmt(d.avg_yield);
+        const subs = ivCards[0].querySelectorAll('[style*="color:var(--text-muted)"]');
+        if (subs[1] && parts[1]) subs[1].textContent = 'vs' + parts[1];
       }
       if (d.construction_cost_rise && ivCards[1]) {
-        const v = ivCards[1].querySelector('[style*="font-size:22px"]'); if (v) v.textContent = '+' + d.construction_cost_rise;
-        const s = ivCards[1].querySelectorAll('[style*="font-size:10px"]')[1]; if (s && d.construction_cost_context) s.textContent = d.construction_cost_context;
+        const v = ivCards[1].querySelector('[style*="font-size:26px"]'); if (v) v.textContent = '+' + d.construction_cost_rise;
+        const subs = ivCards[1].querySelectorAll('[style*="color:var(--text-muted)"]');
+        if (subs[1] && d.construction_cost_context) subs[1].textContent = d.construction_cost_context;
       }
       if (d.growth_forecast && ivCards[2]) {
-        const v = ivCards[2].querySelector('[style*="font-size:22px"]'); if (v) v.textContent = d.growth_forecast;
-        const s = ivCards[2].querySelectorAll('[style*="font-size:10px"]')[1]; if (s && d.growth_forecast_context) s.textContent = d.growth_forecast_context;
+        const v = ivCards[2].querySelector('[style*="font-size:26px"]'); if (v) v.textContent = d.growth_forecast;
+        const subs = ivCards[2].querySelectorAll('[style*="color:var(--text-muted)"]');
+        if (subs[1] && d.growth_forecast_context) subs[1].textContent = d.growth_forecast_context;
       }
     }
 
@@ -7324,8 +7327,8 @@
       const srcData = Array.isArray(d.data_sources) ? d.data_sources : null;
       if (srcData && srcData.length) {
         sourcesEl.innerHTML = srcData.map((s, i) =>
-          '<div style="padding:7px 0;font-size:12px;' + (i < srcData.length-1 ? 'border-bottom:1px solid rgba(201,168,76,0.1);' : '') + '">' +
-          '<span style="color:var(--gold-light);font-family:\'DM Mono\',monospace;font-size:11px;font-weight:600;margin-right:8px;">' + s.tag + '</span>' +
+          '<div style="padding:9px 0;font-size:13px;line-height:1.6;' + (i < srcData.length-1 ? 'border-bottom:1px solid rgba(201,168,76,0.1);' : '') + '">' +
+          '<span style="color:var(--gold);font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;margin-right:10px;">' + s.tag + '</span>' +
           '<span style="color:var(--grey-pale);">' + s.description + '</span></div>'
         ).join('');
       }
