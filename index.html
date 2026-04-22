@@ -180,10 +180,10 @@
   }
 
   .login-logo-text span {
-    display: block; font-size: 11px;
+    display: block; font-size: 12px;
     font-family: 'Outfit', system-ui, sans-serif;
-    font-weight: 400; color: var(--grey-light);
-    letter-spacing: 2px; text-transform: uppercase;
+    font-weight: 500; color: var(--grey-pale);
+    letter-spacing: 1.5px; text-transform: uppercase;
   }
 
   .login-heading {
@@ -193,17 +193,17 @@
   }
 
   .login-sub {
-    font-size: 15px; color: var(--grey-light);
-    margin-bottom: 40px; line-height: 1.7;
+    font-size: 16px; color: var(--grey-pale);
+    margin-bottom: 40px; line-height: 1.65;
   }
 
   .form-group { margin-bottom: 22px; }
 
   .form-label {
-    display: block; font-size: 12px;
-    text-transform: uppercase; letter-spacing: 1.5px;
-    color: var(--grey-light); margin-bottom: 9px;
-    font-weight: 500;
+    display: block; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--grey-pale); margin-bottom: 10px;
+    font-weight: 600;
   }
 
   .form-input {
@@ -212,12 +212,12 @@
     border: 1px solid var(--grey);
     color: var(--white);
     font-family: 'Outfit', system-ui, sans-serif;
-    font-size: 15px; outline: none;
+    font-size: 16px; outline: none;
     transition: border-color 0.2s;
   }
 
   .form-input:focus { border-color: var(--gold); }
-  .form-input::placeholder { color: var(--grey-mid); }
+  .form-input::placeholder { color: var(--text-muted); }
 
   .btn-login {
     width: 100%; padding: 17px;
@@ -225,8 +225,8 @@
     color: var(--black);
     border: none; cursor: pointer;
     font-family: 'Outfit', system-ui, sans-serif;
-    font-size: 14px; font-weight: 600;
-    letter-spacing: 1.5px; text-transform: uppercase;
+    font-size: 15px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase;
     transition: background 0.2s, transform 0.1s;
     margin-top: 10px;
   }
@@ -236,16 +236,16 @@
 
   .login-hint {
     margin-top: 22px; text-align: center;
-    font-size: 13px; color: var(--grey-mid);
+    font-size: 14px; color: var(--text-muted);
   }
 
   .login-hint span { color: var(--gold); }
 
   .btn-become {
-    width: 100%; padding: 15px; margin-top: 12px;
+    width: 100%; padding: 16px; margin-top: 12px;
     background: transparent; border: 1px solid var(--gold-border);
     color: var(--gold); font-family: 'Outfit', system-ui, sans-serif;
-    font-size: 14px; font-weight: 500; letter-spacing: 0.5px;
+    font-size: 15px; font-weight: 600; letter-spacing: 0.5px;
     cursor: pointer; transition: all 0.2s;
   }
   .btn-become:hover { background: var(--gold-dim); border-color: var(--gold); }
@@ -260,7 +260,7 @@
   }
   .enquiry-back {
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 13px; color: var(--grey-mid); cursor: pointer;
+    font-size: 14px; color: var(--text-muted); cursor: pointer;
     margin-bottom: 32px; background: none; border: none;
     font-family: 'Outfit', system-ui, sans-serif; letter-spacing: 0.5px;
     transition: color 0.2s;
@@ -272,16 +272,16 @@
     margin-bottom: 8px;
   }
   .enquiry-sub {
-    font-size: 14px; color: var(--grey-light); line-height: 1.6;
+    font-size: 16px; color: var(--grey-pale); line-height: 1.65;
     margin-bottom: 32px;
   }
   .enquiry-section {
     margin-bottom: 28px;
   }
   .enquiry-section-title {
-    font-size: 12px; font-weight: 700; letter-spacing: 2px;
+    font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
     text-transform: uppercase; color: var(--gold-light);
-    margin-bottom: 14px; padding-bottom: 8px;
+    margin-bottom: 14px; padding-bottom: 10px;
     border-bottom: 1px solid var(--gold-border);
   }
   .enquiry-grid {
@@ -289,32 +289,32 @@
   }
   .enquiry-grid .form-group.full { grid-column: 1 / -1; }
   .form-select {
-    width: 100%; padding: 12px 14px;
+    width: 100%; padding: 13px 16px;
     background: var(--black-card); border: 1px solid var(--grey);
     color: var(--white); font-family: 'Outfit', system-ui, sans-serif;
-    font-size: 13px; outline: none; appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235A5A52'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 12px center;
+    font-size: 15px; outline: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23B8C2CC'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center;
     transition: border-color 0.2s;
   }
   .form-select:focus { border-color: var(--gold); }
   .form-select option { background: var(--black-card); }
   .enquiry-optional {
-    font-size: 11px; color: var(--grey-mid); margin-left: 4px;
+    font-size: 12px; color: var(--text-muted); margin-left: 4px;
   }
   .form-textarea {
-    width: 100%; padding: 12px 14px; min-height: 90px; resize: vertical;
+    width: 100%; padding: 13px 16px; min-height: 96px; resize: vertical;
     background: var(--black-card); border: 1px solid var(--grey);
     color: var(--white); font-family: 'Outfit', system-ui, sans-serif;
-    font-size: 13px; outline: none; transition: border-color 0.2s;
+    font-size: 15px; line-height: 1.55; outline: none; transition: border-color 0.2s;
   }
   .form-textarea:focus { border-color: var(--gold); }
-  .form-textarea::placeholder { color: var(--grey-mid); }
+  .form-textarea::placeholder { color: var(--text-muted); }
   .enquiry-submit {
-    width: 100%; padding: 15px; margin-top: 8px;
+    width: 100%; padding: 16px; margin-top: 8px;
     background: var(--gold); border: none; color: var(--black);
-    font-family: 'Outfit', system-ui, sans-serif; font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
+    font-family: 'Outfit', system-ui, sans-serif; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.8px;
   }
   .enquiry-submit:hover { background: var(--gold-light); transform: translateY(-1px); }
   .enquiry-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
@@ -322,19 +322,19 @@
     text-align: center; padding: 60px 20px;
   }
   .enquiry-success-icon {
-    font-size: 36px; color: var(--gold); margin-bottom: 20px;
+    font-size: 40px; color: var(--gold); margin-bottom: 20px;
   }
   .enquiry-success h2 {
     font-family: 'Playfair Display', Georgia, serif; font-size: 28px;
     color: var(--white); margin-bottom: 12px;
   }
   .enquiry-success p {
-    font-size: 14px; color: var(--grey-light); line-height: 1.7;
-    max-width: 420px; margin: 0 auto;
+    font-size: 16px; color: var(--grey-pale); line-height: 1.7;
+    max-width: 460px; margin: 0 auto;
   }
   .enquiry-error {
     background: rgba(201,76,76,0.1); border: 1px solid rgba(201,76,76,0.3);
-    color: var(--red); font-size: 13px; padding: 10px 14px;
+    color: var(--red); font-size: 14px; padding: 12px 16px;
     margin-bottom: 12px; display: none;
   }
 
@@ -372,16 +372,16 @@
   }
 
   .sidebar-section {
-    padding: 20px 16px 8px;
-    font-size: 11px; font-weight: 600;
-    letter-spacing: 2px; text-transform: uppercase;
-    color: var(--grey-light);
+    padding: 22px 16px 8px;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--text-muted);
   }
 
   .nav-item {
     display: flex; align-items: center; gap: 10px;
-    padding: 10px 16px; cursor: pointer;
-    font-size: 14px; color: var(--grey-pale);
+    padding: 12px 16px; cursor: pointer;
+    font-size: 15px; color: var(--grey-pale);
     transition: all 0.15s; border-left: 2px solid transparent;
     text-decoration: none;
   }
@@ -417,12 +417,12 @@
   }
 
   .user-info { flex: 1; min-width: 0; }
-  .user-name { font-size: 13px; font-weight: 500; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .user-role { font-size: 11px; color: var(--grey-light); letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-name { font-size: 14px; font-weight: 600; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: 12px; color: var(--text-muted); letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .btn-logout {
     background: none; border: none; cursor: pointer;
-    color: var(--grey-mid); font-size: 14px;
+    color: var(--text-muted); font-size: 16px;
     transition: color 0.15s; flex-shrink: 0;
   }
   .btn-logout:hover { color: var(--red); }
@@ -443,32 +443,32 @@
     position: sticky; top: 0; z-index: 50;
   }
 
-  .topbar-left { display: flex; flex-direction: column; gap: 3px; }
+  .topbar-left { display: flex; flex-direction: column; gap: 4px; }
   .topbar-title {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 22px; font-weight: 500; line-height: 1;
+    font-size: 24px; font-weight: 500; line-height: 1;
   }
   .topbar-company {
     display: none;
-    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--gold); opacity: 0.75; line-height: 1;
+    font-size: 12px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--gold); line-height: 1;
   }
 
   .topbar-meta {
-    font-size: 13px; color: var(--grey-light);
+    font-size: 14px; color: var(--grey-pale);
     display: flex; align-items: center; gap: 20px;
   }
 
   .update-badge {
-    display: flex; align-items: center; gap: 6px;
+    display: flex; align-items: center; gap: 8px;
     background: var(--teal-dim);
     border: 1px solid rgba(20,163,168,0.25);
-    padding: 4px 10px; font-size: 12px;
+    padding: 6px 12px; font-size: 13px; font-weight: 600;
     color: var(--teal);
   }
 
   .update-dot {
-    width: 6px; height: 6px;
+    width: 7px; height: 7px;
     border-radius: 50%; background: var(--teal);
     animation: pulse 2s ease infinite;
   }
@@ -501,9 +501,9 @@
   .stat-card:nth-child(4) { animation-delay: 0.2s; }
 
   .stat-label {
-    font-size: 12px; text-transform: uppercase;
-    letter-spacing: 1.5px; color: var(--grey-pale);
-    margin-bottom: 12px; font-weight: 500;
+    font-size: 13px; text-transform: uppercase;
+    letter-spacing: 1.2px; color: var(--grey-pale);
+    margin-bottom: 12px; font-weight: 600;
   }
 
   .stat-value {
@@ -512,17 +512,17 @@
     color: var(--gold); line-height: 1;
   }
 
-  .stat-sub { font-size: 12px; color: var(--grey-mid); margin-top: 6px; }
+  .stat-sub { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
 
   /* Partner-specific stat card */
   .stat-card.partner-tile { border-color: rgba(201,168,76,0.25); cursor: default; }
   .stat-card.partner-tile .stat-value { color: var(--white); }
   .stat-card.partner-tile .stat-value.gold { color: var(--gold); }
   .stat-card.partner-tile .stat-chip {
-    display: inline-block; font-size: 11px; letter-spacing: 0.8px;
-    padding: 2px 8px; margin-top: 8px;
+    display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 0.6px;
+    padding: 3px 10px; margin-top: 10px;
     background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2);
-    color: var(--grey-light); text-transform: uppercase;
+    color: var(--grey-pale); text-transform: uppercase;
   }
 
   .dash-grid {
@@ -532,7 +532,7 @@
 
   .section-heading {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 18px; font-weight: 500;
+    font-size: 20px; font-weight: 500;
     margin-bottom: 16px;
     display: flex; align-items: center; gap: 10px;
   }
@@ -546,8 +546,8 @@
   .research-list { display: flex; flex-direction: column; gap: 10px; }
 
   .research-item {
-    display: flex; align-items: center; gap: 16px;
-    padding: 16px 20px;
+    display: flex; align-items: center; gap: 18px;
+    padding: 18px 22px;
     background: var(--black-card);
     border: 1px solid var(--gold-border);
     cursor: pointer; transition: all 0.15s;
@@ -566,11 +566,11 @@
   .research-item:nth-child(5) { animation-delay: 0.3s; }
 
   .ri-state {
-    width: 36px; height: 36px;
+    width: 40px; height: 40px;
     background: var(--gold-dim);
     border: 1px solid var(--gold-border);
     display: flex; align-items: stretch; justify-content: stretch;
-    font-size: 11px; font-weight: 700;
+    font-size: 12px; font-weight: 700;
     color: var(--gold); letter-spacing: 0.5px;
     flex-shrink: 0;
   }
@@ -584,41 +584,41 @@
   }
 
   .score-badge {
-    padding: 4px 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.3px;
+    padding: 5px 14px; font-size: 14px; font-weight: 700; letter-spacing: 0.3px;
   }
 
   .score-badge.high { background: rgba(76,175,122,0.15); color: var(--green); }
   .score-badge.med { background: rgba(201,168,76,0.15); color: var(--gold); }
   .score-badge.low { background: rgba(201,76,76,0.15); color: var(--red); }
 
-  .ri-date { font-size: 12px; color: var(--text-muted); }
+  .ri-date { font-size: 13px; color: var(--text-muted); }
 
   /* ACTIVITY FEED */
   .activity-feed {
     background: var(--black-card);
     border: 1px solid var(--gold-border);
-    padding: 20px;
+    padding: 22px;
   }
 
   .activity-item {
-    display: flex; gap: 12px; padding: 12px 0;
+    display: flex; gap: 14px; padding: 14px 0;
     border-bottom: 1px solid rgba(201,168,76,0.08);
-    font-size: 13px;
+    font-size: 14px;
     animation: fadeUp 0.5s ease both;
   }
 
   .activity-item:last-child { border-bottom: none; }
   .activity-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--gold); margin-top: 5px; flex-shrink: 0;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gold); margin-top: 6px; flex-shrink: 0;
   }
 
   .activity-dot.green { background: var(--green); }
-  .activity-dot.grey { background: var(--grey-mid); }
+  .activity-dot.grey { background: var(--text-muted); }
 
-  .activity-text { color: var(--grey-light); line-height: 1.5; }
+  .activity-text { color: var(--grey-pale); line-height: 1.6; }
   .activity-text strong { color: var(--white); }
-  .activity-time { font-size: 11px; color: var(--grey-mid); margin-top: 4px; }
+  .activity-time { font-size: 12px; color: var(--text-muted); margin-top: 5px; letter-spacing: 0.3px; }
 
   /* ─── MAP SCREEN ─────────────────────────────────────── */
   .map-controls {
@@ -634,23 +634,23 @@
   }
 
   .map-search input {
-    flex: 1; padding: 11px 10px;
+    flex: 1; padding: 13px 10px;
     background: none; border: none;
     color: var(--white); font-family: 'Outfit', system-ui, sans-serif;
-    font-size: 13px; outline: none;
+    font-size: 14px; outline: none;
   }
 
-  .map-search input::placeholder { color: var(--grey-mid); }
-  .map-search-icon { color: var(--grey-mid); font-size: 14px; }
+  .map-search input::placeholder { color: var(--text-muted); }
+  .map-search-icon { color: var(--text-muted); font-size: 16px; }
 
   .filter-pills { display: flex; gap: 8px; }
 
   .pill {
-    padding: 8px 16px;
+    padding: 10px 18px;
     border: 1px solid var(--gold-border);
     background: none; cursor: pointer;
-    font-size: 12px; font-weight: 500;
-    color: var(--grey-light); letter-spacing: 0.5px;
+    font-size: 13px; font-weight: 600;
+    color: var(--grey-pale); letter-spacing: 0.5px;
     transition: all 0.15s;
   }
 
@@ -2197,7 +2197,7 @@
           <div class="update-dot"></div>
           Research updated 18 Feb 2025
         </div>
-        <span id="topbar-today" style="color:var(--grey-mid)"></span>
+        <span id="topbar-today" style="color:var(--text-muted);font-size:14px"></span>
       </div>
     </div>
 
@@ -2307,7 +2307,7 @@
       <!-- Partner welcome header (hidden for admin) -->
       <div id="dash-partner-welcome" style="display:none;margin-bottom:28px;">
         <div id="dash-welcome-name" style="font-family:'Playfair Display',Georgia,serif;font-size:28px;font-weight:500;color:var(--white);line-height:1.2;"></div>
-        <div id="dash-welcome-company" style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-top:6px;opacity:0.85;"></div>
+        <div id="dash-welcome-company" style="font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-top:8px;"></div>
       </div>
 
       <!-- Admin stats (default) -->
