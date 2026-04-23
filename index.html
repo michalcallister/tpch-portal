@@ -1793,6 +1793,168 @@
     stroke: #E8C96A;
     stroke-width: 1.5;
   }
+
+  /* ─── SUBURB RESEARCH v2 (institutional layout) ───────────────────────── */
+  /* Topbar */
+  .rv2-topbar { background: var(--black-soft); border-bottom: 1px solid var(--gold-border); position: sticky; top: 0; z-index: 30; }
+  .rv2-topbar-inner { max-width: 1320px; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; gap: 18px; }
+  .rv2-back-btn { background: transparent; color: var(--gold-light); border: 1px solid var(--gold-border); padding: 7px 16px; border-radius: 3px; font-size: 12px; cursor: pointer; letter-spacing: 0.5px; }
+  .rv2-back-btn:hover { background: var(--gold-dim); }
+  .rv2-breadcrumb { flex: 1; font-size: 12px; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; }
+  .rv2-breadcrumb b { color: var(--gold-light); font-weight: 600; }
+  .rv2-topbar-actions { display: flex; gap: 10px; }
+  .rv2-action-btn { background: transparent; color: var(--white); border: 1px solid var(--grey); padding: 8px 16px; border-radius: 3px; font-size: 12px; cursor: pointer; letter-spacing: 0.4px; }
+  .rv2-action-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold-light); }
+  .rv2-action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* Draft banner */
+  .rv2-draft-banner { background: rgba(200,169,81,0.10); border-bottom: 1px solid var(--gold-border); padding: 10px 32px; font-size: 12px; display: flex; align-items: center; gap: 14px; max-width: none; }
+
+  /* Sticky horizontal anchor nav */
+  .rv2-nav { background: var(--black); border-bottom: 1px solid rgba(200,169,81,0.18); position: sticky; top: 51px; z-index: 25; }
+  .rv2-nav-inner { max-width: 1320px; margin: 0 auto; padding: 0 32px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  .rv2-nav-inner::-webkit-scrollbar { display: none; }
+  .rv2-nav-tab { padding: 16px 20px; font-size: 13px; color: var(--text-muted); text-decoration: none; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 500; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
+  .rv2-nav-tab:hover { color: var(--white); }
+  .rv2-nav-tab.active { color: var(--gold-light); border-bottom-color: var(--gold); }
+
+  /* Layout */
+  .rv2-layout { max-width: 1320px; margin: 0 auto; padding: 36px 32px 80px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; }
+  .rv2-main { min-width: 0; }
+  .rv2-sidebar { position: sticky; top: 110px; align-self: start; }
+  @media (max-width: 980px) {
+    .rv2-layout { grid-template-columns: 1fr; gap: 32px; padding: 24px 20px 60px; }
+    .rv2-sidebar { position: static; order: -1; }
+    .rv2-topbar-inner { padding: 12px 16px; }
+    .rv2-nav-inner { padding: 0 12px; }
+    .rv2-nav-tab { padding: 14px 14px; font-size: 12px; }
+  }
+
+  /* Section pattern */
+  .rv2-group { padding-top: 8px; padding-bottom: 56px; scroll-margin-top: 120px; }
+  .rv2-group:not(:last-child) { border-bottom: 1px solid rgba(200,169,81,0.12); margin-bottom: 24px; }
+  .rv2-group-title { font-family: 'Playfair Display', Georgia, serif; font-size: 32px; font-weight: 500; color: var(--white); margin-bottom: 8px; letter-spacing: -0.5px; }
+  .rv2-group-tagline { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; max-width: 720px; line-height: 1.6; }
+
+  .rv2-section { margin-bottom: 36px; }
+  .rv2-overline { font-size: 11px; color: var(--gold-light); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-bottom: 8px; }
+  .rv2-headline { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; font-weight: 500; color: var(--white); margin-bottom: 14px; line-height: 1.35; max-width: 760px; }
+  .rv2-narrative { font-size: 15.5px; color: var(--grey-pale); line-height: 1.78; max-width: 760px; }
+  .rv2-narrative p { margin-bottom: 14px; }
+  .rv2-narrative p:last-child { margin-bottom: 0; }
+  .rv2-narrative .rv2-narr-label { color: var(--gold-light); letter-spacing: 1px; font-weight: 700; margin-right: 4px; }
+  .rv2-narrative .rv2-bullet-list { margin: 0; padding-left: 0; list-style: none; }
+  .rv2-narrative .rv2-bullet-list li { padding: 10px 0 10px 22px; border-bottom: 1px solid rgba(200,169,81,0.12); position: relative; line-height: 1.6; }
+  .rv2-narrative .rv2-bullet-list li:last-child { border-bottom: none; }
+  .rv2-narrative .rv2-bullet-list li::before { content: ''; position: absolute; left: 0; top: 18px; width: 12px; height: 1px; background: var(--gold); }
+  .rv2-narrative .rv2-bullet-list li strong { color: var(--white); font-weight: 600; }
+
+  /* Stat strip (horizontal pill row of stats) */
+  .rv2-stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--gold-border); border: 1px solid var(--gold-border); border-radius: 3px; overflow: hidden; margin-top: 22px; }
+  .rv2-stat-tile { background: var(--black-card); padding: 16px 18px; }
+  .rv2-stat-tile-label { font-size: 11px; color: var(--text-muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px; }
+  .rv2-stat-tile-value { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: var(--white); font-weight: 500; line-height: 1.1; }
+
+  /* Cover strip (Overview hero) */
+  .rv2-cover { padding: 6px 0 24px; border-bottom: 1px solid var(--gold-border); margin-bottom: 32px; }
+  .rv2-cover-eyebrow { font-size: 11px; color: var(--gold-light); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; font-weight: 600; }
+  .rv2-cover-title { font-family: 'Playfair Display', Georgia, serif; font-size: 44px; font-weight: 500; color: var(--white); line-height: 1.1; margin-bottom: 14px; letter-spacing: -1px; }
+  .rv2-cover-meta { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--text-muted); }
+  .rv2-cover-meta b { color: var(--white); font-weight: 600; }
+
+  /* Exec summary thesis block */
+  .rv2-thesis-block { background: linear-gradient(180deg, rgba(200,169,81,0.06), rgba(200,169,81,0.02)); border: 1px solid var(--gold-border); border-left: 3px solid var(--gold); padding: 28px 32px; margin-bottom: 32px; border-radius: 3px; }
+  .rv2-thesis-block.plain { background: linear-gradient(180deg, rgba(245,243,238,0.04), rgba(245,243,238,0.01)); border-left-color: var(--gold-light); }
+  .rv2-thesis-label { font-size: 11px; color: var(--gold-light); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-bottom: 16px; }
+  .rv2-thesis-kicker { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; font-style: italic; color: var(--cream); line-height: 1.45; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid rgba(200,169,81,0.18); font-weight: 400; }
+  .rv2-thesis-text { font-family: 'Outfit', 'Inter', sans-serif; font-size: 16px; color: var(--white); line-height: 1.75; font-weight: 400; }
+  .rv2-thesis-text p { margin: 0 0 14px; }
+  .rv2-thesis-text p:last-child { margin-bottom: 0; }
+
+  /* Score breakdown bars */
+  .rv2-dim-row { padding: 18px 0; border-bottom: 1px solid rgba(200,169,81,0.08); }
+  .rv2-dim-row:last-child { border-bottom: none; }
+  .rv2-dim-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; gap: 12px; }
+  .rv2-dim-label { font-size: 13.5px; color: var(--white); font-weight: 600; letter-spacing: 0.3px; }
+  .rv2-dim-score { font-family: 'Playfair Display', Georgia, serif; font-size: 18px; font-weight: 500; }
+  .rv2-dim-bar-track { height: 6px; background: rgba(200,169,81,0.10); border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+  .rv2-dim-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+  .rv2-dim-reasoning { font-size: 13.5px; color: var(--grey-pale); line-height: 1.65; max-width: 760px; }
+
+  /* Comparable sales table */
+  .rv2-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13.5px; }
+  .rv2-table th { text-align: left; font-size: 11px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--gold-border); background: rgba(200,169,81,0.04); }
+  .rv2-table td { padding: 12px 14px; border-bottom: 1px solid rgba(200,169,81,0.08); color: var(--grey-pale); vertical-align: top; }
+  .rv2-table tr:hover td { background: rgba(200,169,81,0.04); }
+  .rv2-table td b { color: var(--white); font-weight: 600; }
+  .rv2-table-link { color: var(--gold-light); text-decoration: none; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .rv2-table-link:hover { text-decoration: underline; }
+
+  /* Risk register table */
+  .rv2-risk-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13.5px; }
+  .rv2-risk-table th { text-align: left; font-size: 11px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--gold-border); }
+  .rv2-risk-table td { padding: 14px; border-bottom: 1px solid rgba(200,169,81,0.08); color: var(--grey-pale); vertical-align: top; line-height: 1.55; }
+  .rv2-sev-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.4px; }
+  .rv2-sev-low { background: rgba(76,175,122,0.15); color: var(--green); }
+  .rv2-sev-mid { background: rgba(200,169,81,0.18); color: var(--gold-light); }
+  .rv2-sev-high { background: rgba(201,76,76,0.15); color: var(--red); }
+
+  /* Endorsement (In the press) cards */
+  .rv2-endorsement-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; margin-top: 16px; }
+  .rv2-endorsement-card { background: var(--black-card); border: 1px solid var(--gold-border); border-left: 3px solid var(--gold); padding: 20px 22px; border-radius: 3px; display: flex; flex-direction: column; }
+  .rv2-endorsement-source { font-size: 11px; color: var(--gold-light); letter-spacing: 1.4px; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+  .rv2-endorsement-date { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+  .rv2-endorsement-headline { font-family: 'Playfair Display', Georgia, serif; font-size: 16px; color: var(--white); line-height: 1.4; margin-bottom: 10px; font-weight: 500; }
+  .rv2-endorsement-excerpt { font-size: 13px; color: var(--grey-pale); line-height: 1.65; flex: 1; margin-bottom: 14px; font-style: italic; }
+  .rv2-endorsement-link { font-size: 11px; color: var(--gold-light); text-decoration: none; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600; }
+  .rv2-endorsement-link:hover { text-decoration: underline; }
+  .rv2-endorsement-tag { font-size: 10.5px; color: var(--text-muted); margin-top: 8px; letter-spacing: 0.4px; }
+
+  /* Counter-view block */
+  .rv2-counter { background: var(--black-card); border: 1px solid rgba(201,168,76,0.18); border-left: 3px solid var(--gold-light); padding: 24px 26px; border-radius: 3px; margin-top: 16px; }
+  .rv2-counter-source { font-size: 11px; color: var(--gold-light); letter-spacing: 1.4px; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+  .rv2-counter-date { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+  .rv2-counter-headline { font-family: 'Playfair Display', Georgia, serif; font-size: 18px; color: var(--white); line-height: 1.4; margin-bottom: 12px; font-weight: 500; }
+  .rv2-counter-excerpt { font-size: 14px; color: var(--grey-pale); line-height: 1.7; font-style: italic; margin-bottom: 16px; padding-left: 14px; border-left: 2px solid var(--gold-border); }
+  .rv2-counter-link { font-size: 11px; color: var(--gold-light); text-decoration: none; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600; display: inline-block; margin-bottom: 18px; }
+  .rv2-counter-link:hover { text-decoration: underline; }
+  .rv2-response-block { background: rgba(76,175,122,0.06); border: 1px solid rgba(76,175,122,0.25); border-left: 3px solid var(--green); padding: 16px 20px; border-radius: 3px; }
+  .rv2-response-label { font-size: 11px; color: var(--green); letter-spacing: 1.4px; text-transform: uppercase; font-weight: 600; margin-bottom: 8px; }
+  .rv2-response-text { font-size: 14px; color: var(--white); line-height: 1.65; }
+
+  /* Sources list */
+  .rv2-source-row { padding: 12px 0; border-bottom: 1px solid rgba(200,169,81,0.08); display: grid; grid-template-columns: 110px 1fr; gap: 18px; align-items: baseline; }
+  .rv2-source-row:last-child { border-bottom: none; }
+  .rv2-source-tag { font-size: 11px; color: var(--gold-light); letter-spacing: 0.8px; text-transform: uppercase; font-weight: 600; }
+  .rv2-source-meta { font-size: 13.5px; color: var(--grey-pale); line-height: 1.55; }
+  .rv2-source-meta b { color: var(--white); font-weight: 600; }
+  .rv2-source-meta a { color: var(--gold-light); text-decoration: none; font-size: 11.5px; word-break: break-all; }
+  .rv2-source-meta a:hover { text-decoration: underline; }
+
+  /* Disclaimer */
+  .rv2-disclaimer { background: var(--black-soft); border: 1px solid rgba(200,169,81,0.10); padding: 22px 26px; border-radius: 3px; margin-top: 32px; }
+  .rv2-disclaimer-label { font-size: 11px; color: var(--text-muted); letter-spacing: 1.6px; text-transform: uppercase; font-weight: 600; margin-bottom: 10px; }
+  .rv2-disclaimer-text { font-size: 12.5px; color: var(--text-muted); line-height: 1.7; }
+
+  /* Sidebar */
+  .rv2-sb-card { background: var(--black-card); border: 1px solid var(--gold-border); border-radius: 3px; margin-bottom: 18px; overflow: hidden; }
+  .rv2-sb-conviction { padding: 26px 22px 22px; text-align: center; border-left: 3px solid var(--gold); }
+  .rv2-sb-conviction-label { font-size: 11px; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; font-weight: 600; }
+  .rv2-sb-conviction-rating { font-family: 'Playfair Display', Georgia, serif; font-size: 28px; font-weight: 500; line-height: 1; margin-bottom: 6px; }
+  .rv2-sb-conviction-score { font-size: 13px; color: var(--text-muted); }
+  .rv2-sb-conviction-score b { color: var(--white); font-weight: 600; font-size: 18px; }
+  .rv2-sb-card-head { padding: 12px 18px; font-size: 11px; color: var(--gold-light); letter-spacing: 1.6px; text-transform: uppercase; font-weight: 600; background: rgba(200,169,81,0.04); border-bottom: 1px solid var(--gold-border); }
+  .rv2-sb-card-body { padding: 14px 18px; }
+  .rv2-sb-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(200,169,81,0.06); font-size: 13px; }
+  .rv2-sb-row:last-child { border-bottom: none; }
+  .rv2-sb-row-label { color: var(--text-muted); }
+  .rv2-sb-row-value { color: var(--white); font-weight: 600; }
+  .rv2-sb-actions { padding: 14px 18px; }
+  .rv2-sb-action-btn { display: block; width: 100%; padding: 11px 14px; margin-bottom: 8px; background: transparent; color: var(--white); border: 1px solid var(--grey); border-radius: 3px; font-size: 12.5px; cursor: pointer; letter-spacing: 0.4px; text-align: center; }
+  .rv2-sb-action-btn.primary { background: var(--gold); color: var(--black); border-color: var(--gold); font-weight: 600; }
+  .rv2-sb-action-btn.primary:hover:not(:disabled) { background: var(--gold-light); }
+  .rv2-sb-action-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold-light); }
+  .rv2-sb-action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -2390,7 +2552,6 @@
           <button class="pill active" onclick="togglePill(this)">All Markets</button>
           <button class="pill" onclick="togglePill(this)">Strong Buy</button>
           <button class="pill" onclick="togglePill(this)">With Stock</button>
-          <button class="pill" onclick="togglePill(this)">SMSF</button>
         </div>
       </div>
 
@@ -2469,7 +2630,7 @@
             <div class="ri-state">VIC</div>
             <div class="ri-info">
               <div class="ri-name">Melbourne CBD & Surrounds</div>
-              <div class="ri-meta">Melbourne Square · SMSF eligible · Off-the-plan</div>
+              <div class="ri-meta">Melbourne Square · Off-the-plan</div>
             </div>
             <div class="ri-score">
               <div class="score-badge high">Strong Buy</div>
@@ -2596,7 +2757,6 @@
                 </div>
                 <div style="display:flex;gap:6px;flex-wrap:wrap;" id="rd-tags">
                   <span class="insight-tag bull">Low vacancy</span>
-                  <span class="insight-tag bull">SMSF eligible</span>
                   <span class="insight-tag bull">Below replacement cost</span>
                   <span class="insight-tag bull">Supply cliff confirmed</span>
                   <span class="insight-tag watch">Monitor strata levies</span>
@@ -2826,7 +2986,6 @@
                 <div class="data-row"><span class="dr-label">Rental Growth YoY</span><span class="dr-value" id="rd-rentgrowth">+9.0%</span></div>
                 <div class="data-row"><span class="dr-label">Median Unit Price</span><span class="dr-value" id="rd-medprice">$605,221</span></div>
                 <div class="data-row"><span class="dr-label">Yield vs Sydney</span><span class="dr-value" style="color:var(--green)">5.1% vs 2.9%</span></div>
-                <div class="data-row"><span class="dr-label">SMSF Eligible</span><span class="dr-value" id="rd-smsf" style="color:var(--green)">✓ Yes</span></div>
                 <div class="updated-tag" style="margin-top:12px;">
                   <div class="update-dot"></div>
                   <span id="rd-updated">Updated Feb 2025</span>
@@ -2840,7 +2999,7 @@
               <div class="sidebar-card-body" style="text-align:center;padding:22px 18px;">
                 <div id="rd-rec-rating" style="font-family:'Playfair Display',Georgia,serif;font-size:34px;color:var(--green);font-weight:600;line-height:1;">Strong Buy</div>
                 <div style="width:60px;height:2px;background:var(--green);margin:12px auto;"></div>
-                <div id="rd-rec-text" style="font-size:14px;color:var(--grey-pale);line-height:1.7;">Prioritised stock for immediate presentation to SMSF and investor clients. Active market with available stock.</div>
+                <div id="rd-rec-text" style="font-size:14px;color:var(--grey-pale);line-height:1.7;">Prioritised stock for immediate presentation to investor clients. Active market with available stock.</div>
               </div>
             </div>
 
@@ -2886,6 +3045,57 @@
       <div id="report-print-area" style="display:none;"></div>
     </div>
 
+    <!-- ── PAGE: SUBURB RESEARCH v2 (institutional layout) ── -->
+    <div id="page-research-v2" class="page-view" style="padding:0;overflow-y:auto;max-height:calc(100vh - 61px);">
+      <!-- Loading state -->
+      <div id="rv2-loading" style="padding:80px 32px;text-align:center;color:var(--text-muted);">
+        <div style="font-family:'Playfair Display',Georgia,serif;font-size:20px;color:var(--white);margin-bottom:8px;">Loading research</div>
+        <div style="font-size:13px;">Fetching the latest published draft...</div>
+      </div>
+      <!-- Empty / error state -->
+      <div id="rv2-error" style="display:none;padding:80px 32px;text-align:center;">
+        <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--white);margin-bottom:10px;">Research coming soon</div>
+        <div id="rv2-error-msg" style="font-size:14px;color:var(--text-muted);max-width:480px;margin:0 auto 24px;">This suburb has not yet been profiled by the Research Agent. Once a draft is approved by the TPCH editorial team, the report will appear here.</div>
+        <button onclick="rv2Back()" style="background:transparent;color:var(--gold-light);border:1px solid var(--gold-border);padding:10px 22px;border-radius:3px;font-size:13px;cursor:pointer;letter-spacing:0.5px;">← Back</button>
+      </div>
+      <!-- Report container -->
+      <div id="rv2-report" style="display:none;">
+        <!-- Top action bar -->
+        <div class="rv2-topbar">
+          <div class="rv2-topbar-inner">
+            <button onclick="rv2Back()" class="rv2-back-btn">← Back</button>
+            <div id="rv2-breadcrumb" class="rv2-breadcrumb"></div>
+            <div class="rv2-topbar-actions">
+              <button id="rv2-share-btn" class="rv2-action-btn" disabled title="Coming Phase 3">Share with client</button>
+              <button id="rv2-pdf-btn" class="rv2-action-btn" disabled title="Coming Phase 2">Download PDF</button>
+            </div>
+          </div>
+        </div>
+        <!-- Draft banner (shown when status !== 'published') -->
+        <div id="rv2-draft-banner" class="rv2-draft-banner" style="display:none;">
+          <span style="color:var(--gold-light);font-weight:600;letter-spacing:0.6px;">DRAFT</span>
+          <span style="color:var(--text-muted);">This research is awaiting admin approval. Not visible to channel partners.</span>
+        </div>
+        <!-- Sticky anchor nav -->
+        <nav class="rv2-nav" id="rv2-nav">
+          <div class="rv2-nav-inner">
+            <a href="#rv2-sec-overview" class="rv2-nav-tab active" data-section="overview" onclick="rv2NavClick(event,'overview')">Overview</a>
+            <a href="#rv2-sec-market"   class="rv2-nav-tab" data-section="market"   onclick="rv2NavClick(event,'market')">Market</a>
+            <a href="#rv2-sec-demand"   class="rv2-nav-tab" data-section="demand"   onclick="rv2NavClick(event,'demand')">Demand</a>
+            <a href="#rv2-sec-supply"   class="rv2-nav-tab" data-section="supply"   onclick="rv2NavClick(event,'supply')">Supply</a>
+            <a href="#rv2-sec-risk"     class="rv2-nav-tab" data-section="risk"     onclick="rv2NavClick(event,'risk')">Risk</a>
+            <a href="#rv2-sec-press"    class="rv2-nav-tab" data-section="press"    onclick="rv2NavClick(event,'press')">Press</a>
+            <a href="#rv2-sec-sources"  class="rv2-nav-tab" data-section="sources"  onclick="rv2NavClick(event,'sources')">Sources</a>
+          </div>
+        </nav>
+        <!-- Two column body -->
+        <div class="rv2-layout">
+          <main id="rv2-main" class="rv2-main"></main>
+          <aside id="rv2-sidebar" class="rv2-sidebar"></aside>
+        </div>
+      </div>
+    </div>
+
     <!-- ── PAGE: ALL REPORTS ──────────────────────────── -->
     <div id="page-reports" class="page-view" style="padding:32px">
       <div class="section-heading">All Research Reports</div>
@@ -2894,7 +3104,7 @@
           <div class="ri-state">VIC</div>
           <div class="ri-info">
             <div class="ri-name">Melbourne CBD & Surrounds</div>
-            <div class="ri-meta">Melbourne Square · SMSF eligible · Completed stock · Commission $25K+</div>
+            <div class="ri-meta">Melbourne Square · Completed stock · Commission $25K+</div>
           </div>
           <div class="ri-score">
             <div class="score-badge high">Strong Buy</div>
@@ -3715,8 +3925,8 @@
           <div id="aad-status-badge" style="margin-left:auto;"></div>
         </div>
 
-        <!-- Run controls -->
-        <div style="background:var(--black-card);border:1px solid var(--gold-border);border-radius:4px;padding:20px 24px;margin-bottom:24px;">
+        <!-- Run controls (project-bound agents) -->
+        <div id="aad-run-controls-project" style="background:var(--black-card);border:1px solid var(--gold-border);border-radius:4px;padding:20px 24px;margin-bottom:24px;">
           <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px;">Run Agent</div>
           <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
             <select id="aad-project-select" class="form-input" style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.1);padding:10px 14px;border-radius:3px;font-size:13px;min-width:260px;">
@@ -3732,6 +3942,18 @@
               Run All Projects
             </button>
             <div id="aad-run-status" style="font-size:13px;color:var(--text-muted);margin-left:8px;"></div>
+          </div>
+        </div>
+
+        <!-- Run controls (suburb-research — local-skill drafted) -->
+        <div id="aad-run-controls-research" style="display:none;background:var(--black-card);border:1px solid var(--gold-border);border-radius:4px;padding:20px 24px;margin-bottom:24px;">
+          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">How drafts arrive</div>
+          <div style="font-size:13px;color:var(--grey-pale);line-height:1.7;max-width:760px;">
+            Suburb research drafts are produced by Opus 4.7 in a local Claude Code session using the
+            <span style="font-family:'DM Mono',monospace;color:var(--gold-light);">suburb-research</span> skill, then uploaded via the
+            <span style="font-family:'DM Mono',monospace;color:var(--gold-light);">upload-research</span> edge function. Approve or reject the draft below; approval flips the row to
+            <span style="color:var(--white);">published</span> and exposes it on the public Research page.
+            One-click portal trigger is Phase 1.5.
           </div>
         </div>
 
@@ -4608,10 +4830,10 @@
   function useFallbackData() {
     liveResearch = [
       { id:'melbourne-cbd', suburb:'Melbourne CBD', region:'Inner City & Surrounds', state:'VIC',
-        map_lat:-37.8136, map_lng:144.9631, rating:'Strong Buy', smsf_eligible:true,
+        map_lat:-37.8136, map_lng:144.9631, rating:'Strong Buy',
         avg_yield:5.10, capital_growth:6.20, vacancy_rate:2.40, median_price:605221,
         weekly_rent:575, rental_growth:9.0,
-        thesis_short:'Completed SMSF-eligible stock with above-market commissions. Supply cliff confirmed.',
+        thesis_short:'Completed stock with above-market commissions. Supply cliff confirmed.',
         thesis_main:"Melbourne's CBD and inner suburbs represent one of the most compelling yield and growth opportunities in Australia. Record low vacancy rates driven by the return of international students, a decade-high migration wave, and severely constrained new supply are converging to create exceptional rental demand pressure across all product types.",
         thesis_detail:"Construction completions in FY2025 will be the lowest on record — just 3,070 build-to-sell apartments, a 50% drop from FY2024. Against annual demand of 15,000+ dwellings, the gap is structural. Buyers entering today are purchasing below replacement cost.",
         tpch_headline:"Melbourne is the standout contrarian opportunity in Australia right now.",
@@ -4630,7 +4852,7 @@
         population:'5.4M metro', pop_growth_pct:2.40, unemployment:4.00, rental_growth:9.0,
         updated_at:'2025-02-18T00:00:00Z' },
       { id:'canberra', suburb:'Canberra', region:'Inner North & South', state:'ACT',
-        map_lat:-35.2809, map_lng:149.1300, rating:'Strong Buy', smsf_eligible:false,
+        map_lat:-35.2809, map_lng:149.1300, rating:'Strong Buy',
         avg_yield:5.10, capital_growth:5.80, vacancy_rate:0.90, median_price:620000,
         weekly_rent:660, rental_growth:9.40,
         thesis_short:'Government-underpinned market with sub-1% vacancy and the highest household income of any Australian capital.',
@@ -4689,7 +4911,7 @@
         population:'470K city', pop_growth_pct:1.80, unemployment:3.20,
         updated_at:'2025-02-15T00:00:00Z' },
       { id:'brisbane', suburb:'Brisbane', region:'SE Growth Corridor', state:'QLD',
-        map_lat:-27.4698, map_lng:153.0251, rating:'Watch', smsf_eligible:false,
+        map_lat:-27.4698, map_lng:153.0251, rating:'Watch',
         avg_yield:5.40, capital_growth:7.10, vacancy_rate:1.40, median_price:720000,
         weekly_rent:700, rental_growth:12.10,
         thesis_short:'Olympic pipeline market with the fastest population growth in Australia — stock selection is critical.',
@@ -4748,7 +4970,7 @@
         population:'2.6M metro', pop_growth_pct:2.80, unemployment:3.60,
         updated_at:'2025-02-12T00:00:00Z' },
       { id:'perth', suburb:'Perth', region:'Northern Suburbs', state:'WA',
-        map_lat:-31.9505, map_lng:115.8605, rating:'Strong Buy', smsf_eligible:false,
+        map_lat:-31.9505, map_lng:115.8605, rating:'Strong Buy',
         avg_yield:6.10, capital_growth:8.40, vacancy_rate:0.80, median_price:590000,
         weekly_rent:740, rental_growth:14.80,
         thesis_short:"Australia's strongest performing market — mining boom, acute undersupply, decade-high yields above 6%.",
@@ -4807,7 +5029,7 @@
         population:'2.1M metro', pop_growth_pct:2.20, unemployment:3.40,
         updated_at:'2025-02-10T00:00:00Z' },
       { id:'port-hedland', suburb:'Port Hedland', region:'Pilbara Resources Region', state:'WA',
-        map_lat:-20.3161, map_lng:118.5954, rating:'Strong Buy', smsf_eligible:false, is_exclusive:true,
+        map_lat:-20.3161, map_lng:118.5954, rating:'Strong Buy', is_exclusive:true,
         avg_yield:8.20, capital_growth:9.10, vacancy_rate:0.40, median_price:480000,
         weekly_rent:1100, rental_growth:22.50,
         thesis_short:'TPCH-exclusive. 8-9% gross yields, 0.4% vacancy, resources-driven demand that will persist through the decade.',
@@ -7152,7 +7374,6 @@
       `<span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Conviction</span>
        <span style="font-family:'Playfair Display',Georgia,serif;font-size:24px;font-weight:600;color:${col};">${d.rating || 'Pending'}</span>`;
     let tags = '';
-    if (d.smsf_eligible)          tags += '<span class="insight-tag bull">SMSF eligible</span>';
     if (d.is_exclusive)           tags += '<span class="insight-tag bull">TPCH Exclusive</span>';
     if (d.construction_cost_rise) tags += '<span class="insight-tag bull">Below replacement cost</span>';
     if (d.supply_shortfall)       tags += '<span class="insight-tag bull">Supply cliff confirmed</span>';
@@ -7251,9 +7472,6 @@
     setEl('rd-unemp',     d.unemployment ? Number(d.unemployment).toFixed(1) + '%' : '—');
     setEl('rd-rentgrowth',d.rental_growth ? '+' + Number(d.rental_growth).toFixed(1) + '% YoY' : '—');
     setEl('rd-medprice',  fmtFull(d.median_price));
-    setEl('rd-smsf',      d.smsf_eligible ? '✓ Yes' : 'Confirm');
-    const smsfEl = document.getElementById('rd-smsf');
-    if (smsfEl) smsfEl.style.color = d.smsf_eligible ? 'var(--green)' : 'var(--text-muted)';
     setEl('rd-updated',   (d.ai_generated ? 'AI-updated ' : 'Updated ') + updDate);
 
     // ── Recommendation panel ──
@@ -7499,7 +7717,7 @@
       <div class="metric">
         <div class="metric-label">TPCH Conviction</div>
         <div class="metric-value" style="color:${col};">${d.rating || 'Pending'}</div>
-        <div class="metric-sub">${d.smsf_eligible || isMelb ? 'SMSF eligible' : 'Confirm eligibility'}</div>
+        <div class="metric-sub">${d.is_exclusive ? 'TPCH Exclusive' : 'Active research'}</div>
       </div>
     </div>
   </div>
@@ -7538,7 +7756,6 @@
         <div class="stat-row"><span class="stat-label">State</span><span class="stat-value">${d.state}</span></div>
         <div class="stat-row"><span class="stat-label">Vacancy Rate</span><span class="stat-value">${isMelb ? '2.4%' : fmt(d.vacancy_rate)}</span></div>
         <div class="stat-row"><span class="stat-label">Median Unit Price</span><span class="stat-value">${isMelb ? '$605,221' : fmtFull(d.median_price)}</span></div>
-        <div class="stat-row"><span class="stat-label">SMSF Eligible</span><span class="stat-value">${(d.smsf_eligible||isMelb)?'Yes':'Confirm'}</span></div>
       </div>
       <div>
         <div class="stat-row"><span class="stat-label">Rental Yield</span><span class="stat-value">${isMelb?'5.1%':fmt(d.avg_yield)}</span></div>
@@ -7661,24 +7878,26 @@
     document.getElementById('aad-desc').textContent = agent.description || '';
     document.getElementById('aad-status-badge').innerHTML = `<div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:12px;${agent.status==='active'?'background:rgba(76,175,122,0.15);color:#4CAF7A;border:1px solid rgba(76,175,122,0.25)':'background:rgba(255,255,255,0.05);color:var(--grey-mid);border:1px solid rgba(255,255,255,0.1)'}">${agent.status}</div>`;
 
-    // Ensure projects are loaded (they normally load on Stock page visit)
-    if (!allProjects.length) {
-      try {
-        const res = await fetch(SUPABASE_URL + '/rest/v1/projects?order=name', {
-          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
-        });
-        if (res.ok) allProjects = await res.json();
-      } catch(e) { console.error('Failed to load projects for agent', e); }
+    const isSuburbResearch = agent.slug === 'suburb-research';
+    document.getElementById('aad-run-controls-project').style.display = isSuburbResearch ? 'none' : '';
+    document.getElementById('aad-run-controls-research').style.display = isSuburbResearch ? '' : 'none';
+
+    if (!isSuburbResearch) {
+      // Project-bound agent — populate project picker and run controls
+      if (!allProjects.length) {
+        try {
+          const res = await fetch(SUPABASE_URL + '/rest/v1/projects?order=name', {
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+          });
+          if (res.ok) allProjects = await res.json();
+        } catch(e) { console.error('Failed to load projects for agent', e); }
+      }
+      const sel = document.getElementById('aad-project-select');
+      sel.innerHTML = '<option value="">Select a project...</option>' +
+        allProjects.map(p => `<option value="${p.id}">${p.name} — ${p.suburb || ''}, ${p.state || ''}</option>`).join('');
+      document.getElementById('aad-run-btn').disabled = agent.status !== 'active';
+      document.getElementById('aad-run-all-btn').disabled = agent.status !== 'active';
     }
-
-    // Populate project dropdown
-    const sel = document.getElementById('aad-project-select');
-    sel.innerHTML = '<option value="">Select a project...</option>' +
-      allProjects.map(p => `<option value="${p.id}">${p.name} — ${p.suburb || ''}, ${p.state || ''}</option>`).join('');
-
-    // Disable run buttons if agent not active
-    document.getElementById('aad-run-btn').disabled = agent.status !== 'active';
-    document.getElementById('aad-run-all-btn').disabled = agent.status !== 'active';
 
     // Load results + history
     await Promise.all([aiLoadDraftResults(agent.id), aiLoadRunHistory(agent.id)]);
@@ -7760,6 +7979,9 @@
 
   // ── Load draft results ─────────────────────────────────
   async function aiLoadDraftResults(agentId) {
+    if (aiCurrentAgent?.slug === 'suburb-research') {
+      return aiLoadSuburbResearchDrafts();
+    }
     try {
       const res = await fetch(SUPABASE_URL + '/rest/v1/project_analysis?status=eq.draft&order=created_at.desc', {
         headers: { 'apikey': SUPABASE_ANON_KEY }
@@ -7897,6 +8119,235 @@
         body: JSON.stringify({ status: 'rejected', reviewed_by: currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString() })
       });
       showToast('Analysis rejected.');
+      if (aiCurrentAgent) await aiLoadDraftResults(aiCurrentAgent.id);
+    } catch(e) { showToast('Reject failed: ' + e.message); }
+  }
+
+  // ── Suburb research drafts ─────────────────────────────
+  async function aiLoadSuburbResearchDrafts() {
+    const el = document.getElementById('aad-results-list');
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/suburb_research?status=eq.draft&order=created_at.desc', {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+      });
+      const drafts = res.ok ? await res.json() : [];
+      if (!drafts.length) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:14px;">No suburb research drafts. Generate one via the local <span style="font-family:\'DM Mono\',monospace;color:var(--gold-light);">suburb-research</span> skill in Claude Code.</div>';
+        return;
+      }
+      const ratingClass = (r) => r === 'Strong Buy' ? 'strong' : r === 'Good Buy' ? 'good' : r === 'Watch' ? 'moderate' : 'caution';
+      const dimLabel = { demographic_tailwind:'Demographic', supply_pressure:'Supply', capital_growth_outlook:'Capital Growth', income_yield_quality:'Yield', infra_liveability:'Infra & Liveability' };
+      const dimLabels = {
+        demographic_tailwind: 'Demographic Tailwind',
+        supply_pressure: 'Supply Tightness',
+        capital_growth_outlook: 'Capital Growth Outlook',
+        income_yield_quality: 'Income & Yield Quality',
+        infra_liveability: 'Infrastructure & Liveability',
+      };
+      const dimOrder = ['demographic_tailwind','supply_pressure','capital_growth_outlook','income_yield_quality','infra_liveability'];
+      el.innerHTML = drafts.map(d => {
+        const dimensions = (d.dimensions && typeof d.dimensions === 'object') ? d.dimensions : null;
+        const fmt = (v, suffix) => v == null ? '—' : (v + (suffix || ''));
+        const heroChips = [
+          ['Median', d.median_price ? '$' + Number(d.median_price).toLocaleString() : '—'],
+          ['Yield', fmt(d.avg_yield, '%')],
+          ['Vacancy', fmt(d.vacancy_rate, '%')],
+          ['10yr CG', fmt(d.capital_growth_10yr, '% p.a.')],
+          ['Weekly rent', d.weekly_rent ? '$' + Number(d.weekly_rent).toLocaleString() : '—'],
+        ];
+        const endorseCount = Array.isArray(d.endorsements) ? d.endorsements.length : 0;
+        const sourceCount = Array.isArray(d.sources) ? d.sources.length : 0;
+        const pillarKeys = d.pillars ? Object.keys(d.pillars) : [];
+        return `
+        <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
+          <!-- Header -->
+          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.06);">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <div style="flex:1;">
+                <div style="font-size:17px;font-weight:600;color:var(--white);">${d.suburb || '—'}, ${d.state_code || ''}</div>
+                <div style="font-size:11px;font-family:'DM Mono',monospace;letter-spacing:1.5px;color:var(--text-muted);text-transform:uppercase;margin-top:3px;">${d.lga || ''}${d.lga && d.postcode ? ' · ' : ''}${d.postcode || ''}${d.region ? ' · ' + d.region : ''}</div>
+              </div>
+              <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--gold);">${d.conviction_score ?? '?'}<span style="font-size:14px;color:var(--text-muted);font-weight:400;">/100</span></div>
+              <div class="ia-key-badge ${ratingClass(d.rating)}">${d.rating || 'Pending'}</div>
+            </div>
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:16px;color:var(--grey-pale);line-height:1.65;font-style:italic;margin-bottom:18px;">${d.thesis_short || d.thesis_main || '—'}</div>
+            <!-- Hero chips -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              ${heroChips.map(([label, val]) => `
+                <div style="flex:1;min-width:120px;background:rgba(255,255,255,0.03);border-radius:3px;padding:10px 14px;">
+                  <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">${label}</div>
+                  <div style="font-size:14px;color:var(--white);font-weight:600;">${val}</div>
+                </div>`).join('')}
+            </div>
+          </div>
+
+          <!-- Thesis -->
+          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);margin-bottom:10px;">Executive Summary</div>
+            <div style="font-size:14px;color:var(--grey-pale);line-height:1.7;">${d.thesis_main || '—'}</div>
+          </div>
+
+          <!-- Score breakdown (5 dimensions × 20) -->
+          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px;">
+              <span style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);">Score Breakdown</span>
+              <span style="font-size:12px;color:var(--text-muted);">5 dimensions · 20 points each · sums to ${d.conviction_score ?? '?'}/100</span>
+            </div>
+            ${dimensions ? `
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                ${dimOrder.map(k => {
+                  const dim = dimensions[k] || {};
+                  const score = Number.isInteger(dim.score) ? dim.score : 0;
+                  const pct = Math.max(0, Math.min(100, (score / 20) * 100));
+                  const barColour = score >= 16 ? 'var(--green)' : score >= 12 ? 'var(--gold)' : score >= 8 ? '#E8A050' : 'var(--red)';
+                  return `<div style="background:rgba(255,255,255,0.03);border-radius:3px;padding:14px 16px;">
+                    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px;">
+                      <div style="flex:1;font-size:13px;font-weight:600;color:var(--white);">${dimLabels[k] || k}</div>
+                      <div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--gold-light);font-weight:600;">${score}<span style="font-size:11px;color:var(--text-muted);">/20</span></div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.05);height:6px;border-radius:3px;overflow:hidden;margin-bottom:10px;">
+                      <div style="width:${pct}%;height:100%;background:${barColour};"></div>
+                    </div>
+                    <div style="font-size:13px;color:var(--grey-pale);line-height:1.6;">${dim.score_reasoning || '<span style="color:var(--text-muted);font-style:italic;">No reasoning captured</span>'}</div>
+                  </div>`;
+                }).join('')}
+              </div>` : `
+              <div style="background:rgba(232,160,80,0.08);border:1px solid rgba(232,160,80,0.2);border-radius:3px;padding:14px 16px;font-size:13px;color:var(--grey-pale);line-height:1.6;">
+                Dimension scores were not captured on this draft. (Earlier function version dropped them; re-upload via the suburb-research skill to populate.)
+              </div>`}
+          </div>
+
+          <!-- Pillars (collapsible) -->
+          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <span style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);">12 Pillars</span>
+              <span style="font-size:12px;color:var(--text-muted);">${pillarKeys.length} populated · click to expand</span>
+            </div>
+            <div style="display:none;margin-top:14px;">
+              ${pillarKeys.map(k => {
+                const p = d.pillars[k] || {};
+                return `<div style="margin-bottom:14px;padding:12px 14px;background:rgba(255,255,255,0.03);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;">
+                  <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold-light);margin-bottom:6px;">${k.replace(/_/g,' ')}</div>
+                  <div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:6px;">${p.headline || ''}</div>
+                  <div style="font-size:13px;color:var(--grey-pale);line-height:1.65;">${p.narrative || ''}</div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Endorsements (full list) -->
+          ${Array.isArray(d.endorsements) && d.endorsements.length ? `
+          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);margin-bottom:12px;">In the Press <span style="font-size:12px;color:var(--text-muted);font-weight:400;letter-spacing:0;text-transform:none;">· ${endorseCount} endorsement${endorseCount===1?'':'s'}</span></div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              ${d.endorsements.map(e => `
+                <div style="background:rgba(255,255,255,0.03);border-left:2px solid var(--gold-light);padding:12px 14px;border-radius:0 3px 3px 0;">
+                  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px;">
+                    <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold-light);">${e.source || ''}</div>
+                    <div style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">${e.date || ''}</div>
+                    ${e.supports_pillar ? `<div style="font-size:10px;color:var(--text-muted);">supports ${e.supports_pillar.replace(/_/g,' ')}</div>` : ''}
+                  </div>
+                  <div style="font-size:14px;color:var(--white);font-weight:600;margin-bottom:4px;">${e.headline || ''}</div>
+                  <div style="font-size:13px;color:var(--grey-pale);line-height:1.55;margin-bottom:6px;">${e.excerpt || ''}</div>
+                  ${e.url ? `<a href="${e.url}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);text-decoration:none;font-family:'DM Mono',monospace;">${e.url.length > 70 ? e.url.slice(0,70)+'…' : e.url} ↗</a>` : ''}
+                </div>`).join('')}
+            </div>
+          </div>` : ''}
+
+          <!-- Counter-view (full) -->
+          ${d.counter_view ? `
+          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);margin-bottom:12px;">Counter-view Considered</div>
+            <div style="background:rgba(201,76,76,0.06);border-left:2px solid var(--red);padding:12px 14px;border-radius:0 3px 3px 0;margin-bottom:10px;">
+              <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px;">
+                <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--red);">${d.counter_view.source || ''}</div>
+                <div style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">${d.counter_view.date || ''}</div>
+              </div>
+              <div style="font-size:14px;color:var(--white);font-weight:600;margin-bottom:4px;">${d.counter_view.headline || ''}</div>
+              <div style="font-size:13px;color:var(--grey-pale);line-height:1.55;margin-bottom:6px;">${d.counter_view.excerpt || ''}</div>
+              ${d.counter_view.url ? `<a href="${d.counter_view.url}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);text-decoration:none;font-family:'DM Mono',monospace;">${d.counter_view.url.length > 70 ? d.counter_view.url.slice(0,70)+'…' : d.counter_view.url} ↗</a>` : ''}
+            </div>
+            <div style="background:rgba(80,180,120,0.06);border-left:2px solid var(--green);padding:12px 14px;border-radius:0 3px 3px 0;">
+              <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:6px;">TPCH Response</div>
+              <div style="font-size:13px;color:var(--grey-pale);line-height:1.6;">${d.counter_view.response || ''}</div>
+            </div>
+          </div>` : ''}
+
+          <!-- Comparable sales -->
+          ${Array.isArray(d.comparable_sales) && d.comparable_sales.length ? `
+          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);margin-bottom:12px;">Comparable Sales <span style="font-size:12px;color:var(--text-muted);font-weight:400;letter-spacing:0;text-transform:none;">· ${d.comparable_sales.length} transaction${d.comparable_sales.length===1?'':'s'}</span></div>
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+                    <th style="text-align:left;padding:8px 10px;color:var(--text-muted);font-weight:600;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Address</th>
+                    <th style="text-align:left;padding:8px 10px;color:var(--text-muted);font-weight:600;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Date</th>
+                    <th style="text-align:right;padding:8px 10px;color:var(--text-muted);font-weight:600;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Price</th>
+                    <th style="text-align:right;padding:8px 10px;color:var(--text-muted);font-weight:600;font-size:10px;letter-spacing:1px;text-transform:uppercase;">sqm</th>
+                    <th style="text-align:right;padding:8px 10px;color:var(--text-muted);font-weight:600;font-size:10px;letter-spacing:1px;text-transform:uppercase;">$/sqm</th>
+                    <th style="text-align:left;padding:8px 10px;color:var(--text-muted);font-weight:600;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${d.comparable_sales.map(c => `
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                      <td style="padding:8px 10px;color:var(--white);">${c.source_url ? `<a href="${c.source_url}" target="_blank" rel="noopener" style="color:var(--white);text-decoration:none;border-bottom:1px dotted var(--gold);">${c.address || ''}</a>` : (c.address || '')}</td>
+                      <td style="padding:8px 10px;color:var(--grey-pale);font-family:'DM Mono',monospace;">${c.date || ''}</td>
+                      <td style="padding:8px 10px;color:var(--white);text-align:right;font-family:'DM Mono',monospace;">${c.price ? '$' + Number(c.price).toLocaleString() : '—'}</td>
+                      <td style="padding:8px 10px;color:var(--grey-pale);text-align:right;font-family:'DM Mono',monospace;">${c.sqm_internal ?? '—'}</td>
+                      <td style="padding:8px 10px;color:var(--grey-pale);text-align:right;font-family:'DM Mono',monospace;">${c.price_per_sqm ? '$' + Number(c.price_per_sqm).toLocaleString() : '—'}</td>
+                      <td style="padding:8px 10px;color:var(--grey-pale);text-transform:capitalize;">${c.property_type || ''}</td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>` : ''}
+
+          <!-- Quick stats strip (sources count) -->
+          <div style="padding:14px 24px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;gap:24px;font-size:12px;color:var(--text-muted);">
+            <span><span style="color:var(--white);font-weight:600;">${endorseCount}</span> endorsements</span>
+            <span><span style="color:var(--white);font-weight:600;">${sourceCount}</span> sources cited</span>
+            <span><span style="color:var(--white);font-weight:600;">${pillarKeys.length}</span> pillars populated</span>
+          </div>
+
+          <!-- Actions -->
+          <div style="padding:18px 24px;display:flex;gap:12px;align-items:center;">
+            <button onclick="aiPublishResearch('${d.id}')" style="background:var(--green);color:var(--black);border:none;padding:12px 26px;border-radius:3px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.5px;">Publish to Portal</button>
+            <button onclick="aiRejectResearch('${d.id}')" style="background:transparent;color:var(--red);border:1px solid rgba(201,76,76,0.3);padding:12px 26px;border-radius:3px;font-size:13px;font-weight:600;cursor:pointer;">Reject</button>
+            <div style="flex:1;"></div>
+            <div style="font-size:12px;color:var(--text-muted);">Generated ${new Date(d.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})} · ${d.model_used || 'claude-opus-4-7'}</div>
+          </div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      console.error('Load suburb research drafts failed', e);
+      el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--red);font-size:14px;">Failed to load drafts: ' + e.message + '</div>';
+    }
+  }
+
+  async function aiPublishResearch(researchId) {
+    try {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/suburb_research?id=eq.' + researchId, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ status: 'published', reviewed_by: currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString(), published_at: new Date().toISOString() })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      showToast('Suburb research published.');
+      if (aiCurrentAgent) await aiLoadDraftResults(aiCurrentAgent.id);
+    } catch(e) { showToast('Publish failed: ' + e.message); }
+  }
+
+  async function aiRejectResearch(researchId) {
+    try {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/suburb_research?id=eq.' + researchId, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ status: 'rejected', reviewed_by: currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString() })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      showToast('Suburb research rejected.');
       if (aiCurrentAgent) await aiLoadDraftResults(aiCurrentAgent.id);
     } catch(e) { showToast('Reject failed: ' + e.message); }
   }
@@ -8450,6 +8901,535 @@
       body: JSON.stringify({ p_partner_id: currentPartnerRecord.partner_id }),
     }).catch(() => {});
   }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SUBURB RESEARCH v2 — institutional layout
+  // ═══════════════════════════════════════════════════════════════════════
+
+  let rv2Current = null;
+  let rv2LastPage = 'dashboard';
+  let rv2ScrollListener = null;
+
+  // ── Entry point ────────────────────────────────────────────
+  async function showResearchV2(slug) {
+    const activePage = document.querySelector('.page-view.active');
+    rv2LastPage = activePage ? activePage.id.replace('page-','') : 'dashboard';
+
+    // Show v2 page
+    document.querySelectorAll('.page-view').forEach(p => { p.classList.remove('active'); p.style.display = ''; });
+    const pg = document.getElementById('page-research-v2');
+    pg.classList.add('active');
+    pg.style.display = '';
+    document.getElementById('topbar-title').textContent = 'Suburb Research';
+    pg.scrollTop = 0;
+
+    // States
+    document.getElementById('rv2-loading').style.display = '';
+    document.getElementById('rv2-error').style.display = 'none';
+    document.getElementById('rv2-report').style.display = 'none';
+
+    try {
+      const d = await rv2Fetch(slug);
+      if (!d) {
+        document.getElementById('rv2-loading').style.display = 'none';
+        document.getElementById('rv2-error').style.display = '';
+        document.getElementById('rv2-error-msg').textContent =
+          `No research found for "${slug}". The Suburb Research Agent has not yet profiled this market.`;
+        return;
+      }
+      rv2Current = d;
+      rv2Render(d);
+      document.getElementById('rv2-loading').style.display = 'none';
+      document.getElementById('rv2-report').style.display = '';
+      // Reset scroll & nav, attach scrollspy
+      pg.scrollTop = 0;
+      rv2SetActiveTab('overview');
+      rv2AttachScrollspy();
+    } catch (e) {
+      console.error('[research-v2] fetch failed', e);
+      document.getElementById('rv2-loading').style.display = 'none';
+      document.getElementById('rv2-error').style.display = '';
+      document.getElementById('rv2-error-msg').textContent = 'Failed to load research: ' + (e.message || 'unknown error');
+    }
+  }
+
+  function rv2Back() {
+    rv2DetachScrollspy();
+    showPageDirect(rv2LastPage || 'dashboard');
+  }
+
+  // ── Supabase fetch ─────────────────────────────────────────
+  async function rv2Fetch(slug) {
+    const url = SUPABASE_URL + '/rest/v1/suburb_research?slug=eq.' + encodeURIComponent(slug) + '&limit=1';
+    const res = await fetch(url, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    return rows && rows.length ? rows[0] : null;
+  }
+
+  // ── Helpers ────────────────────────────────────────────────
+  const rv2Esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const rv2Money = v => v == null ? '—' : '$' + Number(v).toLocaleString('en-AU');
+  const rv2MoneyShort = v => v == null ? '—' : (v >= 1e6 ? '$' + (v/1e6).toFixed(2) + 'M' : '$' + Math.round(v/1e3) + 'k');
+  const rv2Pct = v => v == null ? '—' : Number(v).toFixed(1) + '%';
+  const rv2Date = s => s ? new Date(s).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '';
+  const rv2DimColour = s => s >= 16 ? 'var(--green)' : s >= 12 ? 'var(--gold)' : s >= 8 ? '#E8A04C' : 'var(--red)';
+  const rv2DimLabels = {
+    demographic_tailwind:   'Demographic Tailwind',
+    supply_pressure:        'Supply and Demand',
+    capital_growth_outlook: 'Capital Growth Outlook',
+    income_yield_quality:   'Income & Yield Quality',
+    infra_liveability:      'Infrastructure & Liveability',
+  };
+  const rv2RatingColour = r =>
+    r === 'Strong Buy' ? 'var(--green)' :
+    r === 'Good Buy'   ? 'var(--gold-light)' :
+    r === 'Watch'      ? 'var(--gold)' : 'var(--red)';
+
+  // Render a stats array into a stat-strip
+  function rv2RenderStats(stats) {
+    if (!stats || !stats.length) return '';
+    return `<div class="rv2-stat-strip">${
+      stats.map(s => `
+        <div class="rv2-stat-tile">
+          <div class="rv2-stat-tile-label">${rv2Esc(s.label)}</div>
+          <div class="rv2-stat-tile-value">${rv2Esc(s.value)}</div>
+        </div>`).join('')
+    }</div>`;
+  }
+
+  // Render a pillar narrative as paragraphs.
+  // Detects three writing patterns and formats each appropriately:
+  //   A) "Risk 1: ... Risk 2: ..."     → bulleted list with bolded leads
+  //   B) "DEMAND. ... SUPPLY. ..."     → bold ALLCAPS section labels at the head of each para
+  //   C) explicit double-newline       → paragraph split
+  //   D) long single paragraph         → grouped into 2-sentence paragraphs for breathing room
+  function rv2RenderNarrative(text) {
+    if (!text) return '';
+    const s = String(text).trim();
+
+    // A: numbered Risk list
+    if (/\bRisk\s+\d+\s*:/.test(s)) {
+      const items = s.split(/(?=\bRisk\s+\d+\s*:)/).map(x => x.trim()).filter(Boolean);
+      if (items.length >= 2) {
+        return `<ul class="rv2-bullet-list">${
+          items.map(it => {
+            const m = it.match(/^(Risk\s+\d+\s*:)\s*(.*)$/s);
+            return m
+              ? `<li><strong>${rv2Esc(m[1])}</strong> ${rv2Esc(m[2])}</li>`
+              : `<li>${rv2Esc(it)}</li>`;
+          }).join('')
+        }</ul>`;
+      }
+    }
+
+    // B: ALLCAPS section labels (3+ caps followed by a period and space)
+    const allcapsParts = s.split(/(?=\b[A-Z]{3,}\.\s)/).map(x => x.trim()).filter(Boolean);
+    if (allcapsParts.length > 1) {
+      return allcapsParts.map(p => {
+        const m = p.match(/^([A-Z]{3,})\.\s*(.*)$/s);
+        return m
+          ? `<p><strong class="rv2-narr-label">${rv2Esc(m[1])}.</strong> ${rv2Esc(m[2])}</p>`
+          : `<p>${rv2Esc(p)}</p>`;
+      }).join('');
+    }
+
+    // C: explicit paragraphs
+    if (/\n\s*\n/.test(s)) {
+      return s.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
+        .map(p => `<p>${rv2Esc(p)}</p>`).join('');
+    }
+
+    // D: long single paragraph → 2-sentence chunks
+    const sentences = s.match(/[^.!?]+[.!?]+(?:\s+|$)/g);
+    if (sentences && sentences.length >= 4) {
+      const chunks = [];
+      for (let i = 0; i < sentences.length; i += 2) {
+        chunks.push(sentences.slice(i, i + 2).join('').trim());
+      }
+      return chunks.map(c => `<p>${rv2Esc(c)}</p>`).join('');
+    }
+
+    return `<p>${rv2Esc(s)}</p>`;
+  }
+
+  // Single pillar block (overline + headline + narrative + stats)
+  function rv2RenderPillar(d, key, overline) {
+    const p = (d.pillars || {})[key];
+    if (!p || p.status !== 'ok') return '';
+    return `
+      <section class="rv2-section" id="rv2-pillar-${key}">
+        <div class="rv2-overline">${rv2Esc(overline)}</div>
+        <h3 class="rv2-headline">${rv2Esc(p.headline)}</h3>
+        <div class="rv2-narrative">${rv2RenderNarrative(p.narrative)}</div>
+        ${rv2RenderStats(p.stats)}
+      </section>`;
+  }
+
+  // ── Orchestrator ──────────────────────────────────────────
+  function rv2Render(d) {
+    // Breadcrumb
+    document.getElementById('rv2-breadcrumb').innerHTML =
+      `<b>${rv2Esc(d.suburb)}</b>${d.region ? ' · ' + rv2Esc(d.region) : ''} · ${rv2Esc(d.state_code)} · Research updated ${rv2Date(d.updated_at)}`;
+
+    // Draft banner
+    document.getElementById('rv2-draft-banner').style.display = (d.status === 'published') ? 'none' : 'flex';
+
+    // Main column
+    document.getElementById('rv2-main').innerHTML =
+      rv2GroupOverview(d) +
+      rv2GroupMarket(d) +
+      rv2GroupDemand(d) +
+      rv2GroupSupply(d) +
+      rv2GroupRisk(d) +
+      rv2GroupPress(d) +
+      rv2GroupSources(d);
+
+    // Sidebar
+    document.getElementById('rv2-sidebar').innerHTML = rv2RenderSidebar(d);
+  }
+
+  // ── GROUP: Overview ────────────────────────────────────────
+  function rv2GroupOverview(d) {
+    const ratingCol = rv2RatingColour(d.rating);
+
+    // Score breakdown
+    const dimOrder = ['demographic_tailwind','supply_pressure','capital_growth_outlook','income_yield_quality','infra_liveability'];
+    const dims = d.dimensions || {};
+    const dimRows = dimOrder.map(k => {
+      const dim = dims[k];
+      if (!dim) return '';
+      const col = rv2DimColour(dim.score);
+      const pct = (dim.score / 20) * 100;
+      return `
+        <div class="rv2-dim-row">
+          <div class="rv2-dim-head">
+            <span class="rv2-dim-label">${rv2DimLabels[k] || k}</span>
+            <span class="rv2-dim-score" style="color:${col};">${dim.score}/20</span>
+          </div>
+          <div class="rv2-dim-bar-track"><div class="rv2-dim-bar-fill" style="width:${pct}%;background:${col};"></div></div>
+          <div class="rv2-dim-reasoning">${rv2Esc(dim.score_reasoning)}</div>
+        </div>`;
+    }).join('');
+
+    return `
+      <section class="rv2-group" id="rv2-sec-overview">
+        <div class="rv2-cover">
+          <div class="rv2-cover-eyebrow">◈ ${rv2Esc(d.state_code)}${d.region ? ' · ' + rv2Esc(d.region) : ''} · Suburb Research</div>
+          <h1 class="rv2-cover-title">${rv2Esc(d.suburb)}</h1>
+          <div class="rv2-cover-meta">
+            <span><b style="color:${ratingCol};">${rv2Esc(d.rating)}</b></span>
+            <span>Conviction <b>${d.conviction_score}</b>/100</span>
+            ${d.lga ? `<span>LGA · <b>${rv2Esc(d.lga)}</b></span>` : ''}
+            ${d.postcode ? `<span>Postcode <b>${rv2Esc(d.postcode)}</b></span>` : ''}
+            <span>Authored by <b>TPCH Research</b></span>
+          </div>
+        </div>
+
+        ${(d.thesis_short || d.thesis_main) ? `
+          <div class="rv2-thesis-block">
+            <div class="rv2-thesis-label">Executive Summary</div>
+            ${d.thesis_short ? `<div class="rv2-thesis-kicker">${rv2Esc(d.thesis_short)}</div>` : ''}
+            ${d.thesis_main ? `<div class="rv2-thesis-text">${rv2RenderNarrative(d.thesis_main)}</div>` : ''}
+          </div>` : ''}
+
+        ${d.narrative_thesis ? `
+          <div class="rv2-thesis-block plain">
+            <div class="rv2-thesis-label">The ${rv2Esc(d.suburb)} Story, in Plain English</div>
+            <div class="rv2-thesis-text">${rv2RenderNarrative(d.narrative_thesis)}</div>
+          </div>` : ''}
+
+        <div class="rv2-section" style="margin-top:42px;">
+          <div class="rv2-overline">Score Breakdown</div>
+          <h3 class="rv2-headline">Five-dimension conviction model.</h3>
+          <div class="rv2-narrative" style="margin-bottom:6px;">Each dimension scores 0–20 and the overall conviction score is the exact sum of the five. The reasoning behind every score is published in full so the rating stands up to independent scrutiny.</div>
+          <div style="margin-top:14px;">${dimRows}</div>
+        </div>
+      </section>`;
+  }
+
+  // ── GROUP: Market ──────────────────────────────────────────
+  function rv2GroupMarket(d) {
+    const sales = Array.isArray(d.comparable_sales) ? d.comparable_sales : [];
+    const compSection = sales.length ? `
+      <section class="rv2-section">
+        <div class="rv2-overline">Comparable Sales</div>
+        <h3 class="rv2-headline">Recent named transactions in the suburb.</h3>
+        <table class="rv2-table">
+          <thead>
+            <tr>
+              <th>Address</th><th>Date</th><th>Price</th><th>Type</th><th>Internal sqm</th><th>$/sqm</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sales.map(s => `
+              <tr>
+                <td><b>${rv2Esc(s.address)}</b></td>
+                <td>${rv2Date(s.date)}</td>
+                <td><b>${rv2Money(s.price)}</b></td>
+                <td>${rv2Esc(s.property_type || '—')}</td>
+                <td>${s.sqm_internal || '—'}</td>
+                <td>${s.price_per_sqm ? rv2Money(s.price_per_sqm) : '—'}</td>
+                <td>${s.source_url ? `<a href="${rv2Esc(s.source_url)}" target="_blank" rel="noopener" class="rv2-table-link">Source ↗</a>` : ''}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </section>` : '';
+
+    return `
+      <section class="rv2-group" id="rv2-sec-market">
+        <div class="rv2-group-title">Market</div>
+        <div class="rv2-group-tagline">Where prices, rents, vacancy, and affordability sit today, and the cycle position underneath them.</div>
+        ${rv2RenderPillar(d, 'price_growth',  'Price Growth')}
+        ${rv2RenderPillar(d, 'rent_trend',    'Rent Trend')}
+        ${rv2RenderPillar(d, 'vacancy_trend', 'Vacancy')}
+        ${rv2RenderPillar(d, 'affordability', 'Affordability')}
+        ${compSection}
+      </section>`;
+  }
+
+  // ── GROUP: Demand ──────────────────────────────────────────
+  function rv2GroupDemand(d) {
+    return `
+      <section class="rv2-group" id="rv2-sec-demand">
+        <div class="rv2-group-title">Demand</div>
+        <div class="rv2-group-tagline">Who is moving here, who is working here, and how that translates into long-term tenant and buyer depth.</div>
+        ${rv2RenderPillar(d, 'demographics', 'Demographics')}
+        ${rv2RenderPillar(d, 'migration',    'Migration')}
+        ${rv2RenderPillar(d, 'employment',   'Employment')}
+      </section>`;
+  }
+
+  // ── GROUP: Supply ──────────────────────────────────────────
+  function rv2GroupSupply(d) {
+    return `
+      <section class="rv2-group" id="rv2-sec-supply">
+        <div class="rv2-group-title">Supply &amp; Infrastructure</div>
+        <div class="rv2-group-tagline">What is being built, what is funded, and how the supply pipeline lines up against forward demand.</div>
+        ${rv2RenderPillar(d, 'supply_pipeline', 'Supply Pipeline')}
+        ${rv2RenderPillar(d, 'infrastructure',  'Infrastructure')}
+      </section>`;
+  }
+
+  // ── GROUP: Risk ────────────────────────────────────────────
+  function rv2GroupRisk(d) {
+    const rr = (d.pillars || {}).risk_register;
+    let riskTable = '';
+    let suppressNarrative = false;
+    if (rr && rr.status === 'ok') {
+      // Prefer agent-emitted structured items; fall back to parsing the narrative.
+      let items = rr.chart_data && Array.isArray(rr.chart_data.items) ? rr.chart_data.items : null;
+      if (!items && rr.narrative) {
+        items = [];
+        const re = /Risk\s+\d+\s*:\s*([^.(]+?)\s*\(\s*(?:severity|sev)\s+(\d)\s*,\s*(?:likelihood|like)\s+(\d)\s*\)\.\s*Mitigation:\s*(.*?)(?=\s*Risk\s+\d+\s*:|$)/gis;
+        let m;
+        while ((m = re.exec(rr.narrative)) !== null) {
+          items.push({ risk: m[1].trim(), severity: +m[2], likelihood: +m[3], mitigation: m[4].trim().replace(/\s+$/, '') });
+        }
+        if (!items.length) items = null;
+      }
+      if (items && items.length) {
+        suppressNarrative = true;
+        const sevClass = s => s >= 4 ? 'rv2-sev-high' : s >= 3 ? 'rv2-sev-mid' : 'rv2-sev-low';
+        riskTable = `
+          <table class="rv2-risk-table">
+            <thead><tr><th>Risk</th><th>Severity</th><th>Likelihood</th><th>Mitigation</th></tr></thead>
+            <tbody>
+              ${items.map(it => `
+                <tr>
+                  <td><b style="color:var(--white);">${rv2Esc(it.risk)}</b></td>
+                  <td><span class="rv2-sev-badge ${sevClass(it.severity)}">${it.severity}/5</span></td>
+                  <td>${it.likelihood}/5</td>
+                  <td>${rv2Esc(it.mitigation)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>`;
+      }
+    }
+
+    // Risk Register pillar header — without the narrative when we have a structured table
+    const riskPillar = (rr && rr.status === 'ok') ? `
+      <section class="rv2-section" id="rv2-pillar-risk_register">
+        <div class="rv2-overline">Risk Register</div>
+        <h3 class="rv2-headline">${rv2Esc(rr.headline)}</h3>
+        ${suppressNarrative ? '' : `<div class="rv2-narrative">${rv2RenderNarrative(rr.narrative)}</div>`}
+        ${rv2RenderStats(rr.stats)}
+      </section>` : '';
+
+    const cv = d.counter_view || {};
+    const counterBlock = cv.headline ? `
+      <section class="rv2-section">
+        <div class="rv2-overline">Counter-view Considered</div>
+        <h3 class="rv2-headline">The strongest credible bear case, tested against the buy thesis.</h3>
+        <div class="rv2-counter">
+          <div class="rv2-counter-source">${rv2Esc(cv.source)}</div>
+          <div class="rv2-counter-date">${rv2Date(cv.date)}</div>
+          <div class="rv2-counter-headline">${rv2Esc(cv.headline)}</div>
+          <div class="rv2-counter-excerpt">${rv2Esc(cv.excerpt)}</div>
+          ${cv.url ? `<a href="${rv2Esc(cv.url)}" target="_blank" rel="noopener" class="rv2-counter-link">Read original ↗</a>` : ''}
+          <div class="rv2-response-block">
+            <div class="rv2-response-label">TPCH Response</div>
+            <div class="rv2-response-text">${rv2Esc(cv.response)}</div>
+          </div>
+        </div>
+      </section>` : '';
+
+    return `
+      <section class="rv2-group" id="rv2-sec-risk">
+        <div class="rv2-group-title">Risk</div>
+        <div class="rv2-group-tagline">A quantified risk register and a single named counter-view, with TPCH's response in the open.</div>
+        ${riskPillar}
+        ${riskTable}
+        ${counterBlock}
+      </section>`;
+  }
+
+  // ── GROUP: Press ───────────────────────────────────────────
+  function rv2GroupPress(d) {
+    const items = Array.isArray(d.endorsements) ? d.endorsements : [];
+    const cards = items.map(e => `
+      <article class="rv2-endorsement-card">
+        <div class="rv2-endorsement-source">${rv2Esc(e.source)}</div>
+        <div class="rv2-endorsement-date">${rv2Date(e.date)}</div>
+        <div class="rv2-endorsement-headline">${rv2Esc(e.headline)}</div>
+        <div class="rv2-endorsement-excerpt">"${rv2Esc(e.excerpt)}"</div>
+        <a href="${rv2Esc(e.url)}" target="_blank" rel="noopener" class="rv2-endorsement-link">Read article ↗</a>
+        ${e.supports_pillar ? `<div class="rv2-endorsement-tag">Supports: ${rv2Esc(e.supports_pillar)}</div>` : ''}
+      </article>`).join('');
+
+    return `
+      <section class="rv2-group" id="rv2-sec-press">
+        <div class="rv2-group-title">In the Press</div>
+        <div class="rv2-group-tagline">Recent third-party items supporting the suburb thesis. Sourced and date-stamped within the last twelve months.</div>
+        <div class="rv2-endorsement-grid">${cards}</div>
+      </section>`;
+  }
+
+  // ── GROUP: Sources ─────────────────────────────────────────
+  function rv2GroupSources(d) {
+    const sources = Array.isArray(d.sources) ? d.sources : [];
+    const rows = sources.map(s => `
+      <div class="rv2-source-row">
+        <div class="rv2-source-tag">${rv2Esc(s.tag)}</div>
+        <div class="rv2-source-meta">
+          <b>${rv2Esc(s.publisher)}</b> · ${rv2Esc(s.title)}${s.date ? ' · ' + rv2Date(s.date) : ''}<br>
+          <a href="${rv2Esc(s.url)}" target="_blank" rel="noopener">${rv2Esc(s.url)}</a>
+        </div>
+      </div>`).join('');
+
+    return `
+      <section class="rv2-group" id="rv2-sec-sources" style="border-bottom:none;">
+        <div class="rv2-group-title">Sources &amp; Methodology</div>
+        <div class="rv2-group-tagline">Every URL referenced in this report. Drafted by Claude Opus 4.7 using live web search; reviewed and approved by the TPCH editorial team before publication.</div>
+        <div style="margin-top:8px;">${rows}</div>
+        <div class="rv2-disclaimer">
+          <div class="rv2-disclaimer-label">Disclaimer</div>
+          <div class="rv2-disclaimer-text">This research is prepared by The Property Clearing House from publicly available sources believed to be reliable at the time of publication. We take care to ensure the information is accurate; however, the report is only as current and complete as the sources it draws on, and conditions can change after publication. TPCH does not deal directly with investors. Any financial or non-financial advice arising from this research is the responsibility of the channel partner who shares it with the end client, not TPCH.</div>
+        </div>
+      </section>`;
+  }
+
+  // ── Sidebar ───────────────────────────────────────────────
+  function rv2RenderSidebar(d) {
+    const ratingCol = rv2RatingColour(d.rating);
+    return `
+      <div class="rv2-sb-card">
+        <div class="rv2-sb-conviction">
+          <div class="rv2-sb-conviction-label">TPCH Conviction</div>
+          <div class="rv2-sb-conviction-rating" style="color:${ratingCol};">${rv2Esc(d.rating)}</div>
+          <div class="rv2-sb-conviction-score"><b>${d.conviction_score}</b> / 100</div>
+        </div>
+      </div>
+      <div class="rv2-sb-card">
+        <div class="rv2-sb-card-head">Key Statistics</div>
+        <div class="rv2-sb-card-body">
+          <div class="rv2-sb-row"><span class="rv2-sb-row-label">Median Price</span><span class="rv2-sb-row-value">${rv2MoneyShort(d.median_price)}</span></div>
+          <div class="rv2-sb-row"><span class="rv2-sb-row-label">Gross Yield</span><span class="rv2-sb-row-value">${rv2Pct(d.avg_yield)}</span></div>
+          <div class="rv2-sb-row"><span class="rv2-sb-row-label">Vacancy Rate</span><span class="rv2-sb-row-value">${rv2Pct(d.vacancy_rate)}</span></div>
+          <div class="rv2-sb-row"><span class="rv2-sb-row-label">10yr Growth</span><span class="rv2-sb-row-value">${rv2Pct(d.capital_growth_10yr)}</span></div>
+          <div class="rv2-sb-row"><span class="rv2-sb-row-label">Weekly Rent</span><span class="rv2-sb-row-value">${d.weekly_rent ? '$' + d.weekly_rent : '—'}</span></div>
+          <div class="rv2-sb-row"><span class="rv2-sb-row-label">Population</span><span class="rv2-sb-row-value">${rv2Esc(d.population || '—')}</span></div>
+          <div class="rv2-sb-row"><span class="rv2-sb-row-label">Pop. Growth</span><span class="rv2-sb-row-value">${d.pop_growth_pct != null ? '+' + Number(d.pop_growth_pct).toFixed(1) + '%' : '—'}</span></div>
+        </div>
+      </div>
+      <div class="rv2-sb-card">
+        <div class="rv2-sb-card-head">Distribution</div>
+        <div class="rv2-sb-actions">
+          <button class="rv2-sb-action-btn primary" disabled title="Coming Phase 3">Share with client</button>
+          <button class="rv2-sb-action-btn" disabled title="Coming Phase 2">Download PDF</button>
+          <button class="rv2-sb-action-btn" disabled title="Coming Phase 3">White-label PDF</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6;padding:0 8px;">
+        Drafted by Claude Opus 4.7 · ${d.model_used || 'claude-opus-4-7'}<br>
+        Last updated ${rv2Date(d.updated_at)}
+      </div>`;
+  }
+
+  // ── Sticky nav ────────────────────────────────────────────
+  function rv2NavClick(ev, section) {
+    ev.preventDefault();
+    const target = document.getElementById('rv2-sec-' + section);
+    const pg = document.getElementById('page-research-v2');
+    if (!target || !pg) return;
+    // Clear sticky topbar + sticky nav + breathing room above the section title
+    const offset = 180;
+    const top = target.offsetTop - offset;
+    pg.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    rv2SetActiveTab(section);
+  }
+  function rv2SetActiveTab(section) {
+    document.querySelectorAll('.rv2-nav-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.section === section);
+    });
+  }
+  function rv2AttachScrollspy() {
+    rv2DetachScrollspy();
+    const pg = document.getElementById('page-research-v2');
+    const sections = ['overview','market','demand','supply','risk','press','sources']
+      .map(s => ({ key: s, el: document.getElementById('rv2-sec-' + s) }))
+      .filter(x => x.el);
+    rv2ScrollListener = () => {
+      const y = pg.scrollTop + 200;
+      let active = sections[0].key;
+      for (const s of sections) {
+        if (s.el.offsetTop <= y) active = s.key;
+      }
+      rv2SetActiveTab(active);
+    };
+    pg.addEventListener('scroll', rv2ScrollListener, { passive: true });
+  }
+  function rv2DetachScrollspy() {
+    if (!rv2ScrollListener) return;
+    const pg = document.getElementById('page-research-v2');
+    if (pg) pg.removeEventListener('scroll', rv2ScrollListener);
+    rv2ScrollListener = null;
+  }
+
+  // ── URL handler: ?r2=southbank-vic ────────────────────────
+  // Triggers v2 page once the user is inside #screen-portal (post-login).
+  // Polls briefly so it works whether the user is already logged in or
+  // logs in after landing on the URL.
+  (function rv2HandleUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('r2');
+    if (!slug) return;
+    let fired = false;
+    const tryFire = () => {
+      if (fired) return true;
+      const portal = document.getElementById('screen-portal');
+      if (portal && portal.classList.contains('active') && typeof showResearchV2 === 'function') {
+        fired = true;
+        showResearchV2(slug);
+        return true;
+      }
+      return false;
+    };
+    const interval = setInterval(() => { if (tryFire()) clearInterval(interval); }, 400);
+    setTimeout(() => clearInterval(interval), 60000); // give up after 60s
+  })();
 
 </script>
 

@@ -1,0 +1,294 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portal.tpch.com.au/schemas/suburb-research-output.json",
+  "title": "TPCH Suburb Research Output Schema",
+  "description": "Strict schema for the JSON payload produced by the Suburb Research Agent (the local .claude/skills/suburb-research skill, and any future research-agent edge function). Any field written into the suburb_research table must conform to this shape. Keep this file aligned with supabase/functions/upload-research/prompt.ts. v2.0.0 retired the original 12 EXTENDED pillars; the report now uses 12 CORE pillars only, with comparable_sales as the only promoted top-level field. cashflow_model was retired in April 2026 as cash-flow modelling belongs at project level, not suburb level.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "suburb",
+    "state_code",
+    "conviction_score",
+    "rating",
+    "thesis_short",
+    "thesis_main",
+    "narrative_thesis",
+    "dimensions",
+    "pillars",
+    "endorsements",
+    "counter_view",
+    "sources",
+    "hero_metrics"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "2.2.0",
+      "description": "Must equal SCHEMA_VERSION in supabase/functions/upload-research/prompt.ts. Bump together when the JSON shape changes. v2.1.0 added narrative_thesis. v2.2.0 enforced thesis_main as a rich 3-4 paragraph Executive Summary (min 1200 chars), distinct from the long-form narrative_thesis."
+    },
+    "suburb": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Suburb name in title case, e.g. 'Southbank'."
+    },
+    "state_code": {
+      "type": "string",
+      "enum": ["VIC", "NSW", "QLD", "WA", "SA", "NT", "TAS", "ACT"]
+    },
+    "region": {
+      "type": ["string", "null"],
+      "description": "Free-text region label until region_research is built (Phase 2). E.g. 'Inner Melbourne'."
+    },
+    "lga": {
+      "type": ["string", "null"],
+      "description": "Local Government Area, e.g. 'City of Melbourne'."
+    },
+    "postcode": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}$"
+    },
+    "map_lat": { "type": ["number", "null"] },
+    "map_lng": { "type": ["number", "null"] },
+
+    "conviction_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "MUST equal the exact sum of the 5 dimension scores."
+    },
+    "rating": {
+      "type": "string",
+      "enum": ["Strong Buy", "Good Buy", "Watch", "Caution"],
+      "description": "Must match the band implied by conviction_score. 80-100 Strong Buy, 60-79 Good Buy, 40-59 Watch, 0-39 Caution."
+    },
+    "thesis_short": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 140,
+      "description": "One-line summary used on suburb cards. No em-dashes, no hype."
+    },
+    "thesis_main": {
+      "type": "string",
+      "minLength": 1200,
+      "description": "Rich Executive Summary, 3-4 paragraphs, approximately 2,500 to 3,000 chars. Structure: para 1 cycle position + cross-city comparables; para 2 leading indicators that contradict the trailing print (vacancy, rent, yield); para 3 supply math (demand-per-year, in-train pipeline, absorption window, statewide shortfall, land-constraint); para 4 catalysts already live + closing rating sentence. Every numerical claim cited inline (Source: Publisher, Date). Distinct from narrative_thesis (which is the voice-led Plain English Story version)."
+    },
+    "narrative_thesis": {
+      "type": "string",
+      "minLength": 1500,
+      "description": "Long-form 'The [suburb] story, in plain English' narrative. Six-part framework: cycle position; cross-city comparables; the contrarian signal; tenant pool; catalysts; shape of the opportunity. Includes a dedicated 'Supply versus demand' subsection (between catalysts and shape) carrying the full demand math + supply math + absorption math + statewide context + land-constraint assessment + balance conclusion. Every factual claim cited inline (Source: Publisher, Date)."
+    },
+
+    "dimensions": {
+      "type": "object",
+      "required": [
+        "demographic_tailwind",
+        "supply_pressure",
+        "capital_growth_outlook",
+        "income_yield_quality",
+        "infra_liveability"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "demographic_tailwind":   { "$ref": "#/$defs/dimension" },
+        "supply_pressure":        { "$ref": "#/$defs/dimension" },
+        "capital_growth_outlook": { "$ref": "#/$defs/dimension" },
+        "income_yield_quality":   { "$ref": "#/$defs/dimension" },
+        "infra_liveability":      { "$ref": "#/$defs/dimension" }
+      }
+    },
+
+    "pillars": {
+      "type": "object",
+      "description": "All 12 pillars must be present with status:'ok'. EXTENDED pillars retired in v2.0.0.",
+      "required": [
+        "demographics", "migration", "employment", "supply_pipeline",
+        "vacancy_trend", "price_growth", "rent_trend", "affordability",
+        "infrastructure", "risk_register", "endorsements", "counter_view"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "demographics":    { "$ref": "#/$defs/pillar" },
+        "migration":       { "$ref": "#/$defs/pillar" },
+        "employment":      { "$ref": "#/$defs/pillar" },
+        "supply_pipeline": { "$ref": "#/$defs/pillar" },
+        "vacancy_trend":   { "$ref": "#/$defs/pillar" },
+        "price_growth":    { "$ref": "#/$defs/pillar" },
+        "rent_trend":      { "$ref": "#/$defs/pillar" },
+        "affordability":   { "$ref": "#/$defs/pillar" },
+        "infrastructure":  { "$ref": "#/$defs/pillar" },
+        "risk_register":   { "$ref": "#/$defs/pillar" },
+        "endorsements":    { "$ref": "#/$defs/pillar" },
+        "counter_view":    { "$ref": "#/$defs/pillar" }
+      }
+    },
+
+    "endorsements": {
+      "type": "array",
+      "minItems": 3,
+      "description": "≥3 third-party articles or research-house calls supporting the suburb thesis. Each within 12 months of today.",
+      "items": { "$ref": "#/$defs/endorsement" }
+    },
+
+    "counter_view": {
+      "type": "object",
+      "required": ["source", "headline", "date", "url", "excerpt", "response"],
+      "additionalProperties": false,
+      "properties": {
+        "source":   { "type": "string", "minLength": 1 },
+        "headline": { "type": "string", "minLength": 1 },
+        "date":     { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "url":      { "type": "string", "format": "uri", "pattern": "^https://" },
+        "excerpt":  { "type": "string", "minLength": 1 },
+        "response": {
+          "type": "string",
+          "minLength": 30,
+          "description": "1-2 sentences contextualising why the buy thesis still holds, using your own data. Not a dismissal."
+        }
+      }
+    },
+
+    "comparable_sales": {
+      "type": "array",
+      "maxItems": 10,
+      "description": "0-10 named recent transactions. Top-level field (not a pillar) since v2.0.0. Leave empty array if not available.",
+      "items": {
+        "type": "object",
+        "required": ["address", "date", "price", "property_type", "source_url"],
+        "additionalProperties": false,
+        "properties": {
+          "address":       { "type": "string", "minLength": 5 },
+          "date":          { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "price":         { "type": "integer", "minimum": 0 },
+          "sqm_internal":  { "type": ["integer", "null"], "minimum": 0 },
+          "price_per_sqm": { "type": ["integer", "null"], "minimum": 0 },
+          "bedrooms":      { "type": ["integer", "null"], "minimum": 0 },
+          "property_type": { "type": "string", "enum": ["apartment", "house", "townhouse", "land"] },
+          "source_url":    { "type": "string", "format": "uri", "pattern": "^https://" }
+        }
+      }
+    },
+
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Master citation list. Every URL referenced anywhere in the report must appear here.",
+      "items": {
+        "type": "object",
+        "required": ["tag", "publisher", "title", "url"],
+        "additionalProperties": false,
+        "properties": {
+          "tag":       { "type": "string", "minLength": 2, "description": "Short label referenced from each pillar's citation_tags array." },
+          "publisher": { "type": "string", "minLength": 2 },
+          "title":     { "type": "string", "minLength": 5 },
+          "date":      { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "url":       { "type": "string", "format": "uri", "pattern": "^https://" }
+        }
+      }
+    },
+
+    "hero_metrics": {
+      "type": "object",
+      "description": "Denormalised hero strip values. Populated where data exists, null otherwise.",
+      "additionalProperties": false,
+      "properties": {
+        "median_price":         { "type": ["integer", "null"], "minimum": 0 },
+        "avg_yield":            { "type": ["number", "null"], "minimum": 0 },
+        "vacancy_rate":         { "type": ["number", "null"], "minimum": 0 },
+        "capital_growth_10yr":  { "type": ["number", "null"] },
+        "weekly_rent":          { "type": ["integer", "null"], "minimum": 0 },
+        "population":           { "type": ["string", "null"], "description": "Display string, e.g. '32,400'." },
+        "pop_growth_pct":       { "type": ["number", "null"] }
+      },
+      "required": []
+    }
+  },
+
+  "$defs": {
+    "dimension": {
+      "type": "object",
+      "required": ["score", "score_reasoning"],
+      "additionalProperties": false,
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "score_reasoning": {
+          "type": "string",
+          "minLength": 80,
+          "description": "2-3 sentences. (a) Why this number, (b) what data points pushed it up or down, (c) what would need to change to move it."
+        }
+      }
+    },
+    "pillar": {
+      "type": "object",
+      "description": "All 12 pillars are mandatory. Status MUST be 'ok'. Headline, narrative, and stats must be populated.",
+      "required": ["status", "headline", "narrative", "stats", "citation_tags"],
+      "additionalProperties": false,
+      "properties": {
+        "status":       { "type": "string", "const": "ok" },
+        "headline":     { "type": "string", "minLength": 10, "maxLength": 200 },
+        "narrative":    {
+          "type": "string",
+          "minLength": 200,
+          "description": "2-3 paragraphs. Every factual claim carries an inline (Source: Publisher, Date) citation."
+        },
+        "stats": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["label", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "label": { "type": "string", "minLength": 2, "maxLength": 60 },
+              "value": { "type": "string", "minLength": 1, "maxLength": 60 }
+            }
+          }
+        },
+        "chart_data":   { "description": "Structured data the UI can render as a bar/line chart, or null." },
+        "citation_tags": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 2 },
+          "description": "Each tag must appear in the top-level sources list."
+        }
+      }
+    },
+    "endorsement": {
+      "type": "object",
+      "required": ["source", "headline", "date", "url", "excerpt", "supports_pillar"],
+      "additionalProperties": false,
+      "properties": {
+        "source":          { "type": "string", "minLength": 2, "description": "Masthead/publisher e.g. 'Australian Financial Review'." },
+        "headline":        { "type": "string", "minLength": 5 },
+        "date":            { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Within 12 months of today." },
+        "url":             { "type": "string", "format": "uri", "pattern": "^https://" },
+        "excerpt":         { "type": "string", "minLength": 10, "description": "1-3 sentences quoting or paraphrasing the supportive claim." },
+        "supports_pillar": { "type": "string", "minLength": 3, "description": "Pillar key this endorsement reinforces." }
+      }
+    }
+  },
+
+  "x-pre-flight-self-check": {
+    "description": "Non-standard extension. The agent should self-verify these rules before emitting the JSON. Enforcement is duplicated in the upload-research edge function validator.",
+    "rules": [
+      "schema_version equals '2.0.0' (must match prompt.ts SCHEMA_VERSION).",
+      "All 12 pillars present with status:'ok'. (EXTENDED pillars retired in v2.0.0.)",
+      "5 dimension scores are integers 0-20.",
+      "conviction_score equals the exact sum of the 5 dimension scores.",
+      "rating matches the band: 80+ Strong Buy, 60-79 Good Buy, 40-59 Watch, 0-39 Caution.",
+      "endorsements array has 3 or more items, every URL is full https://, every date within 12 months of today, all 6 required fields per item.",
+      "Exactly 1 counter_view with a populated response field of ≥30 chars.",
+      "Every citation_tag in any pillar appears in the top-level sources list.",
+      "No em-dash character (U+2014) anywhere in any string.",
+      "No banned jargon undescribed (institutional-grade, blue-chip, investment-grade, premium offering, world-class, once-in-a-generation, unmissable).",
+      "No XML or markdown citation tags (<cite>, [^1], etc.).",
+      "Every dimension score_reasoning is ≥80 chars (2-3 substantive sentences).",
+      "Australian English throughout (-ise endings, 'centre', 'metre', 'labour').",
+      "Narrative thesis section ('The [suburb] story, in plain English') follows the six-part framework with no forecasted numbers and all claims cited inline.",
+      "Supply & Demand thesis populated in BOTH supply_pipeline pillar narrative AND a dedicated 'Supply versus demand' subsection of the narrative thesis: demand math, supply math, absorption math, statewide context, land-constraint assessment, balance conclusion."
+    ]
+  }
+}
