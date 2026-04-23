@@ -2626,6 +2626,17 @@
       <div style="margin-top:32px">
         <div class="section-heading">Latest Research</div>
         <div class="research-list">
+          <div class="research-item" onclick="showResearch('southbank-vic')">
+            <div class="ri-state">VIC</div>
+            <div class="ri-info">
+              <div class="ri-name">Southbank — Inner Melbourne</div>
+              <div class="ri-meta">Suburb research pilot · Institutional layout</div>
+            </div>
+            <div class="ri-score">
+              <div class="score-badge high">Strong Buy</div>
+              <div class="ri-date">New format</div>
+            </div>
+          </div>
           <div class="research-item" onclick="showResearch('melbourne-cbd')">
             <div class="ri-state">VIC</div>
             <div class="ri-info">
@@ -3100,6 +3111,17 @@
     <div id="page-reports" class="page-view" style="padding:32px">
       <div class="section-heading">All Research Reports</div>
       <div class="research-list">
+        <div class="research-item" onclick="showResearch('southbank-vic')">
+          <div class="ri-state">VIC</div>
+          <div class="ri-info">
+            <div class="ri-name">Southbank — Inner Melbourne</div>
+            <div class="ri-meta">Suburb research pilot · 12+12 pillar institutional brief</div>
+          </div>
+          <div class="ri-score">
+            <div class="score-badge high">Strong Buy</div>
+            <div class="ri-date">New format</div>
+          </div>
+        </div>
         <div class="research-item" onclick="showResearch('melbourne-cbd')">
           <div class="ri-state">VIC</div>
           <div class="ri-info">
@@ -4736,6 +4758,7 @@
   let liveResearch = [];
   let liveStock    = [];
   let dataLoaded   = false;
+  let researchV2Slugs = new Set(); // populated from suburb_research; router uses it to choose v2 vs legacy
 
   // ─── FETCH FROM SUPABASE ──────────────────────────────────
   async function loadSupabaseData() {
@@ -4768,6 +4791,21 @@
       );
       const stkData = stkRes.ok ? await stkRes.json() : [];
       liveStock = Array.isArray(stkData) ? stkData : [];
+
+      // Fetch v2 suburb-research slugs so the router can route clicks
+      // to the institutional-layout viewer when an entry exists.
+      try {
+        const v2Res = await fetch(
+          SUPABASE_URL + '/rest/v1/suburb_research?select=slug',
+          { headers }
+        );
+        if (v2Res.ok) {
+          const v2Rows = await v2Res.json();
+          if (Array.isArray(v2Rows)) {
+            researchV2Slugs = new Set(v2Rows.map(r => r.slug).filter(Boolean));
+          }
+        }
+      } catch (_) { /* router will just fall back to legacy */ }
 
       dataLoaded = true;
       buildRegionMap();
@@ -7336,7 +7374,34 @@
   let lastPage = 'dashboard';
   let currentResearch = null;
 
+  // Smart router: if a v2 (institutional-layout) entry exists for this id (or
+  // id+'-<state>'), route to showResearchV2; otherwise fall through to the
+  // legacy viewer. Lets us migrate suburbs to the new layout one at a time
+  // without breaking existing demo content.
   function showResearch(id) {
+    if (researchV2Slugs && researchV2Slugs.size) {
+      if (researchV2Slugs.has(id)) return showResearchV2(id);
+      const stateSuffixes = ['vic','nsw','qld','wa','sa','tas','act','nt'];
+      // If id already ends with a state code we won't double-suffix.
+      const looksSuffixed = stateSuffixes.some(s => id.endsWith('-' + s));
+      if (!looksSuffixed) {
+        // Try to match against the legacy report's state if we have it.
+        const legacy = (typeof getResearchById === 'function') ? getResearchById(id) : null;
+        if (legacy && legacy.state) {
+          const candidate = id + '-' + String(legacy.state).toLowerCase();
+          if (researchV2Slugs.has(candidate)) return showResearchV2(candidate);
+        }
+        // Otherwise try every state suffix.
+        for (const s of stateSuffixes) {
+          const candidate = id + '-' + s;
+          if (researchV2Slugs.has(candidate)) return showResearchV2(candidate);
+        }
+      }
+    }
+    return showResearchLegacy(id);
+  }
+
+  function showResearchLegacy(id) {
     const d = getResearchById(id);
     if (!d) return;
     currentResearch = d;
