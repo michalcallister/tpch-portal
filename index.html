@@ -2625,436 +2625,10 @@
       <!-- LATEST RESEARCH below map -->
       <div style="margin-top:32px">
         <div class="section-heading">Latest Research</div>
-        <div class="research-list">
-          <div class="research-item" onclick="showResearch('southbank-vic')">
-            <div class="ri-state">VIC</div>
-            <div class="ri-info">
-              <div class="ri-name">Southbank — Inner Melbourne</div>
-              <div class="ri-meta">Suburb research pilot · Institutional layout</div>
-            </div>
-            <div class="ri-score">
-              <div class="score-badge high">Strong Buy</div>
-              <div class="ri-date">New format</div>
-            </div>
-          </div>
-          <div class="research-item" onclick="showResearch('melbourne-cbd')">
-            <div class="ri-state">VIC</div>
-            <div class="ri-info">
-              <div class="ri-name">Melbourne CBD & Surrounds</div>
-              <div class="ri-meta">Melbourne Square · Off-the-plan</div>
-            </div>
-            <div class="ri-score">
-              <div class="score-badge high">Strong Buy</div>
-              <div class="ri-date">Updated 18 Feb</div>
-            </div>
-          </div>
-          <div class="research-item" onclick="showResearch('canberra')">
-            <div class="ri-state">ACT</div>
-            <div class="ri-info">
-              <div class="ri-name">Canberra — Inner North & South</div>
-              <div class="ri-meta">Limited remaining stock · High rental demand</div>
-            </div>
-            <div class="ri-score">
-              <div class="score-badge high">Strong Buy</div>
-              <div class="ri-date">Updated 15 Feb</div>
-            </div>
-          </div>
-          <div class="research-item" onclick="showResearch('brisbane')">
-            <div class="ri-state">QLD</div>
-            <div class="ri-info">
-              <div class="ri-name">Brisbane — South East Growth Corridor</div>
-              <div class="ri-meta">Infrastructure-led growth · Olympic pipeline</div>
-            </div>
-            <div class="ri-score">
-              <div class="score-badge med">Watch</div>
-              <div class="ri-date">Updated 12 Feb</div>
-            </div>
-          </div>
-          <div class="research-item" onclick="showResearch('perth')">
-            <div class="ri-state">WA</div>
-            <div class="ri-info">
-              <div class="ri-name">Perth — Northern Suburbs</div>
-              <div class="ri-meta">Population surge · Land constrained</div>
-            </div>
-            <div class="ri-score">
-              <div class="score-badge high">Strong Buy</div>
-              <div class="ri-date">Updated 10 Feb</div>
-            </div>
-          </div>
-          <div class="research-item" onclick="showResearch('port-hedland')">
-            <div class="ri-state">WA</div>
-            <div class="ri-info">
-              <div class="ri-name">Port Hedland — Resources Boom</div>
-              <div class="ri-meta">Exclusive · Unique stock available · High yield</div>
-            </div>
-            <div class="ri-score">
-              <div class="score-badge high">Exclusive</div>
-              <div class="ri-date">Updated 8 Feb</div>
-            </div>
-          </div>
-        </div>
+        <div class="research-list"></div>
       </div>
     </div>
 
-    <!-- ── PAGE: RESEARCH DETAIL ──────────────────────── -->
-    <div id="page-research" class="page-view" style="padding:0; overflow-y:auto; max-height:calc(100vh - 61px)">
-
-      <!-- STICKY REPORT HEADER -->
-      <div style="background:var(--black-card);border-bottom:1px solid var(--gold-border);padding:22px 36px;position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:20px;">
-        <div style="display:flex;align-items:center;gap:16px;min-width:0;">
-          <button class="back-btn" onclick="goBack()" style="margin:0;flex-shrink:0;">← Back</button>
-          <div style="min-width:0;">
-            <div style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px;" id="rd-badge">◈ VIC · Melbourne</div>
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="rd-title">Melbourne CBD & Surrounds</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;flex-shrink:0;">
-          <button class="btn-outline" onclick="downloadReport('tpch')" style="font-size:13px;padding:10px 16px;">⬇ TPCH Report</button>
-          <button class="btn-outline" onclick="downloadReport('branded')" style="font-size:13px;padding:10px 16px;color:var(--white);border-color:rgba(255,255,255,0.2);">⬇ White-Label</button>
-          <button class="btn-primary" onclick="showModal('stock')" style="font-size:13px;padding:10px 16px;">View Stock →</button>
-        </div>
-      </div>
-
-      <div style="padding:32px 36px;max-width:1100px;">
-
-        <!-- HERO METRICS ROW -->
-        <div class="rd-metrics" style="margin-bottom:28px;">
-          <div class="metric-card">
-            <div class="metric-label">Avg Rental Yield</div>
-            <div class="metric-value" id="rm-yield">5.1%</div>
-            <div class="metric-change up" id="rm-yield-ch">↑ Gross rental yield</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Capital Growth p.a.</div>
-            <div class="metric-value" id="rm-growth">6.2%</div>
-            <div class="metric-change up" id="rm-growth-ch">↑ 10yr median p.a.</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Vacancy Rate</div>
-            <div class="metric-value" id="rm-vacancy">2.4%</div>
-            <div class="metric-change up" id="rm-vacancy-ch">↓ Critically tightening</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Median Unit Price</div>
-            <div class="metric-value" id="rm-price">$605k</div>
-            <div class="metric-change" id="rm-price-ch" style="color:var(--grey-light)">Investor grade</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Weekly Rent (median)</div>
-            <div class="metric-value" id="rm-rent">$575</div>
-            <div class="metric-change up">↑ +9% YoY</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Supply Shortfall (2029)</div>
-            <div class="metric-value" style="color:var(--red)">21,600</div>
-            <div class="metric-change" style="color:var(--red)">↑ apartments deficit</div>
-          </div>
-        </div>
-
-        <!-- TPCH PERSPECTIVE — editorial block -->
-        <div id="rd-tpch-block" style="background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.04));border:1px solid var(--gold);border-left:4px solid var(--gold);padding:24px 28px;margin-bottom:28px;animation:fadeUp 0.4s ease both;">
-          <div style="display:flex;align-items:flex-start;gap:16px;">
-            <div style="flex-shrink:0;">
-              <div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;"><svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/><polygon points="21,10 8,22 34,22" fill="#F5F3EE"/><rect x="10" y="21" width="24" height="18" fill="#F5F3EE"/><rect x="16" y="30" width="10" height="9" fill="#C8A951"/></svg></div>
-            </div>
-            <div style="flex:1;">
-              <div style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">TPCH Perspective — Our View</div>
-              <div style="font-family:'Playfair Display',Georgia,serif;font-size:21px;font-weight:500;color:var(--white);line-height:1.45;margin-bottom:14px;" id="rd-tpch-headline">Melbourne is the standout contrarian opportunity in Australia right now.</div>
-              <div style="font-size:15px;color:var(--grey-pale);line-height:1.8;" id="rd-tpch-view">While Sydney commands headlines, Melbourne has quietly been building the conditions for a significant re-rating. The pandemic hangover suppressed prices artificially — extended lockdowns and investor exodus created a buying window that is now closing. With net overseas migration at decade highs, a 60% pipeline shortfall confirmed by Urbis, and Melbourne priced 41% below Sydney at a 20-year discount, the fundamentals are as compelling as we've seen in any market. We're not just watching this market — we're actively presenting it to clients who want income now and capital growth on a 3–5 year horizon. The supply cliff is real and confirmed by multiple independent sources. We believe Melbourne CBD and inner suburbs will be one of the top performing markets in Australia by 2028.</div>
-              <div style="margin-top:16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
-                <div id="rd-conviction" style="display:flex;align-items:center;gap:10px;">
-                  <span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Conviction</span>
-                  <span style="font-family:'Playfair Display',Georgia,serif;font-size:24px;font-weight:600;color:var(--green);">Strong Buy</span>
-                </div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;" id="rd-tags">
-                  <span class="insight-tag bull">Low vacancy</span>
-                  <span class="insight-tag bull">Below replacement cost</span>
-                  <span class="insight-tag bull">Supply cliff confirmed</span>
-                  <span class="insight-tag watch">Monitor strata levies</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TWO COLUMN LAYOUT -->
-        <div style="display:grid;grid-template-columns:1fr 300px;gap:24px;align-items:start;">
-
-          <!-- LEFT COLUMN -->
-          <div>
-
-            <!-- INVESTMENT THESIS -->
-            <div class="content-card">
-              <div class="content-card-title">Investment Thesis</div>
-              <p id="rd-thesis">Melbourne's CBD and inner suburbs represent one of the most compelling yield and growth opportunities in Australia. Record low vacancy rates driven by the return of international students, a decade-high migration wave, and severely constrained new supply are converging to create exceptional rental demand pressure across all product types.</p>
-              <p id="rd-thesis2">Construction completions in FY2025 will be the lowest on record — just 3,070 build-to-sell apartments, a 50% drop from FY2024. Against annual demand of 15,000+ dwellings, the gap is structural and will not be resolved in the near term. Buyers entering today are purchasing below replacement cost, meaning market prices must eventually catch up to what it costs to build new.</p>
-            </div>
-
-            <!-- SUPPLY & DEMAND DATA -->
-            <div class="content-card">
-              <div class="content-card-title" style="display:flex;justify-content:space-between;align-items:center;">
-                Supply vs. Demand
-                <span id="rd-supply-source-badge" style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: Urbis · City of Melbourne</span>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
-                <div style="background:var(--black-soft);padding:18px;border:1px solid var(--gold-border);">
-                  <div id="rd-pipeline-period" style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:8px;font-weight:600;">Pipeline (2024–28)</div>
-                  <div id="rd-pipeline-total" style="font-family:'Playfair Display',Georgia,serif;font-size:32px;color:var(--gold);font-weight:600;">8,900</div>
-                  <div id="rd-pipeline-label" style="font-size:13px;color:var(--grey-pale);margin-top:6px;">apartments in central Melbourne pipeline</div>
-                </div>
-                <div style="background:var(--black-soft);padding:18px;border:1px solid rgba(201,76,76,0.4);">
-                  <div id="rd-demand-period" style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:8px;font-weight:600;">Demand (2024–28)</div>
-                  <div id="rd-demand-total" style="font-family:'Playfair Display',Georgia,serif;font-size:32px;color:var(--red);font-weight:600;">21,600</div>
-                  <div id="rd-demand-label" style="font-size:13px;color:var(--grey-pale);margin-top:6px;">dwellings needed — a 60% shortfall</div>
-                </div>
-              </div>
-              <div id="rd-supply-paragraph" style="font-size:15px;color:var(--grey-pale);line-height:1.75;margin-bottom:16px;">The Victorian Government's target of 80,000 homes per year is already falling short by 20,000 annually. Roughly 48% of the apartment pipeline is stalled due to labour shortages and a 20–30% surge in material costs. This is not a short-term correction — it is a structural supply deficit locked in for the medium term.</div>
-              <!-- Pipeline bar chart -->
-              <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;">Annual Pipeline vs. Demand (units)</div>
-              <div id="rd-supply-chart"></div>
-              <div id="rd-supply-source-footer" style="font-size:12px;color:var(--text-muted);margin-top:10px;">Source: City of Melbourne, Apartment Essentials, Urbis — Feb 2025</div>
-            </div>
-
-            <!-- KEY DEMAND DRIVERS -->
-            <div class="content-card">
-              <div class="content-card-title" style="display:flex;justify-content:space-between;align-items:center;">
-                Key Demand Drivers
-                <span style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: ABS · Urbis · SQM</span>
-              </div>
-              <ul class="bullet-list" id="rd-drivers">
-                <li>Net overseas migration into Victoria at decade highs — 140,000+ per annum, with Melbourne on track to surpass Sydney as Australia's largest city by 2032. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: ABS, VIF23</em></li>
-                <li>FY2025 apartment completions will be the lowest on record — just 3,070 BTS apartments, a 50% drop from the prior year. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: Urbis</em></li>
-                <li>Melbourne median house prices are currently 41% cheaper than Sydney's — the largest discount in 20 years, creating exceptional relative value. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: TPCH Research</em></li>
-                <li>International student enrolments recovering strongly — University of Melbourne and Monash both ranked top 3% globally, sustaining inner-city rental demand. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: Urbis</em></li>
-                <li>$107 billion Victorian Infrastructure Plan confirmed — including Suburban Rail Loop, Melbourne Greenline ($224m), and Queen Victoria Market renewal ($268m). <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: Urbis</em></li>
-                <li>Major banks forecasting RBA cash rate to drop to 3.35–3.85% by Dec 2025, expected to materially stimulate apartment demand and price growth. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: ANZ, NAB, CBA, Westpac via Urbis</em></li>
-              </ul>
-            </div>
-
-            <!-- INTRINSIC VALUE / REPLACEMENT COST -->
-            <div class="content-card">
-              <div class="content-card-title" style="display:flex;justify-content:space-between;align-items:center;">
-                The Intrinsic Value Case
-                <span style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: TPCH · Cordell CCCI</span>
-              </div>
-              <p style="font-size:15px;color:var(--grey-pale);line-height:1.75;margin-bottom:18px;">New apartments in 2025 must be priced <strong style="color:var(--gold)">30% higher</strong> than those in 2020 just to break even on construction costs. Victorian construction costs have increased 25.5% between 2019–20 and 2023–24. Buying existing stock today means purchasing <em>below replacement cost</em> — a rare condition where market prices are structurally forced to catch up over time.</p>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
-                <div style="background:var(--black-soft);padding:16px 14px;border:1px solid var(--gold-border);text-align:center;">
-                  <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;font-weight:600;">Yield vs Sydney</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;color:var(--green);font-weight:600;">5.1%</div>
-                  <div style="font-size:13px;color:var(--text-muted);margin-top:5px;">vs. Sydney 2.9%</div>
-                </div>
-                <div style="background:var(--black-soft);padding:16px 14px;border:1px solid var(--gold-border);text-align:center;">
-                  <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;font-weight:600;">Const. Cost Rise</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;color:var(--gold);font-weight:600;">+25.5%</div>
-                  <div style="font-size:13px;color:var(--text-muted);margin-top:5px;">Victoria 2019–24</div>
-                </div>
-                <div style="background:var(--black-soft);padding:16px 14px;border:1px solid var(--gold-border);text-align:center;">
-                  <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;font-weight:600;">Growth Forecast</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;color:var(--green);font-weight:600;">28–30%</div>
-                  <div style="font-size:13px;color:var(--text-muted);margin-top:5px;">by 2030 (analyst consensus)</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- RENTAL MARKET -->
-            <div class="content-card">
-              <div class="content-card-title" style="display:flex;justify-content:space-between;align-items:center;">
-                Rental Market Performance
-                <span style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: SQM · Apartment Essentials · Urbis</span>
-              </div>
-              <div style="font-size:15px;color:var(--grey-pale);line-height:1.75;margin-bottom:18px;">CBD apartment median weekly rent reached <strong style="color:var(--gold)">$750</strong> in the year to November 2024, up from $690 the prior year. CBD apartments command an average premium of 5%+ over broader inner Melbourne, with higher premiums for 1–2 bed units. Vacancy averaged 2.4% across 2024, hitting a low of 1.6% in March.</div>
-              <!-- Rent comparison chart -->
-              <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;">Weekly Rents by Typology — CBD vs Inner Melbourne</div>
-              <div class="mini-chart" id="rd-rent-chart">
-                <div class="chart-bar-row">
-                  <div class="chart-bar-label">1BR CBD</div>
-                  <div class="chart-bar-track"><div class="chart-bar-fill" style="width:76%"></div></div>
-                  <div class="chart-bar-val">$630/wk</div>
-                </div>
-                <div class="chart-bar-row">
-                  <div class="chart-bar-label">1BR Inner</div>
-                  <div class="chart-bar-track"><div class="chart-bar-fill" style="width:71%;background:var(--grey-mid)"></div></div>
-                  <div class="chart-bar-val">$590/wk</div>
-                </div>
-                <div class="chart-bar-row">
-                  <div class="chart-bar-label">2BR CBD</div>
-                  <div class="chart-bar-track"><div class="chart-bar-fill" style="width:100%"></div></div>
-                  <div class="chart-bar-val">$830/wk</div>
-                </div>
-                <div class="chart-bar-row">
-                  <div class="chart-bar-label">2BR Inner</div>
-                  <div class="chart-bar-track"><div class="chart-bar-fill" style="width:90%;background:var(--grey-mid)"></div></div>
-                  <div class="chart-bar-val">$750/wk</div>
-                </div>
-                <div class="chart-bar-row">
-                  <div class="chart-bar-label">3BR CBD</div>
-                  <div class="chart-bar-track"><div class="chart-bar-fill" style="width:55%"></div></div>
-                  <div class="chart-bar-val">$1,230/wk</div>
-                </div>
-              </div>
-              <div style="font-size:12px;color:var(--text-muted);margin-top:10px;">Source: Apartment Essentials, Urbis — Year to Nov 2024</div>
-            </div>
-
-            <!-- ECONOMIC ENVIRONMENT -->
-            <div class="content-card">
-              <div class="content-card-title" style="display:flex;justify-content:space-between;align-items:center;">
-                Economic Environment
-                <span style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: ABS · RBA · Urbis</span>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
-                <div style="background:var(--black-soft);padding:14px 16px;border:1px solid var(--gold-border);">
-                  <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Unemployment</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--gold);font-weight:600;">4.0%</div>
-                  <div style="font-size:13px;color:var(--green);margin-top:4px;">Below 10yr avg of 5.3%</div>
-                </div>
-                <div style="background:var(--black-soft);padding:14px 16px;border:1px solid var(--gold-border);">
-                  <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Inflation (CPI)</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--gold);font-weight:600;">2.8%</div>
-                  <div style="font-size:13px;color:var(--green);margin-top:4px;">Down from 5.4% — 3.5yr low</div>
-                </div>
-                <div style="background:var(--black-soft);padding:14px 16px;border:1px solid var(--gold-border);">
-                  <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Net Migration (2024)</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--gold);font-weight:600;">+446,000</div>
-                  <div style="font-size:13px;color:var(--grey-pale);margin-top:4px;">Persons — year ending Jun 2024</div>
-                </div>
-                <div style="background:var(--black-soft);padding:14px 16px;border:1px solid var(--gold-border);">
-                  <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Consumer Confidence</div>
-                  <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--gold);font-weight:600;">+12pts</div>
-                  <div style="font-size:13px;color:var(--green);margin-top:4px;">YoY improvement Dec 2024</div>
-                </div>
-              </div>
-              <div style="font-size:12px;color:var(--text-muted);">Sources: ABS, RBA, ANZ–Roy Morgan Consumer Confidence — Dec 2024</div>
-            </div>
-
-            <!-- INFRASTRUCTURE PIPELINE -->
-            <div class="content-card">
-              <div class="content-card-title" style="display:flex;justify-content:space-between;align-items:center;">
-                Infrastructure Pipeline
-                <span style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--grey-pale);text-transform:uppercase;background:var(--black-soft);padding:6px 12px;border:1px solid var(--gold-border);">Source: Urbis · Vic Govt.</span>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:12px;">
-                <div style="display:flex;gap:18px;align-items:center;font-size:12px;color:var(--text-muted);margin-bottom:4px;">
-                  <div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--gold);color:var(--black);padding:3px 8px;font-size:11px;font-weight:700;letter-spacing:0.5px;">YEAR</span>Confirmed / under way</div>
-                  <div style="display:flex;align-items:center;gap:8px;"><span style="background:rgba(201,168,76,0.3);color:var(--gold);padding:3px 8px;font-size:11px;font-weight:700;letter-spacing:0.5px;">YEAR</span>Planned / proposed</div>
-                </div>
-                <div style="display:flex;gap:16px;padding:14px 16px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
-                  <div style="background:var(--gold);color:var(--black);padding:6px 10px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;letter-spacing:0.5px;">2025</div>
-                  <div>
-                    <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:5px;">Melbourne Greenline — Stage 1</div>
-                    <div style="font-size:14px;color:var(--grey-pale);line-height:1.65;">$224m project delivering a 4km riverside public space along the Yarra in CBD. Enhances liveability and walkability of inner precincts.</div>
-                  </div>
-                </div>
-                <div style="display:flex;gap:16px;padding:14px 16px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
-                  <div style="background:var(--gold);color:var(--black);padding:6px 10px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;letter-spacing:0.5px;">2025</div>
-                  <div>
-                    <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:5px;">Melbourne Walk — Bourke Street Mall</div>
-                    <div style="font-size:14px;color:var(--grey-pale);line-height:1.65;">First major delivery in 50 years — 37,000 sqm commercial space, 6,000 sqm retail across 45 tenancies. Activates the CBD core.</div>
-                  </div>
-                </div>
-                <div style="display:flex;gap:16px;padding:14px 16px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
-                  <div style="background:rgba(201,168,76,0.3);color:var(--gold);padding:6px 10px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;letter-spacing:0.5px;">2029</div>
-                  <div>
-                    <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:5px;">Queen Victoria Market Renewal</div>
-                    <div style="font-size:14px;color:var(--grey-pale);line-height:1.65;">$268m restoration creating new open spaces, restaurants, bars, events — strengthening the market's precinct as a lifestyle destination.</div>
-                  </div>
-                </div>
-                <div style="display:flex;gap:16px;padding:14px 16px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;">
-                  <div style="background:rgba(201,168,76,0.3);color:var(--gold);padding:6px 10px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;letter-spacing:0.5px;">2035</div>
-                  <div>
-                    <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:5px;">Suburban Rail Loop — SRL East</div>
-                    <div style="font-size:14px;color:var(--grey-pale);line-height:1.65;">Connects Frankston to Werribee via Melbourne Airport. Reduces travel times across middle suburbs and supports new housing precincts at Clayton, Broadmeadows and Sunshine.</div>
-                  </div>
-                </div>
-                <div style="font-size:13px;color:var(--text-muted);padding:10px 0;">Total Victorian Infrastructure Plan: <strong style="color:var(--gold)">$107 billion</strong> committed for Melbourne and surrounding regions. Source: Urbis</div>
-              </div>
-            </div>
-
-            <!-- RISK FACTORS -->
-            <div class="content-card" style="border-color:rgba(201,76,76,0.3);">
-              <div class="content-card-title" style="color:var(--red);">Risk Factors to Monitor</div>
-              <ul class="bullet-list">
-                <li style="color:var(--grey-pale);">Victorian land tax environment remains elevated — confirm impact on holding costs for investor clients before presentation. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: SRO Victoria</em></li>
-                <li style="color:var(--grey-pale);">Heated developer environment — stalled projects may resume if costs ease, adding supply risk in 2026–27. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: TPCH</em></li>
-                <li style="color:var(--grey-pale);">Body corporate levies for large-amenity towers can be material — always confirm OC fees with client before signing. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: TPCH</em></li>
-                <li style="color:var(--grey-pale);">Interest rate path remains uncertain — while consensus is downward, any delay will defer price recovery. <em style="color:var(--text-muted);font-size:13px;display:block;margin-top:4px;font-style:normal;letter-spacing:0.3px;">Source: RBA</em></li>
-              </ul>
-            </div>
-
-          </div>
-
-          <!-- RIGHT SIDEBAR -->
-          <div>
-
-            <!-- KEY STATS -->
-            <div class="sidebar-card">
-              <div class="sidebar-card-header">Key Statistics</div>
-              <div class="sidebar-card-body">
-                <div class="data-row"><span class="dr-label">State</span><span class="dr-value" id="rd-state">Victoria</span></div>
-                <div class="data-row"><span class="dr-label">Population</span><span class="dr-value" id="rd-pop">5.4M metro</span></div>
-                <div class="data-row"><span class="dr-label">Pop. Growth p.a.</span><span class="dr-value" id="rd-popgrowth">+2.4%</span></div>
-                <div class="data-row"><span class="dr-label">Unemployment</span><span class="dr-value" id="rd-unemp">4.0%</span></div>
-                <div class="data-row"><span class="dr-label">Rental Growth YoY</span><span class="dr-value" id="rd-rentgrowth">+9.0%</span></div>
-                <div class="data-row"><span class="dr-label">Median Unit Price</span><span class="dr-value" id="rd-medprice">$605,221</span></div>
-                <div class="data-row"><span class="dr-label">Yield vs Sydney</span><span class="dr-value" style="color:var(--green)">5.1% vs 2.9%</span></div>
-                <div class="updated-tag" style="margin-top:12px;">
-                  <div class="update-dot"></div>
-                  <span id="rd-updated">Updated Feb 2025</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- TPCH RECOMMENDATION -->
-            <div class="sidebar-card" style="border-color:var(--gold);">
-              <div class="sidebar-card-header" style="background:var(--gold);color:var(--black);">TPCH Recommendation</div>
-              <div class="sidebar-card-body" style="text-align:center;padding:22px 18px;">
-                <div id="rd-rec-rating" style="font-family:'Playfair Display',Georgia,serif;font-size:34px;color:var(--green);font-weight:600;line-height:1;">Strong Buy</div>
-                <div style="width:60px;height:2px;background:var(--green);margin:12px auto;"></div>
-                <div id="rd-rec-text" style="font-size:14px;color:var(--grey-pale);line-height:1.7;">Prioritised stock for immediate presentation to investor clients. Active market with available stock.</div>
-              </div>
-            </div>
-
-            <!-- DOWNLOADS -->
-            <div class="sidebar-card">
-              <div class="sidebar-card-header">Download Reports</div>
-              <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px;">
-                <button onclick="downloadReport('tpch')" style="width:100%;padding:13px 16px;background:var(--gold);color:var(--black);border:none;cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;transition:background 0.15s;" onmouseover="this.style.background='var(--gold-light)'" onmouseout="this.style.background='var(--gold)'">
-                  ⬇ TPCH Branded Report
-                </button>
-                <button onclick="downloadReport('branded')" style="width:100%;padding:13px 16px;background:none;color:var(--white);border:1px solid var(--gold-border);cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;text-align:left;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--gold-border)';this.style.color='var(--white)'">
-                  ⬇ White-Label (Your Brand)
-                </button>
-                <div style="padding:12px 0;border-top:1px solid var(--gold-border);margin-top:6px;">
-                  <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600;">Additional Resources</div>
-                  <div style="font-size:14px;color:var(--grey-pale);padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.06);cursor:pointer;" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--grey-pale)'">⬇ Suburb Data Sheet (CSV)</div>
-                  <div style="font-size:14px;color:var(--grey-pale);padding:8px 0;cursor:pointer;" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--grey-pale)'">⬇ Share via Email</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- DATA SOURCES -->
-            <div class="sidebar-card">
-              <div class="sidebar-card-header">Data Sources</div>
-              <div class="sidebar-card-body" style="padding:14px 18px;">
-                <div style="font-size:13px;color:var(--grey-pale);line-height:1.7;" id="rd-sources">
-                  <div style="padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;margin-right:10px;">URBIS</span>Melbourne CBD Market Outlook, Feb 2025</div>
-                  <div style="padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;margin-right:10px;">SQM</span>Vacancy Rate & Rental Data</div>
-                  <div style="padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;margin-right:10px;">ABS</span>Population & Migration Statistics</div>
-                  <div style="padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;margin-right:10px;">APTE</span>Apartment Essentials Rent Data</div>
-                  <div style="padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.06);"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;margin-right:10px;">RBA</span>Cash Rate Forecasts</div>
-                  <div style="padding:8px 0;"><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;margin-right:10px;">TPCH</span>Editorial & Investment Perspective</div>
-                </div>
-                <div style="font-size:12px;color:var(--text-muted);margin-top:12px;line-height:1.65;padding-top:12px;border-top:1px solid var(--gold-border);">All data as at Feb 2025. TPCH research is for channel partner use only and does not constitute financial advice.</div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- PRINT / DOWNLOAD TEMPLATE (hidden, used for report generation) -->
-      <div id="report-print-area" style="display:none;"></div>
-    </div>
 
     <!-- ── PAGE: SUBURB RESEARCH v2 (institutional layout) ── -->
     <div id="page-research-v2" class="page-view" style="padding:0;overflow-y:auto;max-height:calc(100vh - 61px);">
@@ -3114,74 +2688,7 @@
     <!-- ── PAGE: ALL REPORTS ──────────────────────────── -->
     <div id="page-reports" class="page-view" style="padding:32px">
       <div class="section-heading">All Research Reports</div>
-      <div class="research-list">
-        <div class="research-item" onclick="showResearch('southbank-vic')">
-          <div class="ri-state">VIC</div>
-          <div class="ri-info">
-            <div class="ri-name">Southbank — Inner Melbourne</div>
-            <div class="ri-meta">Suburb research pilot · 12+12 pillar institutional brief</div>
-          </div>
-          <div class="ri-score">
-            <div class="score-badge high">Strong Buy</div>
-            <div class="ri-date">New format</div>
-          </div>
-        </div>
-        <div class="research-item" onclick="showResearch('melbourne-cbd')">
-          <div class="ri-state">VIC</div>
-          <div class="ri-info">
-            <div class="ri-name">Melbourne CBD & Surrounds</div>
-            <div class="ri-meta">Melbourne Square · Completed stock · Commission $25K+</div>
-          </div>
-          <div class="ri-score">
-            <div class="score-badge high">Strong Buy</div>
-            <div class="ri-date">18 Feb 2025</div>
-          </div>
-        </div>
-        <div class="research-item" onclick="showResearch('canberra')">
-          <div class="ri-state">ACT</div>
-          <div class="ri-info">
-            <div class="ri-name">Canberra — Inner North & South</div>
-            <div class="ri-meta">Public service demand · Land constrained · Limited remaining stock</div>
-          </div>
-          <div class="ri-score">
-            <div class="score-badge high">Strong Buy</div>
-            <div class="ri-date">15 Feb 2025</div>
-          </div>
-        </div>
-        <div class="research-item" onclick="showResearch('brisbane')">
-          <div class="ri-state">QLD</div>
-          <div class="ri-info">
-            <div class="ri-name">Brisbane — South East Growth Corridor</div>
-            <div class="ri-meta">Olympic infrastructure · Population boom · New estates</div>
-          </div>
-          <div class="ri-score">
-            <div class="score-badge med">Watch</div>
-            <div class="ri-date">12 Feb 2025</div>
-          </div>
-        </div>
-        <div class="research-item" onclick="showResearch('perth')">
-          <div class="ri-state">WA</div>
-          <div class="ri-info">
-            <div class="ri-name">Perth — Northern Suburbs</div>
-            <div class="ri-meta">Mining sector growth · Undersupply · Population migration from east</div>
-          </div>
-          <div class="ri-score">
-            <div class="score-badge high">Strong Buy</div>
-            <div class="ri-date">10 Feb 2025</div>
-          </div>
-        </div>
-        <div class="research-item" onclick="showResearch('port-hedland')">
-          <div class="ri-state">WA</div>
-          <div class="ri-info">
-            <div class="ri-name">Port Hedland — Resources Boom</div>
-            <div class="ri-meta">TPCH Exclusive · 7–9% gross yield · Resources-driven demand</div>
-          </div>
-          <div class="ri-score">
-            <div class="score-badge high">Exclusive</div>
-            <div class="ri-date">8 Feb 2025</div>
-          </div>
-        </div>
-      </div>
+      <div class="research-list"></div>
     </div>
 
     <!-- ── PAGE: STOCK BROWSE ───────────────────────────── -->
@@ -4762,15 +4269,10 @@
   let liveResearch = [];
   let liveStock    = [];
   let dataLoaded   = false;
-  let researchV2Slugs = new Set(); // populated from suburb_research; router uses it to choose v2 vs legacy
 
   // ─── FETCH FROM SUPABASE ──────────────────────────────────
   async function loadSupabaseData() {
-    // If not configured yet, use fallback static data
-    if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
-      useFallbackData();
-      return;
-    }
+    if (SUPABASE_URL === 'YOUR_SUPABASE_URL') return;
     try {
       const headers = {
         'apikey': SUPABASE_ANON_KEY,
@@ -4778,15 +4280,22 @@
         'Content-Type': 'application/json'
       };
 
-      // Fetch research reports
+      // Fetch published suburb research (the only research surface now)
       const resRes = await fetch(
-        SUPABASE_URL + '/rest/v1/research_reports?is_visible=eq.true&order=state,suburb',
+        SUPABASE_URL + '/rest/v1/suburb_research?status=eq.published&order=state_code,suburb',
         { headers }
       );
-      if (!resRes.ok) throw new Error('research_reports fetch failed: ' + resRes.status);
+      if (!resRes.ok) throw new Error('suburb_research fetch failed: ' + resRes.status);
       const resData = await resRes.json();
-      if (!Array.isArray(resData)) throw new Error('Unexpected response from research_reports');
-      liveResearch = resData;
+      if (!Array.isArray(resData)) throw new Error('Unexpected response from suburb_research');
+      // Normalise so downstream consumers (region map, card onclicks, deeplink)
+      // can keep using the legacy field names. slug is the new key of truth.
+      liveResearch = resData.map(r => ({
+        ...r,
+        id: r.slug,
+        state: r.state_code,
+        capital_growth: r.capital_growth_10yr,
+      }));
 
       // Fetch available stock
       const stkRes = await fetch(
@@ -4796,32 +4305,17 @@
       const stkData = stkRes.ok ? await stkRes.json() : [];
       liveStock = Array.isArray(stkData) ? stkData : [];
 
-      // Fetch v2 suburb-research slugs so the router can route clicks
-      // to the institutional-layout viewer when an entry exists.
-      try {
-        const v2Res = await fetch(
-          SUPABASE_URL + '/rest/v1/suburb_research?select=slug',
-          { headers }
-        );
-        if (v2Res.ok) {
-          const v2Rows = await v2Res.json();
-          if (Array.isArray(v2Rows)) {
-            researchV2Slugs = new Set(v2Rows.map(r => r.slug).filter(Boolean));
-          }
-        }
-      } catch (_) { /* router will just fall back to legacy */ }
-
       dataLoaded = true;
       buildRegionMap();
       refreshDashboard();
       refreshResearchList();
+      if (typeof refreshResearchPins === 'function') refreshResearchPins();
       console.log('Supabase: loaded', liveResearch.length, 'reports,', liveStock.length, 'stock items');
 
       // Pre-load pending enquiry count for admin badge
       if (currentUserIsAdmin) refreshEnqBadge();
     } catch(err) {
-      console.warn('Supabase load failed, using fallback data:', err);
-      useFallbackData();
+      console.warn('Supabase load failed:', err);
     }
   }
 
@@ -4868,286 +4362,12 @@
     });
   }
 
-  // ─── FALLBACK STATIC DATA (used before Supabase is connected) ──
-  function useFallbackData() {
-    liveResearch = [
-      { id:'melbourne-cbd', suburb:'Melbourne CBD', region:'Inner City & Surrounds', state:'VIC',
-        map_lat:-37.8136, map_lng:144.9631, rating:'Strong Buy',
-        avg_yield:5.10, capital_growth:6.20, vacancy_rate:2.40, median_price:605221,
-        weekly_rent:575, rental_growth:9.0,
-        thesis_short:'Completed stock with above-market commissions. Supply cliff confirmed.',
-        thesis_main:"Melbourne's CBD and inner suburbs represent one of the most compelling yield and growth opportunities in Australia. Record low vacancy rates driven by the return of international students, a decade-high migration wave, and severely constrained new supply are converging to create exceptional rental demand pressure across all product types.",
-        thesis_detail:"Construction completions in FY2025 will be the lowest on record — just 3,070 build-to-sell apartments, a 50% drop from FY2024. Against annual demand of 15,000+ dwellings, the gap is structural. Buyers entering today are purchasing below replacement cost.",
-        tpch_headline:"Melbourne is the standout contrarian opportunity in Australia right now.",
-        tpch_view:"While Sydney commands headlines, Melbourne has quietly been building the conditions for a significant re-rating. The pandemic hangover suppressed prices artificially — extended lockdowns and investor exodus created a buying window that is now closing. With net overseas migration at decade highs, a 60% pipeline shortfall confirmed by Urbis, and Melbourne priced 41% below Sydney at a 20-year discount, the fundamentals are as compelling as we've seen in any market. We're not just watching this market — we're actively presenting it to clients who want income now and capital growth on a 3–5 year horizon.",
-        demand_drivers:["Net overseas migration into Victoria at decade highs — 140,000+ per annum. Source: ABS, VIF23","FY2025 apartment completions the lowest on record — just 3,070 BTS apartments, a 50% drop from prior year. Source: Urbis","Melbourne median house prices 41% cheaper than Sydney — largest discount in 20 years. Source: TPCH Research","$107 billion Victorian Infrastructure Plan confirmed — Suburban Rail Loop, Greenline, QVM renewal. Source: Urbis","Major banks forecasting RBA cash rate to fall to 3.35–3.85% by Dec 2025. Source: ANZ, NAB, CBA, Westpac"],
-        comparable_rents:[{label:"1BR CBD",weekly:630},{label:"1BR Inner",weekly:590},{label:"2BR CBD",weekly:830},{label:"2BR Inner",weekly:750},{label:"3BR CBD",weekly:1230}],
-        supply_pipeline:[{year:"2024",pipeline:588,demand:7205},{year:"2025",pipeline:2368,demand:10805},{year:"2026",pipeline:1762,demand:14410},{year:"2027",pipeline:2446,demand:18010},{year:"2028",pipeline:1679,demand:21615}],
-        supply_shortfall:21600, supply_shortfall_label:"projected apartments deficit by 2029",
-        construction_cost_rise:"25.5%", construction_cost_context:"Victorian construction costs 2019–24. Source: Cordell CCCI / ABS",
-        growth_forecast:"28–30%", growth_forecast_context:"Projected by 2030 — major analyst consensus. Source: TPCH",
-        yield_vs_comparison:"5.1% vs Sydney 2.9%",
-        infrastructure_pipeline:[{year:"2025",project:"Melbourne Greenline — Stage 1",detail:"$224m project delivering a 4km riverside public space along the Yarra in CBD.",status:"confirmed"},{year:"2025",project:"Melbourne Walk — Bourke Street Mall",detail:"First major delivery in 50 years — 37,000sqm commercial, 6,000sqm retail across 45 tenancies.",status:"confirmed"},{year:"2029",project:"Queen Victoria Market Renewal",detail:"$268m restoration — new open spaces, restaurants, bars and events destination.",status:"planned"},{year:"2035",project:"Suburban Rail Loop — SRL East",detail:"Connects Frankston to Werribee via Melbourne Airport, reducing travel times across middle suburbs.",status:"proposed"}],
-        economic_environment:[{label:"Unemployment",value:"4.0%",context:"Below 10yr avg of 5.3%"},{label:"Inflation (CPI)",value:"2.8%",context:"Down from 5.4% — 3.5yr low"},{label:"Net Migration",value:"+446,000",context:"Year ending Jun 2024"},{label:"Consumer Confidence",value:"+12pts",context:"YoY improvement Dec 2024"}],
-        risk_factors:["Victorian land tax environment elevated — confirm holding cost impact on client. Source: SRO Victoria","Stalled pipeline may resume if costs ease, adding supply risk in 2026–27. Source: TPCH","Body corporate levies for large-amenity towers can be material — always confirm OC fees. Source: TPCH","Interest rate path remains uncertain — consensus is downward but any delay defers price recovery. Source: RBA"],
-        data_sources:[{tag:"URBIS",description:"Melbourne CBD Market Outlook, Feb 2025"},{tag:"SQM",description:"Vacancy Rate & Rental Data"},{tag:"ABS",description:"Population & Migration Statistics"},{tag:"APTE",description:"Apartment Essentials Rent Data"},{tag:"RBA",description:"Cash Rate Forecasts"},{tag:"TPCH",description:"Editorial & Investment Perspective"}],
-        population:'5.4M metro', pop_growth_pct:2.40, unemployment:4.00, rental_growth:9.0,
-        updated_at:'2025-02-18T00:00:00Z' },
-      { id:'canberra', suburb:'Canberra', region:'Inner North & South', state:'ACT',
-        map_lat:-35.2809, map_lng:149.1300, rating:'Strong Buy',
-        avg_yield:5.10, capital_growth:5.80, vacancy_rate:0.90, median_price:620000,
-        weekly_rent:660, rental_growth:9.40,
-        thesis_short:'Government-underpinned market with sub-1% vacancy and the highest household income of any Australian capital.',
-        thesis_main:"Canberra is structurally one of Australia's most resilient investment markets. Underpinned by federal government employment — effectively recession-proof tenant demand — high household incomes and a constrained land supply, Canberra delivers consistent rental returns with far lower volatility than other Australian capitals. Vacancy has remained below 1% for over two years, and new supply is severely limited by planning constraints and construction cost pressures.",
-        thesis_detail:"TPCH has identified remaining stock in select inner-north and inner-south precincts where yields are above-market and tenant profiles are among the highest quality in Australia. Government workers, defence personnel, and university-affiliated tenants provide exceptional income security. This is a finite opportunity — well-positioned stock in Canberra moves quickly and rarely re-enters the market.",
-        tpch_headline:"Canberra is Australia's most income-secure rental market — and it is running out of rentable stock.",
-        tpch_view:"Canberra rarely gets the attention it deserves from property investors — and that is exactly why we like it. While Sydney and Melbourne dominate headlines, Canberra has quietly delivered some of the most consistent rental income and capital stability of any Australian market over the past decade. The federal government employment base is effectively a floor on rental demand. Vacancy below 1% is not a short-term anomaly — it is a structural feature of a city with constrained land supply, minimal new pipeline, and a growing public sector workforce. Median household income in Canberra is the highest of any Australian capital, which means lower arrears risk and higher rent tolerance. We are actively presenting Canberra stock to channel partners who want certainty of income and low-volatility growth.",
-        demand_drivers:[
-          "Federal government employment underpins tenant base — APS workforce approaching 175,000 with continued growth under multiple agency expansions. Source: APS Statistical Bulletin 2024",
-          "Canberra median household income of $128,000 is the highest of any Australian capital — significantly reducing arrears risk for landlords. Source: ABS Census 2021",
-          "SQM Research vacancy rate at 0.9% for inner precincts — well below the 3% threshold considered healthy, signalling acute undersupply. Source: SQM Research Jan 2025",
-          "ACT Government housing target of 30,000 new homes by 2030 is running at less than 40% of pace required — structural undersupply is locked in. Source: ACT Government Housing Strategy",
-          "University of Canberra and ANU combined enrolment of 40,000+ students sustains year-round inner-city rental demand. Source: Universities Australia 2024",
-          "Defence and intelligence sector expansion — AUKUS commitments driving headcount growth in Canberra-based agencies into 2030. Source: Defence Strategic Review 2023"
-        ],
-        comparable_rents:[{label:"1BR Inner North",weekly:560},{label:"2BR Inner North",weekly:680},{label:"2BR Inner South",weekly:660},{label:"3BR House",weekly:820},{label:"1BR CBD",weekly:540}],
-        supply_pipeline:[
-          {year:"2024",pipeline:1820,demand:4200},
-          {year:"2025",pipeline:1540,demand:4400},
-          {year:"2026",pipeline:1380,demand:4600},
-          {year:"2027",pipeline:1200,demand:4800},
-          {year:"2028",pipeline:980, demand:5000}
-        ],
-        supply_shortfall:8500,
-        supply_shortfall_label:"projected dwellings deficit by 2028",
-        construction_cost_rise:"22%",
-        construction_cost_context:"ACT construction costs 2019-24. Source: Cordell CCCI / ABS",
-        growth_forecast:"18-22%",
-        growth_forecast_context:"Projected by 2028 based on supply constraints and income growth. Source: TPCH Research",
-        yield_vs_comparison:"5.1% vs Sydney 2.9%",
-        infrastructure_pipeline:[
-          {year:"2025",project:"Light Rail Stage 2A — City to Woden",detail:"$2.1B extension of the Canberra Light Rail network connecting the CBD to the Woden town centre. Directly increases accessibility and value of inner-south precincts.",status:"confirmed"},
-          {year:"2026",project:"Northbourne Avenue Urban Renewal",detail:"Significant mixed-use redevelopment along the light rail corridor in Dickson and Downer. Creates new residential density and amenity along the inner-north spine.",status:"confirmed"},
-          {year:"2026",project:"ACT Government Affordable Housing Program",detail:"$150M committed to increase social and affordable housing supply. Absorbs demand at the lower end, reducing competition pressure on private rental market.",status:"confirmed"},
-          {year:"2029",project:"ANU Campus Expansion — Acton Precinct",detail:"Australian National University expanding research and residential facilities on the Acton campus, adding 3,000+ student beds and supporting services.",status:"planned"}
-        ],
-        economic_environment:[
-          {label:"Unemployment",value:"3.2%",context:"Lowest of any Australian capital"},
-          {label:"Median HH Income",value:"$128k",context:"Highest of any Australian capital"},
-          {label:"Public Sector",value:"43%",context:"Of ACT workforce — recession resistant"},
-          {label:"Rental Growth",value:"+9.4%",context:"YoY — year ending Dec 2024"}
-        ],
-        risk_factors:[
-          "Public service employment concentration — any federal government restructuring or workforce reductions would impact tenant demand. Monitor APS staffing plans. Source: APS Commission",
-          "Interest rate sensitivity — Canberra buyers tend to be highly leveraged due to higher purchase prices. Rate reductions will stimulate demand further but delays will slow price recovery. Source: RBA",
-          "Light rail Stage 2 timeline risk — construction delays or cost overruns could push the Woden connection back, dampening short-term demand in inner south. Source: ACT Government",
-          "Planning policy changes — ACT Government is rezoning areas of inner Canberra for higher density. Monitor specific sites for new supply risk in medium term. Source: ACT Planning Authority"
-        ],
-        data_sources:[
-          {tag:"SQM",description:"Vacancy Rate and Rental Data — Jan 2025"},
-          {tag:"ABS",description:"Population, Income and Migration Statistics"},
-          {tag:"ACT GOVT",description:"Housing Strategy and Infrastructure Pipeline"},
-          {tag:"CORELOGIC",description:"Price Growth and Yield Data — Jan 2025"},
-          {tag:"TPCH",description:"Editorial and Investment Perspective"}
-        ],
-        population:'470K city', pop_growth_pct:1.80, unemployment:3.20,
-        updated_at:'2025-02-15T00:00:00Z' },
-      { id:'brisbane', suburb:'Brisbane', region:'SE Growth Corridor', state:'QLD',
-        map_lat:-27.4698, map_lng:153.0251, rating:'Watch',
-        avg_yield:5.40, capital_growth:7.10, vacancy_rate:1.40, median_price:720000,
-        weekly_rent:700, rental_growth:12.10,
-        thesis_short:'Olympic pipeline market with the fastest population growth in Australia — stock selection is critical.',
-        thesis_main:"Brisbane's south east growth corridor is experiencing infrastructure-led transformation at a scale not seen since the 1980s. The 2032 Olympic Games pipeline has confirmed $7B+ in public and private investment across inner and middle-ring precincts. Population growth at 2.8% per annum — the fastest of any major Australian capital — is compressing vacancy rates and driving rental growth well above the national average.",
-        thesis_detail:"TPCH rates Brisbane as Watch, not Strong Buy, because the market is heated and stock selection is critical. The right product in the right precinct — particularly near Cross River Rail stations, the Olympic corridor, and established inner-ring suburbs — represents a compelling opportunity. Poorly selected stock in speculative fringe locations carries meaningful risk. TPCH is actively curating opportunities for channel partners in high-conviction precincts only.",
-        tpch_headline:"Brisbane is the Olympic decade play — infrastructure-led growth on a scale unseen in Australian property since the 1980s.",
-        tpch_view:"Brisbane is the story of the next decade, but it is not a story where every postcode wins. The 2032 Olympic Games have brought forward a decade of investment in a compressed timeframe — Cross River Rail alone will unlock $10B in new development around its 10 new stations. Population is growing at 2.8% per annum and net interstate migration from Sydney and Melbourne shows no sign of slowing. The key risk is that this story is now widely known, which means the easy wins are priced in. Our approach for channel partners is focused on specific high-conviction precincts — inner-ring walkable suburbs, cross-rail station catchments, and locations with genuine amenity advantages. In those areas, yields of 5-6% with double-digit capital growth projections are realistic. We are not putting clients into fringe estates and calling it an Olympic play.",
-        demand_drivers:[
-          "Population growing at 2.8% p.a. — fastest of any major Australian capital. SEQ region expected to grow by 2.2 million people by 2046. Source: Queensland Government Population Projections 2024",
-          "$7.1B Olympic and Paralympic Games infrastructure spend confirmed — venues, transport and precincts directly serving the inner city and SE corridor. Source: OLGC 2024",
-          "Cross River Rail — $6.3B underground rail link with 10 new stations transforming inner-city connectivity. Operational 2025. Unlocking development corridors in Woolloongabba, Dutton Park and Roma Street. Source: Cross River Rail Authority",
-          "Net interstate migration into Queensland at record highs — over 50,000 persons per annum from NSW and VIC, predominantly settling in Brisbane and the Gold Coast. Source: ABS 2024",
-          "Rental vacancy at 1.4% and falling — CoreLogic data shows rents rising 12.1% YoY with no supply relief forecast before 2027 in inner precincts. Source: CoreLogic Jan 2025",
-          "Brisbane median unit price still $200k+ below Sydney — relative affordability driving demand from interstate investors and owner-occupiers. Source: Domain Quarterly Report Q4 2024"
-        ],
-        comparable_rents:[{label:"1BR Inner",weekly:580},{label:"2BR Inner",weekly:720},{label:"2BR Near Rail",weekly:750},{label:"3BR House",weekly:890},{label:"1BR CBD",weekly:610}],
-        supply_pipeline:[
-          {year:"2024",pipeline:6200,demand:14800},
-          {year:"2025",pipeline:7400,demand:16200},
-          {year:"2026",pipeline:8100,demand:17500},
-          {year:"2027",pipeline:6800,demand:18900},
-          {year:"2028",pipeline:5200,demand:20400}
-        ],
-        supply_shortfall:18000,
-        supply_shortfall_label:"projected dwellings deficit by 2028",
-        construction_cost_rise:"28%",
-        construction_cost_context:"QLD construction costs 2019-24. Source: Cordell CCCI / ABS",
-        growth_forecast:"20-25%",
-        growth_forecast_context:"Projected by 2029 in high-conviction inner precincts. Source: TPCH Research / Domain",
-        yield_vs_comparison:"5.4% vs Sydney 2.9%",
-        infrastructure_pipeline:[
-          {year:"2025",project:"Cross River Rail — Full Operations",detail:"$6.3B underground rail network with 10 new stations through the Brisbane CBD and inner suburbs. Significantly improves connectivity across the SE corridor and unlocks major development precincts.",status:"confirmed"},
-          {year:"2027",project:"Brisbane Metro — Stage 1",detail:"$1.5B high-frequency bus rapid transit connecting the CBD with Herston, Eight Mile Plains and Carina. Increases inner-city accessibility and suburb connectivity.",status:"confirmed"},
-          {year:"2028",project:"2032 Olympic Venues — Inner Brisbane",detail:"Gabba redevelopment, Brisbane Arena, Aquatic Centre and Athletes Village construction across inner city precincts. Direct amenity uplift for surrounding residential markets.",status:"confirmed"},
-          {year:"2031",project:"Queen's Wharf Brisbane",detail:"$3.6B integrated resort and residential development on the Brisbane River. Transforms the CBD waterfront precinct with hotels, retail, dining and public space.",status:"confirmed"}
-        ],
-        economic_environment:[
-          {label:"Unemployment",value:"3.6%",context:"Below national average of 4.0%"},
-          {label:"Population Growth",value:"+2.8% p.a.",context:"Fastest of any major capital"},
-          {label:"Rental Growth",value:"+12.1%",context:"YoY — year ending Dec 2024"},
-          {label:"Net Migration",value:"+50k p.a.",context:"From NSW and VIC annually"}
-        ],
-        risk_factors:[
-          "Market heat and reduced incentive — Brisbane is now widely understood as a growth market, meaning developer incentives and commissions have compressed. Stock selection is critical. Source: TPCH",
-          "Fringe estate risk — outer SEQ land releases are being heavily marketed but lack the infrastructure proximity that drives genuine rental demand. Avoid postcodes beyond 20km of Brisbane CBD without confirmed rail access. Source: TPCH",
-          "Construction pipeline risk — large-scale projects approved in 2023-24 will begin completing in 2026-27, which may temporarily soften inner-city rents. Monitor unit approval data quarterly. Source: ABS",
-          "Interest rate sensitivity — Brisbane's price growth has been partly driven by interstate migration of leveraged buyers. Any sustained rate environment above 4.5% will dampen demand more than supply-constrained markets. Source: RBA"
-        ],
-        data_sources:[
-          {tag:"CORELOGIC",description:"Price Growth, Yield and Rental Data — Jan 2025"},
-          {tag:"SQM",description:"Vacancy Rate and Rental Trend Data"},
-          {tag:"ABS",description:"Population and Migration Statistics"},
-          {tag:"OLGC",description:"Olympic and Legacy Games Commission — Infrastructure Plan"},
-          {tag:"TPCH",description:"Editorial and Investment Perspective"}
-        ],
-        population:'2.6M metro', pop_growth_pct:2.80, unemployment:3.60,
-        updated_at:'2025-02-12T00:00:00Z' },
-      { id:'perth', suburb:'Perth', region:'Northern Suburbs', state:'WA',
-        map_lat:-31.9505, map_lng:115.8605, rating:'Strong Buy',
-        avg_yield:6.10, capital_growth:8.40, vacancy_rate:0.80, median_price:590000,
-        weekly_rent:740, rental_growth:14.80,
-        thesis_short:"Australia's strongest performing market — mining boom, acute undersupply, decade-high yields above 6%.",
-        thesis_main:"Perth is not just a property story — it is a scarcity story. Population is surging at over 2.2% per annum driven by record interstate migration and a resources boom workforce, while the rental vacancy rate of 0.8% is functionally the lowest of any major Australian city. New supply is severely constrained by labour shortages, high construction costs, and limited land release in the northern growth corridors where demand is most acute. Yields above 6% with sustained double-digit capital growth make Perth the standout market in Australia right now.",
-        thesis_detail:"TPCH has secured stock in key northern suburbs growth corridors including Joondalup, Wanneroo and Alkimos. These are established infrastructure-served areas benefiting directly from the METRONET rail extensions and population inflow from the eastern seaboard. Yields of 6%+ and capital growth projections of 20-25% over 3-4 years are underpinned by an undersupply that independent economists estimate will take 4-5 years to resolve, even under optimistic construction scenarios.",
-        tpch_headline:"Perth is not a property story — it is a scarcity story, and it is the best-performing residential market in Australia right now.",
-        tpch_view:"We have been watching Perth carefully for three years and the fundamentals have never been stronger. The mining cycle is at decade highs — Rio Tinto, BHP and Fortescue are all running expanded workforces and project pipelines that extend well into the 2030s. That means high-income workers, high housing demand, and a rental market that is essentially at capacity. The 0.8% vacancy rate is not a cyclical dip — it reflects a structural mismatch between population growth and the ability of the construction industry to respond. Perth also offers something rare in Australian property: genuine below-replacement-cost purchasing. In the northern suburbs, house-and-land product can still be acquired for less than what it costs to build today. That dynamic does not last. We are actively placing clients in Perth stock and the results have been excellent — rental income from day one and capital uplift that has outperformed all major capitals since 2022.",
-        demand_drivers:[
-          "WA population growing at 2.2% p.a. — driven by record net interstate migration of 25,000+ per annum from NSW, VIC and QLD. Source: ABS ERP Dec 2024",
-          "Mining sector employment at decade highs — Rio Tinto, BHP and Fortescue combined WA workforce exceeds 80,000. FIFO and residential workforce demand is acute in northern suburbs. Source: DEMIRS WA 2024",
-          "Rental vacancy at 0.8% in Perth metropolitan area — the lowest of any major Australian capital. In targeted northern suburbs precincts vacancy is below 0.5%. Source: SQM Research Jan 2025",
-          "METRONET rail expansion — $8.4B WA Government investment in new rail lines to Yanchep, Ellenbrook and Morley directly connecting northern suburbs to Perth CBD, supporting property values along the corridor. Source: PTA WA",
-          "Perth median house price remains $400k+ below Sydney and $300k+ below Melbourne — relative affordability driving continued investor and owner-occupier demand. Source: Domain Quarterly Report Q4 2024",
-          "New dwelling completions running at 40% below long-run average due to labour and materials constraints. Supply gap is expected to persist until at least 2028. Source: HIA WA Housing Outlook 2025"
-        ],
-        comparable_rents:[{label:"3BR House North",weekly:750},{label:"4BR House North",weekly:920},{label:"2BR Unit",weekly:620},{label:"3BR Unit",weekly:780},{label:"2BR House",weekly:680}],
-        supply_pipeline:[
-          {year:"2024",pipeline:8200, demand:18500},
-          {year:"2025",pipeline:9100, demand:20200},
-          {year:"2026",pipeline:10400,demand:21800},
-          {year:"2027",pipeline:9800, demand:23400},
-          {year:"2028",pipeline:8600, demand:25000}
-        ],
-        supply_shortfall:14000,
-        supply_shortfall_label:"projected dwellings deficit by 2028",
-        construction_cost_rise:"30%",
-        construction_cost_context:"WA construction costs 2019-24. Source: Cordell CCCI / ABS",
-        growth_forecast:"22-28%",
-        growth_forecast_context:"Projected by 2028 in northern suburbs corridor. Source: TPCH Research / CoreLogic",
-        yield_vs_comparison:"6.1% vs Sydney 2.9%",
-        infrastructure_pipeline:[
-          {year:"2025",project:"METRONET Yanchep Rail Extension",detail:"$1.6B rail extension connecting Yanchep and Butler to the Perth network. Directly serves the northern growth corridor where TPCH stock is located, improving connectivity and supporting capital values.",status:"confirmed"},
-          {year:"2026",project:"METRONET Ellenbrook Line",detail:"$1.9B new line connecting Ellenbrook to Morley and the City. Transforms the north-eastern corridor and establishes new property value benchmarks along the route.",status:"confirmed"},
-          {year:"2027",project:"Scarborough Beach Redevelopment",detail:"$100M+ beachfront precinct upgrade — new amphitheatre, dining precinct, surf club and public amenity. Elevates Scarborough as Perth's premier coastal destination.",status:"confirmed"},
-          {year:"2028",project:"Perth City Link — Northern Sector",detail:"Continued development of the Perth City Link mixed-use precinct above the Horseshoe Bridge. New residential, hotel and commercial towers connecting Northbridge to the CBD.",status:"planned"}
-        ],
-        economic_environment:[
-          {label:"Unemployment",value:"3.4%",context:"Lowest of eastern state capitals"},
-          {label:"Mining Employment",value:"Decade high",context:"Rio Tinto, BHP, Fortescue WA ops"},
-          {label:"Rental Growth",value:"+14.8%",context:"YoY — year ending Dec 2024"},
-          {label:"Population Growth",value:"+2.2% p.a.",context:"Record net interstate migration"}
-        ],
-        risk_factors:[
-          "Resources cycle dependency — Perth's rental market is exposed to a downturn in WA mining activity. A sustained fall in iron ore prices below $80/tonne would reduce workforce demand. Monitor commodity prices and BHP/Rio capex announcements. Source: TPCH",
-          "Construction pipeline catch-up — the state government is aggressively funding new supply, including land releases in Eglinton and Alkimos. If construction productivity improves, supply could normalise faster than expected. Source: WAPC",
-          "Interstate migration reversal — Perth's population surge depends partly on continued eastern-seaboard departures. Any major economic improvement in NSW or VIC could slow inflows. Source: ABS",
-          "Price growth expectations — Perth has already recorded 24% median price growth since 2022. First-time investors entering now face a higher entry price than early movers, compressing the upside multiple. Source: CoreLogic"
-        ],
-        data_sources:[
-          {tag:"SQM",description:"Vacancy Rate and Rental Data — Jan 2025"},
-          {tag:"CORELOGIC",description:"Price Growth and Yield Trends"},
-          {tag:"HIA",description:"WA Housing Outlook and Supply Forecasts"},
-          {tag:"PTA WA",description:"METRONET Infrastructure Pipeline"},
-          {tag:"TPCH",description:"Editorial and Investment Perspective"}
-        ],
-        population:'2.1M metro', pop_growth_pct:2.20, unemployment:3.40,
-        updated_at:'2025-02-10T00:00:00Z' },
-      { id:'port-hedland', suburb:'Port Hedland', region:'Pilbara Resources Region', state:'WA',
-        map_lat:-20.3161, map_lng:118.5954, rating:'Strong Buy', is_exclusive:true,
-        avg_yield:8.20, capital_growth:9.10, vacancy_rate:0.40, median_price:480000,
-        weekly_rent:1100, rental_growth:22.50,
-        thesis_short:'TPCH-exclusive. 8-9% gross yields, 0.4% vacancy, resources-driven demand that will persist through the decade.',
-        thesis_main:"Port Hedland delivers the highest residential gross yields of any Australian market — consistently 8-9% — backed by one of the most structurally constrained rental markets in the country. The resources sector is not a short-term catalyst here; Rio Tinto, BHP and Fortescue have all confirmed capital expenditure programs extending well into the 2030s, meaning the workforce housing demand that drives Port Hedland's rental market is underwritten for the medium term. Vacancy sits at 0.4% — effectively zero — and there is no material new residential construction pipeline.",
-        thesis_detail:"TPCH has exclusive access to a curated stock package in Port Hedland not available through any other channel. This stock was acquired at below-current-market pricing and provides day-one rental income at gross yields of 8-9%. The tenant profile is overwhelmingly resources sector workers — high-income, government or company-backed, and typically on long-term accommodation arrangements. This is not speculative — it is income-generating from settlement, with capital growth as the upside. Channel partners should note this is a high-yield, specialist market that suits sophisticated investors comfortable with a regional location.",
-        tpch_headline:"Port Hedland offers the highest residential gross yields in Australia — income-backed by the world's largest iron ore export operation.",
-        tpch_view:"Port Hedland is unlike any other market in Australia and that is precisely why we have secured exclusive stock here. This is not a lifestyle market — it is a pure income and resources play, and the numbers are exceptional. Gross yields of 8-9% on settled stock are real and current. The tenant base is among the highest-quality of any market in Australia: resources workers employed by Rio Tinto, BHP and Fortescue on packages that include rental assistance, meaning vacancy and arrears risk is structurally lower than comparable yield markets. We have done the due diligence on this stock and we are confident in presenting it to channel partners whose clients want income security that metro markets simply cannot deliver. The supply constraint is absolute — Port Hedland cannot grow its residential base quickly due to planning limitations, infrastructure costs and the absence of a mainstream construction industry. That means the current yield environment will persist, not compress.",
-        demand_drivers:[
-          "Rio Tinto, BHP and Fortescue combined WA Pilbara workforce exceeds 50,000, with housing demand concentrated in Port Hedland as the hub of iron ore export operations. Source: Company Annual Reports 2024",
-          "Port Hedland Port throughput at record 190Mt per annum and climbing — sustained operations require a stable, growing residential workforce base. Source: PHPA Annual Report 2024",
-          "Rental vacancy at 0.4% — the lowest of any monitored Australian market. SQM Research data confirms no available private rental stock in most dwelling categories. Source: SQM Research Jan 2025",
-          "Resources capex at decade highs — BHP South Flank and Rio Tinto Western Range projects have confirmed construction and operational phases extending to 2035+. Source: Company Investor Reports 2024",
-          "Limited new residential construction — Port Hedland has no active residential developer pipeline of scale. Constraints include land availability, construction costs 40-50% above Perth, and limited contractor capacity. Source: TPCH Research",
-          "Government infrastructure commitment — $2.8B Port Hedland Port Expansion (Stage 2) and $500M+ town centre revitalisation confirm long-term investment in the precinct by WA Government and PHPA. Source: PHPA 2024"
-        ],
-        comparable_rents:[{label:"3BR House",weekly:1100},{label:"4BR House",weekly:1400},{label:"2BR Unit",weekly:850},{label:"4BR Executive",weekly:1800},{label:"3BR Modern",weekly:1250}],
-        supply_pipeline:[
-          {year:"2024",pipeline:42, demand:580},
-          {year:"2025",pipeline:55, demand:620},
-          {year:"2026",pipeline:38, demand:650},
-          {year:"2027",pipeline:60, demand:680},
-          {year:"2028",pipeline:45, demand:720}
-        ],
-        supply_shortfall:2500,
-        supply_shortfall_label:"projected dwellings deficit by 2028",
-        construction_cost_rise:"35%",
-        construction_cost_context:"Pilbara construction costs 2019-24, running 40-50% above Perth metro. Source: Rawlinsons 2024",
-        growth_forecast:"25-35%",
-        growth_forecast_context:"Projected by 2028 on supply constraint and ongoing resources investment. Source: TPCH Research",
-        yield_vs_comparison:"8.2% vs Sydney 2.9%",
-        infrastructure_pipeline:[
-          {year:"2025",project:"Port Hedland Port Expansion Stage 2",detail:"$2.8B expansion of the Port Hedland iron ore export terminal — the world's largest bulk export port. Confirms long-term operational commitment and workforce housing demand.",status:"confirmed"},
-          {year:"2026",project:"Port Hedland Town Centre Revitalisation",detail:"$120M WA Government investment in the Port Hedland CBD — new civic spaces, retail precinct, community facilities and streetscape improvements. Enhances liveability for long-term residents.",status:"confirmed"},
-          {year:"2027",project:"BHP Western Range Iron Ore Project",detail:"$4.6B new iron ore mine and infrastructure connecting to Port Hedland. Adds significant workforce demand — estimated 2,000+ permanent positions — to an already constrained housing market.",status:"confirmed"},
-          {year:"2030",project:"Pilbara Hydrogen Hub",detail:"State Government-supported hydrogen export facility at Port Hedland. Early-stage but represents a diversification of economic activity beyond iron ore for the long term.",status:"planned"}
-        ],
-        economic_environment:[
-          {label:"Unemployment",value:"2.1%",context:"Effectively full employment"},
-          {label:"Avg Weekly Wage",value:"$2,100+",context:"Resources sector premium incomes"},
-          {label:"Rental Growth",value:"+22.5%",context:"YoY — year ending Dec 2024"},
-          {label:"Port Throughput",value:"190Mt p.a.",context:"Record high — iron ore exports"}
-        ],
-        risk_factors:[
-          "Resources cycle risk — Port Hedland is a single-industry market. A sustained fall in iron ore prices or a major operational shutdown by Rio Tinto or BHP would materially impact rental demand. Monitor commodity prices and company capex guidance annually. Source: TPCH",
-          "Lifestyle and liveability constraints — Port Hedland is a remote, industrial town. Tenant turnover can be higher than metro markets and ongoing property management requires a specialist local agent. Source: TPCH",
-          "Climate and infrastructure risk — Cyclone season (November to April) presents annual insurance and maintenance risks. Ensure landlord insurance includes cyclone damage and all properties are cyclone-rated to current standards. Source: BoM / SES WA",
-          "Financing — some major banks apply conservative LVR policies for Pilbara properties due to perceived volatility. Ensure client financing is confirmed before commitment to purchase. Source: TPCH / Lender policies"
-        ],
-        data_sources:[
-          {tag:"PHPA",description:"Port Hedland Port Authority Annual Report 2024"},
-          {tag:"SQM",description:"Vacancy Rate and Rental Data — Jan 2025"},
-          {tag:"CORELOGIC",description:"Price Growth and Yield Data"},
-          {tag:"BHP/RIO",description:"Annual Reports and Investor Presentations 2024"},
-          {tag:"TPCH",description:"Editorial and Investment Perspective — Exclusive Access"}
-        ],
-        population:'15K town', pop_growth_pct:3.10, unemployment:2.10,
-        updated_at:'2025-02-08T00:00:00Z' }
-    ];
-    dataLoaded = true;
-    buildRegionMap();
-  }
-
   // ─── REGION LOOKUP (works with both Supabase IDs and static keys) ──
   function getRegionByCode(code) {
     return stateInfo[code] || null;
   }
 
-  function getResearchById(id) {
-    // Try exact id match first (works for fallback slugs and Supabase UUIDs via cta)
-    // Fall back to suburb-derived slug so map pin clicks work when Supabase returns UUID ids
-    return liveResearch.find(r => r.id === id) ||
-           liveResearch.find(r => r.suburb && r.suburb.toLowerCase().replace(/\s+/g,'-') === id) ||
-           null;
-  }
-
-  // backward-compat aliases used elsewhere in the code
+  // backward-compat alias used by selectRegion/resetMapPanel
   const regions = new Proxy({}, { get: (_, code) => getRegionByCode(code) });
 
   // ─── DASHBOARD + LIST REFRESH ────────────────────────────
@@ -5164,18 +4384,22 @@
     // Rebuild the research lists on dashboard + all-reports pages
     const lists = document.querySelectorAll('.research-list');
     if (!lists.length) return;
-    const html = liveResearch.map(r => `
-      <div class="research-item" onclick="showResearch('${r.id}')">
-        <div class="ri-state">${r.state}</div>
+    const html = liveResearch.map(r => {
+      const badgeClass = (r.rating === 'Strong Buy' || r.rating === 'Good Buy') ? 'high'
+                       : r.rating === 'Watch' ? 'med' : 'low';
+      return `
+      <div class="research-item" onclick="showResearch('${r.slug}')">
+        <div class="ri-state">${r.state_code}</div>
         <div class="ri-info">
           <div class="ri-name">${r.suburb}${r.region ? ' — ' + r.region : ''}</div>
           <div class="ri-meta">${r.thesis_short || ''}</div>
         </div>
         <div class="ri-score">
-          <div class="score-badge ${r.rating === 'Strong Buy' ? 'high' : r.rating === 'Watch' ? 'med' : 'low'}">${r.is_exclusive ? 'Exclusive' : r.rating}</div>
+          <div class="score-badge ${badgeClass}">${r.rating}</div>
           <div class="ri-date">${new Date(r.updated_at).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     lists.forEach(l => l.innerHTML = html);
   }
 
@@ -7375,496 +6599,12 @@
   }
 
   // ─── RESEARCH DETAIL ──────────────────────────────────
-  let lastPage = 'dashboard';
-  let currentResearch = null;
-
-  // Smart router: if a v2 (institutional-layout) entry exists for this id (or
-  // id+'-<state>'), route to showResearchV2; otherwise fall through to the
-  // legacy viewer. Lets us migrate suburbs to the new layout one at a time
-  // without breaking existing demo content.
-  function showResearch(id) {
-    if (researchV2Slugs && researchV2Slugs.size) {
-      if (researchV2Slugs.has(id)) return showResearchV2(id);
-      const stateSuffixes = ['vic','nsw','qld','wa','sa','tas','act','nt'];
-      // If id already ends with a state code we won't double-suffix.
-      const looksSuffixed = stateSuffixes.some(s => id.endsWith('-' + s));
-      if (!looksSuffixed) {
-        // Try to match against the legacy report's state if we have it.
-        const legacy = (typeof getResearchById === 'function') ? getResearchById(id) : null;
-        if (legacy && legacy.state) {
-          const candidate = id + '-' + String(legacy.state).toLowerCase();
-          if (researchV2Slugs.has(candidate)) return showResearchV2(candidate);
-        }
-        // Otherwise try every state suffix.
-        for (const s of stateSuffixes) {
-          const candidate = id + '-' + s;
-          if (researchV2Slugs.has(candidate)) return showResearchV2(candidate);
-        }
-      }
-    }
-    return showResearchLegacy(id);
-  }
-
-  function showResearchLegacy(id) {
-    const d = getResearchById(id);
-    if (!d) return;
-    currentResearch = d;
-    const activePage = document.querySelector('.page-view.active');
-    lastPage = activePage ? activePage.id.replace('page-','') : 'dashboard';
-
-    const fmt      = v => v != null ? Number(v).toFixed(1) + '%' : '—';
-    const fmtPrice = v => v ? '$' + (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : Math.round(v/1000)+'k') : '—';
-    const fmtFull  = v => v ? '$' + Number(v).toLocaleString('en-AU') : '—';
-
-    // ── Header ──
-    document.getElementById('rd-badge').textContent  = '◈ ' + d.state + ' · ' + (d.region || d.suburb);
-    document.getElementById('rd-title').textContent  = d.suburb + (d.region ? ' — ' + d.region : '');
-
-    // ── Hero metrics ──
-    document.getElementById('rm-yield').textContent      = fmt(d.avg_yield);
-    document.getElementById('rm-growth').textContent     = fmt(d.capital_growth);
-    document.getElementById('rm-vacancy').textContent    = fmt(d.vacancy_rate);
-    document.getElementById('rm-price').textContent      = fmtPrice(d.median_price);
-    document.getElementById('rm-rent').textContent       = d.weekly_rent ? '$' + d.weekly_rent : '—';
-    document.getElementById('rm-yield-ch').textContent   = '↑ Gross rental yield';
-    document.getElementById('rm-growth-ch').textContent  = '↑ 10yr median p.a.';
-    const vac = d.vacancy_rate || 3;
-    document.getElementById('rm-vacancy-ch').textContent = vac < 2 ? '↓ Critically tightening' : vac < 3 ? '↓ Below healthy benchmark' : 'Monitored closely';
-
-    // ── TPCH Perspective block ──
-    const tpchView     = d.tpch_view     || d.thesis_main || '';
-    const tpchHeadline = d.tpch_headline || d.suburb + ' — a market TPCH is actively monitoring for our channel partners.';
-    document.getElementById('rd-tpch-headline').textContent = tpchHeadline;
-    document.getElementById('rd-tpch-view').textContent     = tpchView;
-
-    // ── Conviction / tags ──
-    const col = d.rating === 'Strong Buy' ? 'var(--green)' : d.rating === 'Watch' ? 'var(--gold)' : 'var(--grey-light)';
-    document.getElementById('rd-conviction').innerHTML =
-      `<span style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Conviction</span>
-       <span style="font-family:'Playfair Display',Georgia,serif;font-size:24px;font-weight:600;color:${col};">${d.rating || 'Pending'}</span>`;
-    let tags = '';
-    if (d.is_exclusive)           tags += '<span class="insight-tag bull">TPCH Exclusive</span>';
-    if (d.construction_cost_rise) tags += '<span class="insight-tag bull">Below replacement cost</span>';
-    if (d.supply_shortfall)       tags += '<span class="insight-tag bull">Supply cliff confirmed</span>';
-    if (vac < 2)                  tags += '<span class="insight-tag bull">Sub-2% vacancy</span>';
-    tags += '<span class="insight-tag watch">Monitor strata levies</span>';
-    document.getElementById('rd-tags').innerHTML = tags;
-
-    // ── Investment thesis ──
-    document.getElementById('rd-thesis').textContent  = d.thesis_main   || '';
-    document.getElementById('rd-thesis2').textContent = d.thesis_detail || '';
-
-    // ── Demand drivers ──
-    const driversEl = document.getElementById('rd-drivers');
-    if (driversEl) {
-      const drivers = Array.isArray(d.demand_drivers)
-        ? d.demand_drivers
-        : (d.demand_drivers ? JSON.parse(d.demand_drivers) : []);
-      if (drivers.length) driversEl.innerHTML = drivers.map(dr => `<li>${dr}</li>`).join('');
-    }
-
-    // ── Supply pipeline chart ──
-    const supplyChartEl = document.getElementById('rd-supply-chart');
-    if (supplyChartEl) {
-      const pipelineData = Array.isArray(d.supply_pipeline) ? d.supply_pipeline : null;
-      if (pipelineData && pipelineData.length) {
-        const maxD = Math.max(...pipelineData.map(r => r.demand));
-        supplyChartEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;">` +
-          pipelineData.map(row => `
-            <div style="display:grid;grid-template-columns:48px 1fr 96px;align-items:center;gap:10px;">
-              <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted);font-weight:600;">${row.year}</div>
-              <div style="display:flex;flex-direction:column;gap:4px;">
-                <div style="width:${Math.round(row.pipeline/maxD*100)}%;max-width:100%;height:9px;background:var(--gold);min-width:2px;transition:width 0.6s ease;"></div>
-                <div style="width:${Math.round(row.demand/maxD*100)}%;max-width:100%;height:9px;background:rgba(201,76,76,0.6);min-width:2px;"></div>
-              </div>
-              <div style="font-size:13px;line-height:1.5;font-family:'DM Mono',monospace;font-weight:600;">
-                <div style="color:var(--gold);">${row.pipeline.toLocaleString()}</div>
-                <div style="color:var(--red)">${row.demand.toLocaleString()}</div>
-              </div>
-            </div>`).join('') +
-          `</div>
-          <div style="display:flex;gap:20px;margin-top:14px;">
-            <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--grey-pale);"><div style="width:14px;height:9px;background:var(--gold);"></div>Pipeline (supply)</div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--grey-pale);"><div style="width:14px;height:9px;background:rgba(201,76,76,0.6);"></div>Dwelling demand</div>
-          </div>`;
-      } else {
-        supplyChartEl.innerHTML = '<div style="font-size:14px;color:var(--text-muted);padding:12px 0;">Supply/demand chart data not yet available for this market.</div>';
-      }
-    }
-
-    // ── Supply headline boxes, paragraph & source ──
-    const pipelineData2 = Array.isArray(d.supply_pipeline) ? d.supply_pipeline : null;
-    if (pipelineData2 && pipelineData2.length) {
-      const firstYear  = pipelineData2[0].year;
-      const lastYear   = pipelineData2[pipelineData2.length - 1].year;
-      const totalPipe  = pipelineData2.reduce((s, r) => s + r.pipeline, 0);
-      const period     = firstYear + '–' + lastYear;
-      const setSD = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-      setSD('rd-pipeline-period',  'Pipeline (' + period + ')');
-      setSD('rd-pipeline-total',   totalPipe.toLocaleString('en-AU'));
-      setSD('rd-pipeline-label',   d.suburb + ' pipeline (cumulative)');
-      setSD('rd-demand-period',    'Demand (' + period + ')');
-      setSD('rd-demand-total',     d.supply_shortfall ? Number(d.supply_shortfall).toLocaleString('en-AU') : '—');
-      setSD('rd-demand-label',     d.supply_shortfall_label || 'projected dwellings deficit');
-    }
-    if (d.thesis_detail) {
-      const para = document.getElementById('rd-supply-paragraph');
-      if (para) para.textContent = d.thesis_detail;
-    }
-    const srcData2 = Array.isArray(d.data_sources) ? d.data_sources : null;
-    if (srcData2 && srcData2.length) {
-      const badge  = document.getElementById('rd-supply-source-badge');
-      const footer = document.getElementById('rd-supply-source-footer');
-      const srcStr = 'Source: ' + srcData2.slice(0, 3).map(s => s.tag).join(' · ');
-      if (badge)  badge.textContent  = srcStr;
-      if (footer) footer.textContent = srcData2.map(s => s.tag + ' — ' + s.description).join(' · ');
-    }
-
-    // ── Rent comparison chart ──
-    const rentChartEl = document.getElementById('rd-rent-chart');
-    if (rentChartEl && Array.isArray(d.comparable_rents) && d.comparable_rents.length) {
-      const maxRent = Math.max(...d.comparable_rents.map(r => r.weekly));
-      rentChartEl.innerHTML = d.comparable_rents.map((r, i) =>
-        `<div class="chart-bar-row">
-          <div class="chart-bar-label">${r.label}</div>
-          <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round(r.weekly/maxRent*100)}%;${i%2===1?'background:var(--grey-pale)':''}"></div></div>
-          <div class="chart-bar-val">$${r.weekly}/wk</div>
-        </div>`).join('');
-    }
-
-    // ── Sidebar stats ──
-    const updDate = d.updated_at ? new Date(d.updated_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : 'Feb 2025';
-    const setEl = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val||'—'; };
-    setEl('rd-state',     d.state);
-    setEl('rd-pop',       d.population);
-    setEl('rd-popgrowth', d.pop_growth_pct ? '+' + Number(d.pop_growth_pct).toFixed(1) + '%' : '—');
-    setEl('rd-unemp',     d.unemployment ? Number(d.unemployment).toFixed(1) + '%' : '—');
-    setEl('rd-rentgrowth',d.rental_growth ? '+' + Number(d.rental_growth).toFixed(1) + '% YoY' : '—');
-    setEl('rd-medprice',  fmtFull(d.median_price));
-    setEl('rd-updated',   (d.ai_generated ? 'AI-updated ' : 'Updated ') + updDate);
-
-    // ── Recommendation panel ──
-    const recRating = document.getElementById('rd-rec-rating');
-    const recText   = document.getElementById('rd-rec-text');
-    if (recRating) { recRating.textContent = d.rating || 'Pending'; recRating.style.color = col; }
-    if (recText)   recText.textContent = d.thesis_short || 'Review full research before presenting to clients.';
-
-    // ── Supply shortfall hero metric ──
-    const shortfallCards = document.querySelectorAll('#page-research .metric-card');
-    const shortfallCard  = shortfallCards[shortfallCards.length - 1];
-    if (shortfallCard && d.supply_shortfall) {
-      const sv = shortfallCard.querySelector('.metric-value');
-      const sc = shortfallCard.querySelector('.metric-change');
-      if (sv) { sv.textContent = Number(d.supply_shortfall).toLocaleString('en-AU'); sv.style.color = 'var(--red)'; }
-      if (sc) { sc.textContent = '\u2191 ' + (d.supply_shortfall_label || 'projected dwellings deficit'); sc.style.color = 'var(--red)'; }
-    }
-
-    // ── Infrastructure pipeline ──
-    const infraSection = [...document.querySelectorAll('#page-research .content-card')].find(c => {
-      const t = c.querySelector('.content-card-title'); return t && t.textContent.includes('Infrastructure Pipeline');
-    });
-    if (infraSection) {
-      const infraData = Array.isArray(d.infrastructure_pipeline) ? d.infrastructure_pipeline : null;
-      if (infraData && infraData.length) {
-        const infraList = infraSection.querySelector('[style*="flex-direction:column"]');
-        if (infraList) {
-          const legend =
-            '<div style="display:flex;gap:18px;align-items:center;font-size:12px;color:var(--text-muted);margin-bottom:14px;">' +
-              '<div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--gold);color:var(--black);padding:3px 8px;font-size:11px;font-weight:700;letter-spacing:0.5px;">YEAR</span>Confirmed / under way</div>' +
-              '<div style="display:flex;align-items:center;gap:8px;"><span style="background:rgba(201,168,76,0.3);color:var(--gold);padding:3px 8px;font-size:11px;font-weight:700;letter-spacing:0.5px;">YEAR</span>Planned / proposed</div>' +
-            '</div>';
-          infraList.innerHTML = legend + infraData.map(item => {
-            const bg = item.status==='confirmed' ? 'background:var(--gold);color:var(--black)' : 'background:rgba(201,168,76,0.3);color:var(--gold)';
-            return '<div style="display:flex;gap:16px;padding:14px 16px;background:var(--black-soft);border:1px solid var(--gold-border);align-items:flex-start;margin-bottom:10px;">' +
-              '<div style="' + bg + ';padding:6px 10px;font-size:13px;font-weight:700;flex-shrink:0;white-space:nowrap;letter-spacing:0.5px;">' + item.year + '</div>' +
-              '<div><div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:5px;">' + item.project + '</div>' +
-              '<div style="font-size:14px;color:var(--grey-pale);line-height:1.65;">' + item.detail + '</div></div></div>';
-          }).join('') + '<div style="font-size:13px;color:var(--text-muted);padding:10px 0;">Source: State Government Infrastructure Plans</div>';
-        }
-      }
-    }
-
-    // ── Economic environment ──
-    const econSection = [...document.querySelectorAll('#page-research .content-card')].find(c => {
-      const t = c.querySelector('.content-card-title'); return t && t.textContent.includes('Economic Environment');
-    });
-    if (econSection) {
-      const econData = Array.isArray(d.economic_environment) ? d.economic_environment : null;
-      if (econData && econData.length) {
-        const econGrid = econSection.querySelector('[style*="grid-template-columns:1fr 1fr"]');
-        if (econGrid) {
-          econGrid.innerHTML = econData.map(item =>
-            '<div style="background:var(--black-soft);padding:14px 16px;border:1px solid var(--gold-border);">' +
-            '<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">' + item.label + '</div>' +
-            '<div style="font-family:\'Playfair Display\',Georgia,serif;font-size:24px;color:var(--gold);font-weight:600;">' + item.value + '</div>' +
-            '<div style="font-size:13px;color:var(--grey-pale);margin-top:4px;line-height:1.55;">' + item.context + '</div></div>'
-          ).join('');
-        }
-      }
-    }
-
-    // ── Intrinsic value cards ──
-    const intrinsicSection = [...document.querySelectorAll('#page-research .content-card')].find(c => {
-      const t = c.querySelector('.content-card-title'); return t && t.textContent.includes('Intrinsic Value');
-    });
-    if (intrinsicSection) {
-      const ivCards = intrinsicSection.querySelectorAll('[style*="border:1px solid var(--gold-border)"][style*="text-align:center"]');
-      if (d.yield_vs_comparison && ivCards[0]) {
-        const parts = d.yield_vs_comparison.split('vs');
-        const v = ivCards[0].querySelector('[style*="font-size:26px"]'); if (v) v.textContent = parts[0]?.trim() || fmt(d.avg_yield);
-        const subs = ivCards[0].querySelectorAll('[style*="color:var(--text-muted)"]');
-        if (subs[1] && parts[1]) subs[1].textContent = 'vs' + parts[1];
-      }
-      if (d.construction_cost_rise && ivCards[1]) {
-        const v = ivCards[1].querySelector('[style*="font-size:26px"]'); if (v) v.textContent = '+' + d.construction_cost_rise;
-        const subs = ivCards[1].querySelectorAll('[style*="color:var(--text-muted)"]');
-        if (subs[1] && d.construction_cost_context) subs[1].textContent = d.construction_cost_context;
-      }
-      if (d.growth_forecast && ivCards[2]) {
-        const v = ivCards[2].querySelector('[style*="font-size:26px"]'); if (v) v.textContent = d.growth_forecast;
-        const subs = ivCards[2].querySelectorAll('[style*="color:var(--text-muted)"]');
-        if (subs[1] && d.growth_forecast_context) subs[1].textContent = d.growth_forecast_context;
-      }
-    }
-
-    // ── Risk factors ──
-    const riskSection = [...document.querySelectorAll('#page-research .content-card')].find(c => {
-      const t = c.querySelector('.content-card-title'); return t && t.textContent.includes('Risk Factors');
-    });
-    if (riskSection) {
-      const riskData = Array.isArray(d.risk_factors) ? d.risk_factors : null;
-      if (riskData && riskData.length) {
-        const riskList = riskSection.querySelector('.bullet-list');
-        if (riskList) riskList.innerHTML = riskData.map(r => '<li style="color:var(--grey-pale);">' + r + '</li>').join('');
-      }
-    }
-
-    // ── Data sources sidebar ──
-    const sourcesEl = document.getElementById('rd-sources');
-    if (sourcesEl) {
-      const srcData = Array.isArray(d.data_sources) ? d.data_sources : null;
-      if (srcData && srcData.length) {
-        sourcesEl.innerHTML = srcData.map((s, i) =>
-          '<div style="padding:9px 0;font-size:13px;line-height:1.6;' + (i < srcData.length-1 ? 'border-bottom:1px solid rgba(201,168,76,0.1);' : '') + '">' +
-          '<span style="color:var(--gold);font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;margin-right:10px;">' + s.tag + '</span>' +
-          '<span style="color:var(--grey-pale);">' + s.description + '</span></div>'
-        ).join('');
-      }
-    }
-
-    // ── Navigate to page ──
-    document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
-    document.getElementById('page-research').classList.add('active');
-    document.getElementById('topbar-title').textContent = d.suburb;
-    document.getElementById('page-research').scrollTop = 0;
-  }
-
-  function goBack() {
-    showPage(lastPage, null);
-    const navMap = { dashboard:0, reports:1, stock:2 };
-    document.querySelectorAll('.nav-item').forEach((n,i) => n.classList.toggle('active', i===(navMap[lastPage]??0)));
-    const titles = { dashboard:'Dashboard', reports:'All Research Reports', stock:'Stock Portal' };
-    document.getElementById('topbar-title').textContent = titles[lastPage] || 'Dashboard';
-  }
-
-  // ─── DOWNLOAD REPORT ──────────────────────────────────
-  function downloadReport(type) {
-    const d = currentResearch;
-    if (!d) { showModal('branded'); return; }
-
-    const isBranded = type === 'tpch';
-    const partnerName = document.querySelector('.user-name')?.textContent || 'Channel Partner';
-    const partnerInitials = document.querySelector('.user-avatar')?.textContent || 'CP';
-    const reportDate = new Date().toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' });
-    const isMelb = d.suburb === 'Melbourne CBD';
-
-    const col = d.rating === 'Strong Buy' ? '#4CAF50' : d.rating === 'Watch' ? '#C9A84C' : '#888';
-
-    const headerSection = isBranded
-      ? `<div style="background:#13120E;padding:28px 40px;display:flex;align-items:center;justify-content:space-between;">
-           <div style="display:flex;align-items:center;gap:14px;">
-             <div style="width:40px;height:40px;background:#C9A84C;display:flex;align-items:center;justify-content:center;font-family:serif;font-size:15px;font-weight:700;color:#13120E;">TC</div>
-             <div style="color:#fff;font-family:'Arial',sans-serif;">
-               <div style="font-size:13px;font-weight:700;letter-spacing:1px;">THE PROPERTY CLEARING HOUSE</div>
-               <div style="font-size:10px;color:#C9A84C;letter-spacing:2px;text-transform:uppercase;">Vision. Intelligence. Advantage.</div>
-             </div>
-           </div>
-           <div style="text-align:right;color:#888;font-size:11px;font-family:Arial,sans-serif;">
-             <div>Confidential — Channel Partners Only</div>
-             <div style="color:#C9A84C;margin-top:3px;">${reportDate}</div>
-           </div>
-         </div>`
-      : `<div style="background:#13120E;padding:28px 40px;display:flex;align-items:center;justify-content:space-between;">
-           <div style="display:flex;align-items:center;gap:14px;">
-             <div style="width:40px;height:40px;background:#C9A84C;display:flex;align-items:center;justify-content:center;font-family:serif;font-size:15px;font-weight:700;color:#13120E;">${partnerInitials}</div>
-             <div style="color:#fff;font-family:'Arial',sans-serif;">
-               <div style="font-size:13px;font-weight:700;letter-spacing:1px;">${partnerName.toUpperCase()}</div>
-               <div style="font-size:10px;color:#C9A84C;letter-spacing:2px;text-transform:uppercase;">Investment Research Report</div>
-             </div>
-           </div>
-           <div style="text-align:right;color:#888;font-size:11px;font-family:Arial,sans-serif;">
-             <div>Prepared for your clients</div>
-             <div style="color:#C9A84C;margin-top:3px;">${reportDate}</div>
-           </div>
-         </div>`;
-
-    const footerText = isBranded
-      ? 'This report is prepared by The Property Clearing House for channel partner use only and does not constitute financial advice. Data sourced from Urbis, SQM Research, ABS, RBA and Apartment Essentials. © TPCH ' + new Date().getFullYear()
-      : 'This research report has been prepared for informational purposes only and does not constitute financial advice. Always conduct your own due diligence. Powered by The Property Clearing House.';
-
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>${d.suburb} — Investment Research Report</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: Arial, sans-serif; background: #fff; color: #1a1a1a; }
-    .page { max-width: 860px; margin: 0 auto; }
-    h1 { font-family: Georgia, serif; font-size: 28px; font-weight: 600; color: #13120E; margin-bottom: 6px; }
-    h2 { font-family: Georgia, serif; font-size: 16px; font-weight: 600; color: #13120E; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e8e0cc; }
-    p { font-size: 13px; line-height: 1.8; color: #444; margin-bottom: 10px; }
-    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 24px 0; }
-    .metric { background: #f7f4ed; padding: 16px; border-left: 3px solid #C9A84C; }
-    .metric-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 4px; }
-    .metric-value { font-family: Georgia, serif; font-size: 26px; color: #13120E; font-weight: 600; }
-    .metric-sub { font-size: 10px; color: #888; margin-top: 3px; }
-    .section { padding: 20px 40px; border-bottom: 1px solid #f0ebe0; }
-    .tpch-block { background: #faf7f0; border-left: 4px solid #C9A84C; padding: 20px 24px; margin: 16px 0; }
-    .tpch-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #C9A84C; margin-bottom: 8px; }
-    .tpch-headline { font-family: Georgia, serif; font-size: 17px; font-weight: 500; color: #13120E; margin-bottom: 10px; line-height: 1.5; }
-    ul { padding-left: 18px; }
-    ul li { font-size: 13px; line-height: 1.8; color: #444; margin-bottom: 4px; }
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
-    .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0ebe0; font-size: 12px; }
-    .stat-label { color: #888; }
-    .stat-value { font-weight: 600; color: #13120E; }
-    .rating-block { text-align: center; padding: 20px; background: #f7f4ed; }
-    .rating-value { font-family: Georgia, serif; font-size: 32px; font-weight: 600; color: ${col}; }
-    .footer { background: #f7f4ed; padding: 16px 40px; font-size: 10px; color: #888; line-height: 1.6; }
-    .data-tag { display: inline-block; background: #f0ebe0; padding: 2px 8px; font-size: 10px; border-radius: 2px; color: #888; margin-left: 6px; }
-    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
-<body>
-<div class="page">
-  ${headerSection}
-  
-  <div style="padding:28px 40px 10px;">
-    <div style="font-size:11px;color:#C9A84C;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">◈ ${d.state} · Market Research Report</div>
-    <h1>${d.suburb}${d.region ? ' — ' + d.region : ''}</h1>
-    <p style="font-size:13px;color:#888;margin-top:4px;">Investment case for sophisticated investors — ${reportDate}</p>
-  </div>
-
-  <div style="padding:0 40px 20px;">
-    <div class="metrics">
-      <div class="metric">
-        <div class="metric-label">Avg Rental Yield</div>
-        <div class="metric-value">${isMelb ? '5.1%' : (d.avg_yield ? Number(d.avg_yield).toFixed(1)+'%' : '—')}</div>
-        <div class="metric-sub">Gross rental — CBD apartments</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Vacancy Rate</div>
-        <div class="metric-value">${isMelb ? '2.4%' : (d.vacancy_rate ? Number(d.vacancy_rate).toFixed(1)+'%' : '—')}</div>
-        <div class="metric-sub">Below healthy 3% benchmark</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Median Unit Price</div>
-        <div class="metric-value">${isMelb ? '$605k' : (d.median_price ? '$'+Math.round(d.median_price/1000)+'k' : '—')}</div>
-        <div class="metric-sub">Investor grade — CBD / inner</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Weekly Rent</div>
-        <div class="metric-value">${isMelb ? '$575' : (d.weekly_rent ? '$'+d.weekly_rent : '—')}</div>
-        <div class="metric-sub">Median — all unit types</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Supply Shortfall</div>
-        <div class="metric-value" style="color:#c0392b;">${isMelb ? '21,600' : '—'}</div>
-        <div class="metric-sub">Projected dwellings deficit by 2029</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">TPCH Conviction</div>
-        <div class="metric-value" style="color:${col};">${d.rating || 'Pending'}</div>
-        <div class="metric-sub">${d.is_exclusive ? 'TPCH Exclusive' : 'Active research'}</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="tpch-block">
-      <div class="tpch-label">${isBranded ? 'TPCH Perspective' : 'Research Perspective'}</div>
-      <div class="tpch-headline">${isMelb ? 'Melbourne is the standout contrarian opportunity in Australia right now.' : d.suburb + ' — key market insights for investor clients.'}</div>
-      <p>${isMelb ? 'While Sydney commands headlines, Melbourne has quietly been building the conditions for a significant re-rating. The pandemic hangover suppressed prices artificially — extended lockdowns and investor exodus created a buying window that is now closing. With net overseas migration at decade highs, a 60% pipeline shortfall confirmed by Urbis, and Melbourne priced 41% below Sydney at a 20-year discount, the fundamentals are as compelling as we\'ve seen in any market.' : (d.tpch_view || d.thesis_main || '')}</p>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>Investment Thesis</h2>
-    <p>${isMelb ? "Melbourne's CBD and inner suburbs represent one of the most compelling yield and growth opportunities in Australia. Record low vacancy rates driven by the return of international students, a decade-high migration wave, and severely constrained new supply are converging to create exceptional rental demand pressure." : (d.thesis_main || '')}</p>
-    <p>${isMelb ? "Construction completions in FY2025 will be the lowest on record — just 3,070 build-to-sell apartments, a 50% drop from FY2024. Against annual demand of 15,000+ dwellings, the gap is structural. Buyers entering today are purchasing below replacement cost." : (d.thesis_detail || '')}</p>
-  </div>
-
-  <div class="section">
-    <h2>Key Demand Drivers <span class="data-tag">Source: ABS · Urbis · SQM Research</span></h2>
-    <ul>
-      ${isMelb ? `
-      <li>Net overseas migration into Victoria at decade highs — 140,000+ per annum. Melbourne on track to surpass Sydney as Australia's largest city by 2032. <em style="color:#aaa;font-size:11px;">Source: ABS, VIF23</em></li>
-      <li>FY2025 apartment completions the lowest on record — just 3,070 BTS apartments, a 50% drop from prior year. <em style="color:#aaa;font-size:11px;">Source: Urbis</em></li>
-      <li>Melbourne median house prices currently 41% cheaper than Sydney's — the largest discount in 20 years. <em style="color:#aaa;font-size:11px;">Source: TPCH Research</em></li>
-      <li>$107 billion Victorian Infrastructure Plan confirmed — Suburban Rail Loop, Melbourne Greenline, QVM renewal. <em style="color:#aaa;font-size:11px;">Source: Urbis</em></li>
-      <li>Major banks forecasting RBA cash rate to fall to 3.35–3.85% by Dec 2025, expected to drive price growth. <em style="color:#aaa;font-size:11px;">Source: ANZ, NAB, CBA, Westpac</em></li>
-      ` : (Array.isArray(d.demand_drivers) ? d.demand_drivers.map(dr=>'<li>'+dr+'</li>').join('') : '')}
-    </ul>
-  </div>
-
-  <div class="section">
-    <h2>Key Market Statistics</h2>
-    <div class="stats-grid">
-      <div>
-        <div class="stat-row"><span class="stat-label">State</span><span class="stat-value">${d.state}</span></div>
-        <div class="stat-row"><span class="stat-label">Vacancy Rate</span><span class="stat-value">${isMelb ? '2.4%' : fmt(d.vacancy_rate)}</span></div>
-        <div class="stat-row"><span class="stat-label">Median Unit Price</span><span class="stat-value">${isMelb ? '$605,221' : fmtFull(d.median_price)}</span></div>
-      </div>
-      <div>
-        <div class="stat-row"><span class="stat-label">Rental Yield</span><span class="stat-value">${isMelb?'5.1%':fmt(d.avg_yield)}</span></div>
-        <div class="stat-row"><span class="stat-label">Weekly Rent</span><span class="stat-value">${isMelb?'$575':(d.weekly_rent?'$'+d.weekly_rent:'—')}</span></div>
-        <div class="stat-row"><span class="stat-label">Annual Demand</span><span class="stat-value">${isMelb?'15,000+ pa':'—'}</span></div>
-        <div class="stat-row"><span class="stat-label">TPCH Rating</span><span class="stat-value" style="color:${col};">${d.rating||'Pending'}</span></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="rating-block">
-      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#888;margin-bottom:8px;">${isBranded ? 'TPCH RECOMMENDATION' : 'RESEARCH RECOMMENDATION'}</div>
-      <div class="rating-value">${d.rating || 'Pending'}</div>
-      <div style="font-size:12px;color:#888;margin-top:8px;max-width:500px;margin-left:auto;margin-right:auto;">${d.thesis_short || 'Review full research and confirm client suitability before presentation.'}</div>
-    </div>
-  </div>
-
-  <div class="footer">
-    <strong>Disclaimer:</strong> ${footerText}
-    ${!isBranded ? '<br><br><em>Research data sourced and compiled by The Property Clearing House. For channel partner use only.</em>' : ''}
-  </div>
-</div>
-</body>
-</html>`;
-
-    // Open in new tab for print/save as PDF
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(html);
-      win.document.close();
-      setTimeout(() => win.print(), 800);
-    } else {
-      // Fallback: download as HTML file
-      const blob = new Blob([html], { type: 'text/html' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `${d.suburb.replace(/\s+/g,'-')}-Research-Report.html`;
-      a.click();
-    }
+  // Institutional-layout viewer is the only research surface now.
+  // showResearch is a thin wrapper so map pins, region panel and card
+  // onclicks keep working with the new slug-based keys.
+  function showResearch(slug) {
+    if (!slug) return;
+    return showResearchV2(slug);
   }
 
   // ─── PILLS ────────────────────────────────────────────
@@ -9601,17 +8341,58 @@ const AUS_STATES = {
 };
 
 // City research pins
-const RESEARCH_PINS = [
-  { lat:-31.95, lng:115.86, key:'perth',         label:'Perth',         state:'WA' },
-  { lat:-20.32, lng:118.60, key:'port-hedland',    label:'Port Hedland',  state:'WA' },
-  { lat:-27.47, lng:153.02, key:'brisbane',       label:'Brisbane',      state:'QLD' },
-  { lat:-35.31, lng:149.12, key:'canberra',       label:'Canberra',      state:'ACT' },
-  { lat:-37.81, lng:144.96, key:'melbourne-cbd',  label:'Melbourne',     state:'VIC' }
-];
+// Map pins are derived at render time from liveResearch so only published
+// suburb reports surface a clickable pin. initLeafletMap builds this list
+// from map_lat/map_lng on each row.
+let RESEARCH_PINS = [];
+
+// Layer group holding the pulsing research pins. Lets us rebuild them when
+// liveResearch finishes loading without tearing down the whole map.
+let researchPinsLayer = null;
+
+function refreshResearchPins() {
+  if (!leafletMap) return;
+  if (researchPinsLayer) { researchPinsLayer.clearLayers(); }
+  else { researchPinsLayer = L.layerGroup().addTo(leafletMap); }
+
+  RESEARCH_PINS = (typeof liveResearch !== 'undefined' ? liveResearch : [])
+    .filter(r => r && r.map_lat != null && r.map_lng != null)
+    .map(r => ({
+      lat: Number(r.map_lat),
+      lng: Number(r.map_lng),
+      key: r.slug,
+      label: r.suburb,
+      state: r.state_code,
+    }));
+
+  RESEARCH_PINS.forEach(pin => {
+    const icon = L.divIcon({
+      className: '',
+      html: `
+        <div style="position:relative;width:28px;height:28px;cursor:pointer;">
+          <div style="position:absolute;inset:0;border-radius:50%;border:2px solid #C9A84C;opacity:0.8;animation:leafPulse 2s ease-in-out infinite;"></div>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:#C9A84C;box-shadow:0 0 8px rgba(201,168,76,0.8);"></div>
+        </div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+    const marker = L.marker([pin.lat, pin.lng], { icon }).addTo(researchPinsLayer);
+    const labelIcon = L.divIcon({
+      className: '',
+      html: `<div style="font-family:'Outfit',system-ui,sans-serif;font-size:10px;font-weight:600;color:#C9A84C;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.9);padding-left:16px;margin-top:-5px;">${pin.label}</div>`,
+      iconSize: [120, 20],
+      iconAnchor: [0, 10]
+    });
+    L.marker([pin.lat, pin.lng], { icon: labelIcon, interactive: false }).addTo(researchPinsLayer);
+    marker.on('click', () => showResearch(pin.key));
+    marker.on('mouseover', () => { marker._icon.querySelector('div').style.transform = 'scale(1.3)'; });
+    marker.on('mouseout',  () => { marker._icon.querySelector('div').style.transform = 'scale(1)'; });
+  });
+}
 
 function initLeafletMap() {
-  // Don't re-init if already done
-  if (leafletMap) return;
+  // Idempotent: if map already exists just refresh pins from current data.
+  if (leafletMap) { refreshResearchPins(); return; }
 
   leafletMap = L.map('leaflet-map', {
     center: [-27, 134],
@@ -9699,38 +8480,9 @@ function initLeafletMap() {
     }
   }).addTo(leafletMap);
 
-  // Add pulsing research pins
-  RESEARCH_PINS.forEach(pin => {
-    const icon = L.divIcon({
-      className: '',
-      html: `
-        <div style="position:relative;width:28px;height:28px;cursor:pointer;">
-          <div style="position:absolute;inset:0;border-radius:50%;border:2px solid #C9A84C;opacity:0.8;animation:leafPulse 2s ease-in-out infinite;"></div>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:#C9A84C;box-shadow:0 0 8px rgba(201,168,76,0.8);"></div>
-        </div>`,
-      iconSize: [28, 28],
-      iconAnchor: [14, 14]
-    });
-
-    const marker = L.marker([pin.lat, pin.lng], { icon }).addTo(leafletMap);
-
-    // City label
-    const labelIcon = L.divIcon({
-      className: '',
-      html: `<div style="font-family:'Outfit',system-ui,sans-serif;font-size:10px;font-weight:600;color:#C9A84C;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.9);padding-left:16px;margin-top:-5px;">${pin.label}</div>`,
-      iconSize: [120, 20],
-      iconAnchor: [0, 10]
-    });
-    L.marker([pin.lat, pin.lng], { icon: labelIcon, interactive: false }).addTo(leafletMap);
-
-    marker.on('click', () => showResearch(pin.key));
-    marker.on('mouseover', () => {
-      marker._icon.querySelector('div').style.transform = 'scale(1.3)';
-    });
-    marker.on('mouseout', () => {
-      marker._icon.querySelector('div').style.transform = 'scale(1)';
-    });
-  });
+  // Pins render from liveResearch — build once here, and loadSupabaseData will
+  // call refreshResearchPins again when the async fetch completes.
+  refreshResearchPins();
 
   // Small attribution bottom right
   L.control.attribution({ prefix: false, position: 'bottomright' })
@@ -11619,7 +10371,7 @@ async function generateInvestorKit() {
   if (s._suburb && s._state) {
     try {
       const rRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/research_reports?suburb=ilike.${encodeURIComponent(s._suburb)}&state=eq.${s._state}&is_visible=eq.true&limit=1`,
+        `${SUPABASE_URL}/rest/v1/suburb_research?suburb=ilike.${encodeURIComponent(s._suburb)}&state_code=eq.${s._state}&status=eq.published&limit=1`,
         { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) } }
       );
       const rData = await rRes.json();
