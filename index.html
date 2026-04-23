@@ -3078,7 +3078,6 @@
             <div id="rv2-breadcrumb" class="rv2-breadcrumb"></div>
             <div class="rv2-topbar-actions">
               <button id="rv2-share-btn" class="rv2-action-btn" disabled title="Coming Phase 3">Share with client</button>
-              <button id="rv2-pdf-btn" class="rv2-action-btn" disabled title="Coming Phase 2">Download PDF</button>
             </div>
           </div>
         </div>
@@ -3086,6 +3085,11 @@
         <div id="rv2-draft-banner" class="rv2-draft-banner" style="display:none;">
           <span style="color:var(--gold-light);font-weight:600;letter-spacing:0.6px;">DRAFT</span>
           <span style="color:var(--text-muted);">This research is awaiting admin approval. Not visible to channel partners.</span>
+          <div style="flex:1;"></div>
+          <div id="rv2-draft-actions" style="display:none;gap:10px;align-items:center;">
+            <button id="rv2-draft-publish-btn" style="background:var(--green);color:var(--black);border:none;padding:8px 18px;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:0.5px;">Publish to Portal</button>
+            <button id="rv2-draft-reject-btn" style="background:transparent;color:var(--red);border:1px solid rgba(201,76,76,0.3);padding:8px 18px;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;">Reject</button>
+          </div>
         </div>
         <!-- Sticky anchor nav -->
         <nav class="rv2-nav" id="rv2-nav">
@@ -8377,7 +8381,8 @@
           </div>
 
           <!-- Actions -->
-          <div style="padding:18px 24px;display:flex;gap:12px;align-items:center;">
+          <div style="padding:18px 24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <button onclick="showResearchV2('${d.slug}')" style="background:var(--gold);color:var(--black);border:none;padding:12px 26px;border-radius:3px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.5px;">Preview as published</button>
             <button onclick="aiPublishResearch('${d.id}')" style="background:var(--green);color:var(--black);border:none;padding:12px 26px;border-radius:3px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.5px;">Publish to Portal</button>
             <button onclick="aiRejectResearch('${d.id}')" style="background:transparent;color:var(--red);border:1px solid rgba(201,76,76,0.3);padding:12px 26px;border-radius:3px;font-size:13px;font-weight:600;cursor:pointer;">Reject</button>
             <div style="flex:1;"></div>
@@ -9139,8 +9144,24 @@
     document.getElementById('rv2-breadcrumb').innerHTML =
       `<b>${rv2Esc(d.suburb)}</b>${d.region ? ' · ' + rv2Esc(d.region) : ''} · ${rv2Esc(d.state_code)} · Research updated ${rv2Date(d.updated_at)}`;
 
-    // Draft banner
-    document.getElementById('rv2-draft-banner').style.display = (d.status === 'published') ? 'none' : 'flex';
+    // Draft banner (and inline publish/reject for admins)
+    const isDraft = d.status !== 'published';
+    document.getElementById('rv2-draft-banner').style.display = isDraft ? 'flex' : 'none';
+    const draftActions = document.getElementById('rv2-draft-actions');
+    if (isDraft && currentAdminEmail) {
+      draftActions.style.display = 'flex';
+      document.getElementById('rv2-draft-publish-btn').onclick = async () => {
+        await aiPublishResearch(d.id);
+        rv2Back();
+      };
+      document.getElementById('rv2-draft-reject-btn').onclick = async () => {
+        if (!confirm('Reject this research draft? It will be hidden from publish queue.')) return;
+        await aiRejectResearch(d.id);
+        rv2Back();
+      };
+    } else {
+      draftActions.style.display = 'none';
+    }
 
     // Main column
     document.getElementById('rv2-main').innerHTML =
@@ -9423,7 +9444,6 @@
         <div class="rv2-sb-card-head">Distribution</div>
         <div class="rv2-sb-actions">
           <button class="rv2-sb-action-btn primary" disabled title="Coming Phase 3">Share with client</button>
-          <button class="rv2-sb-action-btn" disabled title="Coming Phase 2">Download PDF</button>
           <button class="rv2-sb-action-btn" disabled title="Coming Phase 3">White-label PDF</button>
         </div>
       </div>
