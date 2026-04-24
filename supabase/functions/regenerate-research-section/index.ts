@@ -64,7 +64,7 @@ const SECTION_LABEL: Record<string, string> = {
   counter_view: 'Counter-view response (counter_view.response only; do not change the cited article)',
 }
 for (const k of PILLAR_KEYS) SECTION_LABEL['pillar_' + k] = `Pillar narrative: ${k} (headline + narrative only)`
-for (const k of DIMENSION_KEYS) SECTION_LABEL['dim_' + k] = `Dimension reasoning: ${k} (score_reasoning only; do NOT change the numeric score)`
+for (const k of DIMENSION_KEYS) SECTION_LABEL['dim_' + k] = `Dimension: ${k} (score + score_reasoning; defend or revise against the challenge)`
 
 const TONE_RULES = `TONE & VOICE (TPCH house style, non-negotiable):
 - Australian English throughout. -ise endings, "centre", "metre", "labour", "favour".
@@ -153,7 +153,7 @@ ${notes && notes.trim() ? notes.trim() : '(none)'}
 
 INSTRUCTIONS:
 - Rewrite ONLY the fields shown in the "CURRENT CONTENT" block above. Do not touch any other field on the draft.
-- If the section is a dimension, you MUST keep the numeric score unchanged. You are revising score_reasoning only. Score changes require a full skill re-run.
+- If the section is a DIMENSION: treat the admin comments as a direct challenge to the score. DEFEND OR REVISE. Consider the comments and notes honestly against the evidence across the feeding pillars. If the challenge holds up (new data, corrected interpretation, better reading of the existing evidence), MOVE the score (up or down) to reflect the stronger or weaker case, and explain the move in score_reasoning. If the challenge does not hold up against the data, KEEP the score where it is and use score_reasoning to explain why the existing number still stands. Never move the score purely because the admin asked for a higher number; only move it when the evidence warrants. The score must be an integer between 0 and 20 inclusive.
 - If the section is counter_view, change only the "response" field. The cited article (source, headline, date, url, excerpt) is fixed.
 - If the section is a pillar, you may revise headline and narrative only. Do not touch status, stats, or citation_tags.
 - Preserve inline "(Source: Publisher, Date)" citations. If you reference new data, cite a source in the same inline format. Do NOT introduce new URLs that are not already in the draft's sources list unless the admin notes supply one.
@@ -261,12 +261,32 @@ function applyPatch(row: any, section_key: string, patched: any): { patch: Recor
     const dims = { ...(row.dimensions || {}) }
     const cur = { ...(dims[k] || {}) }
     if (typeof patched.score_reasoning === 'string') cur.score_reasoning = patched.score_reasoning
-    // Discipline rule: score is not regeneratable. Ignore any score the model returned.
+    // Defend-or-revise: accept a new score if it is a valid integer 0-20.
+    // The model is instructed to move it only when the evidence warrants.
+    const proposedScore = patched.score
+    if (typeof proposedScore === 'number' && Number.isInteger(proposedScore) && proposedScore >= 0 && proposedScore <= 20) {
+      cur.score = proposedScore
+    }
     dims[k] = cur
     patch.dimensions = dims
+
+    // Recompute conviction_score from the 5 dimensions and rebucket rating.
+    const totals = DIMENSION_KEYS.map(dk => {
+      const s = dims[dk]?.score
+      return typeof s === 'number' ? s : 0
+    })
+    const sum = totals.reduce((a, b) => a + b, 0)
+    patch.conviction_score = sum
+    patch.rating = sum >= 80 ? 'Strong Buy'
+                 : sum >= 60 ? 'Good Buy'
+                 : sum >= 40 ? 'Watch'
+                 : 'Caution'
+
     newContent.dimension_key = k
     newContent.score = cur.score ?? null
     newContent.score_reasoning = cur.score_reasoning ?? null
+    newContent.conviction_score = patch.conviction_score
+    newContent.rating = patch.rating
     return { patch, newContent }
   }
   return { patch, newContent }
