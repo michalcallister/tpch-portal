@@ -153,7 +153,13 @@ ${notes && notes.trim() ? notes.trim() : '(none)'}
 
 INSTRUCTIONS:
 - Rewrite ONLY the fields shown in the "CURRENT CONTENT" block above. Do not touch any other field on the draft.
-- If the section is a DIMENSION: treat the admin comments as a direct challenge to the score. DEFEND OR REVISE. Consider the comments and notes honestly against the evidence across the feeding pillars. If the challenge holds up (new data, corrected interpretation, better reading of the existing evidence), MOVE the score (up or down) to reflect the stronger or weaker case, and explain the move in score_reasoning. If the challenge does not hold up against the data, KEEP the score where it is and use score_reasoning to explain why the existing number still stands. Never move the score purely because the admin asked for a higher number; only move it when the evidence warrants. The score must be an integer between 0 and 20 inclusive.
+- If the section is a DIMENSION: treat the admin comments as a direct challenge to the score. DEFEND OR REVISE. Consider the comments and notes honestly against the evidence across the feeding pillars. If the challenge holds up (new data, corrected interpretation, better reading of the existing evidence), revise the score (up or down). If the challenge does not hold up against the data, keep the score where it is. Never move the score because the admin asked for a higher number; only move it when the evidence warrants. The score must be an integer between 0 and 20 inclusive.
+- SCORE_REASONING IS STANDALONE INVESTOR-FACING PROSE. Write it as if the final score was always the number. It is the reader's justification, not a changelog. STRICTLY DO NOT:
+  - reference the admin, the review, the comment, the reviewer, the challenge, or this regen cycle;
+  - narrate the movement ("revising up to", "lifting to", "moving from X to Y", "the case is now stronger", "reflecting the admin's point", "on re-read", "now that");
+  - explain why the score did not move further or what would keep it from moving higher (the "what would change it" clause is optional and belongs only if genuinely useful to the reader; keep to one phrase);
+  - use first-person or second-person ("we", "I", "you").
+  Target 2 to 3 sentences. State the case for the current score in the third person as an analyst would publish it.
 - If the section is counter_view, change only the "response" field. The cited article (source, headline, date, url, excerpt) is fixed.
 - If the section is a pillar, you may revise headline and narrative only. Do not touch status, stats, or citation_tags.
 - Preserve inline "(Source: Publisher, Date)" citations. If you reference new data, cite a source in the same inline format. Do NOT introduce new URLs that are not already in the draft's sources list unless the admin notes supply one.
@@ -209,8 +215,12 @@ function scanProse(obj: any): string | null {
   if (flat.includes('—')) return 'Contains em dash (—). Hard brand rule: never.'
   if (/<cite[\s>]/i.test(flat)) return 'Contains XML citation tag.'
   const jargonRe = /\b(institutional-?grade|institutional-?quality|blue-?chip|world-?class|once-in-a-generation|unmissable)\b/i
-  const m = flat.match(jargonRe)
-  if (m) return `Contains banned jargon: "${m[0]}"`
+  const jm = flat.match(jargonRe)
+  if (jm) return `Contains banned jargon: "${jm[0]}"`
+  // Meta-narration guard: score_reasoning must not reference the review process.
+  const metaRe = /\b(revising up|revising down|revising the score|lifting to|lifted to|moving from \w+ to|the admin|admin flagged|admin'?s (point|comment|challenge)|on re-read|now that the|reflecting the (admin|review|comment|challenge)|the honest cap|we (have |now |)(revise|lift|move|cap|hold))/i
+  const mm = flat.match(metaRe)
+  if (mm) return `Score reasoning contains review-process meta-narration: "${mm[0]}". Reasoning must read as standalone investor-facing prose.`
   return null
 }
 
