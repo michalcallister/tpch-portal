@@ -7343,16 +7343,17 @@
       return;
     }
     try {
-      // Capture the current suburb_research.updated_at as a weak "version stamp"
-      // so we can see later which draft revision the comment applied to.
+      // Capture which draft version this comment was filed against,
+      // so the reviewer can tell later whether a later revert / reupload
+      // has invalidated the feedback.
       let versionStamp = null;
       try {
-        const vRes = await fetch(SUPABASE_URL + '/rest/v1/research_versions?research_id=eq.' + researchId + '&order=version_number.desc&limit=1&select=id', {
+        const vRes = await fetch(SUPABASE_URL + '/rest/v1/research_versions?research_id=eq.' + researchId + '&order=version_number.desc&limit=1&select=version_number', {
           headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
         });
         if (vRes.ok) {
           const vs = await vRes.json();
-          versionStamp = vs[0]?.id || null;
+          versionStamp = Number.isInteger(vs[0]?.version_number) ? vs[0].version_number : null;
         }
       } catch (_) {}
 
