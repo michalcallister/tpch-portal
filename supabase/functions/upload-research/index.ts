@@ -27,7 +27,10 @@
 // ============================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { SCHEMA_VERSION } from './prompt.ts'
+
+// Mirror of SCHEMA_VERSION in ./prompt.ts. Kept inline so this function
+// can deploy as a single file; keep in sync with prompt.ts on any bump.
+const SCHEMA_VERSION = '2.2.0'
 
 const UPLOAD_SECRET = Deno.env.get('UPLOAD_SECRET') || ''
 const sb = createClient(
@@ -411,7 +414,7 @@ Deno.serve(async (req) => {
     const { data: inserted, error: insertErr } = await sb
       .from('suburb_research')
       .upsert(insertPayload, { onConflict: 'slug' })
-      .select('id, slug')
+      .select('*')
       .single()
 
     if (insertErr || !inserted) {
@@ -423,10 +426,36 @@ Deno.serve(async (req) => {
       })
     }
 
+    // 10) Append to research_versions so the admin can diff/revert.
+    //     Uses max(version_number)+1 for this research_id to avoid race-worry.
+    const { data: lastVersion } = await sb
+      .from('research_versions')
+      .select('id, version_number')
+      .eq('research_id', inserted.id)
+      .order('version_number', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const nextVersionNumber = (lastVersion?.version_number ?? 0) + 1
+    const changeSummary = lastVersion
+      ? `upload-research upsert (v${nextVersionNumber}) · ${triggered_by || 'mick@local-skill'}`
+      : `upload-research initial draft (v1) · ${triggered_by || 'mick@local-skill'}`
+
+    await sb.from('research_versions').insert({
+      research_id: inserted.id,
+      version_number: nextVersionNumber,
+      snapshot: inserted,
+      section_key: null,
+      parent_version_id: lastVersion?.id ?? null,
+      change_summary: changeSummary,
+      created_by: triggered_by || 'upload-research',
+    })
+
     return new Response(JSON.stringify({
       success: true,
       run_id: run.id,
       research_id: inserted.id,
+      version_number: nextVersionNumber,
       slug: inserted.slug,
       suburb: research.suburb,
       state_code: research.state_code,

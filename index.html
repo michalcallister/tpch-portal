@@ -6933,6 +6933,50 @@
   }
 
   // ── Suburb research drafts ─────────────────────────────
+  // Section keys the comment rail offers. Free-form strings are allowed
+  // at the database level; this is just the curated dropdown.
+  const RESEARCH_SECTION_KEYS = [
+    ['overall', 'Overall / general'],
+    ['exec_summary', 'Executive summary'],
+    ['narrative_thesis', 'Long-form thesis'],
+    ['hero_metrics', 'Hero metrics'],
+    ['dim_demographic_tailwind', 'Score · Demographic Tailwind'],
+    ['dim_supply_pressure', 'Score · Supply Tightness'],
+    ['dim_capital_growth_outlook', 'Score · Capital Growth'],
+    ['dim_income_yield_quality', 'Score · Income & Yield'],
+    ['dim_infra_liveability', 'Score · Infra & Liveability'],
+    ['pillar_demographics', 'Pillar · Demographics'],
+    ['pillar_migration', 'Pillar · Migration'],
+    ['pillar_employment', 'Pillar · Employment'],
+    ['pillar_supply_pipeline', 'Pillar · Supply pipeline'],
+    ['pillar_vacancy_trend', 'Pillar · Vacancy trend'],
+    ['pillar_price_growth', 'Pillar · Price growth'],
+    ['pillar_rent_trend', 'Pillar · Rent trend'],
+    ['pillar_affordability', 'Pillar · Affordability'],
+    ['pillar_infrastructure', 'Pillar · Infrastructure'],
+    ['pillar_risk_register', 'Pillar · Risk register'],
+    ['pillar_endorsements', 'Pillar · Endorsements'],
+    ['pillar_counter_view', 'Pillar · Counter-view'],
+    ['endorsements', 'In the press'],
+    ['counter_view', 'Counter-view considered'],
+    ['comparable_sales', 'Comparable sales'],
+    ['sources', 'Sources list'],
+  ];
+  const RESEARCH_COMMENT_KINDS = [
+    ['fact_check', 'Fact check'],
+    ['score_disagree', 'Score disagreement'],
+    ['tone', 'Tone / voice'],
+    ['house_view', 'House view / bias'],
+    ['other', 'Other'],
+  ];
+  function sectionLabel(key) {
+    const match = RESEARCH_SECTION_KEYS.find(([k]) => k === key);
+    return match ? match[1] : key;
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
   async function aiLoadSuburbResearchDrafts() {
     const el = document.getElementById('aad-results-list');
     try {
@@ -6944,6 +6988,36 @@
         el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:14px;">No suburb research drafts. Generate one via the local <span style="font-family:\'DM Mono\',monospace;color:var(--gold-light);">suburb-research</span> skill in Claude Code.</div>';
         return;
       }
+
+      // Fetch all review comments and version history for the visible drafts.
+      const draftIds = drafts.map(d => d.id);
+      const idFilter = 'in.(' + draftIds.join(',') + ')';
+      let commentsByResearch = {};
+      let versionsByResearch = {};
+      try {
+        const [cRes, vRes] = await Promise.all([
+          fetch(SUPABASE_URL + '/rest/v1/research_section_comments?research_id=' + encodeURIComponent(idFilter) + '&order=created_at.desc', {
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+          }),
+          fetch(SUPABASE_URL + '/rest/v1/research_versions?research_id=' + encodeURIComponent(idFilter) + '&order=version_number.desc&select=id,research_id,version_number,change_summary,created_by,created_at', {
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+          }),
+        ]);
+        if (cRes.ok) {
+          const allComments = await cRes.json();
+          commentsByResearch = allComments.reduce((acc, c) => {
+            (acc[c.research_id] = acc[c.research_id] || []).push(c);
+            return acc;
+          }, {});
+        }
+        if (vRes.ok) {
+          const allVersions = await vRes.json();
+          versionsByResearch = allVersions.reduce((acc, v) => {
+            (acc[v.research_id] = acc[v.research_id] || []).push(v);
+            return acc;
+          }, {});
+        }
+      } catch (ce) { console.warn('Rail preload failed', ce); }
       const ratingClass = (r) => r === 'Strong Buy' ? 'strong' : r === 'Good Buy' ? 'good' : r === 'Watch' ? 'moderate' : 'caution';
       const dimLabel = { demographic_tailwind:'Demographic', supply_pressure:'Supply', capital_growth_outlook:'Capital Growth', income_yield_quality:'Yield', infra_liveability:'Infra & Liveability' };
       const dimLabels = {
@@ -6967,6 +7041,10 @@
         const endorseCount = Array.isArray(d.endorsements) ? d.endorsements.length : 0;
         const sourceCount = Array.isArray(d.sources) ? d.sources.length : 0;
         const pillarKeys = d.pillars ? Object.keys(d.pillars) : [];
+        const comments = commentsByResearch[d.id] || [];
+        const openComments = comments.filter(c => c.status === 'open');
+        const openCount = openComments.length;
+        const versions = versionsByResearch[d.id] || [];
         return `
         <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
           <!-- Header -->
@@ -7114,16 +7192,93 @@
           </div>` : ''}
 
           <!-- Quick stats strip (sources count) -->
-          <div style="padding:14px 24px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;gap:24px;font-size:12px;color:var(--text-muted);">
+          <div style="padding:14px 24px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;gap:24px;font-size:12px;color:var(--text-muted);flex-wrap:wrap;">
             <span><span style="color:var(--white);font-weight:600;">${endorseCount}</span> endorsements</span>
             <span><span style="color:var(--white);font-weight:600;">${sourceCount}</span> sources cited</span>
             <span><span style="color:var(--white);font-weight:600;">${pillarKeys.length}</span> pillars populated</span>
+            <span><span style="color:${openCount>0?'var(--red)':'var(--white)'};font-weight:600;">${openCount}</span> open comment${openCount===1?'':'s'} · ${comments.length} total</span>
+          </div>
+
+          <!-- Review comments rail -->
+          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <span style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);">Review Comments</span>
+              <span style="font-size:12px;color:var(--text-muted);">${comments.length} thread${comments.length===1?'':'s'}${openCount>0?' · <span style=\"color:var(--red);font-weight:600;\">'+openCount+' open</span>':''} · click to expand</span>
+            </div>
+            <div style="display:${openCount>0?'block':'none'};margin-top:14px;">
+              <!-- New comment form -->
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:3px;padding:14px 16px;margin-bottom:16px;">
+                <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold-light);margin-bottom:10px;">Add comment</div>
+                <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+                  <select id="sc-section-${d.id}" style="flex:1;min-width:200px;background:var(--black-soft);color:var(--white);border:1px solid rgba(255,255,255,0.1);padding:8px 10px;border-radius:3px;font-size:12px;">
+                    ${RESEARCH_SECTION_KEYS.map(([k,label]) => `<option value="${k}">${escapeHtml(label)}</option>`).join('')}
+                  </select>
+                  <select id="sc-kind-${d.id}" style="min-width:160px;background:var(--black-soft);color:var(--white);border:1px solid rgba(255,255,255,0.1);padding:8px 10px;border-radius:3px;font-size:12px;">
+                    ${RESEARCH_COMMENT_KINDS.map(([k,label]) => `<option value="${k}">${escapeHtml(label)}</option>`).join('')}
+                  </select>
+                </div>
+                <textarea id="sc-body-${d.id}" placeholder="What needs attention in this section? Be specific (e.g. 'Cite ABS cat. 3218.0 ERP vintage' or 'Score feels high: no density uplift on the LGA planning scheme')." style="width:100%;min-height:70px;background:var(--black-soft);color:var(--white);border:1px solid rgba(255,255,255,0.1);padding:10px 12px;border-radius:3px;font-size:13px;line-height:1.5;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+                <div style="display:flex;gap:10px;align-items:center;margin-top:10px;">
+                  <button onclick="aiSubmitSectionComment('${d.id}')" style="background:var(--gold);color:var(--black);border:none;padding:8px 18px;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:0.5px;">Post comment</button>
+                  <span style="font-size:11px;color:var(--text-muted);">as ${escapeHtml(currentAdminEmail || 'admin')}</span>
+                </div>
+              </div>
+              <!-- Existing comments -->
+              ${comments.length === 0 ? `
+                <div style="font-size:13px;color:var(--text-muted);padding:10px 2px;">No comments on this draft yet.</div>
+              ` : comments.map(c => {
+                const statusColour = { open:'var(--red)', addressed:'var(--gold)', resolved:'var(--green)', wontfix:'var(--text-muted)' }[c.status] || 'var(--text-muted)';
+                return `
+                <div style="background:rgba(255,255,255,0.02);border-left:2px solid ${statusColour};padding:12px 14px;margin-bottom:10px;border-radius:0 3px 3px 0;">
+                  <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+                    <span style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold-light);">${escapeHtml(sectionLabel(c.section_key))}</span>
+                    <span style="font-size:11px;color:var(--text-muted);">${escapeHtml(c.kind)}</span>
+                    <span style="font-size:11px;color:${statusColour};font-weight:600;letter-spacing:0.5px;text-transform:uppercase;">${escapeHtml(c.status)}</span>
+                    <span style="flex:1;"></span>
+                    <span style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">${escapeHtml(c.author_email || '')}</span>
+                    <span style="font-size:11px;color:var(--text-muted);">${new Date(c.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+                  </div>
+                  <div style="font-size:13px;color:var(--grey-pale);line-height:1.6;white-space:pre-wrap;margin-bottom:8px;">${escapeHtml(c.body)}</div>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <select onchange="aiChangeCommentStatus('${c.id}', this.value)" style="background:var(--black-soft);color:var(--white);border:1px solid rgba(255,255,255,0.1);padding:4px 8px;border-radius:3px;font-size:11px;">
+                      ${['open','addressed','resolved','wontfix'].map(s => `<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
+                    </select>
+                    <button onclick="aiDeleteSectionComment('${c.id}')" style="background:transparent;color:var(--text-muted);border:1px solid rgba(255,255,255,0.1);padding:4px 10px;border-radius:3px;font-size:11px;cursor:pointer;">Delete</button>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Version history -->
+          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <span style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);">Version History</span>
+              <span style="font-size:12px;color:var(--text-muted);">${versions.length} snapshot${versions.length===1?'':'s'} · click to expand</span>
+            </div>
+            <div style="display:none;margin-top:14px;">
+              ${versions.length === 0 ? `
+                <div style="font-size:13px;color:var(--text-muted);padding:10px 2px;">No version history recorded for this draft.</div>
+              ` : versions.map((v, idx) => {
+                const isLatest = idx === 0;
+                return `
+                <div style="display:flex;align-items:baseline;gap:12px;padding:10px 12px;background:rgba(255,255,255,0.02);border-left:2px solid ${isLatest?'var(--gold)':'rgba(255,255,255,0.1)'};margin-bottom:6px;border-radius:0 3px 3px 0;flex-wrap:wrap;">
+                  <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--gold-light);font-weight:600;min-width:40px;">v${v.version_number}</span>
+                  <span style="flex:1;min-width:200px;font-size:13px;color:var(--grey-pale);">${escapeHtml(v.change_summary || '(no summary)')}</span>
+                  <span style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">${escapeHtml(v.created_by || '')}</span>
+                  <span style="font-size:11px;color:var(--text-muted);">${new Date(v.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+                  ${isLatest
+                    ? '<span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold);">Current</span>'
+                    : `<button onclick="aiRevertResearchVersion('${d.id}', '${v.id}', ${v.version_number})" style="background:transparent;color:var(--gold);border:1px solid rgba(200,169,81,0.3);padding:4px 10px;border-radius:3px;font-size:11px;cursor:pointer;">Revert to v${v.version_number}</button>`}
+                </div>`;
+              }).join('')}
+            </div>
           </div>
 
           <!-- Actions -->
           <div style="padding:18px 24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
             <button onclick="showResearchV2('${d.slug}')" style="background:var(--gold);color:var(--black);border:none;padding:12px 26px;border-radius:3px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.5px;">Preview as published</button>
-            <button onclick="aiPublishResearch('${d.id}')" style="background:var(--green);color:var(--black);border:none;padding:12px 26px;border-radius:3px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.5px;">Publish to Portal</button>
+            <button onclick="aiPublishResearch('${d.id}', ${openCount})" style="background:${openCount>0?'rgba(120,120,120,0.2)':'var(--green)'};color:${openCount>0?'var(--text-muted)':'var(--black)'};border:none;padding:12px 26px;border-radius:3px;font-size:13px;font-weight:600;cursor:${openCount>0?'not-allowed':'pointer'};letter-spacing:0.5px;" ${openCount>0?'title="Resolve or dismiss all open comments before publishing."':''}>Publish to Portal${openCount>0?' · blocked':''}</button>
             <button onclick="aiRejectResearch('${d.id}')" style="background:transparent;color:var(--red);border:1px solid rgba(201,76,76,0.3);padding:12px 26px;border-radius:3px;font-size:13px;font-weight:600;cursor:pointer;">Reject</button>
             <div style="flex:1;"></div>
             <div style="font-size:12px;color:var(--text-muted);">Generated ${new Date(d.created_at).toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})} · ${d.model_used || 'claude-opus-4-7'}</div>
@@ -7136,12 +7291,22 @@
     }
   }
 
-  async function aiPublishResearch(researchId) {
+  async function aiPublishResearch(researchId, knownOpenCount) {
     try {
+      // Strict gate: block publish while any comment is still status='open'.
+      // Re-check server-side in case the admin's cached view is stale.
+      const gateRes = await fetch(SUPABASE_URL + '/rest/v1/research_section_comments?research_id=eq.' + researchId + '&status=eq.open&select=id', {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+      });
+      const openRows = gateRes.ok ? await gateRes.json() : [];
+      if (openRows.length > 0) {
+        showToast(`Publish blocked: ${openRows.length} open comment${openRows.length===1?'':'s'}. Resolve or mark wontfix first.`);
+        return;
+      }
       const r = await fetch(SUPABASE_URL + '/rest/v1/suburb_research?id=eq.' + researchId, {
         method: 'PATCH',
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ status: 'published', reviewed_by: currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString(), published_at: new Date().toISOString() })
+        body: JSON.stringify({ status: 'published', reviewed_by: currentAdminEmail || currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString(), published_at: new Date().toISOString() })
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       showToast('Suburb research published.');
@@ -7154,12 +7319,163 @@
       const r = await fetch(SUPABASE_URL + '/rest/v1/suburb_research?id=eq.' + researchId, {
         method: 'PATCH',
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ status: 'rejected', reviewed_by: currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString() })
+        body: JSON.stringify({ status: 'rejected', reviewed_by: currentAdminEmail || currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString() })
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       showToast('Suburb research rejected.');
       if (aiCurrentAgent) await aiLoadDraftResults(aiCurrentAgent.id);
     } catch(e) { showToast('Reject failed: ' + e.message); }
+  }
+
+  // ── Section comments (admin review rail) ───────────────
+  async function aiSubmitSectionComment(researchId) {
+    const sectionEl = document.getElementById('sc-section-' + researchId);
+    const kindEl = document.getElementById('sc-kind-' + researchId);
+    const bodyEl = document.getElementById('sc-body-' + researchId);
+    if (!sectionEl || !kindEl || !bodyEl) return;
+    const body = (bodyEl.value || '').trim();
+    if (body.length < 4) {
+      showToast('Comment is too short.');
+      return;
+    }
+    if (!currentAdminEmail) {
+      showToast('Sign in as an admin to comment.');
+      return;
+    }
+    try {
+      // Capture the current suburb_research.updated_at as a weak "version stamp"
+      // so we can see later which draft revision the comment applied to.
+      let versionStamp = null;
+      try {
+        const vRes = await fetch(SUPABASE_URL + '/rest/v1/research_versions?research_id=eq.' + researchId + '&order=version_number.desc&limit=1&select=id', {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        });
+        if (vRes.ok) {
+          const vs = await vRes.json();
+          versionStamp = vs[0]?.id || null;
+        }
+      } catch (_) {}
+
+      const r = await fetch(SUPABASE_URL + '/rest/v1/research_section_comments', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          research_id: researchId,
+          section_key: sectionEl.value,
+          kind: kindEl.value,
+          body: body,
+          author_email: currentAdminEmail,
+          status: 'open',
+          version_created_against: versionStamp,
+        }),
+      });
+      if (!r.ok) {
+        const txt = await r.text();
+        throw new Error('HTTP ' + r.status + ': ' + txt);
+      }
+      showToast('Comment posted.');
+      await aiLoadSuburbResearchDrafts();
+    } catch (e) {
+      showToast('Comment failed: ' + e.message);
+    }
+  }
+
+  async function aiChangeCommentStatus(commentId, newStatus) {
+    try {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/research_section_comments?id=eq.' + commentId, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      showToast('Comment marked ' + newStatus + '.');
+      await aiLoadSuburbResearchDrafts();
+    } catch (e) {
+      showToast('Status change failed: ' + e.message);
+    }
+  }
+
+  // Fields a revert restores on the suburb_research row. Deliberately
+  // excludes id, slug, created_at, updated_at, status, reviewed_by,
+  // reviewed_at, published_at, ai_generated — a revert changes content,
+  // not the review workflow or identity.
+  const RESEARCH_REVERT_FIELDS = [
+    'suburb','region','state_code','lga','postcode','map_lat','map_lng',
+    'rating','conviction_score','median_price','avg_yield','vacancy_rate',
+    'capital_growth_10yr','weekly_rent','population','pop_growth_pct',
+    'thesis_short','thesis_main','narrative_thesis',
+    'pillars','dimensions','endorsements','counter_view','comparable_sales','sources',
+    'model_used','triggered_by',
+  ];
+
+  async function aiRevertResearchVersion(researchId, versionId, versionNumber) {
+    if (!confirm(`Revert this draft to v${versionNumber}? The current content will be saved as a new version before being replaced.`)) return;
+    if (!currentAdminEmail) { showToast('Sign in as an admin to revert.'); return; }
+    try {
+      // 1) Fetch the target version's full snapshot.
+      const vRes = await fetch(SUPABASE_URL + '/rest/v1/research_versions?id=eq.' + versionId + '&select=snapshot,version_number', {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+      });
+      if (!vRes.ok) throw new Error('Fetch version failed: HTTP ' + vRes.status);
+      const [versionRow] = await vRes.json();
+      if (!versionRow?.snapshot) throw new Error('Target version has no snapshot to restore.');
+      const snap = versionRow.snapshot;
+
+      // 2) Find the current latest version for parent_version_id + next number.
+      const latestRes = await fetch(SUPABASE_URL + '/rest/v1/research_versions?research_id=eq.' + researchId + '&order=version_number.desc&limit=1&select=id,version_number', {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+      });
+      const latest = latestRes.ok ? (await latestRes.json())[0] : null;
+      const nextVersionNumber = (latest?.version_number ?? 0) + 1;
+
+      // 3) PATCH the suburb_research row with the restored fields.
+      const patch = {};
+      RESEARCH_REVERT_FIELDS.forEach(k => {
+        if (k in snap) patch[k] = snap[k];
+      });
+      const pRes = await fetch(SUPABASE_URL + '/rest/v1/suburb_research?id=eq.' + researchId, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify(patch),
+      });
+      if (!pRes.ok) throw new Error('Revert PATCH failed: HTTP ' + pRes.status);
+      const [restored] = await pRes.json();
+
+      // 4) Append a new version snapshot recording the revert.
+      await fetch(SUPABASE_URL + '/rest/v1/research_versions', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          research_id: researchId,
+          version_number: nextVersionNumber,
+          snapshot: restored,
+          section_key: null,
+          parent_version_id: latest?.id ?? null,
+          change_summary: `Reverted to v${versionNumber} by ${currentAdminEmail}`,
+          created_by: currentAdminEmail,
+        }),
+      });
+
+      showToast(`Reverted to v${versionNumber}. New snapshot saved as v${nextVersionNumber}.`);
+      await aiLoadSuburbResearchDrafts();
+    } catch (e) {
+      showToast('Revert failed: ' + e.message);
+    }
+  }
+
+  async function aiDeleteSectionComment(commentId) {
+    if (!confirm('Delete this comment? This cannot be undone.')) return;
+    try {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/research_section_comments?id=eq.' + commentId, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Prefer': 'return=minimal' },
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      showToast('Comment deleted.');
+      await aiLoadSuburbResearchDrafts();
+    } catch (e) {
+      showToast('Delete failed: ' + e.message);
+    }
   }
 
   // ─── MY DEALS ────────────────────────────────────────────
