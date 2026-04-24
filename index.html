@@ -6973,6 +6973,19 @@
     const match = RESEARCH_SECTION_KEYS.find(([k]) => k === key);
     return match ? match[1] : key;
   }
+  // Narrative sections the regenerate-research-section edge function accepts.
+  // Data-driven sections (endorsements, comparable_sales, sources, hero_metrics)
+  // need a full skill re-run, not a partial regen.
+  function isRegeneratableSection(key) {
+    if (!key) return false;
+    if (key === 'exec_summary' || key === 'narrative_thesis' || key === 'counter_view') return true;
+    if (key.startsWith('dim_')) return true;
+    if (key.startsWith('pillar_')) {
+      // pillar_endorsements and pillar_counter_view are synthetic labels that don't map to a pillar payload key
+      return key !== 'pillar_endorsements' && key !== 'pillar_counter_view';
+    }
+    return false;
+  }
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
@@ -7228,6 +7241,7 @@
                 <div style="font-size:13px;color:var(--text-muted);padding:10px 2px;">No comments on this draft yet.</div>
               ` : comments.map(c => {
                 const statusColour = { open:'var(--red)', addressed:'var(--gold)', resolved:'var(--green)', wontfix:'var(--text-muted)' }[c.status] || 'var(--text-muted)';
+                const canRegen = isRegeneratableSection(c.section_key) && c.status === 'open';
                 return `
                 <div style="background:rgba(255,255,255,0.02);border-left:2px solid ${statusColour};padding:12px 14px;margin-bottom:10px;border-radius:0 3px 3px 0;">
                   <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
@@ -7244,7 +7258,18 @@
                       ${['open','addressed','resolved','wontfix'].map(s => `<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
                     </select>
                     <button onclick="aiDeleteSectionComment('${c.id}')" style="background:transparent;color:var(--text-muted);border:1px solid rgba(255,255,255,0.1);padding:4px 10px;border-radius:3px;font-size:11px;cursor:pointer;">Delete</button>
+                    ${canRegen ? `<button onclick="aiToggleRegenForm('${c.id}')" style="background:transparent;color:var(--gold);border:1px solid rgba(200,169,81,0.3);padding:4px 10px;border-radius:3px;font-size:11px;cursor:pointer;">Regenerate with notes</button>` : ''}
                   </div>
+                  ${canRegen ? `
+                    <div id="regen-form-${c.id}" style="display:none;margin-top:10px;padding:10px;background:rgba(200,169,81,0.04);border:1px solid rgba(200,169,81,0.15);border-radius:3px;">
+                      <label style="display:block;font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--gold-light);margin-bottom:6px;">Optional extra guidance for Opus 4.7</label>
+                      <textarea id="regen-notes-${c.id}" rows="2" placeholder="e.g. 'Lead with the LGA rezoning approved in Feb 2026.' Leave blank to let the comment speak for itself." style="width:100%;box-sizing:border-box;background:var(--black-soft);color:var(--white);border:1px solid rgba(255,255,255,0.1);padding:8px;border-radius:3px;font-size:12px;font-family:inherit;resize:vertical;"></textarea>
+                      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+                        <button onclick="aiRegenerateSection('${d.id}', '${c.section_key}', '${c.id}')" id="regen-btn-${c.id}" style="background:var(--gold);color:var(--black);border:none;padding:6px 14px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:0.5px;">Regenerate section</button>
+                        <span style="font-size:11px;color:var(--text-muted);">Calls Opus 4.7. ~15 to 30 seconds. Creates a new version; revert if worse.</span>
+                      </div>
+                    </div>
+                  ` : ''}
                 </div>`;
               }).join('')}
             </div>
@@ -7476,6 +7501,43 @@
       await aiLoadSuburbResearchDrafts();
     } catch (e) {
       showToast('Delete failed: ' + e.message);
+    }
+  }
+
+  function aiToggleRegenForm(commentId) {
+    const el = document.getElementById('regen-form-' + commentId);
+    if (!el) return;
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+
+  async function aiRegenerateSection(researchId, sectionKey, commentId) {
+    const notesEl = document.getElementById('regen-notes-' + commentId);
+    const btn = document.getElementById('regen-btn-' + commentId);
+    const notes = notesEl ? notesEl.value.trim() : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Regenerating (Opus 4.7)...'; btn.style.opacity = '0.6'; btn.style.cursor = 'wait'; }
+    try {
+      const res = await fetch(SUPABASE_URL + '/functions/v1/regenerate-research-section', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          research_id: researchId,
+          section_key: sectionKey,
+          notes: notes || null,
+          comment_ids: [commentId],
+          triggered_by: currentAdminEmail || 'admin@portal',
+        }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(out.error || ('HTTP ' + res.status));
+      showToast('Section regenerated. New version v' + out.version_number + ' saved. Comment marked addressed.');
+      await aiLoadSuburbResearchDrafts();
+    } catch (e) {
+      showToast('Regenerate failed: ' + e.message);
+      if (btn) { btn.disabled = false; btn.textContent = 'Regenerate section'; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
     }
   }
 
