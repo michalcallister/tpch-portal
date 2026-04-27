@@ -1,27 +1,47 @@
 // ============================================================
-// TPCH — invite-partner Edge Function
+// TPCH — invite-partner Edge Function (HARDENED)
 // Deploy: supabase functions deploy invite-partner
 //
-// Handles two invite types:
+// SECURITY HARDENING (Apr 2026):
+//   * JWT verification REQUIRED (verify_jwt: true).
+//   * type='partner' and type='resend' require an admin JWT
+//     (caller's auth.uid() must match an active tpch_team row).
+//   * type='staff' requires the caller to either be admin OR own
+//     the supplied partner_id (channel_partners.user_id = caller).
+//   * CORS locked to portal.tpch.com.au + tpch.com.au.
+//
+// Handles three invite types:
 //   type: "partner"  — admin invites a new channel partner directly
 //   type: "staff"    — partner owner invites a staff member
+//   type: "resend"   — admin resends portal access link to existing partner
 //
 // Secrets required (auto-injected):
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 // Optional:
-//   PORTAL_URL  — base URL for the invite redirect (default: https://tpch.com.au)
-//   RESEND_API_KEY — if set, sends a branded invite email instead of Supabase default
+//   PORTAL_URL     — base URL for the invite redirect (default: https://tpch.com.au)
+//   RESEND_API_KEY — if set, sends branded email via Resend instead of Supabase default
 // ============================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = new Set([
+  'https://portal.tpch.com.au',
+  'https://tpch.com.au',
+])
+
+function corsFor(origin: string | null) {
+  const allow = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://portal.tpch.com.au'
+  return {
+    'Access-Control-Allow-Origin':  allow,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin',
+  }
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
+  const cors = corsFor(req.headers.get('origin'))
+  if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -31,9 +51,53 @@ Deno.serve(async (req) => {
   const portalUrl = Deno.env.get('PORTAL_URL') || 'https://tpch.com.au'
   const redirectTo = `${portalUrl}#login`
 
+  function json(body: object, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    })
+  }
+
   try {
+    // ── Auth: derive caller from JWT ─────────────────────────────────────
+    const jwtToken = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
+    if (!jwtToken) return json({ error: 'Sign in required' }, 401)
+
+    const { data: userRes, error: userErr } = await supabase.auth.getUser(jwtToken)
+    if (userErr || !userRes?.user) return json({ error: 'Invalid session' }, 401)
+    const callerUid = userRes.user.id
+
+    // Determine if caller is admin
+    const { data: adminRow } = await supabase
+      .from('tpch_team')
+      .select('id')
+      .eq('user_id', callerUid)
+      .eq('status', 'active')
+      .maybeSingle()
+    const isAdmin = !!adminRow
+
     const body = await req.json()
     const { type } = body
+
+    // ── Type-specific authorisation ──────────────────────────────────────
+    if (type === 'partner' || type === 'resend') {
+      if (!isAdmin) return json({ error: 'Admin only' }, 403)
+    } else if (type === 'staff') {
+      // Caller must be admin OR own the supplied partner_id
+      if (!isAdmin) {
+        if (!body.partner_id) return json({ error: 'partner_id is required' }, 400)
+        const { data: ownerRow } = await supabase
+          .from('channel_partners')
+          .select('id')
+          .eq('user_id', callerUid)
+          .eq('id', body.partner_id)
+          .eq('status', 'active')
+          .maybeSingle()
+        if (!ownerRow) return json({ error: 'Not authorised for this partner firm' }, 403)
+      }
+    } else {
+      return json({ error: 'type must be "partner", "staff", or "resend"' }, 400)
+    }
 
     // ── Partner invite (admin → new channel partner) ──────────────
     if (type === 'partner') {
@@ -43,7 +107,6 @@ Deno.serve(async (req) => {
         return json({ error: 'full_name, email and company_name are required' }, 400)
       }
 
-      // Upsert channel_partners row
       const { data: partner, error: partnerErr } = await supabase
         .from('channel_partners')
         .upsert(
@@ -55,7 +118,6 @@ Deno.serve(async (req) => {
 
       if (partnerErr) return json({ error: partnerErr.message }, 500)
 
-      // Generate invite link (fall back to recovery if already registered)
       const resendKey  = Deno.env.get('RESEND_API_KEY') || ''
       const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@tpch.com.au'
       const firstName  = full_name?.split(' ')[0] || full_name || 'there'
@@ -83,7 +145,6 @@ Deno.serve(async (req) => {
 
       const inviteLink = linkData?.properties?.action_link ?? redirectTo
 
-      // Send branded invite email via Resend
       if (resendKey) {
         const html = `<!DOCTYPE html>
 <html>
@@ -157,7 +218,6 @@ Deno.serve(async (req) => {
         return json({ error: 'full_name, email and partner_id are required' }, 400)
       }
 
-      // Upsert partner_staff row
       const { data: staff, error: staffErr } = await supabase
         .from('partner_staff')
         .upsert(
@@ -177,14 +237,12 @@ Deno.serve(async (req) => {
 
       if (staffErr) return json({ error: staffErr.message }, 500)
 
-      // Get firm name for the invite email context
       const { data: firm } = await supabase
         .from('channel_partners')
         .select('company_name, full_name')
         .eq('id', partner_id)
         .single()
 
-      // Generate invite link (fall back to recovery if already registered)
       const resendKey  = Deno.env.get('RESEND_API_KEY') || ''
       const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@tpch.com.au'
       const firmName   = firm?.company_name || 'TPCH Partner Network'
@@ -213,7 +271,6 @@ Deno.serve(async (req) => {
 
       const inviteLink = linkData?.properties?.action_link ?? portalUrl
 
-      // Send branded email via Resend
       if (resendKey) {
         const html = `<!DOCTYPE html>
 <html>
@@ -272,7 +329,6 @@ Deno.serve(async (req) => {
       const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@tpch.com.au'
       const firstName = full_name?.split(' ')[0] || full_name || 'there'
 
-      // Try invite first; if user already exists fall back to recovery (password reset)
       let linkData: any = null
       let { data: inviteData, error: inviteError } = await supabase.auth.admin.generateLink({
         type: 'invite',
@@ -296,7 +352,6 @@ Deno.serve(async (req) => {
 
       const inviteLink = linkData?.properties?.action_link ?? portalUrl
 
-      // Send branded welcome email via Resend
       const welcomeHtml = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -353,10 +408,3 @@ Deno.serve(async (req) => {
     return json({ error: err.message }, 500)
   }
 })
-
-function json(body: object, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  })
-}
