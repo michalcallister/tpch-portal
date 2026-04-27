@@ -4291,7 +4291,7 @@
     try {
       const headers = {
         'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
         'Content-Type': 'application/json'
       };
 
@@ -4338,7 +4338,7 @@
     try {
       const res = await fetch(
         SUPABASE_URL + '/rest/v1/pending_enquiries?status=eq.pending&select=id',
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) } }
       );
       if (!res.ok) return;
       const data = await res.json();
@@ -4433,7 +4433,7 @@
     try {
       const res = await fetch(
         SUPABASE_URL + '/rest/v1/tpch_team?status=eq.active&select=email',
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) } }
       );
       if (res.ok) {
         const team = await res.json();
@@ -4801,7 +4801,7 @@
     try {
       const res = await fetch(
         SUPABASE_URL + '/rest/v1/pending_enquiries?order=created_at.desc',
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) } }
       );
       if (!res.ok) throw new Error('Failed to load enquiries');
       allEnquiries = await res.json();
@@ -4938,7 +4938,7 @@
     const res = await fetch(SUPABASE_URL + '/rest/v1/pending_enquiries?id=eq.' + id, {
       method: 'PATCH',
       headers: {
-        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
         'Content-Type': 'application/json', 'Prefer': 'return=minimal'
       },
       body: JSON.stringify({
@@ -4962,7 +4962,7 @@
         await fetch(SUPABASE_URL + '/rest/v1/channel_partners?on_conflict=email', {
           method: 'POST',
           headers: {
-            'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
             'Content-Type': 'application/json', 'Prefer': 'resolution=ignore-duplicates'
           },
           body: JSON.stringify({
@@ -5347,7 +5347,7 @@
     const res = await fetch(SUPABASE_URL + '/rest/v1/channel_partners?id=eq.' + id, {
       method: 'PATCH',
       headers: {
-        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
         'Content-Type': 'application/json', 'Prefer': 'return=minimal'
       },
       body: JSON.stringify(updates)
@@ -5364,7 +5364,7 @@
     const res = await fetch(SUPABASE_URL + '/rest/v1/channel_partners?id=eq.' + id, {
       method: 'PATCH',
       headers: {
-        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
         'Content-Type': 'application/json', 'Prefer': 'return=minimal'
       },
       body: JSON.stringify({ status, updated_at: new Date().toISOString() })
@@ -5383,7 +5383,7 @@
     const res = await fetch(SUPABASE_URL + '/rest/v1/channel_partners?id=eq.' + id, {
       method: 'PATCH',
       headers: {
-        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
         'Content-Type': 'application/json', 'Prefer': 'return=minimal'
       },
       body: JSON.stringify({ notes, updated_at: new Date().toISOString() })
@@ -5403,7 +5403,7 @@
     try {
       const res = await fetch(
         SUPABASE_URL + '/rest/v1/tpch_team?order=joined_at.desc',
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) } }
       );
       if (!res.ok) throw new Error('Failed to load team');
       allTeam = await res.json();
@@ -5560,7 +5560,7 @@
     }
     const res = await fetch(SUPABASE_URL + '/rest/v1/tpch_team?id=eq.' + id, {
       method: 'PATCH',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ full_name, email, role, updated_at: new Date().toISOString() })
     });
     if (res.ok) {
@@ -5576,7 +5576,7 @@
   async function setTmStatus(id, status) {
     const res = await fetch(SUPABASE_URL + '/rest/v1/tpch_team?id=eq.' + id, {
       method: 'PATCH',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ status, updated_at: new Date().toISOString() })
     });
     if (res.ok) {
@@ -5646,7 +5646,7 @@
     const res = await fetch(SUPABASE_URL + '/rest/v1/tpch_team', {
       method: 'POST',
       headers: {
-        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
         'Content-Type': 'application/json', 'Prefer': 'return=representation'
       },
       body: JSON.stringify({ full_name, email, password, role, status: 'active' })
@@ -5707,7 +5707,7 @@
     if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
     const res = await fetch(SUPABASE_URL + '/rest/v1/tpch_team?id=eq.' + id, {
       method: 'DELETE',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
     });
     if (res.ok) {
       allTeam = allTeam.filter(x => x.id !== id);
@@ -5728,7 +5728,7 @@
     if (newPw.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
     const res = await fetch(SUPABASE_URL + '/rest/v1/tpch_team?id=eq.' + id, {
       method: 'PATCH',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ password: newPw, updated_at: new Date().toISOString() })
     });
     if (res.ok) {
@@ -5815,7 +5815,7 @@
         method: 'POST',
         headers: {
           'apikey': SUPABASE_ANON_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
@@ -5832,7 +5832,7 @@
         method: 'POST',
         headers: {
           'apikey': SUPABASE_ANON_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -6797,7 +6797,7 @@
       if (!allProjects.length) {
         try {
           const res = await fetch(SUPABASE_URL + '/rest/v1/projects?order=name', {
-            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
           });
           if (res.ok) allProjects = await res.json();
         } catch(e) { console.error('Failed to load projects for agent', e); }
@@ -6861,7 +6861,7 @@
         headers: {
           'Content-Type': 'application/json',
           'apikey': SUPABASE_ANON_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+          'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY)
         },
         body: JSON.stringify({
           agent_slug: agentSlug,
@@ -7013,7 +7013,7 @@
     try {
       await fetch(SUPABASE_URL + '/rest/v1/project_analysis?id=eq.' + analysisId, {
         method: 'PATCH',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({ status: 'published', reviewed_by: currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString(), published_at: new Date().toISOString() })
       });
       showToast('Analysis published.');
@@ -7025,7 +7025,7 @@
     try {
       await fetch(SUPABASE_URL + '/rest/v1/project_analysis?id=eq.' + analysisId, {
         method: 'PATCH',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({ status: 'rejected', reviewed_by: currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString() })
       });
       showToast('Analysis rejected.');
@@ -7095,7 +7095,7 @@
     const el = document.getElementById('aad-results-list');
     try {
       const res = await fetch(SUPABASE_URL + '/rest/v1/suburb_research?status=eq.draft&order=created_at.desc', {
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
       });
       const drafts = res.ok ? await res.json() : [];
       if (!drafts.length) {
@@ -7111,10 +7111,10 @@
       try {
         const [cRes, vRes] = await Promise.all([
           fetch(SUPABASE_URL + '/rest/v1/research_section_comments?research_id=' + encodeURIComponent(idFilter) + '&order=created_at.desc', {
-            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
           }),
           fetch(SUPABASE_URL + '/rest/v1/research_versions?research_id=' + encodeURIComponent(idFilter) + '&order=version_number.desc&select=id,research_id,version_number,change_summary,created_by,created_at', {
-            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
           }),
         ]);
         if (cRes.ok) {
@@ -7422,7 +7422,7 @@
       // Strict gate: block publish while any comment is still status='open'.
       // Re-check server-side in case the admin's cached view is stale.
       const gateRes = await fetch(SUPABASE_URL + '/rest/v1/research_section_comments?research_id=eq.' + researchId + '&status=eq.open&select=id', {
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
       });
       const openRows = gateRes.ok ? await gateRes.json() : [];
       if (openRows.length > 0) {
@@ -7431,7 +7431,7 @@
       }
       const r = await fetch(SUPABASE_URL + '/rest/v1/suburb_research?id=eq.' + researchId, {
         method: 'PATCH',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({ status: 'published', reviewed_by: currentAdminEmail || currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString(), published_at: new Date().toISOString() })
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -7444,7 +7444,7 @@
     try {
       const r = await fetch(SUPABASE_URL + '/rest/v1/suburb_research?id=eq.' + researchId, {
         method: 'PATCH',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({ status: 'rejected', reviewed_by: currentAdminEmail || currentPartnerRecord?.email || 'admin', reviewed_at: new Date().toISOString() })
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -7475,7 +7475,7 @@
       let versionStamp = null;
       try {
         const vRes = await fetch(SUPABASE_URL + '/rest/v1/research_versions?research_id=eq.' + researchId + '&order=version_number.desc&limit=1&select=version_number', {
-          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
         });
         if (vRes.ok) {
           const vs = await vRes.json();
@@ -7485,7 +7485,7 @@
 
       const r = await fetch(SUPABASE_URL + '/rest/v1/research_section_comments', {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({
           research_id: researchId,
           section_key: sectionEl.value,
@@ -7511,7 +7511,7 @@
     try {
       const r = await fetch(SUPABASE_URL + '/rest/v1/research_section_comments?id=eq.' + commentId, {
         method: 'PATCH',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({ status: newStatus }),
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -7541,7 +7541,7 @@
     try {
       // 1) Fetch the target version's full snapshot.
       const vRes = await fetch(SUPABASE_URL + '/rest/v1/research_versions?id=eq.' + versionId + '&select=snapshot,version_number', {
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
       });
       if (!vRes.ok) throw new Error('Fetch version failed: HTTP ' + vRes.status);
       const [versionRow] = await vRes.json();
@@ -7550,7 +7550,7 @@
 
       // 2) Find the current latest version for parent_version_id + next number.
       const latestRes = await fetch(SUPABASE_URL + '/rest/v1/research_versions?research_id=eq.' + researchId + '&order=version_number.desc&limit=1&select=id,version_number', {
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
       });
       const latest = latestRes.ok ? (await latestRes.json())[0] : null;
       const nextVersionNumber = (latest?.version_number ?? 0) + 1;
@@ -7562,7 +7562,7 @@
       });
       const pRes = await fetch(SUPABASE_URL + '/rest/v1/suburb_research?id=eq.' + researchId, {
         method: 'PATCH',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
         body: JSON.stringify(patch),
       });
       if (!pRes.ok) throw new Error('Revert PATCH failed: HTTP ' + pRes.status);
@@ -7571,7 +7571,7 @@
       // 4) Append a new version snapshot recording the revert.
       await fetch(SUPABASE_URL + '/rest/v1/research_versions', {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({
           research_id: researchId,
           version_number: nextVersionNumber,
@@ -7595,7 +7595,7 @@
     try {
       const r = await fetch(SUPABASE_URL + '/rest/v1/research_section_comments?id=eq.' + commentId, {
         method: 'DELETE',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Prefer': 'return=minimal' },
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       showToast('Comment deleted.');
@@ -7622,7 +7622,7 @@
         headers: {
           'Content-Type': 'application/json',
           'apikey': SUPABASE_ANON_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
         },
         body: JSON.stringify({
           research_id: researchId,
@@ -8252,7 +8252,7 @@
   async function rv2Fetch(slug) {
     const url = SUPABASE_URL + '/rest/v1/suburb_research?slug=eq.' + encodeURIComponent(slug) + '&limit=1';
     const res = await fetch(url, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) },
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const rows = await res.json();
@@ -9223,7 +9223,7 @@ async function loadStockProjects() {
   document.getElementById('stk-cards').innerHTML =
     '<div class="stk-empty"><div class="stk-empty-icon">◈</div>Loading projects...</div>';
   try {
-    const headers = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+    const headers = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) };
     const [projRes, stockRes, availRes] = await Promise.all([
       fetch(SUPABASE_URL + '/rest/v1/projects?order=name', { headers }),
       fetch(SUPABASE_URL + '/rest/v1/stock?select=project_id,total_contract,channel_commission,channel_comm_flat,channel_comm_pct,availability&availability=in.(Available,Reserved)', { headers }),
@@ -9617,7 +9617,7 @@ async function loadProjectStock(projectId) {
   try {
     const res = await fetch(
       SUPABASE_URL + '/rest/v1/stock?project_id=eq.' + projectId + '&availability=in.(Available,Reserved)&order=total_contract',
-      { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+      { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) } }
     );
     if (!res.ok) throw new Error('Failed to load stock');
     allStockItems = await res.json();
@@ -9972,7 +9972,7 @@ async function saveAnalysisEdits() {
   try {
     const res = await fetch(SUPABASE_URL + '/rest/v1/project_analysis?id=eq.' + currentAnalysisRow.id, {
       method: 'PATCH',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify(patch),
     });
     if (!res.ok) {
@@ -10248,7 +10248,7 @@ async function saveDescription() {
       method: 'PATCH',
       headers: {
         'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal',
       },
@@ -12970,7 +12970,7 @@ function buildKitHtml(s, research, brand) {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_ANON_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ p_stock_id: route.stockId, p_partner_id: route.partnerId }),
@@ -13431,7 +13431,7 @@ function buildKitHtml(s, research, brand) {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ p_project_id: projectId, p_lat: lat, p_lng: lng }),
