@@ -49,7 +49,10 @@ Deno.serve(async (req) => {
   )
 
   const portalUrl = Deno.env.get('PORTAL_URL') || 'https://tpch.com.au'
-  const redirectTo = `${portalUrl}#login`
+  // Use a plain URL without a hash fragment. Supabase appends #access_token=...
+  // on redirect, so any pre-existing hash gets concatenated as #login#access_token=...
+  // which the portal's hash parser cannot decode.
+  const redirectTo = portalUrl
 
   function json(body: object, status = 200) {
     return new Response(JSON.stringify(body), {
