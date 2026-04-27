@@ -3425,6 +3425,7 @@
 
           <button class="stk-sidebar-btn partner-only-btn" id="slg-save-list-btn" onclick="openSaveToListModal()" style="margin-top:4px;background:transparent;border-color:var(--gold-border);color:var(--grey-pale);">♡ Save to List</button>
           <button class="stk-sidebar-btn partner-only-btn" id="slg-kit-btn" onclick="generateInvestorKit()" style="margin-top:4px;">Generate Investor Kit</button>
+          <button class="stk-sidebar-btn partner-only-btn" id="slg-flyer-btn" onclick="shareFlyerLink()" style="margin-top:4px;background:transparent;border-color:var(--gold-border);color:var(--grey-pale);">↗ Share Property Flyer</button>
 
           <div class="stk-sidebar-link" onclick="stkListingBack()">← View Project</div>
         </div>
@@ -3681,7 +3682,21 @@
             <div class="form-group" style="grid-column:1/-1;">
               <label class="form-label">Website URL</label>
               <input class="form-input" type="url" id="pset-website" placeholder="https://www.yourfirm.com.au">
-              <p style="font-size:11px;color:var(--grey-mid);margin-top:5px;">Displayed on white-labelled Investor Kits. Upload your logo above to enable white-labelling.</p>
+              <p style="font-size:11px;color:var(--grey-mid);margin-top:5px;">Displayed on white-labelled Investor Kits and the public Property Marketing Flyer.</p>
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+              <label class="form-label">Brand colours</label>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;">
+                <button type="button" class="btn-outline" id="pset-extract-btn" onclick="extractBrandColours()" style="padding:8px 14px;font-size:12px;">↻ Refresh from website</button>
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--grey-mid);">
+                  <span style="display:inline-block;width:22px;height:22px;border-radius:3px;border:1px solid rgba(255,255,255,0.15);background:transparent;" id="pset-swatch-primary"></span>
+                  <span id="pset-brand-primary-hex" style="font-family:'DM Mono',monospace;">—</span>
+                  <span style="margin:0 4px;color:var(--grey);">/</span>
+                  <span style="display:inline-block;width:22px;height:22px;border-radius:3px;border:1px solid rgba(255,255,255,0.15);background:transparent;" id="pset-swatch-accent"></span>
+                  <span id="pset-brand-accent-hex" style="font-family:'DM Mono',monospace;">—</span>
+                </div>
+              </div>
+              <p style="font-size:11px;color:var(--grey-mid);margin-top:6px;" id="pset-brand-msg">Pulls a primary + accent colour from your website to white-label the property flyer. Requires a website URL above.</p>
             </div>
           </div>
 
@@ -6095,6 +6110,10 @@
     applyNavForRole(false, false);
   }
   document.addEventListener('DOMContentLoaded', () => {
+    // Public flyer route — short-circuit the entire portal boot.
+    // The flyer screen handles its own data fetching and rendering.
+    if (typeof flyerParseHash === 'function' && flyerParseHash()) return;
+
     const _todayEl = document.getElementById('topbar-today');
     if (_todayEl) _todayEl.textContent = new Date().toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -6332,9 +6351,10 @@
     document.getElementById('pset-company').value = r.company_name || '';
     document.getElementById('pset-state').value   = r.state || '';
     document.getElementById('pset-name').value    = r.full_name || '';
-    document.getElementById('pset-role').value    = r.job_role || '';
+    document.getElementById('pset-role').value    = r.role_type || r.job_role || '';
     document.getElementById('pset-address').value = r.registered_address || '';
     document.getElementById('pset-website').value = r.website  || '';
+    renderBrandSwatches(r.brand_primary, r.brand_accent);
     // Logo preview
     if (r.logo_url) {
       document.getElementById('pset-logo-preview').innerHTML =
@@ -6350,10 +6370,12 @@
   async function savePartnerProfile() {
     if (!currentPartnerRecord) return;
     const partnerId = currentPartnerRecord.partner_id;
+    const previousWebsite = currentPartnerRecord.website || '';
     const body = {
       company_name:       document.getElementById('pset-company').value.trim(),
       state:              document.getElementById('pset-state').value,
       full_name:          document.getElementById('pset-name').value.trim(),
+      role_type:          document.getElementById('pset-role').value.trim() || null,
       registered_address: document.getElementById('pset-address').value.trim() || null,
       website:            document.getElementById('pset-website').value.trim() || null,
     };
@@ -6370,16 +6392,77 @@
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(await res.text());
-      // Update local record
+      // Update local record + persist to sessionStorage so a refresh keeps the fields
       Object.assign(currentPartnerRecord, body);
+      saveSession();
       const roleLabel = currentPartnerRecord.role === 'staff'
         ? (currentPartnerRecord.job_role || 'Staff') + ' · ' + body.company_name
         : 'Partner · ' + body.company_name;
       document.querySelector('.user-name').textContent = body.full_name;
       document.querySelector('.user-role').textContent = roleLabel;
       showPsetMsg('pset-profile-msg', 'Profile saved.', true);
+      // If the website changed (and isn't empty), kick off colour extraction
+      // in the background — non-blocking, the user doesn't need to wait.
+      if (body.website && body.website !== previousWebsite) {
+        extractBrandColours(true).catch(() => {});
+      }
     } catch(e) {
       showPsetMsg('pset-profile-msg', 'Save failed: ' + e.message, false);
+    }
+  }
+
+  function renderBrandSwatches(primary, accent) {
+    const sP = document.getElementById('pset-swatch-primary');
+    const sA = document.getElementById('pset-swatch-accent');
+    const tP = document.getElementById('pset-brand-primary-hex');
+    const tA = document.getElementById('pset-brand-accent-hex');
+    if (sP) sP.style.background = primary || 'transparent';
+    if (sA) sA.style.background = accent  || 'transparent';
+    if (tP) tP.textContent = primary || '—';
+    if (tA) tA.textContent = accent  || '—';
+  }
+
+  async function extractBrandColours(silent) {
+    if (!currentPartnerRecord || !currentAuthToken) return;
+    const btn = document.getElementById('pset-extract-btn');
+    const msg = document.getElementById('pset-brand-msg');
+    const website = document.getElementById('pset-website').value.trim();
+    if (!website) {
+      if (!silent) {
+        msg.textContent = 'Enter a website URL above first, then save your profile.';
+        msg.style.color = 'var(--red)';
+      }
+      return;
+    }
+    if (btn) { btn.disabled = true; btn.textContent = 'Extracting…'; }
+    if (!silent && msg) { msg.style.color = 'var(--grey-mid)'; msg.textContent = 'Reading colours from ' + website + '…'; }
+    try {
+      const res = await fetch(SUPABASE_URL + '/functions/v1/extract-brand-colours', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + currentAuthToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ website }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        const reason = data?.message || data?.error || 'Could not detect a brand colour from this site.';
+        if (msg) { msg.style.color = 'var(--red)'; msg.textContent = reason; }
+        return;
+      }
+      currentPartnerRecord.brand_primary = data.primary;
+      currentPartnerRecord.brand_accent  = data.accent;
+      renderBrandSwatches(data.primary, data.accent);
+      if (msg) {
+        msg.style.color = 'var(--gold)';
+        msg.textContent = 'Brand colours updated from your website. Source: ' + (data.source || 'detected') + '.';
+      }
+    } catch (e) {
+      if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Extraction failed: ' + (e?.message || e); }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh from website'; }
     }
   }
 
@@ -12200,10 +12283,1233 @@ function buildKitHtml(s, research, brand) {
   </div>
 </div>
 
+<!-- ── Share Flyer Modal ─────────────────────────────────── -->
+<div id="share-flyer-overlay" class="rsv-overlay" style="display:none;" onclick="if(event.target===this)closeShareFlyerModal()">
+  <div class="rsv-modal" style="max-width:520px;">
+    <div class="rsv-modal-header">
+      <div class="rsv-modal-title">Share property flyer</div>
+      <button class="rsv-modal-close" onclick="closeShareFlyerModal()">✕</button>
+    </div>
+    <div class="rsv-modal-body">
+      <p style="font-size:13px;color:var(--grey-pale);margin:0 0 14px;line-height:1.55;">
+        Send this link to your client by email or text. Anyone with the link can view the property — it doesn't require a login.
+      </p>
+      <label class="form-label" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Prepared for (optional)</label>
+      <input class="form-input" type="text" id="share-flyer-recipient" placeholder="Client's full name" maxlength="80" oninput="flyShareSync()" style="margin-top:6px;margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Flyer link</label>
+      <div style="display:flex;gap:8px;align-items:stretch;margin-top:6px;">
+        <input class="form-input" type="text" id="share-flyer-url" readonly onfocus="this.select()" onclick="this.select()" style="flex:1;font-family:'DM Mono',monospace;font-size:12px;">
+        <button class="btn-primary" id="share-flyer-copy-btn" onclick="copyShareFlyerLink()" style="white-space:nowrap;padding:0 18px;font-size:13px;">Copy link</button>
+      </div>
+      <div id="share-flyer-status" style="font-size:12px;color:var(--gold);margin-top:10px;min-height:18px;"></div>
+      <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--gold-border);display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <a id="share-flyer-preview-btn" href="#" target="_blank" rel="noopener" class="btn-outline" style="padding:9px 16px;font-size:12px;text-decoration:none;">↗ Preview flyer in new tab</a>
+        <span style="font-size:12px;color:var(--grey-mid);">Opens what your client will see.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Investor Kit Print Section (hidden from screen) ────── -->
 <div id="kit-print-root" style="display:none;">
   <div id="kit-content"></div>
 </div>
+
+<!-- ════════════════════════════════════════════════════════════
+     PROPERTY MARKETING FLYER — public, white-labelled, no commission
+     URL: portal.tpch.com.au/#flyer/<stockId>/<partnerId>
+     ──────────────────────────────────────────────────────────── -->
+<style id="flyer-styles">
+  #screen-flyer {
+    --f-bg:        #FAFAF7;
+    --f-surface:   #FFFFFF;
+    --f-text:      #1A1A1A;
+    --f-muted:     #6B6B6B;
+    --f-faint:     #9A9A9A;
+    --f-accent:    #1E2733;  /* dark surface colour: contact card bg, button text */
+    --f-primary:   #1E2733;  /* brand-pop accent: spec values, logo fallback, h1 highlights */
+    --f-on-accent: rgba(255,255,255,0.6);  /* pop colour when sitting on --f-accent (contact eyebrow, dark-header recipient) */
+    --f-line:      rgba(0,0,0,0.08);
+    --f-line-soft: rgba(0,0,0,0.04);
+    --f-shadow:    0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+
+    display: none;
+    background: var(--f-bg);
+    color: var(--f-text);
+    font-family: 'Outfit', system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    -webkit-font-smoothing: antialiased;
+  }
+  #screen-flyer.active { display: block; }
+  #screen-flyer * { box-sizing: border-box; }
+  #screen-flyer h1, #screen-flyer h2, #screen-flyer h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 500;
+    color: var(--f-text);
+    letter-spacing: -0.01em;
+  }
+  #screen-flyer a { color: var(--f-accent); text-decoration: none; }
+  #screen-flyer a:hover { text-decoration: underline; }
+
+  .fly-wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+  /* Header */
+  .fly-header {
+    background: var(--f-surface);
+    border-bottom: 1px solid var(--f-line);
+    padding: 22px 0;
+    transition: background 0.2s;
+  }
+  /* When the partner's logo is mostly light pixels (e.g. white text on
+     transparent), flip the header to the dark surface colour so the logo
+     stays visible. Header text/links flip to a light scale to match.
+     ID-anchored on .fly-header-website so it beats #screen-flyer a. */
+  #screen-flyer .fly-header.fly-header-dark { background: var(--f-accent); border-bottom-color: rgba(255,255,255,0.12); }
+  #screen-flyer .fly-header.fly-header-dark .fly-header-website { color: rgba(255,255,255,0.78); }
+  #screen-flyer .fly-header.fly-header-dark .fly-header-website:hover { color: #FFF; }
+  #screen-flyer .fly-header.fly-header-dark .fly-logo-fallback { color: #FFF; }
+  /* 3-column grid: logo left, recipient centred, website right.
+     Empty centre column collapses to 0 width when no recipient is set,
+     so the original logo-left / website-right layout still holds. */
+  .fly-header-inner {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 20px;
+    max-width: 960px; margin: 0 auto; padding: 0 24px;
+  }
+  .fly-header-left   { justify-self: start; }
+  .fly-header-center { justify-self: center; text-align: center; }
+  .fly-header-right  { justify-self: end; }
+  .fly-logo {
+    height: 120px; width: auto; max-height: 140px; max-width: 440px; object-fit: contain;
+    display: block;
+  }
+  .fly-logo-fallback {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 26px; font-weight: 600; color: var(--f-primary);
+    letter-spacing: 0.5px;
+  }
+  .fly-header-website {
+    font-size: 12px; color: var(--f-muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+  }
+  /* Header recipient block — small uppercase eyebrow over a Playfair
+     name set in the brand-pop colour. Sits between logo and website. */
+  .fly-prepared-for-header { line-height: 1.25; }
+  .fly-prepared-for-header .pf-eyebrow {
+    display: block;
+    font-size: 11px; color: var(--f-faint);
+    text-transform: uppercase; letter-spacing: 2.5px;
+  }
+  .fly-prepared-for-header .pf-name {
+    display: block;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 24px; font-weight: 500;
+    color: var(--f-primary);
+    letter-spacing: -0.005em;
+    margin-top: 4px;
+  }
+  /* Lift contrast in dark-header mode so the eyebrow + name are still readable.
+     The name uses --f-on-accent (which falls back to faint white if the partner's
+     primary colour wouldn't pop on the dark surface). */
+  #screen-flyer .fly-header.fly-header-dark .fly-prepared-for-header .pf-eyebrow { color: rgba(255,255,255,0.55); }
+  #screen-flyer .fly-header.fly-header-dark .fly-prepared-for-header .pf-name    { color: var(--f-on-accent); }
+
+  /* Hero */
+  .fly-hero {
+    width: 100%; aspect-ratio: 16/9; background: #1A1A1A center/cover no-repeat;
+    margin-bottom: 32px;
+  }
+
+  /* Title block */
+  .fly-title-block { padding-top: 32px; }
+  /* ID-anchored to beat the global #screen-flyer h1 colour rule. */
+  #screen-flyer .fly-title-block h1 {
+    font-size: 38px; line-height: 1.15; margin: 0 0 8px 0;
+    color: var(--f-primary);
+  }
+  .fly-address {
+    font-size: 14px; color: var(--f-muted);
+    text-transform: uppercase; letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+
+  /* Spec strip */
+  .fly-spec-strip {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 0;
+    background: var(--f-surface);
+    border: 1px solid var(--f-line);
+    border-radius: 4px;
+    margin: 24px 0 40px;
+    box-shadow: var(--f-shadow);
+  }
+  .fly-spec {
+    padding: 22px 16px; text-align: center;
+    border-right: 1px solid var(--f-line-soft);
+  }
+  .fly-spec:last-child { border-right: none; }
+  .fly-spec-val {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 26px; font-weight: 500; color: var(--f-primary);
+    line-height: 1.1; display: block; margin-bottom: 4px;
+  }
+  .fly-spec-label {
+    font-size: 10px; color: var(--f-faint);
+    text-transform: uppercase; letter-spacing: 1.5px;
+  }
+
+  /* Sections */
+  .fly-section { margin: 56px 0; }
+  .fly-section-title {
+    font-size: 11px; color: var(--f-primary);
+    text-transform: uppercase; letter-spacing: 2.5px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--f-line);
+  }
+  /* ID-anchored to beat the global #screen-flyer h2 colour rule. */
+  #screen-flyer .fly-section h2 {
+    font-size: 26px; margin: 0 0 16px 0; color: var(--f-primary);
+  }
+  .fly-prose { font-size: 16px; line-height: 1.75; color: #2A2A2A; white-space: pre-wrap; }
+  /* HTML-rendered description (sanitised) — disable pre-wrap so real <p> margins control spacing. */
+  .fly-prose.fly-prose-html { white-space: normal; }
+  .fly-prose.fly-prose-html p { margin: 0 0 14px 0; }
+  .fly-prose.fly-prose-html p:last-child { margin-bottom: 0; }
+  /* ID-anchored so these win over the global #screen-flyer h2/h3 rule. */
+  #screen-flyer .fly-prose.fly-prose-html h2,
+  #screen-flyer .fly-prose.fly-prose-html h3,
+  #screen-flyer .fly-prose.fly-prose-html h4 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 18px; font-weight: 600;
+    margin: 22px 0 10px 0; color: var(--f-primary);
+    letter-spacing: -0.005em;
+  }
+  .fly-prose.fly-prose-html h2:first-child,
+  .fly-prose.fly-prose-html h3:first-child,
+  .fly-prose.fly-prose-html h4:first-child { margin-top: 0; }
+  .fly-prose.fly-prose-html ul,
+  .fly-prose.fly-prose-html ol { margin: 0 0 14px 22px; padding: 0; }
+  .fly-prose.fly-prose-html li { margin-bottom: 4px; }
+  .fly-prose.fly-prose-html strong,
+  .fly-prose.fly-prose-html b { font-weight: 600; color: var(--f-primary); }
+
+  /* Gallery — <img loading="lazy"> + Supabase image transform thumbnails.
+     Limited to FLY_GALLERY_CAP visible tiles; overflow falls into a
+     "+N more" placeholder that opens the lightbox carousel. */
+  .fly-gallery {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  }
+  .fly-gallery-item {
+    width: 100%; aspect-ratio: 4/3; object-fit: cover;
+    background: #1A1A1A;
+    cursor: zoom-in;
+    transition: opacity 0.15s;
+    display: block;
+  }
+  .fly-gallery-item:hover { opacity: 0.9; }
+  .fly-gallery-more-tile {
+    width: 100%; aspect-ratio: 4/3;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 6px;
+    background: var(--f-accent);
+    color: #FFF;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .fly-gallery-more-tile:hover { opacity: 0.92; transform: scale(1.01); }
+  .fly-gallery-more-tile-count {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 38px; font-weight: 500;
+    line-height: 1;
+  }
+  .fly-gallery-more-tile-label {
+    font-size: 11px;
+    text-transform: uppercase; letter-spacing: 2.5px;
+    color: rgba(255,255,255,0.78);
+  }
+
+  /* Floor plan */
+  .fly-floorplan-img {
+    width: 100%; max-height: 720px; object-fit: contain;
+    background: #F0F0EC; border: 1px solid var(--f-line);
+    border-radius: 4px; cursor: zoom-in;
+  }
+  .fly-floorplan-iframe {
+    width: 100%; height: 720px; border: 1px solid var(--f-line);
+    background: #F0F0EC; border-radius: 4px;
+  }
+
+  /* Map */
+  #fly-map {
+    width: 100%; height: 420px;
+    border: 1px solid var(--f-line); border-radius: 4px;
+    background: #E8E8E5;
+  }
+  .fly-map-fallback {
+    width: 100%; height: 200px;
+    display: flex; align-items: center; justify-content: center;
+    background: #F0F0EC; border: 1px solid var(--f-line); border-radius: 4px;
+    color: var(--f-muted); font-size: 13px;
+  }
+
+  /* Contact card */
+  .fly-contact {
+    background: var(--f-accent); color: #FFF;
+    padding: 36px 32px; border-radius: 4px;
+    text-align: center;
+  }
+  .fly-contact-eyebrow {
+    font-size: 11px; color: var(--f-on-accent);
+    text-transform: uppercase; letter-spacing: 2.5px;
+    margin-bottom: 12px;
+  }
+  .fly-contact-name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px; font-weight: 500; margin-bottom: 4px;
+  }
+  .fly-contact-company {
+    font-size: 14px; color: rgba(255,255,255,0.7);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 24px;
+  }
+  .fly-contact-links {
+    display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  }
+  /* ID-anchored selectors needed to beat #screen-flyer a { color: --f-accent }. */
+  #screen-flyer .fly-contact-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px; border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 3px; color: #FFF; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    transition: background 0.15s;
+  }
+  #screen-flyer .fly-contact-btn:hover { background: rgba(255,255,255,0.08); text-decoration: none; }
+  #screen-flyer .fly-contact-btn-primary {
+    background: #FFF; color: var(--f-accent);
+  }
+  #screen-flyer .fly-contact-btn-primary:hover { background: #F0F0EC; }
+
+  /* Footer */
+  .fly-footer {
+    border-top: 1px solid var(--f-line);
+    padding: 32px 0 48px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--f-faint); font-size: 12px;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .fly-footer a { color: var(--f-muted); }
+
+  /* Lightbox — navigable carousel with arrows, counter, and thumbnail strip. */
+  .fly-lightbox {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.94);
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 56px 64px 16px;
+  }
+  .fly-lightbox.active { display: flex; }
+  .fly-lightbox-stage {
+    flex: 1 1 auto; min-height: 0;
+    width: 100%; display: flex;
+    align-items: center; justify-content: center;
+  }
+  #fly-lightbox-img {
+    max-width: 100%; max-height: 100%;
+    object-fit: contain;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  }
+  .fly-lightbox-close,
+  .fly-lightbox-nav {
+    position: absolute;
+    background: none; border: none; cursor: pointer;
+    color: #FFF; line-height: 1;
+    transition: opacity 0.15s, background 0.15s;
+  }
+  .fly-lightbox-close { top: 18px; right: 22px; font-size: 32px; }
+  .fly-lightbox-close:hover { opacity: 0.7; }
+  .fly-lightbox-nav {
+    top: 50%; transform: translateY(-50%);
+    width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    font-size: 28px; font-weight: 300;
+  }
+  .fly-lightbox-nav:hover { background: rgba(255,255,255,0.16); }
+  .fly-lightbox-nav[disabled] { opacity: 0.2; cursor: default; pointer-events: none; }
+  .fly-lightbox-nav.prev { left: 18px; }
+  .fly-lightbox-nav.next { right: 18px; }
+  .fly-lightbox-counter {
+    position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.7); font-size: 12px;
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+  .fly-lightbox-thumbs {
+    flex: 0 0 auto;
+    width: 100%; max-width: 720px;
+    margin-top: 14px;
+    display: flex; gap: 6px;
+    overflow-x: auto; overflow-y: hidden;
+    padding: 6px 4px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.2) transparent;
+  }
+  .fly-lightbox-thumbs::-webkit-scrollbar { height: 6px; }
+  .fly-lightbox-thumbs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+  .fly-lightbox-thumb {
+    flex: 0 0 auto;
+    width: 72px; height: 54px;
+    object-fit: cover;
+    border: 2px solid transparent;
+    border-radius: 2px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.15s, border-color 0.15s;
+    display: block;
+  }
+  .fly-lightbox-thumb:hover { opacity: 0.85; }
+  .fly-lightbox-thumb.active { opacity: 1; border-color: var(--f-primary); }
+  @media (max-width: 720px) {
+    .fly-lightbox { padding: 48px 12px 8px; }
+    .fly-lightbox-nav { width: 44px; height: 44px; font-size: 22px; }
+    .fly-lightbox-nav.prev { left: 6px; }
+    .fly-lightbox-nav.next { right: 6px; }
+    .fly-lightbox-thumb { width: 60px; height: 44px; }
+  }
+
+  /* Loading + error states */
+  .fly-state {
+    min-height: 70vh; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px; padding: 40px;
+    text-align: center; color: var(--f-muted);
+  }
+  .fly-state h2 { font-size: 22px; color: var(--f-text); margin: 0; }
+
+  /* Mobile */
+  @media (max-width: 720px) {
+    .fly-wrap { padding: 0 18px; }
+    .fly-header-inner { padding: 0 18px; }
+    .fly-header-inner {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: 14px;
+      text-align: center;
+    }
+    .fly-header-left, .fly-header-center, .fly-header-right { justify-self: center; }
+    .fly-logo { height: 80px; max-height: 92px; max-width: 260px; }
+    .fly-prepared-for-header .pf-name { font-size: 20px; }
+    .fly-title-block h1 { font-size: 28px; }
+    .fly-spec-strip { grid-template-columns: repeat(3, 1fr); }
+    .fly-spec { border-bottom: 1px solid var(--f-line-soft); }
+    .fly-spec:nth-child(n+4) { border-bottom: none; }
+    .fly-spec:nth-child(3n) { border-right: none; }
+    .fly-gallery { grid-template-columns: repeat(2, 1fr); }
+    .fly-section { margin: 40px 0; }
+    .fly-section h2 { font-size: 22px; }
+    #fly-map { height: 320px; }
+    .fly-contact { padding: 28px 20px; }
+    .fly-contact-name { font-size: 22px; }
+    .fly-contact-links { flex-direction: column; align-items: stretch; }
+    .fly-contact-btn { justify-content: center; }
+  }
+
+  /* Print */
+  @media print {
+    .fly-header { border-bottom: 2px solid #000; }
+    .fly-contact-btn { display: none; }
+    .fly-section { page-break-inside: avoid; }
+    #fly-map { height: 320px; }
+  }
+</style>
+
+<div id="screen-flyer" class="screen">
+  <!-- Loading state — replaced by render -->
+  <div id="fly-loading" class="fly-state">
+    <h2>Loading property…</h2>
+  </div>
+
+  <div id="fly-content" style="display:none;">
+    <header class="fly-header">
+      <div class="fly-header-inner">
+        <div class="fly-header-left">
+          <img id="fly-logo" class="fly-logo" alt="" style="display:none;">
+          <div id="fly-logo-fallback" class="fly-logo-fallback"></div>
+        </div>
+        <div id="fly-prepared-for" class="fly-header-center fly-prepared-for-header" style="display:none;">
+          <span class="pf-eyebrow">Prepared for</span>
+          <span class="pf-name"></span>
+        </div>
+        <a id="fly-header-website" class="fly-header-right fly-header-website" href="#" target="_blank" rel="noopener" style="display:none;"></a>
+      </div>
+    </header>
+
+    <div id="fly-hero" class="fly-hero"></div>
+
+    <div class="fly-wrap">
+      <div class="fly-title-block">
+        <h1 id="fly-name">—</h1>
+        <div id="fly-address" class="fly-address">—</div>
+      </div>
+
+      <div class="fly-spec-strip">
+        <div class="fly-spec"><span class="fly-spec-val" id="fly-beds">—</span><span class="fly-spec-label">Bed</span></div>
+        <div class="fly-spec"><span class="fly-spec-val" id="fly-baths">—</span><span class="fly-spec-label">Bath</span></div>
+        <div class="fly-spec"><span class="fly-spec-val" id="fly-cars">—</span><span class="fly-spec-label">Car</span></div>
+        <div class="fly-spec"><span class="fly-spec-val" id="fly-sqm">—</span><span class="fly-spec-label">Internal</span></div>
+        <div class="fly-spec"><span class="fly-spec-val" id="fly-price">—</span><span class="fly-spec-label">Price</span></div>
+        <div class="fly-spec"><span class="fly-spec-val" id="fly-rent">—</span><span class="fly-spec-label">Rent / wk</span></div>
+      </div>
+
+      <section class="fly-section" id="fly-overview-section">
+        <div class="fly-section-title">Project Overview</div>
+        <h2 id="fly-project-name">—</h2>
+        <div id="fly-overview" class="fly-prose"></div>
+      </section>
+
+      <section class="fly-section" id="fly-gallery-section" style="display:none;">
+        <div class="fly-section-title">Gallery</div>
+        <div id="fly-gallery" class="fly-gallery"></div>
+      </section>
+
+      <section class="fly-section" id="fly-floorplan-section" style="display:none;">
+        <div class="fly-section-title">Floor Plan</div>
+        <div id="fly-floorplan-mount"></div>
+      </section>
+
+      <section class="fly-section">
+        <div class="fly-section-title">Location</div>
+        <div id="fly-map"></div>
+      </section>
+
+      <section class="fly-section">
+        <div class="fly-contact">
+          <div class="fly-contact-eyebrow">Speak with</div>
+          <div id="fly-contact-name" class="fly-contact-name">—</div>
+          <div id="fly-contact-company" class="fly-contact-company"></div>
+          <div class="fly-contact-links">
+            <a id="fly-contact-phone" class="fly-contact-btn fly-contact-btn-primary" href="#" style="display:none;">Call</a>
+            <a id="fly-contact-email" class="fly-contact-btn" href="#" style="display:none;">Email</a>
+          </div>
+        </div>
+      </section>
+
+      <footer class="fly-footer">
+        <span id="fly-footer-name"></span>
+        <span id="fly-footer-sep" style="margin: 0 10px;">·</span>
+        <a id="fly-footer-website" href="#" target="_blank" rel="noopener"></a>
+      </footer>
+    </div>
+  </div>
+
+  <div id="fly-lightbox" class="fly-lightbox" onclick="flyLightboxBackdrop(event)">
+    <button class="fly-lightbox-close" onclick="flyLightboxClose()" aria-label="Close">×</button>
+    <div id="fly-lightbox-counter" class="fly-lightbox-counter" style="display:none;"></div>
+    <button id="fly-lightbox-prev" class="fly-lightbox-nav prev" onclick="flyLightboxStep(-1)" aria-label="Previous">‹</button>
+    <div class="fly-lightbox-stage">
+      <img id="fly-lightbox-img" alt="">
+    </div>
+    <button id="fly-lightbox-next" class="fly-lightbox-nav next" onclick="flyLightboxStep(1)" aria-label="Next">›</button>
+    <div id="fly-lightbox-thumbs" class="fly-lightbox-thumbs" style="display:none;"></div>
+  </div>
+</div>
+
+<script>
+  // ════════════════════════════════════════════════════════════
+  // Property Marketing Flyer — public, white-labelled
+  // ════════════════════════════════════════════════════════════
+
+  // Stock ID = Monday item ID (digits, text PK). Partner ID = UUID.
+  const FLY_UUID_RE  = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const FLY_STOCK_RE = /^[A-Za-z0-9_-]{1,64}$/;
+
+  // Visible-photo cap on the gallery grid. With > this many photos, the
+  // last tile becomes a "+N more" placeholder that opens the lightbox.
+  const FLY_GALLERY_CAP = 6;
+
+  // Convert a Supabase Storage public URL to its image-transformation
+  // equivalent at the requested size. Non-Supabase URLs are returned as-is
+  // so external image sources still work.
+  function flyerThumbUrl(url, width, height, quality) {
+    if (!url || typeof url !== 'string') return url;
+    const tx = url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+    if (tx === url) return url;  // not a Supabase Storage URL
+    const params = new URLSearchParams({
+      width: String(width), height: String(height),
+      resize: 'cover', quality: String(quality || 70),
+    });
+    return tx + (tx.includes('?') ? '&' : '?') + params.toString();
+  }
+
+  // Build one gallery tile <img>. Wrapped here so the grid render and any
+  // future caller stay in sync. onerror falls back to the original URL if
+  // the transform endpoint isn't available for any reason.
+  function flyerBuildGalleryTile(url, index, allPhotos) {
+    const img = document.createElement('img');
+    img.className = 'fly-gallery-item';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.alt = '';
+    img.src = flyerThumbUrl(url, 600, 450, 70);
+    img.onerror = () => { if (img.src !== url) img.src = url; };
+    img.onclick = () => flyLightboxOpen(allPhotos, index);
+    return img;
+  }
+
+  // Returns { stockId, partnerId, preparedFor } if hash matches
+  // `#flyer/<stockId>/<partnerUuid>` (with optional `?for=<name>`), else null.
+  function flyerParseHash() {
+    const raw = (window.location.hash || '').replace(/^#/, '');
+    const [path, query] = raw.split('?');
+    const parts = path.split('/');
+    if (parts[0] !== 'flyer' || parts.length !== 3) return null;
+    if (!FLY_STOCK_RE.test(parts[1]) || !FLY_UUID_RE.test(parts[2])) return null;
+    let preparedFor = null;
+    if (query) {
+      try {
+        const params = new URLSearchParams(query);
+        const f = params.get('for');
+        if (f) {
+          // Strip control chars and HTML brackets, cap length.
+          preparedFor = f.replace(/[\x00-\x1F\x7F<>]/g, '').trim().slice(0, 80) || null;
+        }
+      } catch (_) { /* malformed query — ignore */ }
+    }
+    return { stockId: parts[1], partnerId: parts[2], preparedFor };
+  }
+
+  // Show only the flyer screen — hide login/portal/etc., kill the topbar.
+  function flyerEnter() {
+    ['screen-login','screen-enquiry','screen-setpassword','screen-forgot','screen-portal'].forEach(s => {
+      const el = document.getElementById(s);
+      if (el) el.classList.remove('active');
+    });
+    document.getElementById('screen-flyer').classList.add('active');
+    document.title = 'Property Information';
+  }
+
+  // Build a sentence-case address line from project fields
+  function flyerFormatAddress(p) {
+    const parts = [p.address, p.suburb, p.state].filter(Boolean);
+    return parts.join(', ').toUpperCase();
+  }
+
+  function flyerFmtCurrency(n) {
+    if (n == null || n === '') return '—';
+    return '$' + Math.round(Number(n)).toLocaleString('en-AU');
+  }
+  function flyerFmtSqm(n) {
+    if (n == null || n === '') return '—';
+    return Math.round(Number(n)) + ' m²';
+  }
+
+  // Allowlist HTML sanitiser for the project description. Drops any tag
+  // outside the allowed set (keeping its text), strips ALL attributes, and
+  // removes comments. Uses the browser's parser via <template> so entities
+  // and malformed input are normalised without round-tripping through innerHTML.
+  function flyerSanitiseHtml(rawHtml) {
+    const allowed = new Set(['P','BR','H2','H3','H4','UL','OL','LI','STRONG','EM','B','I']);
+    const tpl = document.createElement('template');
+    tpl.innerHTML = String(rawHtml || '');
+    function walk(node) {
+      const children = Array.from(node.childNodes);
+      for (const child of children) {
+        if (child.nodeType === 1 /* element */) {
+          if (!allowed.has(child.tagName)) {
+            while (child.firstChild) node.insertBefore(child.firstChild, child);
+            node.removeChild(child);
+          } else {
+            for (const attr of Array.from(child.attributes)) child.removeAttribute(attr.name);
+            walk(child);
+          }
+        } else if (child.nodeType === 8 /* comment */) {
+          node.removeChild(child);
+        }
+      }
+    }
+    walk(tpl.content);
+    return tpl.innerHTML;
+  }
+
+  async function flyerLoad() {
+    const route = flyerParseHash();
+    if (!route) {
+      flyerShowError('This flyer link is invalid.');
+      return;
+    }
+    flyerEnter();
+
+    let payload;
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_flyer_payload', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ p_stock_id: route.stockId, p_partner_id: route.partnerId }),
+      });
+      if (!res.ok) throw new Error('Server error ' + res.status);
+      payload = await res.json();
+    } catch (e) {
+      flyerShowError('Unable to load this property.');
+      return;
+    }
+
+    if (!payload || payload.error || !payload.stock || !payload.project || !payload.partner) {
+      flyerShowError('This property is no longer available.');
+      return;
+    }
+
+    flyerRender(payload);
+  }
+
+  function flyerShowError(msg) {
+    const loading = document.getElementById('fly-loading');
+    if (loading) {
+      loading.innerHTML = '<h2>' + msg + '</h2><p style="color:var(--f-muted);">Please request a new link from the person who shared this with you.</p>';
+    }
+  }
+
+  function flyerRender(p) {
+    const stock   = p.stock;
+    const project = p.project;
+    const partner = p.partner;
+
+    // ── Brand colours (white-label override of the neutral palette) ──
+    flyerApplyBrandColours(partner.brand_primary, partner.brand_accent);
+
+    // ── Header (white-label) ──
+    const logoEl = document.getElementById('fly-logo');
+    const logoFb = document.getElementById('fly-logo-fallback');
+    if (partner.logo_url) {
+      logoEl.src = partner.logo_url;
+      logoEl.alt = partner.company_name || '';
+      logoEl.style.display = '';
+      logoFb.style.display = 'none';
+      // Sample the logo's pixel brightness; flip header to dark when needed.
+      flyerAdaptHeaderToLogo(partner.logo_url);
+    } else {
+      logoEl.style.display = 'none';
+      logoFb.textContent = partner.company_name || '';
+      logoFb.style.display = '';
+    }
+    if (partner.website) {
+      const w = document.getElementById('fly-header-website');
+      let display = partner.website.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+      w.textContent = display;
+      w.href = /^https?:\/\//i.test(partner.website) ? partner.website : 'https://' + partner.website;
+      w.style.display = '';
+    }
+
+    // ── Hero (curated cover image, falling back to first gallery photo) ──
+    // Mirrors the priority used by the project tile on the browse page so
+    // partners see the same cover on the flyer as they do in the portal.
+    // Resized via Supabase image transformation — the visible hero is
+    // ~960px wide so 1600x900 is plenty even on retina displays.
+    const heroUrl = project.hero_image_url
+      || (project.photo_urls && project.photo_urls[0])
+      || null;
+    const hero = document.getElementById('fly-hero');
+    if (heroUrl) {
+      const tx = flyerThumbUrl(heroUrl, 1600, 900, 75);
+      hero.style.backgroundImage = "url('" + tx.replace(/'/g, "%27") + "')";
+    }
+
+    // ── "Prepared for [Client]" block in header ──
+    // Populated from the share URL's ?for= query (sanitised in
+    // flyerParseHash). Lives in the header's centre column so it sits
+    // alongside the logo and website. Applied via textContent.
+    const route = flyerParseHash();
+    if (route?.preparedFor) {
+      const pf = document.getElementById('fly-prepared-for');
+      if (pf) {
+        pf.querySelector('.pf-name').textContent = route.preparedFor;
+        pf.style.display = '';
+      }
+    }
+    document.getElementById('fly-name').textContent    = stock.name || project.name || 'Property';
+    document.getElementById('fly-address').textContent = flyerFormatAddress(project);
+    document.title = (stock.name || project.name || 'Property') + ' — ' + (project.suburb || '');
+
+    // ── Spec strip ──
+    const fnum = v => v == null ? '—' : v;
+    document.getElementById('fly-beds').textContent  = fnum(stock.bedrooms);
+    document.getElementById('fly-baths').textContent = fnum(stock.bathrooms);
+    document.getElementById('fly-cars').textContent  = fnum(stock.car_parks);
+    document.getElementById('fly-sqm').textContent   = stock.build_internal_sqm ? Math.round(stock.build_internal_sqm) + 'm²' : (stock.build_total_sqm ? Math.round(stock.build_total_sqm) + 'm²' : '—');
+    document.getElementById('fly-price').textContent = stock.total_contract ? flyerFmtCurrency(stock.total_contract) : '—';
+    document.getElementById('fly-rent').textContent  = stock.rent_per_week ? '$' + Math.round(stock.rent_per_week).toLocaleString('en-AU') : '—';
+
+    // ── Project overview ──
+    // Descriptions in the DB carry HTML markup (<h3>, <p>, <ul>, <strong>).
+    // Detect and run through an allowlist sanitiser; plain text falls through
+    // to textContent so existing whitespace-only descriptions still work.
+    document.getElementById('fly-project-name').textContent = project.name || '';
+    const overviewEl = document.getElementById('fly-overview');
+    const desc = (project.description || '').trim();
+    if (desc) {
+      if (/<[a-z][^>]*>/i.test(desc)) {
+        overviewEl.classList.add('fly-prose-html');
+        overviewEl.innerHTML = flyerSanitiseHtml(desc);
+      } else {
+        overviewEl.classList.remove('fly-prose-html');
+        overviewEl.textContent = desc;
+      }
+    } else {
+      document.getElementById('fly-overview-section').style.display = 'none';
+    }
+
+    // ── Gallery (project photos) ──
+    // The grid only shows the first FLY_GALLERY_CAP photos; if there are
+    // more, the last visible tile is replaced with a "+N more" overlay that
+    // opens the full lightbox carousel. Each visible thumb is served via
+    // Supabase Storage's image transformation endpoint at thumbnail size,
+    // dropping ~4x off the per-image weight versus the originals.
+    const photos = (project.photo_urls || []).filter(Boolean);
+    if (photos.length > 0) {
+      const grid = document.getElementById('fly-gallery');
+      grid.innerHTML = '';
+      const cap = FLY_GALLERY_CAP;
+      const overflow = photos.length > cap;
+      const visibleCount = overflow ? cap - 1 : photos.length;
+
+      // First N image tiles
+      for (let i = 0; i < visibleCount; i++) {
+        grid.appendChild(flyerBuildGalleryTile(photos[i], i, photos));
+      }
+      // "+ N more" tile if we have leftovers — opens lightbox at the index
+      // immediately after the visible thumbs.
+      if (overflow) {
+        const remaining = photos.length - visibleCount;
+        const tile = document.createElement('div');
+        tile.className = 'fly-gallery-more-tile';
+        tile.innerHTML =
+          '<span class="fly-gallery-more-tile-count">+ ' + remaining + '</span>' +
+          '<span class="fly-gallery-more-tile-label">More photos</span>';
+        tile.onclick = () => flyLightboxOpen(photos, visibleCount);
+        grid.appendChild(tile);
+      }
+      document.getElementById('fly-gallery-section').style.display = '';
+    }
+
+    // ── Floor plan ──
+    if (stock.floor_plan_url) {
+      const mount = document.getElementById('fly-floorplan-mount');
+      const isPdf = /\.pdf(\?|$)/i.test(stock.floor_plan_url);
+      if (isPdf) {
+        mount.innerHTML = '<iframe class="fly-floorplan-iframe" src="' + stock.floor_plan_url + '"></iframe>'
+          + '<a href="' + stock.floor_plan_url + '" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--f-muted);">Open floor plan in new tab ↗</a>';
+      } else {
+        const img = document.createElement('img');
+        img.className = 'fly-floorplan-img';
+        img.src = stock.floor_plan_url;
+        img.alt = 'Floor plan';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.onclick = () => flyLightboxOpen([stock.floor_plan_url], 0);
+        mount.appendChild(img);
+      }
+      document.getElementById('fly-floorplan-section').style.display = '';
+    }
+
+    // ── Contact card ──
+    document.getElementById('fly-contact-name').textContent    = partner.full_name || 'Your advisor';
+    document.getElementById('fly-contact-company').textContent = partner.company_name || '';
+    if (partner.phone) {
+      const a = document.getElementById('fly-contact-phone');
+      a.href = 'tel:' + partner.phone.replace(/\s+/g, '');
+      a.textContent = '📞 ' + partner.phone;
+      a.style.display = '';
+    }
+    if (partner.email) {
+      const a = document.getElementById('fly-contact-email');
+      a.href = 'mailto:' + partner.email + '?subject=' + encodeURIComponent('Enquiry: ' + (stock.name || project.name || 'Property'));
+      a.textContent = '✉ ' + partner.email;
+      a.style.display = '';
+    }
+
+    // ── Footer ──
+    document.getElementById('fly-footer-name').textContent = partner.company_name || '';
+    if (partner.website) {
+      const f = document.getElementById('fly-footer-website');
+      f.textContent = partner.website.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+      f.href = /^https?:\/\//i.test(partner.website) ? partner.website : 'https://' + partner.website;
+    } else {
+      document.getElementById('fly-footer-sep').style.display = 'none';
+    }
+
+    // Reveal content, hide loading
+    document.getElementById('fly-loading').style.display = 'none';
+    document.getElementById('fly-content').style.display = '';
+
+    // ── Map (after layout settles so Leaflet sizes correctly) ──
+    setTimeout(() => flyerInitMap(project), 60);
+  }
+
+  // ── Brand colour application ───────────────────────────────
+  // Three tokens drive the flyer's white-labelling:
+  //   --f-accent:    dark surface colour (contact card bg, button text). Picks
+  //                  the darker of primary/accent; if both are bright, derives
+  //                  a darker shade from primary.
+  //   --f-primary:   brand-pop colour on light backgrounds (h1, spec values,
+  //                  logo fallback, headings, prose bold). Only set if the
+  //                  partner's primary reads on the cream bg — otherwise the
+  //                  default neutral (#1E2733) stays in place.
+  //   --f-on-accent: brand-pop colour when sitting ON the dark surface (contact
+  //                  eyebrow, dark-header recipient name). Only set if the
+  //                  partner's primary is both light-bg-readable AND distinct
+  //                  from the surface colour — otherwise the default faint
+  //                  white stays in place. This is the "fall back to white on
+  //                  the blue" path for partners with unusable primaries.
+  function flyerApplyBrandColours(primary, accent) {
+    const root = document.getElementById('screen-flyer');
+    if (!root) return;
+    const validHex = /^#[0-9a-fA-F]{6}$/;
+    const p = validHex.test(primary || '') ? primary : null;
+    const a = validHex.test(accent  || '') ? accent  : null;
+    if (!p) return;
+    const surfaceColour = (a && flyerLuminance(a) < flyerLuminance(p))
+      ? a
+      : flyerDarkenHex(p, 0.7);
+    root.style.setProperty('--f-accent', surfaceColour);
+
+    if (flyerLuminance(p) < 0.62) {
+      root.style.setProperty('--f-primary', p);
+      if (p.toLowerCase() !== surfaceColour.toLowerCase()) {
+        root.style.setProperty('--f-on-accent', p);
+      }
+    }
+  }
+
+  // Load the logo into a hidden canvas and average its non-transparent pixel
+  // luminance. If the logo is mostly light (e.g. white text on transparent
+  // PNG), flip the header to the partner's dark surface colour so the logo
+  // stays visible. Cross-origin failures fall back silently to white header.
+  function flyerAdaptHeaderToLogo(logoUrl) {
+    if (!logoUrl) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const w = Math.min(img.naturalWidth || 64, 128);
+        const h = Math.min(img.naturalHeight || 64, 128);
+        if (!w || !h) return;
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        const ctx = cv.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const data = ctx.getImageData(0, 0, w, h).data;
+        let lumSum = 0, count = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          const a = data[i + 3];
+          if (a < 32) continue; // skip transparent pixels
+          lumSum += 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+          count++;
+        }
+        if (count === 0) return;
+        const avgLum = lumSum / count / 255;
+        if (avgLum > 0.55) {
+          const header = document.querySelector('#screen-flyer .fly-header');
+          if (header) header.classList.add('fly-header-dark');
+        }
+      } catch (_) { /* canvas tainted by CORS — fall back to white header */ }
+    };
+    img.onerror = () => {};
+    img.src = logoUrl;
+  }
+
+  function flyerLuminance(hex) {
+    const m = /^#([0-9a-fA-F]{6})$/.exec(hex || '');
+    if (!m) return 1;
+    const r = parseInt(m[1].slice(0,2),16) / 255;
+    const g = parseInt(m[1].slice(2,4),16) / 255;
+    const b = parseInt(m[1].slice(4,6),16) / 255;
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  function flyerDarkenHex(hex, factor) {
+    const m = /^#([0-9a-fA-F]{6})$/.exec(hex || '');
+    if (!m) return hex;
+    const r = parseInt(m[1].slice(0,2),16);
+    const g = parseInt(m[1].slice(2,4),16);
+    const b = parseInt(m[1].slice(4,6),16);
+    const f = Math.max(0, Math.min(1, factor));
+    const to = n => Math.round(n * f).toString(16).padStart(2,'0');
+    return '#' + to(r) + to(g) + to(b);
+  }
+
+  // ── Lightbox carousel ───────────────────────────────────────
+  // State for the multi-image lightbox. flyLightboxOpen accepts an array
+  // of URLs and an index; prev/next + keyboard arrows navigate within it.
+  let _flyLightboxImages = [];
+  let _flyLightboxIndex  = 0;
+
+  function flyLightboxOpen(images, index) {
+    _flyLightboxImages = Array.isArray(images) ? images.filter(Boolean) : [images].filter(Boolean);
+    _flyLightboxIndex  = Math.max(0, Math.min(index || 0, _flyLightboxImages.length - 1));
+    if (_flyLightboxImages.length === 0) return;
+    flyLightboxRenderThumbs();
+    flyLightboxShow();
+    document.getElementById('fly-lightbox').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function flyLightboxClose() {
+    document.getElementById('fly-lightbox').classList.remove('active');
+    document.getElementById('fly-lightbox-img').src = '';
+    document.body.style.overflow = '';
+    _flyLightboxImages = [];
+  }
+
+  // Click on the dim backdrop closes the lightbox. Clicks on the image,
+  // nav arrows, close button, or thumbnails bubble up here too — filter
+  // by tag so only the surrounding empty space triggers a close.
+  function flyLightboxBackdrop(ev) {
+    const tag = ev.target.tagName;
+    if (tag === 'IMG' || tag === 'BUTTON') return;
+    flyLightboxClose();
+  }
+
+  function flyLightboxStep(delta) {
+    if (_flyLightboxImages.length === 0) return;
+    _flyLightboxIndex = Math.max(0, Math.min(_flyLightboxIndex + delta, _flyLightboxImages.length - 1));
+    flyLightboxShow();
+  }
+
+  function flyLightboxJump(i) {
+    if (i < 0 || i >= _flyLightboxImages.length) return;
+    _flyLightboxIndex = i;
+    flyLightboxShow();
+  }
+
+  function flyLightboxShow() {
+    const url = _flyLightboxImages[_flyLightboxIndex];
+    document.getElementById('fly-lightbox-img').src = url || '';
+    // Counter + nav arrow availability + active thumb.
+    const total = _flyLightboxImages.length;
+    const counter = document.getElementById('fly-lightbox-counter');
+    const prev = document.getElementById('fly-lightbox-prev');
+    const next = document.getElementById('fly-lightbox-next');
+    if (total > 1) {
+      counter.textContent = (_flyLightboxIndex + 1) + ' of ' + total;
+      counter.style.display = '';
+      prev.style.display = '';
+      next.style.display = '';
+      prev.toggleAttribute('disabled', _flyLightboxIndex === 0);
+      next.toggleAttribute('disabled', _flyLightboxIndex === total - 1);
+    } else {
+      counter.style.display = 'none';
+      prev.style.display = 'none';
+      next.style.display = 'none';
+    }
+    // Mark active thumbnail and scroll it into view.
+    const thumbs = document.getElementById('fly-lightbox-thumbs');
+    Array.from(thumbs.children).forEach((el, i) => {
+      el.classList.toggle('active', i === _flyLightboxIndex);
+      if (i === _flyLightboxIndex) el.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    });
+  }
+
+  function flyLightboxRenderThumbs() {
+    const thumbs = document.getElementById('fly-lightbox-thumbs');
+    thumbs.innerHTML = '';
+    if (_flyLightboxImages.length <= 1) {
+      thumbs.style.display = 'none';
+      return;
+    }
+    _flyLightboxImages.forEach((url, i) => {
+      const t = document.createElement('img');
+      t.className = 'fly-lightbox-thumb';
+      // Tiny thumb size — keeps the strip lightweight even with 100+ photos.
+      t.src = flyerThumbUrl(url, 160, 120, 60);
+      t.alt = '';
+      t.loading = 'lazy';
+      t.decoding = 'async';
+      t.onerror = () => { if (t.src !== url) t.src = url; };
+      t.onclick = (ev) => { ev.stopPropagation(); flyLightboxJump(i); };
+      thumbs.appendChild(t);
+    });
+    thumbs.style.display = '';
+  }
+
+  // Keyboard navigation while the lightbox is open.
+  document.addEventListener('keydown', (ev) => {
+    const lb = document.getElementById('fly-lightbox');
+    if (!lb || !lb.classList.contains('active')) return;
+    if (ev.key === 'Escape')      { flyLightboxClose(); }
+    else if (ev.key === 'ArrowLeft')  { flyLightboxStep(-1); }
+    else if (ev.key === 'ArrowRight') { flyLightboxStep(1); }
+  });
+
+  // ── Map: cached coords or geocode-on-first-view ─────────────
+  let _flyMap = null;
+
+  async function flyerInitMap(project) {
+    let lat = project.map_lat;
+    let lng = project.map_lng;
+
+    if (lat == null || lng == null) {
+      const coords = await flyerGeocode(project);
+      if (coords) {
+        lat = coords.lat; lng = coords.lng;
+        // Cache server-side (idempotent — server only writes if still NULL)
+        flyerCacheGeocode(project.id, lat, lng).catch(() => {});
+      }
+    }
+
+    const mount = document.getElementById('fly-map');
+    if (lat == null || lng == null) {
+      mount.outerHTML = '<div class="fly-map-fallback">Map unavailable for this address.</div>';
+      return;
+    }
+
+    if (typeof L === 'undefined') return; // Leaflet failed to load
+
+    if (_flyMap) { _flyMap.remove(); _flyMap = null; }
+    _flyMap = L.map('fly-map', {
+      center: [lat, lng], zoom: 15,
+      zoomControl: true, attributionControl: true, scrollWheelZoom: false
+    });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      subdomains: 'abcd', maxZoom: 19
+    }).addTo(_flyMap);
+    L.marker([lat, lng]).addTo(_flyMap)
+      .bindPopup((project.name || 'Property') + '<br>' + (project.address || ''));
+  }
+
+  async function flyerGeocode(project) {
+    const q = [project.address, project.suburb, project.state, 'Australia']
+      .filter(Boolean).join(', ');
+    if (!q) return null;
+    try {
+      const res = await fetch(
+        'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=au&q=' + encodeURIComponent(q),
+        { headers: { 'Accept': 'application/json' } }
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) return null;
+      const lat = parseFloat(data[0].lat);
+      const lng = parseFloat(data[0].lon);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+      return { lat, lng };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function flyerCacheGeocode(projectId, lat, lng) {
+    return fetch(SUPABASE_URL + '/rest/v1/rpc/set_project_geocode', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ p_project_id: projectId, p_lat: lat, p_lng: lng }),
+    });
+  }
+
+  // ── Boot ────────────────────────────────────────────────────
+  // Always register hashchange so users can navigate between flyer URLs
+  // (e.g. open a second link in the same tab). On initial load, kick off
+  // the flyer fetch if the URL is a flyer route — this runs alongside the
+  // portal's DOMContentLoaded handler, which checks the same and bails.
+  (function flyerBoot() {
+    window.addEventListener('hashchange', () => {
+      if (flyerParseHash()) flyerLoad();
+    });
+    if (!flyerParseHash()) return;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', flyerLoad);
+    } else {
+      flyerLoad();
+    }
+  })();
+
+  // ── Share Flyer modal (used from inside the portal) ────────
+  // Build the share URL from the current stock/partner and the optional
+  // recipient name. Called on modal open and on every keystroke in the
+  // recipient field so the URL + preview stay in sync.
+  function flyShareBuildUrl() {
+    const stock = (typeof currentStockId !== 'undefined') ? currentStockId : '';
+    const partnerId = currentPartnerRecord?.partner_id || '';
+    let url = location.origin + location.pathname + '#flyer/' + stock + '/' + partnerId;
+    const recipientEl = document.getElementById('share-flyer-recipient');
+    const recipient = (recipientEl?.value || '').trim();
+    if (recipient) url += '?for=' + encodeURIComponent(recipient);
+    return url;
+  }
+
+  function flyShareSync() {
+    const url = flyShareBuildUrl();
+    const input = document.getElementById('share-flyer-url');
+    const preview = document.getElementById('share-flyer-preview-btn');
+    if (input) input.value = url;
+    if (preview) preview.href = url;
+  }
+
+  function shareFlyerLink() {
+    if (typeof currentStockId === 'undefined' || !currentStockId) {
+      alert('No property selected.'); return;
+    }
+    if (!currentPartnerRecord || !currentPartnerRecord.partner_id) {
+      alert('You need to be signed in as a channel partner to share a flyer.'); return;
+    }
+    const recipientEl = document.getElementById('share-flyer-recipient');
+    const status = document.getElementById('share-flyer-status');
+    const copyBtn = document.getElementById('share-flyer-copy-btn');
+    if (recipientEl) recipientEl.value = '';   // start fresh each open
+    flyShareSync();
+    if (status)  status.textContent = '';
+    if (copyBtn) copyBtn.textContent = 'Copy link';
+    document.getElementById('share-flyer-overlay').style.display = 'flex';
+    setTimeout(() => { if (recipientEl) recipientEl.focus(); }, 50);
+  }
+
+  function closeShareFlyerModal() {
+    const ov = document.getElementById('share-flyer-overlay');
+    if (ov) ov.style.display = 'none';
+  }
+
+  function copyShareFlyerLink() {
+    const input = document.getElementById('share-flyer-url');
+    const status = document.getElementById('share-flyer-status');
+    const copyBtn = document.getElementById('share-flyer-copy-btn');
+    if (!input) return;
+    const url = input.value;
+    const onSuccess = () => {
+      if (copyBtn) copyBtn.textContent = '✓ Copied';
+      if (status)  status.textContent = 'Link copied to clipboard. Paste it into an email or text to your client.';
+      setTimeout(() => { if (copyBtn) copyBtn.textContent = 'Copy link'; }, 2400);
+    };
+    const onFail = () => {
+      // Fallback for older browsers / non-secure contexts
+      input.focus(); input.select();
+      try {
+        document.execCommand('copy');
+        onSuccess();
+      } catch (_) {
+        if (status) status.textContent = 'Could not copy automatically — select the link above and press Ctrl+C / ⌘+C.';
+      }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext !== false) {
+      navigator.clipboard.writeText(url).then(onSuccess, onFail);
+    } else {
+      onFail();
+    }
+  }
+</script>
 
 </body>
 </html>

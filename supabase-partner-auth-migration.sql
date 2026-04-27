@@ -75,15 +75,25 @@ BEGIN
       v_partner.user_id := p_user_id;
     END IF;
     RETURN jsonb_build_object(
-      'role',        'partner',
-      'partner_id',  v_partner.id,
-      'full_name',   v_partner.full_name,
-      'email',       v_partner.email,
-      'company_name',v_partner.company_name,
-      'state',       v_partner.state,
-      'logo_url',    v_partner.logo_url,
-      'notification_prefs', v_partner.notification_prefs,
-      'status',      v_partner.status
+      'role',                       'partner',
+      'partner_id',                 v_partner.id,
+      'full_name',                  v_partner.full_name,
+      'email',                      v_partner.email,
+      'phone',                      v_partner.phone,
+      'abn',                        v_partner.abn,
+      'company_name',               v_partner.company_name,
+      'state',                      v_partner.state,
+      'registered_address',         v_partner.registered_address,
+      'website',                    v_partner.website,
+      'role_type',                  v_partner.role_type,
+      'logo_url',                   v_partner.logo_url,
+      'brand_primary',              v_partner.brand_primary,
+      'brand_accent',               v_partner.brand_accent,
+      'brand_colours_extracted_at', v_partner.brand_colours_extracted_at,
+      'notification_prefs',         v_partner.notification_prefs,
+      'status',                     v_partner.status,
+      'agreement_version',          v_partner.agreement_version,
+      'agreement_accepted_at',      v_partner.agreement_accepted_at
     );
   END IF;
 
@@ -101,18 +111,27 @@ BEGIN
     -- Get owner firm details
     SELECT * INTO v_owner FROM public.channel_partners WHERE id = v_staff.partner_id;
     RETURN jsonb_build_object(
-      'role',              'staff',
-      'staff_id',          v_staff.id,
-      'partner_id',        v_staff.partner_id,
-      'full_name',         v_staff.full_name,
-      'email',             v_staff.email,
-      'job_role',          v_staff.role,
-      'comm_display_type', v_staff.comm_display_type,
-      'comm_custom_value', v_staff.comm_custom_value,
-      'company_name',      v_owner.company_name,
-      'logo_url',          v_owner.logo_url,
-      'notification_prefs',v_owner.notification_prefs,
-      'status',            v_staff.status
+      'role',                       'staff',
+      'staff_id',                   v_staff.id,
+      'partner_id',                 v_staff.partner_id,
+      'full_name',                  v_staff.full_name,
+      'email',                      v_staff.email,
+      'phone',                      v_owner.phone,
+      'abn',                        v_owner.abn,
+      'job_role',                   v_staff.role,
+      'comm_display_type',          v_staff.comm_display_type,
+      'comm_custom_value',          v_staff.comm_custom_value,
+      'company_name',               v_owner.company_name,
+      'registered_address',         v_owner.registered_address,
+      'website',                    v_owner.website,
+      'logo_url',                   v_owner.logo_url,
+      'brand_primary',              v_owner.brand_primary,
+      'brand_accent',               v_owner.brand_accent,
+      'brand_colours_extracted_at', v_owner.brand_colours_extracted_at,
+      'notification_prefs',         v_owner.notification_prefs,
+      'status',                     v_staff.status,
+      'agreement_version',          v_owner.agreement_version,
+      'agreement_accepted_at',      v_owner.agreement_accepted_at
     );
   END IF;
 
