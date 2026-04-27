@@ -895,7 +895,7 @@ footer {
         <ul class="footer-links">
           <li><a href="#markets">Victoria</a></li>
           <li><a href="#markets">Queensland</a></li>
-          <li><a href="#markets">West Australia</a></li>
+          <li><a href="#markets">Western Australia</a></li>
           <li><a href="#markets">Canberra</a></li>
         </ul>
       </div>
@@ -917,6 +917,9 @@ footer {
 </footer>
 
 <script>
+const SUPABASE_URL = 'https://oreklvbzwgbufbkvvzny.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZWtsdmJ6d2didWZia3Z2em55Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NjkwNDAsImV4cCI6MjA4NzU0NTA0MH0.fh_36UByHWSwtPMHLOg-8L417dD-n6nQAcmkmnUair0';
+
 // Nav becomes opaque on scroll
 const nav = document.getElementById('nav');
 addEventListener('scroll', () => {
@@ -931,17 +934,65 @@ const ro = new IntersectionObserver(
 document.querySelectorAll('.reveal').forEach(el => ro.observe(el));
 
 // Form
-function submitForm(btn) {
-  const inputs = btn.closest('.form-body').querySelectorAll('input, select');
+async function submitForm(btn) {
+  const card = btn.closest('.form-card');
+  const body = btn.closest('.form-body');
+  const inputs = body.querySelectorAll('input, select');
+
+  // Inline validate
   let ok = true;
   inputs.forEach(el => {
     el.style.borderColor = '';
-    if (!el.value.trim()) { el.style.borderColor = '#C0392B'; ok = false; el.addEventListener('input', () => el.style.borderColor = '', { once: true }); }
+    if (!el.value.trim()) {
+      el.style.borderColor = '#C0392B';
+      ok = false;
+      el.addEventListener('input', () => el.style.borderColor = '', { once: true });
+    }
   });
   if (!ok) return;
-  btn.textContent = 'Submitting…'; btn.disabled = true;
-  setTimeout(() => {
-    btn.closest('.form-card').innerHTML = `
+
+  const first = body.querySelector('#f-first').value.trim();
+  const last  = body.querySelector('#f-last').value.trim();
+  const email = body.querySelector('#f-email').value.trim().toLowerCase();
+  const phone = body.querySelector('#f-phone').value.trim();
+  const role  = body.querySelector('#f-role').value;
+  const firm  = body.querySelector('#f-firm').value.trim();
+
+  if (!/^\S+@\S+\.\S+$/.test(email)) {
+    body.querySelector('#f-email').style.borderColor = '#C0392B';
+    return;
+  }
+
+  const originalLabel = btn.textContent;
+  btn.textContent = 'Submitting…';
+  btn.disabled = true;
+
+  const payload = {
+    full_name:       (first + ' ' + last).trim(),
+    email:           email,
+    phone:           phone,
+    company_name:    firm,
+    role_type:       role,
+    referral_source: 'landing_page'
+  };
+
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/pending_enquiries', {
+      method: 'POST',
+      headers: {
+        'apikey':        SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type':  'application/json',
+        'Prefer':        'return=minimal'
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      throw new Error('HTTP ' + res.status + (errText ? ' — ' + errText : ''));
+    }
+
+    card.innerHTML = `
       <div style="padding:72px 36px;text-align:center;">
         <svg style="margin:0 auto 24px" width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="18" y="10" width="34" height="34" rx="3" transform="rotate(45 35 27)" fill="#C8A951"/>
@@ -953,7 +1004,19 @@ function submitForm(btn) {
         <p style="font-size:13px;font-weight:300;color:#98A5B3;line-height:1.8;max-width:30ch;margin:0 auto 20px;">We'll review your application and be in touch within 2 business days.</p>
         <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:12px;color:#C8A951;">Built on relationships. Driven by results.</div>
       </div>`;
-  }, 800);
+  } catch (err) {
+    btn.textContent = originalLabel;
+    btn.disabled = false;
+    let errEl = body.querySelector('.form-submit-error');
+    if (!errEl) {
+      errEl = document.createElement('div');
+      errEl.className = 'form-submit-error';
+      errEl.style.cssText = 'margin-top:12px;font-size:12px;color:#A33B3B;line-height:1.5;';
+      btn.insertAdjacentElement('afterend', errEl);
+    }
+    errEl.textContent = 'We could not submit your application just now. Please try again, or email admin@tpch.com.au.';
+    console.error('Landing form submit failed:', err);
+  }
 }
 </script>
 </body>
