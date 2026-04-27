@@ -1,18 +1,25 @@
 // ============================================================
-// TPCH — cancel-reservation Edge Function
+// TPCH — cancel-reservation Edge Function (HARDENED)
+//
 // Called by portal when a partner cancels a reservation.
 //
-// POST body: { reservation_id: string, partner_id: string }
+// SECURITY HARDENING (Apr 2026):
+//   * JWT verification REQUIRED (set Verify JWT: ON in dashboard).
+//   * partner_id derived from auth.uid() — body cannot spoof another partner.
+//   * Reservation ownership verified server-side; mismatch returns 403.
+//   * CORS locked to portal.tpch.com.au + tpch.com.au.
 //
-// 1. Validates reservation belongs to partner
-// 2. Marks reservation cancelled in Supabase
-// 3. Reverts stock.availability → Available in Supabase
-// 4. Reverts Monday.com item → Available
+// POST body: { reservation_id: string }
+//   (partner_id is no longer accepted from the body — derived from JWT.)
+//
+// 1. Authenticate caller → derive partner_id
+// 2. Validate reservation belongs to caller's partner_id
+// 3. Mark reservation cancelled in Supabase
+// 4. Revert stock.availability → Available in Supabase
+// 5. Revert Monday.com item → Available
 //
 // Secrets required:
-//   MONDAY_API_TOKEN      — Monday.com API token
-//   MONDAY_STOCK_BOARD_ID — 6070412774
-//
+//   MONDAY_API_TOKEN, MONDAY_STOCK_BOARD_ID
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are auto-injected.
 // ============================================================
 
@@ -23,8 +30,22 @@ const MONDAY_TOKEN   = Deno.env.get('MONDAY_API_TOKEN')          ?? ''
 const STOCK_BOARD_ID = Deno.env.get('MONDAY_STOCK_BOARD_ID')    || '6070412774'
 const SUPABASE_URL   = Deno.env.get('SUPABASE_URL')             ?? ''
 const SUPABASE_KEY   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const AVAIL_COL      = 'color'
 
-const AVAIL_COL = 'color'
+const ALLOWED_ORIGINS = new Set([
+  'https://portal.tpch.com.au',
+  'https://tpch.com.au',
+])
+
+function corsFor(origin: string | null) {
+  const allow = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://portal.tpch.com.au'
+  return {
+    'Access-Control-Allow-Origin':  allow,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
+    'Vary': 'Origin',
+  }
+}
 
 async function setMondayAvailability(itemId: string, label: string) {
   const query = `mutation {
@@ -49,29 +70,54 @@ async function setMondayAvailability(itemId: string, label: string) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin':  '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
-      },
-    })
-  }
-
-  const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
+  const cors = corsFor(req.headers.get('origin'))
+  if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
+  const corsHeaders = { ...cors, 'Content-Type': 'application/json' }
 
   try {
-    const body = await req.json()
-    const { reservation_id, partner_id } = body
-
-    if (!reservation_id || !partner_id) {
-      return new Response(JSON.stringify({ error: 'Missing reservation_id or partner_id' }), { status: 400, headers: corsHeaders })
+    // ── 1. Auth: derive caller from JWT ──────────────────────────────────
+    const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
+    if (!jwt) {
+      return new Response(JSON.stringify({ error: 'Sign in required' }), { status: 401, headers: corsHeaders })
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+    const { data: userRes, error: userErr } = await supabase.auth.getUser(jwt)
+    if (userErr || !userRes?.user) {
+      return new Response(JSON.stringify({ error: 'Invalid session' }), { status: 401, headers: corsHeaders })
+    }
+    const callerUid = userRes.user.id
 
-    // 1. Fetch reservation and validate ownership
+    let partner_id: string | null = null
+    const { data: owner } = await supabase
+      .from('channel_partners')
+      .select('id')
+      .eq('user_id', callerUid)
+      .eq('status', 'active')
+      .maybeSingle()
+    if (owner) {
+      partner_id = owner.id
+    } else {
+      const { data: staff } = await supabase
+        .from('partner_staff')
+        .select('partner_id')
+        .eq('user_id', callerUid)
+        .eq('status', 'active')
+        .maybeSingle()
+      partner_id = staff?.partner_id ?? null
+    }
+    if (!partner_id) {
+      return new Response(JSON.stringify({ error: 'No active partner record for caller' }), { status: 403, headers: corsHeaders })
+    }
+
+    // ── 2. Validate body
+    const body = await req.json()
+    const reservation_id = body?.reservation_id
+    if (!reservation_id) {
+      return new Response(JSON.stringify({ error: 'Missing reservation_id' }), { status: 400, headers: corsHeaders })
+    }
+
+    // ── 3. Fetch reservation and validate ownership
     const { data: rsv, error: fetchErr } = await supabase
       .from('reservations')
       .select('id, stock_id, status, partner_id')
@@ -88,19 +134,18 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Reservation is not active' }), { status: 409, headers: corsHeaders })
     }
 
-    // 2. Mark reservation cancelled
+    // ── 4. Mark cancelled + revert stock
     await supabase
       .from('reservations')
       .update({ status: 'cancelled', cancelled_at: new Date().toISOString(), cancelled_by: 'partner' })
       .eq('id', reservation_id)
 
-    // 3. Revert stock availability in Supabase
     await supabase
       .from('stock')
       .update({ availability: 'Available' })
       .eq('id', rsv.stock_id)
 
-    // 4. Revert Monday.com (non-blocking)
+    // ── 5. Revert Monday.com (non-blocking)
     setMondayAvailability(rsv.stock_id, 'Available').catch(e =>
       console.error('Monday.com revert failed:', e)
     )

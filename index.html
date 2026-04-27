@@ -4480,7 +4480,11 @@
   function saveSession() {
     if (currentUserIsAdmin) {
       sessionStorage.setItem('tpch_session', JSON.stringify({
-        type: 'admin', email: currentAdminEmail, role: currentUserRole,
+        type: 'admin',
+        authToken: currentAuthToken,
+        refreshToken: currentRefreshToken,
+        email: currentAdminEmail,
+        role: currentUserRole,
       }));
     } else if (currentPartnerRecord) {
       sessionStorage.setItem('tpch_session', JSON.stringify({
@@ -4529,52 +4533,83 @@
   async function restoreSession() {
     const raw = sessionStorage.getItem('tpch_session');
     if (!raw) return false;
-    try {
-      const s = JSON.parse(raw);
-      if (s.type === 'admin') {
-        // Re-fetch the team member to get fresh name/role
-        const res = await fetch(
-          SUPABASE_URL + '/rest/v1/tpch_team?email=eq.' + encodeURIComponent(s.email) + '&select=password,full_name,role&limit=1',
-          { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
-        );
-        const [member] = await res.json();
-        if (!member) { clearSession(); return false; }
-        currentUserIsAdmin = true;
-        currentUserRole    = member.role || 'admin';
-        currentAdminEmail  = s.email;
-        currentPartnerRecord = null;
-        const displayName  = member.full_name || s.email.split('@')[0];
-        const initials     = displayName.slice(0,2).toUpperCase();
-        const roleLabel    = currentUserRole === 'super_admin' ? 'Super Admin · TPCH' : 'Admin · TPCH';
-        applyNavForRole(true, false);
-        applyUserCard(displayName, roleLabel, initials);
-        restoreSortPrefs();
-        enterPortal();
-        return true;
-      } else if (s.type === 'partner' && s.authToken) {
-        currentAuthToken     = s.authToken;
-        currentRefreshToken  = s.refreshToken || null;
-        currentPartnerRecord = s.partnerRecord;
-        scheduleTokenRefresh();
-        currentUserIsAdmin   = false;
-        const record         = s.partnerRecord;
-        const displayName    = record.full_name || record.email?.split('@')[0] || '';
-        const initials       = displayName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-        const roleLabel      = record.role === 'staff'
-          ? (record.job_role || 'Staff') + ' · ' + record.company_name
-          : 'Partner · ' + record.company_name;
-        applyNavForRole(false, true);
-        applyUserCard(displayName, roleLabel, initials);
-        restoreSortPrefs();
-        enterPortal();
-        initWhatsNew();
-        loadNotifications();
-        loadPartnerDashboard();
-        loadDeals();
-        loadMyReservations();
-        return true;
-      }
-    } catch(e) { /* bad session data */ }
+    let s;
+    try { s = JSON.parse(raw); } catch(e) { clearSession(); return false; }
+    if (!s || !s.authToken) { clearSession(); return false; }
+
+    currentAuthToken    = s.authToken;
+    currentRefreshToken = s.refreshToken || null;
+
+    // Validate the token by resolving role via get_my_session. If it 401s,
+    // try one refresh-and-retry before giving up. This catches stale tokens
+    // before any downstream RPC errors confuse the user.
+    async function callSession() {
+      return fetch(SUPABASE_URL + '/rest/v1/rpc/get_my_session', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + currentAuthToken,
+          'Content-Type': 'application/json',
+        },
+        body: '{}',
+      });
+    }
+
+    let sessRes;
+    try { sessRes = await callSession(); } catch(e) { sessRes = null; }
+    if (sessRes && sessRes.status === 401 && currentRefreshToken) {
+      await refreshAuthToken();
+      try { sessRes = await callSession(); } catch(e) { sessRes = null; }
+    }
+    if (!sessRes || !sessRes.ok) {
+      currentAuthToken = null; currentRefreshToken = null;
+      clearSession(); return false;
+    }
+    const session = await sessRes.json();
+    if (!session) {
+      currentAuthToken = null; currentRefreshToken = null;
+      clearSession(); return false;
+    }
+
+    scheduleTokenRefresh();
+
+    if (session.role === 'admin') {
+      currentUserIsAdmin   = true;
+      currentUserRole      = session.admin_role || 'admin';
+      currentAdminEmail    = session.email;
+      currentPartnerRecord = null;
+      const displayName    = session.full_name || session.email.split('@')[0];
+      const initials       = displayName.slice(0,2).toUpperCase();
+      const roleLabel      = currentUserRole === 'super_admin' ? 'Super Admin · TPCH' : 'Admin · TPCH';
+      applyNavForRole(true, false);
+      applyUserCard(displayName, roleLabel, initials);
+      restoreSortPrefs();
+      saveSession();
+      enterPortal();
+      return true;
+    }
+
+    if (session.role === 'partner' || session.role === 'staff') {
+      currentUserIsAdmin   = false;
+      currentPartnerRecord = session;
+      const displayName    = session.full_name || session.email?.split('@')[0] || '';
+      const initials       = displayName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+      const roleLabel      = session.role === 'staff'
+        ? (session.job_role || 'Staff') + ' · ' + session.company_name
+        : 'Partner · ' + session.company_name;
+      applyNavForRole(false, true);
+      applyUserCard(displayName, roleLabel, initials);
+      restoreSortPrefs();
+      saveSession();
+      enterPortal();
+      initWhatsNew();
+      loadNotifications();
+      loadPartnerDashboard();
+      loadDeals();
+      loadMyReservations();
+      return true;
+    }
+
     clearSession();
     return false;
   }
@@ -4640,44 +4675,6 @@
       setTimeout(() => document.getElementById('login-email').style.borderColor = '', 1500);
       return;
     }
-
-    // ── Path 1: TPCH team ──
-    if (adminEmails.includes(email)) {
-      const loginBtn = document.querySelector('.btn-login');
-      loginBtn.disabled = true;
-      loginBtn.textContent = 'Signing in…';
-      try {
-        const teamRes = await fetch(
-          SUPABASE_URL + '/rest/v1/tpch_team?email=eq.' + encodeURIComponent(email) + '&select=password,full_name,role&limit=1',
-          { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
-        );
-        const [member] = await teamRes.json();
-        if (member?.password) {
-          if (!pass || member.password !== pass) {
-            showLoginError('Invalid password.');
-            return;
-          }
-        }
-        currentUserIsAdmin = true;
-        currentUserRole = member?.role || 'admin';
-        currentAdminEmail = email;
-        currentPartnerRecord = null;
-        applyNavForRole(true, false);
-        const displayName = member?.full_name || email.split('@')[0];
-        const initials = displayName.slice(0,2).toUpperCase();
-        const roleLabel = currentUserRole === 'super_admin' ? 'Super Admin · TPCH' : 'Admin · TPCH';
-        applyUserCard(displayName, roleLabel, initials);
-        restoreSortPrefs();
-        saveSession();
-        enterPortal();
-      } finally {
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Access Portal →';
-      }
-      return;
-    }
-
-    // ── Path 2: Supabase Auth (channel partners + staff) ──
     if (!pass) {
       document.getElementById('login-pass').style.borderColor = 'var(--red)';
       setTimeout(() => document.getElementById('login-pass').style.borderColor = '', 1500);
@@ -4689,62 +4686,82 @@
     loginBtn.textContent = 'Signing in…';
 
     try {
-      // Authenticate
+      // ── 1. Authenticate via Supabase Auth (admins, partners, staff all here)
       const authRes = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
         method: 'POST',
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pass }),
       });
-
       if (!authRes.ok) {
         showLoginError('Invalid email or password.');
         return;
       }
+      const { access_token, refresh_token } = await authRes.json();
 
-      const { access_token, refresh_token, user } = await authRes.json();
-      currentAuthToken = access_token;
-      currentRefreshToken = refresh_token;
-
-      // Look up partner / staff record
-      const rpcRes = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_my_partner_record', {
+      // ── 2. Resolve role via get_my_session RPC
+      const sessRes = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_my_session', {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': 'Bearer ' + access_token,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ p_email: email, p_user_id: user.id }),
+        body: '{}',
       });
+      const session = sessRes.ok ? await sessRes.json() : null;
 
-      const record = await rpcRes.json();
-
-      if (!record) {
+      if (!session) {
         showLoginError('Your account is not authorised for this portal. Contact admin@tpch.com.au');
-        currentAuthToken = null;
         return;
       }
 
-      currentPartnerRecord = record;
-      currentUserIsAdmin   = false;
+      // ── 3. Wire session state common to all roles
+      currentAuthToken    = access_token;
+      currentRefreshToken = refresh_token;
       scheduleTokenRefresh();
-      applyNavForRole(false, true);
 
-      const displayName = record.full_name || email.split('@')[0];
-      const initials    = displayName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-      const roleLabel   = record.role === 'staff'
-        ? (record.job_role || 'Staff') + ' · ' + record.company_name
-        : 'Partner · ' + record.company_name;
-      applyUserCard(displayName, roleLabel, initials);
-      restoreSortPrefs();
-      saveSession();
-      enterPortal();
-      initWhatsNew();
-      loadNotifications();
-      loadPartnerDashboard();
-      loadDeals();
-      loadMyReservations();
+      if (session.role === 'admin') {
+        currentUserIsAdmin   = true;
+        currentUserRole      = session.admin_role || 'admin';
+        currentAdminEmail    = session.email || email;
+        currentPartnerRecord = null;
+        const displayName = session.full_name || (session.email || email).split('@')[0];
+        const initials    = displayName.slice(0,2).toUpperCase();
+        const roleLabel   = currentUserRole === 'super_admin' ? 'Super Admin · TPCH' : 'Admin · TPCH';
+        applyNavForRole(true, false);
+        applyUserCard(displayName, roleLabel, initials);
+        restoreSortPrefs();
+        saveSession();
+        enterPortal();
+        return;
+      }
+
+      if (session.role === 'partner' || session.role === 'staff') {
+        currentUserIsAdmin   = false;
+        currentPartnerRecord = session;
+        const displayName = session.full_name || (session.email || email).split('@')[0];
+        const initials    = displayName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+        const roleLabel   = session.role === 'staff'
+          ? (session.job_role || 'Staff') + ' · ' + session.company_name
+          : 'Partner · ' + session.company_name;
+        applyNavForRole(false, true);
+        applyUserCard(displayName, roleLabel, initials);
+        restoreSortPrefs();
+        saveSession();
+        enterPortal();
+        initWhatsNew();
+        loadNotifications();
+        loadPartnerDashboard();
+        loadDeals();
+        loadMyReservations();
+        return;
+      }
+
+      showLoginError('Your account is not authorised for this portal. Contact admin@tpch.com.au');
+      currentAuthToken = null; currentRefreshToken = null;
 
     } catch(e) {
+      console.error('Login error:', e);
       showLoginError('Login failed. Please try again.');
     } finally {
       loginBtn.disabled = false;
@@ -5665,23 +5682,24 @@
     if (!newPw) { errEl.textContent = 'Please enter a new password.'; return; }
     if (newPw.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
     if (newPw !== confirm) { errEl.textContent = 'Passwords do not match.'; return; }
-    const res = await fetch(
-      SUPABASE_URL + '/rest/v1/tpch_team?email=eq.' + encodeURIComponent(currentAdminEmail),
-      {
-        method: 'PATCH',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ password: newPw, updated_at: new Date().toISOString() })
-      }
-    );
+    if (!currentAuthToken) { errEl.textContent = 'Session expired. Please sign in again.'; return; }
+    // Updates auth.users password via Supabase Auth.
+    const res = await fetch(SUPABASE_URL + '/auth/v1/user', {
+      method: 'PUT',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + currentAuthToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password: newPw })
+    });
     if (res.ok) {
-      // Update local cache
-      const me = allTeam.find(x => x.email === currentAdminEmail);
-      if (me) me.password = newPw;
       errEl.style.color = '#4CAF7A';
       errEl.textContent = 'Password updated successfully.';
       setTimeout(() => closeAdminChangePwModal(), 1500);
     } else {
-      errEl.textContent = 'Failed to update password. Please try again.';
+      const err = await res.json().catch(() => null);
+      errEl.textContent = err?.msg || 'Failed to update password. Please try again.';
     }
   }
 
