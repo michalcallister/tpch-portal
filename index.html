@@ -5076,7 +5076,7 @@
     try {
       const res = await fetch(SUPABASE_URL + '/functions/v1/invite-partner', {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'partner', full_name: name, email, company_name: company, role_type: role, state, notes }),
       });
       const data = await res.json();
@@ -5246,7 +5246,7 @@
     try {
       const res = await fetch(SUPABASE_URL + '/functions/v1/invite-partner', {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY), 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'resend', email, full_name: fullName, company_name: companyName }),
       });
       const data = await res.json();
