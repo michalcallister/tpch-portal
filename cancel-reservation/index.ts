@@ -25,12 +25,13 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const MONDAY_API     = 'https://api.monday.com/v2'
-const MONDAY_TOKEN   = Deno.env.get('MONDAY_API_TOKEN')          ?? ''
-const STOCK_BOARD_ID = Deno.env.get('MONDAY_STOCK_BOARD_ID')    || '6070412774'
-const SUPABASE_URL   = Deno.env.get('SUPABASE_URL')             ?? ''
-const SUPABASE_KEY   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-const AVAIL_COL      = 'color'
+const MONDAY_API        = 'https://api.monday.com/v2'
+const MONDAY_TOKEN      = Deno.env.get('MONDAY_API_TOKEN')          ?? ''
+const STOCK_BOARD_ID    = Deno.env.get('MONDAY_STOCK_BOARD_ID')    || '6070412774'
+const SUPABASE_URL      = Deno.env.get('SUPABASE_URL')             ?? ''
+const SUPABASE_KEY      = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const AVAIL_COL         = 'color'
+const PARTNER_LINK_COL  = 'link_to_accounts_mkmv2zxe'  // board_relation on Property board → Channel Partners board (8393705888)
 
 const ALLOWED_ORIGINS = new Set([
   'https://portal.tpch.com.au',
@@ -67,6 +68,48 @@ async function setMondayAvailability(itemId: string, label: string) {
   })
   const json = await res.json()
   if (json.errors) console.error('Monday.com revert error:', JSON.stringify(json.errors))
+}
+
+// Remove a partner item id from the property item's Channel Partner board-relation
+// column. Reads existing linked ids first, removes only the target, writes the
+// rest back. No-op if the partner isn't currently linked.
+async function removeMondayPartnerLink(stockItemId: string, partnerItemId: string) {
+  const readQuery = `query {
+    items(ids: [${stockItemId}]) {
+      column_values(ids: ["${PARTNER_LINK_COL}"]) {
+        ... on BoardRelationValue { linked_item_ids }
+      }
+    }
+  }`
+  const readRes = await fetch(MONDAY_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': MONDAY_TOKEN, 'API-Version': '2023-10' },
+    body: JSON.stringify({ query: readQuery }),
+  })
+  const readJson = await readRes.json()
+  if (readJson.errors) {
+    console.error('Monday partner-link read error:', JSON.stringify(readJson.errors))
+    return
+  }
+  const existing: string[] = (readJson.data?.items?.[0]?.column_values?.[0]?.linked_item_ids ?? []).map(String)
+  if (!existing.includes(String(partnerItemId))) return  // nothing to remove
+
+  const remaining = existing.filter(id => id !== String(partnerItemId)).map(Number)
+  const writeQuery = `mutation {
+    change_column_value(
+      board_id: ${STOCK_BOARD_ID},
+      item_id: ${stockItemId},
+      column_id: "${PARTNER_LINK_COL}",
+      value: ${JSON.stringify(JSON.stringify({ item_ids: remaining }))}
+    ) { id }
+  }`
+  const writeRes = await fetch(MONDAY_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': MONDAY_TOKEN, 'API-Version': '2023-10' },
+    body: JSON.stringify({ query: writeQuery }),
+  })
+  const writeJson = await writeRes.json()
+  if (writeJson.errors) console.error('Monday partner-unlink mutation error:', JSON.stringify(writeJson.errors))
 }
 
 Deno.serve(async (req) => {
@@ -120,7 +163,7 @@ Deno.serve(async (req) => {
     // ── 3. Fetch reservation and validate ownership
     const { data: rsv, error: fetchErr } = await supabase
       .from('reservations')
-      .select('id, stock_id, status, partner_id')
+      .select('id, stock_id, status, partner_id, channel_partners(monday_item_id)')
       .eq('id', reservation_id)
       .single()
 
@@ -149,6 +192,12 @@ Deno.serve(async (req) => {
     setMondayAvailability(rsv.stock_id, 'Available').catch(e =>
       console.error('Monday.com revert failed:', e)
     )
+    const partnerMid = (rsv as any).channel_partners?.monday_item_id
+    if (partnerMid) {
+      removeMondayPartnerLink(rsv.stock_id, partnerMid).catch(e =>
+        console.error('Monday partner-unlink failed:', e)
+      )
+    }
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: corsHeaders })
   } catch (err) {

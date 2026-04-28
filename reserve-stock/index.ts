@@ -29,13 +29,14 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const RESEND_KEY     = Deno.env.get('RESEND_API_KEY')           ?? ''
-const MONDAY_API     = 'https://api.monday.com/v2'
-const MONDAY_TOKEN   = Deno.env.get('MONDAY_API_TOKEN')         ?? ''
-const STOCK_BOARD_ID = Deno.env.get('MONDAY_STOCK_BOARD_ID')   || '6070412774'
-const SUPABASE_URL   = Deno.env.get('SUPABASE_URL')            ?? ''
-const SUPABASE_KEY   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-const AVAIL_COL      = 'color'
+const RESEND_KEY        = Deno.env.get('RESEND_API_KEY')           ?? ''
+const MONDAY_API        = 'https://api.monday.com/v2'
+const MONDAY_TOKEN      = Deno.env.get('MONDAY_API_TOKEN')         ?? ''
+const STOCK_BOARD_ID    = Deno.env.get('MONDAY_STOCK_BOARD_ID')   || '6070412774'
+const SUPABASE_URL      = Deno.env.get('SUPABASE_URL')            ?? ''
+const SUPABASE_KEY      = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const AVAIL_COL         = 'color'
+const PARTNER_LINK_COL  = 'link_to_accounts_mkmv2zxe'  // board_relation on Property board → Channel Partners board (8393705888)
 
 const ALLOWED_ORIGINS = new Set([
   'https://portal.tpch.com.au',
@@ -81,6 +82,49 @@ async function setMondayAvailability(itemId: string, label: string) {
   })
   const json = await res.json()
   if (json.errors) console.error('Monday.com mutation error:', JSON.stringify(json.errors))
+}
+
+// Append a partner item id to the property item's Channel Partner board-relation
+// column. Reads existing linked ids first so we never overwrite — multiple
+// partners may have touched a property over its lifetime, and the column is
+// a running record of the current holder.
+async function appendMondayPartnerLink(stockItemId: string, partnerItemId: string) {
+  const readQuery = `query {
+    items(ids: [${stockItemId}]) {
+      column_values(ids: ["${PARTNER_LINK_COL}"]) {
+        ... on BoardRelationValue { linked_item_ids }
+      }
+    }
+  }`
+  const readRes = await fetch(MONDAY_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': MONDAY_TOKEN, 'API-Version': '2023-10' },
+    body: JSON.stringify({ query: readQuery }),
+  })
+  const readJson = await readRes.json()
+  if (readJson.errors) {
+    console.error('Monday partner-link read error:', JSON.stringify(readJson.errors))
+    return
+  }
+  const existing: string[] = (readJson.data?.items?.[0]?.column_values?.[0]?.linked_item_ids ?? []).map(String)
+  if (existing.includes(String(partnerItemId))) return  // already linked
+
+  const merged = [...existing, String(partnerItemId)].map(Number)
+  const writeQuery = `mutation {
+    change_column_value(
+      board_id: ${STOCK_BOARD_ID},
+      item_id: ${stockItemId},
+      column_id: "${PARTNER_LINK_COL}",
+      value: ${JSON.stringify(JSON.stringify({ item_ids: merged }))}
+    ) { id }
+  }`
+  const writeRes = await fetch(MONDAY_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': MONDAY_TOKEN, 'API-Version': '2023-10' },
+    body: JSON.stringify({ query: writeQuery }),
+  })
+  const writeJson = await writeRes.json()
+  if (writeJson.errors) console.error('Monday partner-link mutation error:', JSON.stringify(writeJson.errors))
 }
 
 async function sendConfirmationEmail(body: any, reservationId: string, expiresAt: string) {
@@ -176,20 +220,22 @@ Deno.serve(async (req) => {
     // Resolve caller → partner_id (owner first, then active staff). Trust DB,
     // not the body.
     let partner_id: string | null = null
-    let partner_name  = ''
-    let partner_email = callerEmail
+    let partner_name      = ''
+    let partner_email     = callerEmail
+    let partner_monday_id: string | null = null
 
     const { data: ownerRow } = await supabase
       .from('channel_partners')
-      .select('id, full_name, email')
+      .select('id, full_name, email, monday_item_id')
       .eq('user_id', callerUid)
       .eq('status', 'active')
       .maybeSingle()
 
     if (ownerRow) {
-      partner_id    = ownerRow.id
-      partner_name  = ownerRow.full_name || ''
-      partner_email = ownerRow.email || callerEmail
+      partner_id        = ownerRow.id
+      partner_name      = ownerRow.full_name || ''
+      partner_email     = ownerRow.email || callerEmail
+      partner_monday_id = ownerRow.monday_item_id || null
     } else {
       const { data: staffRow } = await supabase
         .from('partner_staff')
@@ -201,6 +247,13 @@ Deno.serve(async (req) => {
         partner_id    = staffRow.partner_id
         partner_name  = staffRow.full_name || ''
         partner_email = staffRow.email || callerEmail
+        // Staff users inherit their firm's Monday item id.
+        const { data: firmRow } = await supabase
+          .from('channel_partners')
+          .select('monday_item_id')
+          .eq('id', staffRow.partner_id)
+          .maybeSingle()
+        partner_monday_id = firmRow?.monday_item_id || null
       }
     }
 
@@ -284,6 +337,13 @@ Deno.serve(async (req) => {
     setMondayAvailability(body.stock_id, 'Reserved').catch(e =>
       console.error('Monday.com update failed:', e)
     )
+    if (partner_monday_id) {
+      appendMondayPartnerLink(body.stock_id, partner_monday_id).catch(e =>
+        console.error('Monday partner-link failed:', e)
+      )
+    } else {
+      console.warn(`No monday_item_id for partner ${partner_id}; skipping property link`)
+    }
     sendConfirmationEmail(
       { ...body, partner_name, partner_email },
       reservation.id,

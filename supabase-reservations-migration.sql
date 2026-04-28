@@ -93,6 +93,7 @@ BEGIN
       'stock_id',     r.stock_id,
       'stock_name',   r.stock_name,
       'project_name', r.project_name,
+      'partner_id',   r.partner_id,
       'partner_email',r.partner_email,
       'partner_name', r.partner_name,
       'client_name',  r.client_name,

@@ -21,14 +21,15 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const RESEND_KEY      = Deno.env.get('RESEND_API_KEY')          ?? ''
-const MONDAY_API      = 'https://api.monday.com/v2'
-const MONDAY_TOKEN    = Deno.env.get('MONDAY_API_TOKEN')        ?? ''
-const STOCK_BOARD_ID  = Deno.env.get('MONDAY_STOCK_BOARD_ID')  || '6070412774'
-const SUPABASE_URL    = Deno.env.get('SUPABASE_URL')           ?? ''
-const SUPABASE_KEY    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const RESEND_KEY        = Deno.env.get('RESEND_API_KEY')          ?? ''
+const MONDAY_API        = 'https://api.monday.com/v2'
+const MONDAY_TOKEN      = Deno.env.get('MONDAY_API_TOKEN')        ?? ''
+const STOCK_BOARD_ID    = Deno.env.get('MONDAY_STOCK_BOARD_ID')  || '6070412774'
+const SUPABASE_URL      = Deno.env.get('SUPABASE_URL')           ?? ''
+const SUPABASE_KEY      = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
-const AVAIL_COL = 'color'
+const AVAIL_COL         = 'color'
+const PARTNER_LINK_COL  = 'link_to_accounts_mkmv2zxe'  // board_relation on Property board → Channel Partners board (8393705888)
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -52,6 +53,46 @@ async function setMondayAvailability(itemId: string, label: string) {
   })
   const json = await res.json()
   if (json.errors) console.error(`Monday.com revert failed for ${itemId}:`, JSON.stringify(json.errors))
+}
+
+// Remove a partner item id from the property item's Channel Partner board-relation column.
+async function removeMondayPartnerLink(stockItemId: string, partnerItemId: string) {
+  const readQuery = `query {
+    items(ids: [${stockItemId}]) {
+      column_values(ids: ["${PARTNER_LINK_COL}"]) {
+        ... on BoardRelationValue { linked_item_ids }
+      }
+    }
+  }`
+  const readRes = await fetch(MONDAY_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': MONDAY_TOKEN, 'API-Version': '2023-10' },
+    body: JSON.stringify({ query: readQuery }),
+  })
+  const readJson = await readRes.json()
+  if (readJson.errors) {
+    console.error(`Monday partner-link read failed for ${stockItemId}:`, JSON.stringify(readJson.errors))
+    return
+  }
+  const existing: string[] = (readJson.data?.items?.[0]?.column_values?.[0]?.linked_item_ids ?? []).map(String)
+  if (!existing.includes(String(partnerItemId))) return
+
+  const remaining = existing.filter(id => id !== String(partnerItemId)).map(Number)
+  const writeQuery = `mutation {
+    change_column_value(
+      board_id: ${STOCK_BOARD_ID},
+      item_id: ${stockItemId},
+      column_id: "${PARTNER_LINK_COL}",
+      value: ${JSON.stringify(JSON.stringify({ item_ids: remaining }))}
+    ) { id }
+  }`
+  const writeRes = await fetch(MONDAY_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': MONDAY_TOKEN, 'API-Version': '2023-10' },
+    body: JSON.stringify({ query: writeQuery }),
+  })
+  const writeJson = await writeRes.json()
+  if (writeJson.errors) console.error(`Monday partner-unlink failed for ${stockItemId}:`, JSON.stringify(writeJson.errors))
 }
 
 async function sendExpiryEmail(r: any) {
@@ -141,12 +182,23 @@ Deno.serve(async (_req) => {
       return new Response(JSON.stringify({ expired: 0 }), { status: 200 })
     }
 
-    // 2. For each expired reservation: revert Monday.com + send email
+    // 2. For each expired reservation: revert Monday.com + remove partner link + send email
     await Promise.allSettled(
       expired.map(async (r: any) => {
         // Revert Monday.com availability → Available
         if (r.stock_id) {
           await setMondayAvailability(r.stock_id, 'Available')
+        }
+        // Remove the partner from the property item's Channel Partner column
+        if (r.stock_id && r.partner_id) {
+          const { data: cp } = await supabase
+            .from('channel_partners')
+            .select('monday_item_id')
+            .eq('id', r.partner_id)
+            .maybeSingle()
+          if (cp?.monday_item_id) {
+            await removeMondayPartnerLink(r.stock_id, cp.monday_item_id)
+          }
         }
         // Send expiry email to partner
         if (r.partner_email) {

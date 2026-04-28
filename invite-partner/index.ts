@@ -29,6 +29,113 @@ const ALLOWED_ORIGINS = new Set([
   'https://tpch.com.au',
 ])
 
+const MONDAY_API                 = 'https://api.monday.com/v2'
+const MONDAY_TOKEN               = Deno.env.get('MONDAY_API_TOKEN') ?? ''
+const PARTNERS_BOARD_ID          = 8393705888
+const PARTNERS_ACTIVE_GROUP_ID   = 'topics'  // "Active Channels" group on the Channel Partners board
+
+async function mondayQuery(query: string): Promise<any | null> {
+  if (!MONDAY_TOKEN) return null
+  try {
+    const res = await fetch(MONDAY_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': MONDAY_TOKEN,
+        'API-Version':   '2023-10',
+      },
+      body: JSON.stringify({ query }),
+    })
+    const json = await res.json()
+    if (json.errors) {
+      console.error('Monday GraphQL error:', JSON.stringify(json.errors))
+      return null
+    }
+    return json
+  } catch (e) {
+    console.error('Monday GraphQL exception:', e)
+    return null
+  }
+}
+
+// Find an existing Channel Partners board item that matches the firm by either
+// exact email or exact item name (company_name). Returns the first match's id,
+// or null if none. Prevents duplicate Monday items when an invited firm already
+// exists on the board (e.g. backlogged historical partners).
+async function findExistingMondayPartnerItem(opts: {
+  email: string
+  companyName: string
+}): Promise<string | null> {
+  const lcEmail = opts.email.trim().toLowerCase()
+  const byEmailQuery = `query {
+    items_page_by_column_values(
+      board_id: ${PARTNERS_BOARD_ID},
+      columns: [{ column_id: "email_mkmvh4p6", column_values: [${JSON.stringify(lcEmail)}] }],
+      limit: 1
+    ) { items { id } }
+  }`
+  const byEmailRes = await mondayQuery(byEmailQuery)
+  const emailHit = byEmailRes?.data?.items_page_by_column_values?.items?.[0]?.id
+  if (emailHit) return emailHit
+
+  // Fallback: exact item-name match.
+  const byNameQuery = `query {
+    boards(ids: [${PARTNERS_BOARD_ID}]) {
+      items_page(
+        limit: 5,
+        query_params: { rules: [{ column_id: "name", compare_value: [${JSON.stringify(opts.companyName)}], operator: any_of }] }
+      ) { items { id name } }
+    }
+  }`
+  const byNameRes = await mondayQuery(byNameQuery)
+  const nameHits: any[] = byNameRes?.data?.boards?.[0]?.items_page?.items ?? []
+  const exact = nameHits.find(i => (i.name || '').trim().toLowerCase() === opts.companyName.trim().toLowerCase())
+  return exact?.id ?? null
+}
+
+// Create a Monday.com item on the Channel Partners board for a newly-invited
+// partner firm. Returns the new item id, or null on failure (caller logs).
+async function createMondayPartnerItem(opts: {
+  fullName: string
+  email: string
+  companyName: string
+}): Promise<string | null> {
+  if (!MONDAY_TOKEN) {
+    console.warn('MONDAY_API_TOKEN not set; skipping Monday partner-item create')
+    return null
+  }
+  const [first, ...rest] = (opts.fullName || '').trim().split(/\s+/)
+  const surname = rest.join(' ')
+  const colVals = JSON.stringify({
+    email_mkmvh4p6:                 { email: opts.email, text: opts.email },
+    text_mkmy30jn:                  first || '',
+    dup__of_first_name_mkmy16v0:    surname,
+  })
+  const query = `mutation {
+    create_item(
+      board_id: ${PARTNERS_BOARD_ID},
+      group_id: ${JSON.stringify(PARTNERS_ACTIVE_GROUP_ID)},
+      item_name: ${JSON.stringify(opts.companyName)},
+      column_values: ${JSON.stringify(colVals)}
+    ) { id }
+  }`
+  const res = await mondayQuery(query)
+  return res?.data?.create_item?.id ?? null
+}
+
+// Resolve a Channel Partners item id for an invited firm: reuse an existing
+// item if one matches by email or exact name; otherwise create a fresh item.
+async function resolveOrCreateMondayPartnerItem(opts: {
+  fullName: string
+  email: string
+  companyName: string
+}): Promise<{ id: string | null; reused: boolean }> {
+  const existing = await findExistingMondayPartnerItem({ email: opts.email, companyName: opts.companyName })
+  if (existing) return { id: existing, reused: true }
+  const created = await createMondayPartnerItem(opts)
+  return { id: created, reused: false }
+}
+
 function corsFor(origin: string | null) {
   const allow = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://portal.tpch.com.au'
   return {
@@ -116,10 +223,31 @@ Deno.serve(async (req) => {
           { full_name, email, company_name, role_type, state, notes, status: 'active' },
           { onConflict: 'email', ignoreDuplicates: false }
         )
-        .select('id')
+        .select('id, monday_item_id')
         .single()
 
       if (partnerErr) return json({ error: partnerErr.message }, 500)
+
+      // Resolve or create the Monday.com Channel Partners board item.
+      // - Reuses an existing item if one matches by email or exact name (avoids
+      //   duplicating historical partner items already on the board).
+      // - Otherwise creates a fresh item.
+      // Failure logs but does not abort the invite.
+      if (!partner.monday_item_id) {
+        const resolved = await resolveOrCreateMondayPartnerItem({
+          fullName:    full_name,
+          email,
+          companyName: company_name,
+        })
+        if (resolved.id) {
+          const { error: updErr } = await supabase
+            .from('channel_partners')
+            .update({ monday_item_id: resolved.id })
+            .eq('id', partner.id)
+          if (updErr) console.error('Failed to store monday_item_id:', updErr.message)
+          else console.log(`monday_item_id ${resolved.reused ? 'reused' : 'created'}: ${resolved.id} for ${email}`)
+        }
+      }
 
       const resendKey  = Deno.env.get('RESEND_API_KEY') || ''
       const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@tpch.com.au'
