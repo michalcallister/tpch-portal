@@ -12610,18 +12610,21 @@ function buildKitHtml(s, research, brand) {
     margin-bottom: 20px;
   }
 
-  /* Spec strip */
+  /* Spec strip — flex-wraps so 6–9 specs all sit evenly. */
   .fly-spec-strip {
-    display: grid; grid-template-columns: repeat(6, 1fr); gap: 0;
+    display: flex; flex-wrap: wrap; gap: 0;
     background: var(--f-surface);
     border: 1px solid var(--f-line);
     border-radius: 4px;
     margin: 24px 0 40px;
     box-shadow: var(--f-shadow);
+    overflow: hidden;
   }
   .fly-spec {
-    padding: 22px 16px; text-align: center;
+    flex: 1 1 110px; min-width: 90px;
+    padding: 22px 12px; text-align: center;
     border-right: 1px solid var(--f-line-soft);
+    border-bottom: 1px solid var(--f-line-soft);
   }
   .fly-spec:last-child { border-right: none; }
   .fly-spec-val {
@@ -12878,10 +12881,7 @@ function buildKitHtml(s, research, brand) {
     .fly-logo { height: 80px; max-height: 92px; max-width: 260px; }
     .fly-prepared-for-header .pf-name { font-size: 20px; }
     .fly-title-block h1 { font-size: 28px; }
-    .fly-spec-strip { grid-template-columns: repeat(3, 1fr); }
-    .fly-spec { border-bottom: 1px solid var(--f-line-soft); }
-    .fly-spec:nth-child(n+4) { border-bottom: none; }
-    .fly-spec:nth-child(3n) { border-right: none; }
+    .fly-spec { flex-basis: 33%; }
     .fly-gallery { grid-template-columns: repeat(2, 1fr); }
     .fly-section { margin: 40px 0; }
     .fly-section h2 { font-size: 22px; }
@@ -12930,11 +12930,14 @@ function buildKitHtml(s, research, brand) {
         <div id="fly-address" class="fly-address">—</div>
       </div>
 
-      <div class="fly-spec-strip">
+      <div class="fly-spec-strip" id="fly-spec-strip">
         <div class="fly-spec"><span class="fly-spec-val" id="fly-beds">—</span><span class="fly-spec-label">Bed</span></div>
         <div class="fly-spec"><span class="fly-spec-val" id="fly-baths">—</span><span class="fly-spec-label">Bath</span></div>
         <div class="fly-spec"><span class="fly-spec-val" id="fly-cars">—</span><span class="fly-spec-label">Car</span></div>
-        <div class="fly-spec"><span class="fly-spec-val" id="fly-sqm">—</span><span class="fly-spec-label">Internal</span></div>
+        <div class="fly-spec" id="fly-level-wrap" style="display:none;"><span class="fly-spec-val" id="fly-level">—</span><span class="fly-spec-label">Level</span></div>
+        <div class="fly-spec" id="fly-internal-wrap"><span class="fly-spec-val" id="fly-internal">—</span><span class="fly-spec-label">Internal</span></div>
+        <div class="fly-spec" id="fly-external-wrap" style="display:none;"><span class="fly-spec-val" id="fly-external">—</span><span class="fly-spec-label">External</span></div>
+        <div class="fly-spec" id="fly-total-wrap" style="display:none;"><span class="fly-spec-val" id="fly-total">—</span><span class="fly-spec-label">Total</span></div>
         <div class="fly-spec"><span class="fly-spec-val" id="fly-price">—</span><span class="fly-spec-label">Price</span></div>
         <div class="fly-spec"><span class="fly-spec-val" id="fly-rent">—</span><span class="fly-spec-label">Rent / wk</span></div>
       </div>
@@ -13216,7 +13219,31 @@ function buildKitHtml(s, research, brand) {
     document.getElementById('fly-beds').textContent  = fnum(stock.bedrooms);
     document.getElementById('fly-baths').textContent = fnum(stock.bathrooms);
     document.getElementById('fly-cars').textContent  = fnum(stock.car_parks);
-    document.getElementById('fly-sqm').textContent   = stock.build_internal_sqm ? Math.round(stock.build_internal_sqm) + 'm²' : (stock.build_total_sqm ? Math.round(stock.build_total_sqm) + 'm²' : '—');
+
+    // Level — apartments only; hide the cell entirely on houses/townhouses.
+    if (stock.level != null && stock.level !== '') {
+      document.getElementById('fly-level').textContent = stock.level;
+      document.getElementById('fly-level-wrap').style.display = '';
+    } else {
+      document.getElementById('fly-level-wrap').style.display = 'none';
+    }
+
+    // Build areas — show Internal always; show External / Total only when set.
+    const fmtSqm = v => (v ? Math.round(v) + 'm²' : '—');
+    document.getElementById('fly-internal').textContent = fmtSqm(stock.build_internal_sqm);
+    if (stock.build_external_sqm) {
+      document.getElementById('fly-external').textContent = fmtSqm(stock.build_external_sqm);
+      document.getElementById('fly-external-wrap').style.display = '';
+    } else {
+      document.getElementById('fly-external-wrap').style.display = 'none';
+    }
+    if (stock.build_total_sqm) {
+      document.getElementById('fly-total').textContent = fmtSqm(stock.build_total_sqm);
+      document.getElementById('fly-total-wrap').style.display = '';
+    } else {
+      document.getElementById('fly-total-wrap').style.display = 'none';
+    }
+
     document.getElementById('fly-price').textContent = stock.total_contract ? flyerFmtCurrency(stock.total_contract) : '—';
     document.getElementById('fly-rent').textContent  = stock.rent_per_week ? '$' + Math.round(stock.rent_per_week).toLocaleString('en-AU') : '—';
 
