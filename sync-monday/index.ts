@@ -310,7 +310,7 @@ async function fetchAllItems(boardId: string): Promise<any[]> {
                 display_value
               }
               ... on FormulaValue {
-                text
+                display_value
               }
               ... on LongTextValue {
                 text
