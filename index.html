@@ -6138,9 +6138,12 @@
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
       localStorage.setItem('tpch_app_version', APP_VERSION);
-      // Only reload if we aren't already on a versioned URL (prevents loops)
+      // Only reload if we aren't already on a versioned URL (prevents loops).
+      // Preserve location.hash so public deep-links (#flyer/<stockId>/<partnerId>)
+      // survive the cache-bust reload — otherwise first-time visitors land on
+      // the login screen instead of the public flyer.
       if (!location.search.includes('v=')) {
-        location.replace(location.pathname + '?v=' + APP_VERSION);
+        location.replace(location.pathname + '?v=' + APP_VERSION + location.hash);
       }
     }
   })();
