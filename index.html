@@ -12610,9 +12610,9 @@ function buildKitHtml(s, research, brand) {
     margin-bottom: 20px;
   }
 
-  /* Spec strip — flex-wraps so 6–9 specs all sit evenly. */
+  /* Spec strip — explicit two-row layout (5 across top, 4 across bottom). */
   .fly-spec-strip {
-    display: flex; flex-wrap: wrap; gap: 0;
+    display: flex; flex-direction: column;
     background: var(--f-surface);
     border: 1px solid var(--f-line);
     border-radius: 4px;
@@ -12620,11 +12620,12 @@ function buildKitHtml(s, research, brand) {
     box-shadow: var(--f-shadow);
     overflow: hidden;
   }
+  .fly-spec-row { display: flex; flex-wrap: wrap; }
+  .fly-spec-row + .fly-spec-row { border-top: 1px solid var(--f-line-soft); }
   .fly-spec {
-    flex: 1 1 110px; min-width: 90px;
+    flex: 1 1 0; min-width: 90px;
     padding: 22px 12px; text-align: center;
     border-right: 1px solid var(--f-line-soft);
-    border-bottom: 1px solid var(--f-line-soft);
   }
   .fly-spec:last-child { border-right: none; }
   .fly-spec-val {
@@ -12881,7 +12882,7 @@ function buildKitHtml(s, research, brand) {
     .fly-logo { height: 80px; max-height: 92px; max-width: 260px; }
     .fly-prepared-for-header .pf-name { font-size: 20px; }
     .fly-title-block h1 { font-size: 28px; }
-    .fly-spec { flex-basis: 33%; }
+    .fly-spec { flex-basis: 33.33%; }
     .fly-gallery { grid-template-columns: repeat(2, 1fr); }
     .fly-section { margin: 40px 0; }
     .fly-section h2 { font-size: 22px; }
@@ -12931,15 +12932,19 @@ function buildKitHtml(s, research, brand) {
       </div>
 
       <div class="fly-spec-strip" id="fly-spec-strip">
-        <div class="fly-spec"><span class="fly-spec-val" id="fly-beds">—</span><span class="fly-spec-label">Bed</span></div>
-        <div class="fly-spec"><span class="fly-spec-val" id="fly-baths">—</span><span class="fly-spec-label">Bath</span></div>
-        <div class="fly-spec"><span class="fly-spec-val" id="fly-cars">—</span><span class="fly-spec-label">Car</span></div>
-        <div class="fly-spec" id="fly-level-wrap" style="display:none;"><span class="fly-spec-val" id="fly-level">—</span><span class="fly-spec-label">Level</span></div>
-        <div class="fly-spec" id="fly-internal-wrap"><span class="fly-spec-val" id="fly-internal">—</span><span class="fly-spec-label">Internal</span></div>
-        <div class="fly-spec" id="fly-external-wrap" style="display:none;"><span class="fly-spec-val" id="fly-external">—</span><span class="fly-spec-label">External</span></div>
-        <div class="fly-spec" id="fly-total-wrap" style="display:none;"><span class="fly-spec-val" id="fly-total">—</span><span class="fly-spec-label">Total</span></div>
-        <div class="fly-spec"><span class="fly-spec-val" id="fly-price">—</span><span class="fly-spec-label">Price</span></div>
-        <div class="fly-spec"><span class="fly-spec-val" id="fly-rent">—</span><span class="fly-spec-label">Rent / wk</span></div>
+        <div class="fly-spec-row">
+          <div class="fly-spec"><span class="fly-spec-val" id="fly-beds">—</span><span class="fly-spec-label">Bed</span></div>
+          <div class="fly-spec"><span class="fly-spec-val" id="fly-baths">—</span><span class="fly-spec-label">Bath</span></div>
+          <div class="fly-spec"><span class="fly-spec-val" id="fly-cars">—</span><span class="fly-spec-label">Car</span></div>
+          <div class="fly-spec" id="fly-level-wrap" style="display:none;"><span class="fly-spec-val" id="fly-level">—</span><span class="fly-spec-label">Level</span></div>
+          <div class="fly-spec"><span class="fly-spec-val" id="fly-price">—</span><span class="fly-spec-label">Price</span></div>
+        </div>
+        <div class="fly-spec-row">
+          <div class="fly-spec" id="fly-internal-wrap"><span class="fly-spec-val" id="fly-internal">—</span><span class="fly-spec-label">Internal</span></div>
+          <div class="fly-spec" id="fly-external-wrap" style="display:none;"><span class="fly-spec-val" id="fly-external">—</span><span class="fly-spec-label">External</span></div>
+          <div class="fly-spec" id="fly-total-wrap" style="display:none;"><span class="fly-spec-val" id="fly-total">—</span><span class="fly-spec-label">Total</span></div>
+          <div class="fly-spec"><span class="fly-spec-val" id="fly-rent">—</span><span class="fly-spec-label">Rent / wk</span></div>
+        </div>
       </div>
 
       <section class="fly-section" id="fly-overview-section">
