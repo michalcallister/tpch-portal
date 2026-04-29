@@ -13606,24 +13606,32 @@ function buildKitHtml(s, research, brand) {
   }
 
   async function flyerGeocode(project) {
-    const q = [project.address, project.suburb, project.state, 'Australia']
-      .filter(Boolean).join(', ');
-    if (!q) return null;
-    try {
-      const res = await fetch(
-        'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=au&q=' + encodeURIComponent(q),
-        { headers: { 'Accept': 'application/json' } }
-      );
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (!Array.isArray(data) || data.length === 0) return null;
-      const lat = parseFloat(data[0].lat);
-      const lng = parseFloat(data[0].lon);
-      if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
-      return { lat, lng };
-    } catch (e) {
-      return null;
+    // The `address` field comes from Monday's location column and usually
+    // already contains state + country (e.g. "613 Swanston Street, Carlton
+    // VIC, Australia"). Concatenating suburb/state/'Australia' on top of
+    // that produces duplicates that Nominatim returns no results for. Try
+    // the raw address first, then a composed fallback for projects that
+    // only have suburb/state populated.
+    const tries = [];
+    if (project.address) tries.push(project.address);
+    const composed = [project.suburb, project.state, 'Australia'].filter(Boolean).join(', ');
+    if (composed && composed !== project.address) tries.push(composed);
+    for (const q of tries) {
+      try {
+        const res = await fetch(
+          'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=au&q=' + encodeURIComponent(q),
+          { headers: { 'Accept': 'application/json' } }
+        );
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) continue;
+        const lat = parseFloat(data[0].lat);
+        const lng = parseFloat(data[0].lon);
+        if (Number.isNaN(lat) || Number.isNaN(lng)) continue;
+        return { lat, lng };
+      } catch (e) { /* try next */ }
     }
+    return null;
   }
 
   async function flyerCacheGeocode(projectId, lat, lng) {
