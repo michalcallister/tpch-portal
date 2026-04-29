@@ -9,6 +9,8 @@
 <title>The Property Clearing House — Partner Portal</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='18' y='10' width='34' height='34' rx='3' transform='rotate(45 35 27)' fill='%23C8A951'/><polygon points='21,10 8,22 34,22' fill='%23F5F3EE'/><rect x='10' y='21' width='24' height='18' fill='%23F5F3EE'/><rect x='16' y='30' width='10' height='9' fill='%23C8A951'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -2729,171 +2731,496 @@
       </div>
     </div>
 
-    <!-- ── PAGE: ALL REPORTS ──────────────────────────── -->
-    <div id="page-reports" class="page-view" style="padding:32px">
-      <div class="section-heading">All Research Reports</div>
-      <div class="research-list"></div>
-    </div>
+    <!-- ── PAGE: ALL REPORTS (Research browse, Stock-Portal-style shell) ─── -->
+    <div id="page-reports" class="page-view" style="padding:0;overflow:hidden;">
+      <div class="rsc-browse-shell">
 
-    <!-- ── PAGE: STOCK BROWSE ───────────────────────────── -->
-    <div id="page-stock" class="page-view" style="padding:0;overflow:hidden;">
-      <div class="stk-browse-layout">
-
-        <!-- FILTER SIDEBAR -->
-        <div class="stk-filters">
-          <div class="stk-filters-header">
-            <div class="stk-filters-title">Filters</div>
-            <button class="stk-filters-reset" onclick="resetStkFilters()">Reset</button>
-          </div>
-
-          <div class="stk-filter-group">
-            <span class="stk-filter-label">Availability</span>
-            <div class="stk-pill-row">
-              <button class="stk-pill active" onclick="toggleStkPill('avail','all',this)">All</button>
-              <button class="stk-pill" onclick="toggleStkPill('avail','Available',this)">Available</button>
-              <button class="stk-pill" onclick="toggleStkPill('avail','Reserved',this)">Reserved</button>
-            </div>
-          </div>
-
-          <div class="stk-filter-group">
-            <span class="stk-filter-label">State</span>
-            <div class="stk-pill-row" id="stk-state-pills">
-              <button class="stk-pill" onclick="toggleStkMulti('states','QLD',this)">QLD</button>
-              <button class="stk-pill" onclick="toggleStkMulti('states','NSW',this)">NSW</button>
-              <button class="stk-pill" onclick="toggleStkMulti('states','VIC',this)">VIC</button>
-              <button class="stk-pill" onclick="toggleStkMulti('states','WA',this)">WA</button>
-              <button class="stk-pill" onclick="toggleStkMulti('states','SA',this)">SA</button>
-              <button class="stk-pill" onclick="toggleStkMulti('states','ACT',this)">ACT</button>
-              <button class="stk-pill" onclick="toggleStkMulti('states','QLD',this)" style="display:none">NT</button>
-            </div>
-          </div>
-
-          <div class="stk-filter-group">
-            <span class="stk-filter-label">Property Type</span>
-            <div class="stk-pill-row" style="flex-wrap:wrap;gap:6px;">
-              <button class="stk-pill" onclick="toggleStkMulti('types','Apartment',this)">Apartment</button>
-              <button class="stk-pill" onclick="toggleStkMulti('types','Townhouse',this)">Townhouse</button>
-              <button class="stk-pill" onclick="toggleStkMulti('types','House & Land',this)">House & Land</button>
-              <button class="stk-pill" onclick="toggleStkMulti('types','Standard',this)">Standard</button>
-              <button class="stk-pill" onclick="toggleStkMulti('types','Dual living',this)">Dual Living</button>
-              <button class="stk-pill" onclick="toggleStkMulti('types','Co-living',this)">Co-living</button>
-              <button class="stk-pill" onclick="toggleStkMulti('types','NDIS',this)">NDIS</button>
-            </div>
-          </div>
-
-          <div class="stk-filter-group">
-            <span class="stk-filter-label">Bedrooms</span>
-            <div class="stk-pill-row">
-              <button class="stk-pill active" onclick="toggleStkPill('beds','any',this)">Any</button>
-              <button class="stk-pill" onclick="toggleStkPill('beds','1',this)">1</button>
-              <button class="stk-pill" onclick="toggleStkPill('beds','2',this)">2</button>
-              <button class="stk-pill" onclick="toggleStkPill('beds','3',this)">3</button>
-              <button class="stk-pill" onclick="toggleStkPill('beds','4',this)">4+</button>
-            </div>
-          </div>
-
-          <div class="stk-filter-group">
-            <span class="stk-filter-label">Price Range</span>
-            <div class="stk-price-range">
-              <div class="stk-price-label">
-                <span id="stk-price-min-lbl">$200k</span> — <span id="stk-price-max-lbl">$5m</span>
-              </div>
-              <div class="stk-range-wrap" id="stk-range-wrap">
-                <div class="stk-range-track"><div class="stk-range-fill" id="stk-range-fill"></div></div>
-                <input type="range" id="stk-range-min" min="200000" max="5000000" step="50000" value="200000" oninput="updatePriceFilter()">
-                <input type="range" id="stk-range-max" min="200000" max="5000000" step="50000" value="5000000" oninput="updatePriceFilter()">
-              </div>
-            </div>
-          </div>
-
-          <div class="stk-filter-group">
-            <span class="stk-filter-label">Project Type</span>
-            <div class="stk-pill-row">
-              <button class="stk-pill active" onclick="toggleStkPill('projStatus','all',this)">All</button>
-              <button class="stk-pill" onclick="toggleStkPill('projStatus','Established',this)">Established</button>
-              <button class="stk-pill" onclick="toggleStkPill('projStatus','Construction',this)">Construction</button>
-              <button class="stk-pill" onclick="toggleStkPill('projStatus','Off-the-plan',this)">Off-the-plan</button>
-            </div>
-          </div>
-
-          <div class="stk-filter-group">
-            <span class="stk-filter-label">SMSF Eligible</span>
-            <div class="stk-toggle-row">
-              <span class="stk-toggle-desc">Show SMSF only</span>
-              <label class="stk-toggle">
-                <input type="checkbox" id="stk-smsf-toggle" onchange="toggleStkSmsf()">
-                <div class="stk-toggle-track"></div>
-                <div class="stk-toggle-thumb"></div>
-              </label>
-            </div>
-          </div>
-
-          <div class="stk-filter-group">
-            <span class="stk-filter-label">Rental Yield</span>
-            <div class="stk-pill-row">
-              <button class="stk-pill active" onclick="toggleStkPill('yieldMin',0,this)">Any</button>
-              <button class="stk-pill" onclick="toggleStkPill('yieldMin',4,this)">4%+</button>
-              <button class="stk-pill" onclick="toggleStkPill('yieldMin',5,this)">5%+</button>
-              <button class="stk-pill" onclick="toggleStkPill('yieldMin',6,this)">6%+</button>
-              <button class="stk-pill" onclick="toggleStkPill('yieldMin',7,this)">7%+</button>
-              <button class="stk-pill" onclick="toggleStkPill('yieldMin',8,this)">8%+</button>
-            </div>
-          </div>
-          <div class="stk-filter-group">
-            <span class="stk-filter-label">Settlement</span>
-            <div class="stk-pill-row">
-              <button class="stk-pill active" onclick="toggleStkPill('titleWindow','any',this)">Any</button>
-              <button class="stk-pill" onclick="toggleStkPill('titleWindow','completed',this)">Completed</button>
-              <button class="stk-pill" onclick="toggleStkPill('titleWindow','0-6',this)">0–6 months</button>
-              <button class="stk-pill" onclick="toggleStkPill('titleWindow','6-12',this)">6–12 months</button>
-              <button class="stk-pill" onclick="toggleStkPill('titleWindow','12-24',this)">12–24 months</button>
-              <button class="stk-pill" onclick="toggleStkPill('titleWindow','24-36',this)">2–3 years</button>
+        <!-- HEADER ROW: count + view toggle (no tabs — single entity type) -->
+        <div class="rsc-header-row">
+          <div class="rsc-count" id="rsc-count">— reports</div>
+          <div class="rsc-header-right">
+            <div class="rsc-view-btns" id="rsc-view-btns">
+              <button class="rsc-view-btn" title="List view (cards)" onclick="switchRscView('list',this)" id="rsc-view-list-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+              <button class="rsc-view-btn active" title="Map view" onclick="switchRscView('map',this)" id="rsc-view-map-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></button>
             </div>
           </div>
         </div>
 
-        <!-- CARDS AREA -->
-        <div class="stk-main">
-          <div class="stk-top-bar">
-            <div class="stk-browse-tabs">
-              <button class="stk-browse-tab active" id="stk-tab-projects" onclick="switchStkBrowse('projects',this)">Projects</button>
-              <button class="stk-browse-tab" id="stk-tab-stock" onclick="switchStkBrowse('stock',this)">Stock</button>
-            </div>
-            <div style="display:flex;align-items:center;gap:12px">
-              <div class="stk-count" id="stk-count" style="font-size:11px;color:var(--grey-mid)"></div>
-              <button id="stk-sync-btn" class="stk-sync-btn" onclick="syncMonday()" style="display:none">⟳ Sync Now</button>
-              <div class="stk-view-btns" id="stk-view-btns">
-                <button class="stk-view-btn active" title="Grid view" onclick="setStkView('grid',this)">⊞</button>
-                <button class="stk-view-btn" title="List view" onclick="setStkView('list',this)">☰</button>
+        <!-- FILTER ROW: search + 5 dropdowns + More filters + Clear -->
+        <div class="rsc-filter-row" id="rsc-filter-row">
+          <div class="rsc-search-wrap">
+            <input type="text" id="rsc-search" class="rsc-search-input" placeholder="Search suburbs" oninput="onRscSearchInput()">
+            <span class="rsc-search-icon">🔍</span>
+          </div>
+
+          <div class="rsc-fdrop" data-fdrop="states">
+            <button class="rsc-fdrop-btn" onclick="toggleRscFdrop('states',this)">
+              <span class="rsc-fdrop-label">State</span>
+              <span class="rsc-fdrop-value" id="rsc-fdrop-states-val">Any</span>
+              <span class="rsc-fdrop-caret">▾</span>
+            </button>
+            <div class="rsc-fdrop-pop">
+              <div class="rsc-pill-row" id="rsc-state-pills">
+                <button class="rsc-pill" onclick="toggleRscMulti('states','NSW',this)">NSW</button>
+                <button class="rsc-pill" onclick="toggleRscMulti('states','VIC',this)">VIC</button>
+                <button class="rsc-pill" onclick="toggleRscMulti('states','QLD',this)">QLD</button>
+                <button class="rsc-pill" onclick="toggleRscMulti('states','WA',this)">WA</button>
+                <button class="rsc-pill" onclick="toggleRscMulti('states','SA',this)">SA</button>
+                <button class="rsc-pill" onclick="toggleRscMulti('states','TAS',this)">TAS</button>
+                <button class="rsc-pill" onclick="toggleRscMulti('states','ACT',this)">ACT</button>
+                <button class="rsc-pill" onclick="toggleRscMulti('states','NT',this)">NT</button>
               </div>
             </div>
           </div>
-          <div class="stk-cards-wrap">
+
+          <div class="rsc-fdrop" data-fdrop="ratings">
+            <button class="rsc-fdrop-btn" onclick="toggleRscFdrop('ratings',this)">
+              <span class="rsc-fdrop-label">Rating</span>
+              <span class="rsc-fdrop-value" id="rsc-fdrop-ratings-val">All</span>
+              <span class="rsc-fdrop-caret">▾</span>
+            </button>
+            <div class="rsc-fdrop-pop">
+              <div class="rsc-pill-row" style="flex-wrap:wrap;gap:6px;">
+                <button class="rsc-pill" onclick="toggleRscMulti('ratings','Strong Buy',this)">Strong Buy</button>
+                <button class="rsc-pill" onclick="toggleRscMulti('ratings','Good Buy',this)">Good Buy</button>
+                <button class="rsc-pill" onclick="toggleRscMulti('ratings','Watch',this)">Watch</button>
+                <button class="rsc-pill" onclick="toggleRscMulti('ratings','Caution',this)">Caution</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="rsc-fdrop" data-fdrop="scoreMin">
+            <button class="rsc-fdrop-btn" onclick="toggleRscFdrop('scoreMin',this)">
+              <span class="rsc-fdrop-label">Score</span>
+              <span class="rsc-fdrop-value" id="rsc-fdrop-scoreMin-val">Any</span>
+              <span class="rsc-fdrop-caret">▾</span>
+            </button>
+            <div class="rsc-fdrop-pop">
+              <div class="rsc-pill-row">
+                <button class="rsc-pill active" onclick="setRscPill('scoreMin',0,this,'Any')">Any</button>
+                <button class="rsc-pill" onclick="setRscPill('scoreMin',60,this,'60+')">60+</button>
+                <button class="rsc-pill" onclick="setRscPill('scoreMin',70,this,'70+')">70+</button>
+                <button class="rsc-pill" onclick="setRscPill('scoreMin',80,this,'80+')">80+</button>
+                <button class="rsc-pill" onclick="setRscPill('scoreMin',90,this,'90+')">90+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="rsc-fdrop" data-fdrop="yieldMin">
+            <button class="rsc-fdrop-btn" onclick="toggleRscFdrop('yieldMin',this)">
+              <span class="rsc-fdrop-label">Yield</span>
+              <span class="rsc-fdrop-value" id="rsc-fdrop-yieldMin-val">Any</span>
+              <span class="rsc-fdrop-caret">▾</span>
+            </button>
+            <div class="rsc-fdrop-pop">
+              <div class="rsc-pill-row">
+                <button class="rsc-pill active" onclick="setRscPill('yieldMin',0,this,'Any')">Any</button>
+                <button class="rsc-pill" onclick="setRscPill('yieldMin',3,this,'3%+')">3%+</button>
+                <button class="rsc-pill" onclick="setRscPill('yieldMin',4,this,'4%+')">4%+</button>
+                <button class="rsc-pill" onclick="setRscPill('yieldMin',5,this,'5%+')">5%+</button>
+                <button class="rsc-pill" onclick="setRscPill('yieldMin',6,this,'6%+')">6%+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="rsc-fdrop" data-fdrop="priceMax">
+            <button class="rsc-fdrop-btn" onclick="toggleRscFdrop('priceMax',this)">
+              <span class="rsc-fdrop-label">Median price</span>
+              <span class="rsc-fdrop-value" id="rsc-fdrop-priceMax-val">Any</span>
+              <span class="rsc-fdrop-caret">▾</span>
+            </button>
+            <div class="rsc-fdrop-pop">
+              <div class="rsc-pill-row" style="flex-wrap:wrap;gap:6px;">
+                <button class="rsc-pill active" onclick="setRscPill('priceMax',0,this,'Any')">Any</button>
+                <button class="rsc-pill" onclick="setRscPill('priceMax',500000,this,'≤$500k')">≤$500k</button>
+                <button class="rsc-pill" onclick="setRscPill('priceMax',750000,this,'≤$750k')">≤$750k</button>
+                <button class="rsc-pill" onclick="setRscPill('priceMax',1000000,this,'≤$1m')">≤$1m</button>
+                <button class="rsc-pill" onclick="setRscPill('priceMax',1500000,this,'≤$1.5m')">≤$1.5m</button>
+                <button class="rsc-pill" onclick="setRscPill('priceMax',2000000,this,'≤$2m')">≤$2m</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="rsc-fdrop rsc-fdrop-more" data-fdrop="more">
+            <button class="rsc-fdrop-btn" onclick="toggleRscFdrop('more',this)">
+              <span class="rsc-fdrop-caret-icon">⚙</span>
+              <span class="rsc-fdrop-value">More filters</span>
+              <span class="rsc-fdrop-badge" id="rsc-fdrop-more-badge" style="display:none">0</span>
+            </button>
+            <div class="rsc-fdrop-pop rsc-fdrop-pop-wide rsc-fdrop-pop-right">
+              <div class="rsc-filter-group">
+                <span class="rsc-filter-label">Capital Growth (10yr)</span>
+                <div class="rsc-pill-row">
+                  <button class="rsc-pill active" onclick="setRscPill('growthMin',0,this,'Any')">Any</button>
+                  <button class="rsc-pill" onclick="setRscPill('growthMin',4,this,'4%+')">4%+</button>
+                  <button class="rsc-pill" onclick="setRscPill('growthMin',6,this,'6%+')">6%+</button>
+                  <button class="rsc-pill" onclick="setRscPill('growthMin',8,this,'8%+')">8%+</button>
+                </div>
+              </div>
+              <div class="rsc-filter-group">
+                <span class="rsc-filter-label">Vacancy Rate</span>
+                <div class="rsc-pill-row">
+                  <button class="rsc-pill active" onclick="setRscPill('vacancyMax',0,this,'Any')">Any</button>
+                  <button class="rsc-pill" onclick="setRscPill('vacancyMax',1,this,'≤1%')">≤1%</button>
+                  <button class="rsc-pill" onclick="setRscPill('vacancyMax',2,this,'≤2%')">≤2%</button>
+                  <button class="rsc-pill" onclick="setRscPill('vacancyMax',3,this,'≤3%')">≤3%</button>
+                </div>
+              </div>
+              <div class="rsc-filter-group">
+                <span class="rsc-filter-label">Exclusive only</span>
+                <div class="rsc-toggle-row">
+                  <span class="rsc-toggle-desc">Show exclusive reports only</span>
+                  <label class="stk-toggle">
+                    <input type="checkbox" id="rsc-exclusive-toggle" onchange="toggleRscExclusive()">
+                    <div class="stk-toggle-track"></div>
+                    <div class="stk-toggle-thumb"></div>
+                  </label>
+                </div>
+              </div>
+              <div class="rsc-filter-group">
+                <span class="rsc-filter-label">Updated within</span>
+                <div class="rsc-pill-row">
+                  <button class="rsc-pill active" onclick="setRscPill('updatedWithin','any',this,'Any')">Any</button>
+                  <button class="rsc-pill" onclick="setRscPill('updatedWithin','7d',this,'7d')">7 days</button>
+                  <button class="rsc-pill" onclick="setRscPill('updatedWithin','30d',this,'30d')">30 days</button>
+                  <button class="rsc-pill" onclick="setRscPill('updatedWithin','90d',this,'90d')">90 days</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="rsc-clearall" onclick="resetRscFilters()" title="Clear all filters">↺ Clear all</button>
+        </div>
+
+        <!-- BODY: map+list (map mode) or 3-column card grid (list mode) -->
+        <div class="rsc-body">
+
+          <!-- MAP mode: map left, list right -->
+          <div class="rsc-projects-map" id="rsc-projects-map">
+            <div class="rsc-mapwrap">
+              <div id="rsc-map" class="rsc-map"></div>
+              <div class="rsc-mapkey">
+                <label class="rsc-mapkey-row"><input type="checkbox" id="rsc-mapkey-cluster" checked onchange="toggleRscMapClustering()"><span>Cluster reports</span></label>
+                <label class="rsc-mapkey-row"><input type="checkbox" id="rsc-mapkey-pins" checked onchange="toggleRscMapPins()"><span>Show research pins</span></label>
+                <div class="rsc-mapkey-divider"></div>
+                <div class="rsc-mapkey-legend"><span class="rsc-mapkey-cluster3">3</span> 3+ reports</div>
+                <div class="rsc-mapkey-legend"><span class="rsc-mapkey-cluster2">2</span> 2 reports</div>
+                <div class="rsc-mapkey-legend"><span class="rsc-mapkey-cluster1">1</span> 1 report</div>
+                <div class="rsc-mapkey-legend"><span class="rsc-mapkey-pin">●</span> Suburb</div>
+              </div>
+            </div>
+            <div class="rsc-rightpane">
+              <div class="rsc-rightpane-head">
+                <div class="rsc-rightpane-count" id="rsc-rightpane-count">— reports</div>
+                <div class="rsc-rightpane-sort">
+                  <span class="rsc-rightpane-sort-label">Sort by:</span>
+                  <select class="rsc-rightpane-sort-select" id="rsc-sort" onchange="onRscSort(this.value)">
+                    <option value="score-desc">Score (High to Low)</option>
+                    <option value="score-asc">Score (Low to High)</option>
+                    <option value="updated-desc">Recently Updated</option>
+                    <option value="updated-asc">Oldest First</option>
+                    <option value="yield-desc">Yield (High to Low)</option>
+                    <option value="price-asc">Price (Low to High)</option>
+                    <option value="price-desc">Price (High to Low)</option>
+                    <option value="suburb-asc">Suburb (A→Z)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="rsc-rightpane-list" id="rsc-rightpane-list"></div>
+              <div class="rsc-rightpane-footer">
+                <div class="rsc-pager" id="rsc-pager"></div>
+                <div class="rsc-pagesize">
+                  Show <select id="rsc-pagesize-select" onchange="onRscPageSize(this.value)">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                  </select> per page
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LIST mode: 3-column card grid (full width) -->
+          <div class="rsc-projects-grid-wrap" id="rsc-projects-grid-wrap" style="display:none;">
+            <div class="rsc-cards" id="rsc-cards">
+              <div class="rsc-empty"><div class="rsc-empty-icon">◈</div>Loading...</div>
+            </div>
+            <div class="rsc-rightpane-footer rsc-rightpane-footer-grid">
+              <div class="rsc-pager" id="rsc-grid-pager"></div>
+              <div class="rsc-pagesize">
+                Show <select id="rsc-pagesize-select-grid" onchange="onRscPageSize(this.value, true)">
+                  <option value="5">5</option>
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select> per page
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: STOCK BROWSE ───────────────────────────── -->
+    <div id="page-stock" class="page-view" style="padding:0;overflow:hidden;">
+      <div class="stk-browse-shell">
+
+        <!-- HEADER ROW: tabs + count + sync + view toggle -->
+        <div class="stk-header-row">
+          <div class="stk-browse-tabs">
+            <button class="stk-browse-tab active" id="stk-tab-projects" onclick="switchStkBrowse('projects',this)">Projects</button>
+            <button class="stk-browse-tab" id="stk-tab-stock" onclick="switchStkBrowse('stock',this)">Stock</button>
+          </div>
+          <div class="stk-header-right">
+            <div class="stk-count" id="stk-count"></div>
+            <button id="stk-sync-btn" class="stk-sync-btn" onclick="syncMonday()" style="display:none">⟳ Sync Now</button>
+            <div class="stk-view-btns" id="stk-view-btns">
+              <button class="stk-view-btn" title="List view (cards)" onclick="switchStkView('list',this)" id="stk-view-list-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+              <button class="stk-view-btn active" title="Map view" onclick="switchStkView('map',this)" id="stk-view-map-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FILTER ROW: search + 5 dropdowns + More filters + Clear -->
+        <div class="stk-filter-row" id="stk-filter-row">
+          <div class="stk-search-wrap">
+            <input type="text" id="stk-search" class="stk-search-input" placeholder="Search projects" oninput="onStkSearchInput()">
+            <span class="stk-search-icon">🔍</span>
+          </div>
+
+          <div class="stk-fdrop" data-fdrop="avail">
+            <button class="stk-fdrop-btn" onclick="toggleStkFdrop('avail',this)">
+              <span class="stk-fdrop-label">Availability</span>
+              <span class="stk-fdrop-value" id="stk-fdrop-avail-val">All</span>
+              <span class="stk-fdrop-caret">▾</span>
+            </button>
+            <div class="stk-fdrop-pop">
+              <div class="stk-pill-row">
+                <button class="stk-pill active" onclick="toggleStkPill('avail','all',this)">All</button>
+                <button class="stk-pill" onclick="toggleStkPill('avail','Available',this)">Available</button>
+                <button class="stk-pill" onclick="toggleStkPill('avail','Reserved',this)">Reserved</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="stk-fdrop" data-fdrop="states">
+            <button class="stk-fdrop-btn" onclick="toggleStkFdrop('states',this)">
+              <span class="stk-fdrop-label">State</span>
+              <span class="stk-fdrop-value" id="stk-fdrop-states-val">Any</span>
+              <span class="stk-fdrop-caret">▾</span>
+            </button>
+            <div class="stk-fdrop-pop">
+              <div class="stk-pill-row" id="stk-state-pills">
+                <button class="stk-pill" onclick="toggleStkMulti('states','QLD',this)">QLD</button>
+                <button class="stk-pill" onclick="toggleStkMulti('states','NSW',this)">NSW</button>
+                <button class="stk-pill" onclick="toggleStkMulti('states','VIC',this)">VIC</button>
+                <button class="stk-pill" onclick="toggleStkMulti('states','WA',this)">WA</button>
+                <button class="stk-pill" onclick="toggleStkMulti('states','SA',this)">SA</button>
+                <button class="stk-pill" onclick="toggleStkMulti('states','ACT',this)">ACT</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="stk-fdrop" data-fdrop="types">
+            <button class="stk-fdrop-btn" onclick="toggleStkFdrop('types',this)">
+              <span class="stk-fdrop-label">Property type</span>
+              <span class="stk-fdrop-value" id="stk-fdrop-types-val">All</span>
+              <span class="stk-fdrop-caret">▾</span>
+            </button>
+            <div class="stk-fdrop-pop">
+              <div class="stk-pill-row" style="flex-wrap:wrap;gap:6px;">
+                <button class="stk-pill" onclick="toggleStkMulti('types','Apartment',this)">Apartment</button>
+                <button class="stk-pill" onclick="toggleStkMulti('types','Townhouse',this)">Townhouse</button>
+                <button class="stk-pill" onclick="toggleStkMulti('types','House & Land',this)">House & Land</button>
+                <button class="stk-pill" onclick="toggleStkMulti('types','Standard',this)">Standard</button>
+                <button class="stk-pill" onclick="toggleStkMulti('types','Dual living',this)">Dual Living</button>
+                <button class="stk-pill" onclick="toggleStkMulti('types','Co-living',this)">Co-living</button>
+                <button class="stk-pill" onclick="toggleStkMulti('types','NDIS',this)">NDIS</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="stk-fdrop" data-fdrop="projStatus">
+            <button class="stk-fdrop-btn" onclick="toggleStkFdrop('projStatus',this)">
+              <span class="stk-fdrop-label">Project type</span>
+              <span class="stk-fdrop-value" id="stk-fdrop-projStatus-val">All</span>
+              <span class="stk-fdrop-caret">▾</span>
+            </button>
+            <div class="stk-fdrop-pop">
+              <div class="stk-pill-row">
+                <button class="stk-pill active" onclick="toggleStkPill('projStatus','all',this)">All</button>
+                <button class="stk-pill" onclick="toggleStkPill('projStatus','Established',this)">Established</button>
+                <button class="stk-pill" onclick="toggleStkPill('projStatus','Construction',this)">Construction</button>
+                <button class="stk-pill" onclick="toggleStkPill('projStatus','Off-the-plan',this)">Off-the-plan</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="stk-fdrop" data-fdrop="price">
+            <button class="stk-fdrop-btn" onclick="toggleStkFdrop('price',this)">
+              <span class="stk-fdrop-label">Price range</span>
+              <span class="stk-fdrop-value" id="stk-fdrop-price-val">Any</span>
+              <span class="stk-fdrop-caret">▾</span>
+            </button>
+            <div class="stk-fdrop-pop" style="min-width:280px">
+              <div class="stk-price-range">
+                <div class="stk-price-label">
+                  <span id="stk-price-min-lbl">$200k</span> — <span id="stk-price-max-lbl">$5m</span>
+                </div>
+                <div class="stk-range-wrap" id="stk-range-wrap">
+                  <div class="stk-range-track"><div class="stk-range-fill" id="stk-range-fill"></div></div>
+                  <input type="range" id="stk-range-min" min="200000" max="5000000" step="50000" value="200000" oninput="updatePriceFilter()">
+                  <input type="range" id="stk-range-max" min="200000" max="5000000" step="50000" value="5000000" oninput="updatePriceFilter()">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stk-fdrop stk-fdrop-more" data-fdrop="more">
+            <button class="stk-fdrop-btn" onclick="toggleStkFdrop('more',this)">
+              <span class="stk-fdrop-caret-icon">⚙</span>
+              <span class="stk-fdrop-value">More filters</span>
+              <span class="stk-fdrop-badge" id="stk-fdrop-more-badge" style="display:none">0</span>
+            </button>
+            <div class="stk-fdrop-pop stk-fdrop-pop-wide stk-fdrop-pop-right">
+              <div class="stk-filter-group">
+                <span class="stk-filter-label">Bedrooms</span>
+                <div class="stk-pill-row">
+                  <button class="stk-pill active" onclick="toggleStkPill('beds','any',this)">Any</button>
+                  <button class="stk-pill" onclick="toggleStkPill('beds','1',this)">1</button>
+                  <button class="stk-pill" onclick="toggleStkPill('beds','2',this)">2</button>
+                  <button class="stk-pill" onclick="toggleStkPill('beds','3',this)">3</button>
+                  <button class="stk-pill" onclick="toggleStkPill('beds','4',this)">4+</button>
+                </div>
+              </div>
+              <div class="stk-filter-group">
+                <span class="stk-filter-label">SMSF Eligible</span>
+                <div class="stk-toggle-row">
+                  <span class="stk-toggle-desc">Show SMSF only</span>
+                  <label class="stk-toggle">
+                    <input type="checkbox" id="stk-smsf-toggle" onchange="toggleStkSmsf()">
+                    <div class="stk-toggle-track"></div>
+                    <div class="stk-toggle-thumb"></div>
+                  </label>
+                </div>
+              </div>
+              <div class="stk-filter-group">
+                <span class="stk-filter-label">Rental Yield</span>
+                <div class="stk-pill-row">
+                  <button class="stk-pill active" onclick="toggleStkPill('yieldMin',0,this)">Any</button>
+                  <button class="stk-pill" onclick="toggleStkPill('yieldMin',4,this)">4%+</button>
+                  <button class="stk-pill" onclick="toggleStkPill('yieldMin',5,this)">5%+</button>
+                  <button class="stk-pill" onclick="toggleStkPill('yieldMin',6,this)">6%+</button>
+                  <button class="stk-pill" onclick="toggleStkPill('yieldMin',7,this)">7%+</button>
+                  <button class="stk-pill" onclick="toggleStkPill('yieldMin',8,this)">8%+</button>
+                </div>
+              </div>
+              <div class="stk-filter-group">
+                <span class="stk-filter-label">Settlement</span>
+                <div class="stk-pill-row">
+                  <button class="stk-pill active" onclick="toggleStkPill('titleWindow','any',this)">Any</button>
+                  <button class="stk-pill" onclick="toggleStkPill('titleWindow','completed',this)">Completed</button>
+                  <button class="stk-pill" onclick="toggleStkPill('titleWindow','0-6',this)">0–6 months</button>
+                  <button class="stk-pill" onclick="toggleStkPill('titleWindow','6-12',this)">6–12 months</button>
+                  <button class="stk-pill" onclick="toggleStkPill('titleWindow','12-24',this)">12–24 months</button>
+                  <button class="stk-pill" onclick="toggleStkPill('titleWindow','24-36',this)">2–3 years</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="stk-clearall" onclick="resetStkFilters()" title="Clear all filters">↺ Clear all</button>
+        </div>
+
+        <!-- BODY: map+list (Projects/map mode), card grid (Projects/list mode), or stock table (Stock mode) -->
+        <div class="stk-body">
+
+          <!-- Projects MAP mode: map left, list right -->
+          <div class="stk-projects-map" id="stk-projects-map">
+            <div class="stk-mapwrap">
+              <div id="stk-map" class="stk-map"></div>
+              <div class="stk-mapkey">
+                <label class="stk-mapkey-row"><input type="checkbox" id="stk-mapkey-cluster" checked onchange="toggleMapClustering()"><span>Cluster projects</span></label>
+                <label class="stk-mapkey-row"><input type="checkbox" id="stk-mapkey-pins" checked onchange="toggleMapPins()"><span>Show project pins</span></label>
+                <div class="stk-mapkey-divider"></div>
+                <div class="stk-mapkey-legend"><span class="stk-mapkey-cluster3">3</span> 3+ projects</div>
+                <div class="stk-mapkey-legend"><span class="stk-mapkey-cluster2">2</span> 2 projects</div>
+                <div class="stk-mapkey-legend"><span class="stk-mapkey-cluster1">1</span> 1 project</div>
+                <div class="stk-mapkey-legend"><span class="stk-mapkey-pin">●</span> Project</div>
+              </div>
+            </div>
+            <div class="stk-rightpane">
+              <div class="stk-rightpane-head">
+                <div class="stk-rightpane-count" id="stk-rightpane-count">— projects</div>
+                <div class="stk-rightpane-sort">
+                  <span class="stk-rightpane-sort-label">Sort by:</span>
+                  <select class="stk-rightpane-sort-select" id="stk-proj-sort" onchange="onStkProjSort(this.value)">
+                    <option value="avail-desc">Availability (High)</option>
+                    <option value="avail-asc">Availability (Low)</option>
+                    <option value="price-asc">Price (Low to High)</option>
+                    <option value="price-desc">Price (High to Low)</option>
+                    <option value="name-asc">Name (A→Z)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="stk-rightpane-list" id="stk-rightpane-list"></div>
+              <div class="stk-rightpane-footer">
+                <div class="stk-pager" id="stk-projects-pager"></div>
+                <div class="stk-pagesize">
+                  Show <select id="stk-pagesize-select" onchange="onStkPageSize(this.value)">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                  </select> per page
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Projects LIST mode: 3-column card grid (full width) -->
+          <div class="stk-projects-grid-wrap" id="stk-projects-grid-wrap" style="display:none;">
             <div class="stk-cards" id="stk-cards">
               <div class="stk-empty"><div class="stk-empty-icon">◈</div>Loading...</div>
             </div>
-            <div id="stk-stock-table-wrap" style="display:none;padding:0 24px 24px;overflow-x:auto;">
-              <table class="stk-all-stock-table">
-                <thead><tr>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('project')">Lot / Location / Project <span class="dlp-si" id="sas-project">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('availability')">Status <span class="dlp-si" id="sas-availability">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('price')">Price <span class="dlp-si" id="sas-price">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('type')">Type <span class="dlp-si" id="sas-type">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('bedrooms')">Bed·Bath·Car <span class="dlp-si" id="sas-bedrooms">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('land_sqm')">Land m² <span class="dlp-si" id="sas-land_sqm">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('land_price')">Land Price <span class="dlp-si" id="sas-land_price">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('size')">Build m² <span class="dlp-si" id="sas-size">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('build_price')">Build Price <span class="dlp-si" id="sas-build_price">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('rent')">Rent/wk <span class="dlp-si" id="sas-rent">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('rate')">Rate/m² <span class="dlp-si" id="sas-rate">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('yield')">Rental Yield <span class="dlp-si" id="sas-yield">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('title')">Title Date <span class="dlp-si" id="sas-title">⇅</span></th>
-                  <th class="dlp-th-sort" onclick="stkAllSortBy('comm')">Comm <span class="dlp-si" id="sas-comm">⇅</span></th>
-                </tr></thead>
-                <tbody id="stk-all-stock-tbody"></tbody>
-              </table>
+            <div class="stk-rightpane-footer stk-rightpane-footer-grid">
+              <div class="stk-pager" id="stk-projects-grid-pager"></div>
+              <div class="stk-pagesize">
+                Show <select id="stk-pagesize-select-grid" onchange="onStkPageSize(this.value, true)">
+                  <option value="5">5</option>
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select> per page
+              </div>
             </div>
           </div>
+
+          <!-- Stock (per-lot) table mode -->
+          <div id="stk-stock-table-wrap" style="display:none;padding:0 24px 24px;overflow:auto;">
+            <table class="stk-all-stock-table">
+              <thead><tr>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('project')">Lot / Location / Project <span class="dlp-si" id="sas-project">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('availability')">Status <span class="dlp-si" id="sas-availability">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('price')">Price <span class="dlp-si" id="sas-price">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('type')">Type <span class="dlp-si" id="sas-type">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('bedrooms')">Bed·Bath·Car <span class="dlp-si" id="sas-bedrooms">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('land_sqm')">Land m² <span class="dlp-si" id="sas-land_sqm">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('land_price')">Land Price <span class="dlp-si" id="sas-land_price">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('size')">Build m² <span class="dlp-si" id="sas-size">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('build_price')">Build Price <span class="dlp-si" id="sas-build_price">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('rent')">Rent/wk <span class="dlp-si" id="sas-rent">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('rate')">Rate/m² <span class="dlp-si" id="sas-rate">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('yield')">Rental Yield <span class="dlp-si" id="sas-yield">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('title')">Title Date <span class="dlp-si" id="sas-title">⇅</span></th>
+                <th class="dlp-th-sort" onclick="stkAllSortBy('comm')">Comm <span class="dlp-si" id="sas-comm">⇅</span></th>
+              </tr></thead>
+              <tbody id="stk-all-stock-tbody"></tbody>
+            </table>
+          </div>
+
         </div>
       </div>
     </div>
@@ -4369,6 +4696,11 @@
       refreshDashboard();
       refreshResearchList();
       if (typeof refreshResearchPins === 'function') refreshResearchPins();
+      // If the user is sitting on the Research browse when data arrives, render it
+      if (typeof renderResearchBrowse === 'function' && document.getElementById('page-reports')?.classList.contains('active')) {
+        updateRscFdropSummaries();
+        renderResearchBrowse();
+      }
       console.log('Supabase: loaded', liveResearch.length, 'reports,', liveStock.length, 'stock items');
 
       // Pre-load pending enquiry count for admin badge
@@ -4520,6 +4852,38 @@
     // Refresh 5 minutes before the 1-hour expiry
     _tokenRefreshTimer = setTimeout(refreshAuthToken, 55 * 60 * 1000);
   }
+
+  // Wrapper for authenticated REST calls — if the server returns 401/403,
+  // refresh the access token and retry once. Catches the case where the
+  // setTimeout-based scheduleTokenRefresh missed its tick (laptop sleep,
+  // backgrounded tab throttling) and the JWT silently expired.
+  // `buildOpts` is a function so the retry picks up the *new* auth header.
+  async function fetchWithAuthRetry(url, buildOpts) {
+    let res;
+    try { res = await fetch(url, buildOpts()); }
+    catch(e) { res = null; }
+    if (res && (res.status === 401 || res.status === 403) && currentRefreshToken) {
+      await refreshAuthToken();
+      try { res = await fetch(url, buildOpts()); } catch(e) { /* fall through */ }
+    }
+    return res;
+  }
+
+  // When the tab regains focus after being hidden long enough that the JWT
+  // could have expired, refresh proactively so the next API call doesn't
+  // 401. 30 minutes is conservative — well inside the 1-hour token life.
+  let _lastVisibleAt = Date.now();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      const hiddenFor = Date.now() - _lastVisibleAt;
+      if (hiddenFor > 30 * 60 * 1000 && currentRefreshToken) {
+        refreshAuthToken();
+      }
+      _lastVisibleAt = Date.now();
+    } else {
+      _lastVisibleAt = Date.now();
+    }
+  });
 
   function saveSession() {
     if (currentUserIsAdmin) {
@@ -6845,6 +7209,7 @@
     const titles = { dashboard:'Dashboard', reports:'All Research Reports', stock:'Stock Portal', agent:'Research Agent', enquiries:'Enquiries', partners:'Partners', team:'Team', 'partner-settings':'Settings', deals:'Team Deals', lists:'My Lists' };
     document.getElementById('topbar-title').textContent = titles[page] || '';
     if (page === 'dashboard')         { setTimeout(initLeafletMap, 80); }
+    if (page === 'reports')           { updateRscFdropSummaries(); renderResearchBrowse(); }
     if (page === 'stock')             { loadStockProjects(); }
     if (page === 'agent')             { agentInit(); }
     if (page === 'enquiries')         { loadEnquiries(); }
@@ -8896,6 +9261,7 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <script>
 // ── LEAFLET MAP WITH AUSTRALIAN STATE OVERLAYS ───────────────────────────
 
@@ -9183,8 +9549,19 @@ let stkPriceRange = { min: 200000, max: 5000000 };
 let stkFilter = {
   avail: 'all', states: [], types: [],
   beds: 'any', priceMin: 200000, priceMax: 5000000,
-  projStatus: 'all', smsf: false, yieldMin: 0, titleWindow: 'any'
+  projStatus: 'all', smsf: false, yieldMin: 0, titleWindow: 'any',
+  search: '',
+  page: 1,
+  pageSize: 10,
+  viewMode: 'map', // 'map' | 'list' (Projects mode only)
+  projSort: 'avail-desc',
 };
+// Leaflet map + cluster state for the Stock projects pane
+let stkLeafletMap = null;
+let stkMarkerCluster = null;
+let stkProjectMarkers = {}; // id → marker
+let stkClusteringEnabled = true;
+let stkPinsVisible = true;
 // Parse title_forecast text — handles "Titled", ISO dates, and "Month'YY" / "Month 'YY" formats
 function parseTitleForecast(raw) {
   if (!raw) return null;
@@ -9259,9 +9636,10 @@ function fmtComm(s) {
   const flat = s.channel_comm_flat;
   const pct  = s.channel_comm_pct;
   const total = s.total_contract;
-  if (flat && pct)  return fmtCurrency(flat) + ' (' + pct + '%)';
+  // Display order: percentage first, then "+ $amount" when both are present.
+  if (flat && pct)  return pct + '% + ' + fmtCurrency(flat);
   if (flat)         return fmtCurrency(flat);
-  if (pct && total) return pct + '% (' + fmtCurrency(Math.round(total * pct / 100)) + ')';
+  if (pct && total) return pct + '% + ' + fmtCurrency(Math.round(total * pct / 100));
   if (pct)          return pct + '%';
   if (s.channel_commission) return fmtCurrency(s.channel_commission);
   return '—';
@@ -9326,7 +9704,8 @@ function applyStockSort(arr, sort) {
 }
 
 function fmtProjComm(p) {
-  if (p._maxCommFlat && p._maxCommPct) return fmtCurrencyShort(p._maxCommFlat) + ' (' + p._maxCommPct + '%)';
+  // Display order: percentage first, then "+ $amount" when both are present.
+  if (p._maxCommFlat && p._maxCommPct) return p._maxCommPct + '% + ' + fmtCurrencyShort(p._maxCommFlat);
   if (p._maxCommFlat) return fmtCurrencyShort(p._maxCommFlat);
   if (p._maxCommPct)  return p._maxCommPct + '%';
   return '—';
@@ -9376,20 +9755,26 @@ function stkProjStatusClass(s) {
 
 // ── Load & render projects ────────────────────────────────
 async function loadStockProjects() {
-  document.getElementById('stk-cards').innerHTML =
-    '<div class="stk-empty"><div class="stk-empty-icon">◈</div>Loading projects...</div>';
+  const loadingHtml = '<div class="stk-empty" style="padding:40px 20px;color:var(--grey-mid);text-align:center;"><div class="stk-empty-icon">◈</div>Loading projects...</div>';
+  const cardsEl = document.getElementById('stk-cards');
+  const rightListEl = document.getElementById('stk-rightpane-list');
+  if (cardsEl) cardsEl.innerHTML = loadingHtml;
+  if (rightListEl) rightListEl.innerHTML = loadingHtml;
   try {
-    const headers = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) };
+    // Build headers fresh on each call so a token refresh during retry is picked up.
+    const buildOpts = () => ({
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
+    });
     const [projRes, stockRes, availRes] = await Promise.all([
-      fetch(SUPABASE_URL + '/rest/v1/projects?order=name', { headers }),
-      fetch(SUPABASE_URL + '/rest/v1/stock?select=project_id,total_contract,channel_commission,channel_comm_flat,channel_comm_pct,availability&availability=in.(Available,Reserved)', { headers }),
-      fetch(SUPABASE_URL + '/rest/v1/stock?availability=in.(Available,Reserved)&order=project_name,total_contract', { headers }),
+      fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/projects?order=name', buildOpts),
+      fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/stock?select=project_id,total_contract,channel_commission,channel_comm_flat,channel_comm_pct,availability&availability=in.(Available,Reserved)', buildOpts),
+      fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/stock?availability=in.(Available,Reserved)&order=project_name,total_contract', buildOpts),
     ]);
-    if (!projRes.ok) throw new Error('Failed to load projects');
+    if (!projRes || !projRes.ok) throw new Error('Failed to load projects');
     allProjects = await projRes.json();
 
     // Build per-project summary from stock
-    const stockSummary = stockRes.ok ? await stockRes.json() : [];
+    const stockSummary = (stockRes && stockRes.ok) ? await stockRes.json() : [];
     const pmap = {};
     stockSummary.forEach(s => {
       if (!s.project_id) return;
@@ -9411,7 +9796,7 @@ async function loadStockProjects() {
     });
 
     // All available stock for the flat stock view
-    allAvailableStock = availRes.ok ? await availRes.json() : [];
+    allAvailableStock = (availRes && availRes.ok) ? await availRes.json() : [];
     // Attach project state/suburb to each stock item for filtering
     const projById = {};
     allProjects.forEach(p => { projById[p.id] = p; });
@@ -9441,33 +9826,364 @@ async function loadStockProjects() {
       if (fill) { fill.style.left = '0%'; fill.style.right = '0%'; }
     }
 
+    updateStkFdropSummaries();
     renderStockBrowse();
   } catch(e) {
-    document.getElementById('stk-cards').innerHTML =
-      '<div class="stk-empty"><div class="stk-empty-icon">◈</div>Could not load projects.<br>' + e.message + '</div>';
+    const detail = (e && e.message) ? e.message : 'Network or session error';
+    const errHtml =
+      '<div class="stk-empty" style="padding:40px 20px;color:var(--grey-pale);text-align:center;">' +
+        '<div class="stk-empty-icon" style="color:var(--red)">◈</div>' +
+        'Could not load projects.<br>' +
+        '<span style="font-size:12px;color:var(--grey-mid);">' + detail + '</span><br>' +
+        '<button onclick="loadStockProjects()" style="margin-top:14px;padding:8px 18px;background:var(--gold-dim);border:1px solid var(--gold);color:var(--gold);font-family:\'DM Mono\',monospace;font-size:12px;letter-spacing:0.6px;cursor:pointer;">↻ Retry</button>' +
+      '</div>';
+    if (cardsEl) cardsEl.innerHTML = errHtml;
+    if (rightListEl) rightListEl.innerHTML = errHtml;
   }
 }
 
 function switchStkBrowse(mode, el) {
   stkBrowseMode = mode;
   document.querySelectorAll('.stk-browse-tab').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
+  if (el) el.classList.add('active');
   document.getElementById('stk-view-btns').style.display = mode === 'projects' ? '' : 'none';
+  // Reset to first page when switching tabs
+  stkFilter.page = 1;
   renderStockBrowse();
 }
 
 function renderStockBrowse() {
-  const cardsWrap = document.getElementById('stk-cards');
-  const tableWrap = document.getElementById('stk-stock-table-wrap');
+  const mapPane  = document.getElementById('stk-projects-map');
+  const gridPane = document.getElementById('stk-projects-grid-wrap');
+  const tablePane = document.getElementById('stk-stock-table-wrap');
   if (stkBrowseMode === 'stock') {
-    cardsWrap.style.display = 'none';
-    tableWrap.style.display = '';
+    mapPane.style.display = 'none';
+    gridPane.style.display = 'none';
+    tablePane.style.display = '';
     renderAllStockTable();
   } else {
-    cardsWrap.style.display = '';
-    tableWrap.style.display = 'none';
-    renderProjectCards();
+    tablePane.style.display = 'none';
+    if (stkFilter.viewMode === 'map') {
+      mapPane.style.display = '';
+      gridPane.style.display = 'none';
+      renderProjectsMapMode();
+    } else {
+      mapPane.style.display = 'none';
+      gridPane.style.display = '';
+      renderProjectsListMode();
+    }
   }
+}
+
+// ── Filter the projects array (shared by all Projects-mode views) ──
+function filteredStockProjects() {
+  const f = stkFilter;
+  const q = (f.search || '').trim().toLowerCase();
+  return allProjects.filter(p => {
+    if (f.avail === 'Available' && (p._availAvail || 0) === 0) return false;
+    if (f.avail === 'Reserved'  && (p._availReserved || 0) === 0) return false;
+    if ((p._availCount || 0) === 0) return false;
+    if (f.smsf && !p.smsf_eligible) return false;
+    if (f.states.length && !f.states.includes(p.state)) return false;
+    if (f.types.length  && !f.types.includes(p.development_type)) return false;
+    if (f.projStatus !== 'all' && p.project_status !== f.projStatus) return false;
+    if (p._minPrice != null) {
+      if (p._minPrice < f.priceMin || p._minPrice > f.priceMax) return false;
+    }
+    if (q) {
+      const hay = [p.name, p.suburb, p.state, p.development_type].filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function sortStockProjects(arr) {
+  const sorted = [...arr];
+  switch (stkFilter.projSort) {
+    case 'avail-desc': sorted.sort((a,b)=>(b._availCount||0)-(a._availCount||0)); break;
+    case 'avail-asc':  sorted.sort((a,b)=>(a._availCount||0)-(b._availCount||0)); break;
+    case 'price-asc':  sorted.sort((a,b)=>(a._minPrice||Infinity)-(b._minPrice||Infinity)); break;
+    case 'price-desc': sorted.sort((a,b)=>(b._minPrice||0)-(a._minPrice||0)); break;
+    case 'name-asc':   sorted.sort((a,b)=>(a.name||'').localeCompare(b.name||'')); break;
+  }
+  return sorted;
+}
+
+function renderProjectsMapMode() {
+  const all = sortStockProjects(filteredStockProjects());
+  const total = all.length;
+  document.getElementById('stk-count').innerHTML = '<strong>' + total + '</strong> project' + (total !== 1 ? 's' : '') + ' with available stock';
+  document.getElementById('stk-rightpane-count').textContent = total + (total === 1 ? ' project' : ' projects');
+
+  // Map: shows ALL filtered projects (not paginated)
+  renderStockMap(all);
+
+  // Right list: paginated
+  const pageSize = stkFilter.pageSize;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (stkFilter.page > totalPages) stkFilter.page = totalPages;
+  const start = (stkFilter.page - 1) * pageSize;
+  const slice = all.slice(start, start + pageSize);
+  document.getElementById('stk-rightpane-list').innerHTML = renderProjectRows(slice);
+  renderStkPager('stk-projects-pager', total);
+}
+
+function renderProjectsListMode() {
+  const all = sortStockProjects(filteredStockProjects());
+  const total = all.length;
+  document.getElementById('stk-count').innerHTML = '<strong>' + total + '</strong> project' + (total !== 1 ? 's' : '') + ' with available stock';
+
+  const pageSize = stkFilter.pageSize;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (stkFilter.page > totalPages) stkFilter.page = totalPages;
+  const start = (stkFilter.page - 1) * pageSize;
+  const slice = all.slice(start, start + pageSize);
+  const container = document.getElementById('stk-cards');
+  if (!slice.length) {
+    container.innerHTML = '<div class="stk-empty"><div class="stk-empty-icon">◎</div>No projects match your filters.<br><button class="stk-clearall" onclick="resetStkFilters()" style="margin-top:12px;">↺ Clear all</button></div>';
+  } else {
+    container.innerHTML = slice.map(renderProjectCardHtml).join('');
+  }
+  container.style.gridTemplateColumns = 'repeat(3,1fr)';
+  renderStkPager('stk-projects-grid-pager', total);
+}
+
+function renderProjectCardHtml(p) {
+  const heroSrc = p.hero_image_url || (p.photo_urls && p.photo_urls.length ? p.photo_urls[0] : null);
+  const heroHtml = heroSrc
+    ? `<img src="${heroSrc}" alt="${p.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    : '';
+  const initial = (p.name || '?').charAt(0).toUpperCase();
+  const placeholderStyle = heroSrc ? 'style="display:none"' : '';
+  const typeClass = stkTypeBadgeClass(p.development_type);
+  const projStatusClass = stkProjStatusClass(p.project_status);
+  return `
+  <div class="stk-card" onclick="showStockProject('${p.id}')">
+    <div class="stk-card-hero">
+      ${heroHtml}
+      <div class="stk-card-hero-placeholder" ${placeholderStyle}>${initial}</div>
+      <div class="stk-card-badges">
+        ${p.smsf_eligible ? '<span class="stk-badge stk-badge-smsf" style="font-size:11px;padding:2px 7px;">SMSF</span>' : '<span></span>'}
+        ${p.sales_status === 'Sold Out'
+          ? '<span class="stk-badge stk-badge-settled">Sold Out</span>'
+          : p.sales_status === 'Coming Soon'
+            ? '<span class="stk-badge stk-badge-coming-soon">Coming Soon</span>'
+            : '<span class="stk-avail-chip">Available</span>'}
+      </div>
+    </div>
+    <div class="stk-card-body">
+      <div class="stk-card-name">${p.name || '—'}</div>
+      <div class="stk-card-location">${p.suburb || ''}${p.suburb && p.state ? ' · ' : ''}${p.state || ''}</div>
+      <div class="stk-card-meta">
+        ${typeClass ? `<span class="stk-badge ${typeClass}">${p.development_type || ''}</span>` : ''}
+        ${projStatusClass ? `<span class="stk-badge ${projStatusClass}">${p.project_status || ''}</span>` : ''}
+      </div>
+    </div>
+    <div class="stk-card-footer">
+      <div class="stk-card-stats">
+        <div class="stk-card-stat">
+          <span class="stk-card-stat-label">From</span>
+          <span class="stk-card-stat-val">${p._minPrice ? fmtCurrencyShort(p._minPrice) : '—'}</span>
+        </div>
+        <div class="stk-card-stat stk-card-stat-comm">
+          <span class="stk-card-stat-label">Comm</span>
+          <span class="stk-card-stat-val">${fmtProjCommForUser(p)}</span>
+        </div>
+        <div class="stk-card-stat">
+          <span class="stk-card-stat-label">Available</span>
+          <span class="stk-card-stat-val">${p._availCount > 0 ? p._availCount + ' lots' : '—'}</span>
+        </div>
+      </div>
+      <div class="stk-card-cta">View →</div>
+    </div>
+  </div>`;
+}
+
+function renderProjectRows(projects) {
+  if (!projects.length) {
+    return '<div class="stk-empty" style="padding:40px 20px;text-align:center;color:var(--grey-mid);"><div class="stk-empty-icon">◎</div>No projects match your filters.</div>';
+  }
+  return projects.map(p => {
+    const heroSrc = p.hero_image_url || (p.photo_urls && p.photo_urls.length ? p.photo_urls[0] : null);
+    const initial = (p.name || '?').charAt(0).toUpperCase();
+    const heroHtml = heroSrc
+      ? `<img src="${heroSrc}" alt="${p.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      : '';
+    const typeClass = stkTypeBadgeClass(p.development_type);
+    const projStatusClass = stkProjStatusClass(p.project_status);
+    const availLabel = p.sales_status === 'Sold Out'
+      ? '<span class="stk-badge stk-badge-settled">Sold Out</span>'
+      : p.sales_status === 'Coming Soon'
+        ? '<span class="stk-badge stk-badge-coming-soon">Coming Soon</span>'
+        : '<span class="stk-avail-chip">Available</span>';
+    return `
+    <div class="stk-row" data-proj-id="${p.id}" onclick="showStockProject('${p.id}')">
+      <div class="stk-row-thumb">
+        ${heroHtml}
+        <div class="stk-row-thumb-placeholder" ${heroSrc ? 'style="display:none"' : ''}>${initial}</div>
+        ${p.smsf_eligible ? '<span class="stk-row-thumb-smsf">SMSF</span>' : ''}
+      </div>
+      <div class="stk-row-body">
+        <div class="stk-row-body-top">
+          <div class="stk-row-name">${p.name || '—'}</div>
+          <div class="stk-row-loc">${p.suburb || ''}${p.suburb && p.state ? ' · ' : ''}${p.state || ''}</div>
+        </div>
+        <div class="stk-row-badges">
+          ${typeClass ? `<span class="stk-badge ${typeClass}">${p.development_type || ''}</span>` : ''}
+          ${projStatusClass ? `<span class="stk-badge ${projStatusClass}">${p.project_status || ''}</span>` : ''}
+        </div>
+      </div>
+      <div class="stk-row-stats">
+        <div class="stk-row-stat">
+          <span class="stk-row-stat-label">From</span>
+          <span class="stk-row-stat-val">${p._minPrice ? fmtCurrencyShort(p._minPrice) : '—'}</span>
+        </div>
+        <div class="stk-row-stat stk-row-stat-comm">
+          <span class="stk-row-stat-label">Comm</span>
+          <span class="stk-row-stat-val">${fmtProjCommForUser(p)}</span>
+        </div>
+        <div class="stk-row-stat">
+          <span class="stk-row-stat-label">Lots</span>
+          <span class="stk-row-stat-val">${p._availCount > 0 ? p._availCount + (p._availCount === 1 ? ' lot' : ' lots') : '—'}</span>
+        </div>
+      </div>
+      <div class="stk-row-side">
+        ${availLabel}
+        <span class="stk-row-cta">View →</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Pager ─────────────────────────────────────────────────
+function renderStkPager(elId, total) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const pageSize = stkFilter.pageSize;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const cur = Math.min(stkFilter.page, totalPages);
+  if (totalPages <= 1) {
+    el.innerHTML = '<button class="stk-pager-btn active" disabled>1</button>';
+    return;
+  }
+  // Build numbered pager (with ellipsis if many pages)
+  const buttons = [];
+  buttons.push(`<button class="stk-pager-btn" ${cur === 1 ? 'disabled' : ''} onclick="gotoStkPage(${cur - 1})">‹</button>`);
+  const window_ = 5;
+  let start = Math.max(1, cur - Math.floor(window_ / 2));
+  let end = Math.min(totalPages, start + window_ - 1);
+  start = Math.max(1, end - window_ + 1);
+  for (let i = start; i <= end; i++) {
+    buttons.push(`<button class="stk-pager-btn ${i === cur ? 'active' : ''}" onclick="gotoStkPage(${i})">${i}</button>`);
+  }
+  buttons.push(`<button class="stk-pager-btn" ${cur === totalPages ? 'disabled' : ''} onclick="gotoStkPage(${cur + 1})">›</button>`);
+  el.innerHTML = buttons.join('');
+}
+
+function gotoStkPage(p) {
+  stkFilter.page = Math.max(1, p);
+  renderStockBrowse();
+}
+
+function onStkPageSize(v, fromGrid) {
+  stkFilter.pageSize = parseInt(v, 10) || 10;
+  stkFilter.page = 1;
+  // Sync the other selector
+  const a = document.getElementById('stk-pagesize-select');
+  const b = document.getElementById('stk-pagesize-select-grid');
+  if (a) a.value = String(stkFilter.pageSize);
+  if (b) b.value = String(stkFilter.pageSize);
+  renderStockBrowse();
+}
+
+function onStkProjSort(v) {
+  stkFilter.projSort = v;
+  stkFilter.page = 1;
+  renderStockBrowse();
+}
+
+function onStkSearchInput() {
+  const v = document.getElementById('stk-search').value;
+  stkFilter.search = v;
+  stkFilter.page = 1;
+  renderStockBrowse();
+}
+
+// ── View toggle (Projects mode: map vs list) ──────────────
+function switchStkView(view, el) {
+  stkFilter.viewMode = view;
+  // Sync the two pairs of toggle buttons (header right + map overlay)
+  document.querySelectorAll('.stk-view-btn').forEach(b => b.classList.remove('active'));
+  const headerBtn = document.getElementById(view === 'map' ? 'stk-view-map-btn' : 'stk-view-list-btn');
+  if (headerBtn) headerBtn.classList.add('active');
+  const mt = document.getElementById('stk-map-toggle-map');
+  const lt = document.getElementById('stk-map-toggle-list');
+  if (mt) mt.classList.toggle('active', view === 'map');
+  if (lt) lt.classList.toggle('active', view === 'list');
+  renderStockBrowse();
+}
+
+// Convenience for the in-map "Map view" button (no-op when already in map mode but ensures highlight)
+function setStkMapMode() { switchStkView('map'); }
+
+// Legacy alias kept in case any markup still calls setStkView
+function setStkView(view, el) { switchStkView(view, el); }
+
+// ── Filter dropdown popovers ──────────────────────────────
+function toggleStkFdrop(key, btn) {
+  const drop = btn.closest('.stk-fdrop');
+  const wasOpen = drop.classList.contains('open');
+  document.querySelectorAll('.stk-fdrop').forEach(d => d.classList.remove('open'));
+  if (!wasOpen) drop.classList.add('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.stk-fdrop')) {
+    document.querySelectorAll('.stk-fdrop').forEach(d => d.classList.remove('open'));
+  }
+});
+
+function updateStkFdropSummaries() {
+  const f = stkFilter;
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  const setHas = (key, has) => {
+    const dr = document.querySelector(`.stk-fdrop[data-fdrop="${key}"]`);
+    if (dr) dr.classList.toggle('has-value', !!has);
+  };
+
+  // Avail
+  set('stk-fdrop-avail-val', f.avail === 'all' ? 'All' : f.avail);
+  setHas('avail', f.avail !== 'all');
+
+  // States
+  set('stk-fdrop-states-val', f.states.length ? f.states.join(', ') : 'Any');
+  setHas('states', f.states.length > 0);
+
+  // Types
+  set('stk-fdrop-types-val', f.types.length ? (f.types.length === 1 ? f.types[0] : f.types.length + ' selected') : 'All');
+  setHas('types', f.types.length > 0);
+
+  // Project status
+  set('stk-fdrop-projStatus-val', f.projStatus === 'all' ? 'All' : f.projStatus);
+  setHas('projStatus', f.projStatus !== 'all');
+
+  // Price range
+  const rangeIsAll = f.priceMin <= stkPriceRange.min && f.priceMax >= stkPriceRange.max;
+  set('stk-fdrop-price-val', rangeIsAll ? 'Any' : (fmtCurrencyShort(f.priceMin) + ' – ' + fmtCurrencyShort(f.priceMax)));
+  setHas('price', !rangeIsAll);
+
+  // More-filters badge count
+  let extras = 0;
+  if (f.beds !== 'any') extras++;
+  if (f.smsf) extras++;
+  if (f.yieldMin > 0) extras++;
+  if (f.titleWindow !== 'any') extras++;
+  const badge = document.getElementById('stk-fdrop-more-badge');
+  if (badge) {
+    if (extras > 0) { badge.textContent = String(extras); badge.style.display = ''; }
+    else            { badge.style.display = 'none'; }
+  }
+  setHas('more', extras > 0);
 }
 
 function renderAllStockTable() {
@@ -9527,95 +10243,14 @@ function renderAllStockTable() {
     </tr>`).join('');
 }
 
-function renderProjectCards() {
-  // Apply filters
-  const f = stkFilter;
-  let filtered = allProjects.filter(p => {
-    if (f.avail === 'Available' && (p._availAvail || 0) === 0) return false;
-    if (f.avail === 'Reserved'  && (p._availReserved || 0) === 0) return false;
-    if ((p._availCount || 0) === 0) return false;
-    if (f.smsf && !p.smsf_eligible) return false;
-    if (f.states.length && !f.states.includes(p.state)) return false;
-    if (f.types.length  && !f.types.includes(p.development_type)) return false;
-    if (f.projStatus !== 'all' && p.project_status !== f.projStatus) return false;
-    return true;
-  });
-
-  document.getElementById('stk-count').innerHTML = '<strong>' + filtered.length + '</strong> project' + (filtered.length !== 1 ? 's' : '') + ' with available stock';
-
-  if (!filtered.length) {
-    document.getElementById('stk-cards').innerHTML =
-      '<div class="stk-empty"><div class="stk-empty-icon">◎</div>No projects match your filters.<br><button class="stk-filters-reset" onclick="resetStkFilters()" style="margin-top:12px;padding:6px 16px;border:1px solid var(--gold-border);">Reset Filters</button></div>';
-    return;
-  }
-
-  const html = filtered.map(p => {
-    const heroSrc = p.hero_image_url || (p.photo_urls && p.photo_urls.length ? p.photo_urls[0] : null);
-    const heroHtml = heroSrc
-      ? `<img src="${heroSrc}" alt="${p.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-      : '';
-    const initial = (p.name || '?').charAt(0).toUpperCase();
-    const placeholderStyle = heroSrc ? 'style="display:none"' : '';
-    const typeClass = stkTypeBadgeClass(p.development_type);
-    const projStatusClass = stkProjStatusClass(p.project_status);
-
-    return `
-    <div class="stk-card" onclick="showStockProject('${p.id}')">
-      <div class="stk-card-hero">
-        ${heroHtml}
-        <div class="stk-card-hero-placeholder" ${placeholderStyle}>${initial}</div>
-        <div class="stk-card-badges">
-          ${p.smsf_eligible ? '<span class="stk-badge stk-badge-smsf" style="font-size:11px;padding:2px 7px;">SMSF</span>' : '<span></span>'}
-          ${p.sales_status === 'Sold Out'
-            ? '<span class="stk-badge stk-badge-settled">Sold Out</span>'
-            : p.sales_status === 'Coming Soon'
-              ? '<span class="stk-badge stk-badge-coming-soon">Coming Soon</span>'
-              : '<span class="stk-avail-chip" id="avchip-${p.id}">Available</span>'}
-        </div>
-      </div>
-      <div class="stk-card-body">
-        <div class="stk-card-name">${p.name || '—'}</div>
-        <div class="stk-card-location">${p.suburb || ''}${p.suburb && p.state ? ' · ' : ''}${p.state || ''}</div>
-        <div class="stk-card-meta">
-          ${typeClass ? `<span class="stk-badge ${typeClass}">${p.development_type || ''}</span>` : ''}
-          ${projStatusClass ? `<span class="stk-badge ${projStatusClass}">${p.project_status || ''}</span>` : ''}
-        </div>
-      </div>
-      <div class="stk-card-footer">
-        <div class="stk-card-stats">
-          <div class="stk-card-stat">
-            <span class="stk-card-stat-label">From</span>
-            <span class="stk-card-stat-val">${p._minPrice ? fmtCurrencyShort(p._minPrice) : '—'}</span>
-          </div>
-          <div class="stk-card-stat stk-card-stat-comm">
-            <span class="stk-card-stat-label">Comm</span>
-            <span class="stk-card-stat-val">${fmtProjCommForUser(p)}</span>
-          </div>
-          <div class="stk-card-stat">
-            <span class="stk-card-stat-label">Available</span>
-            <span class="stk-card-stat-val">${p._availCount > 0 ? p._availCount + ' lots' : '—'}</span>
-          </div>
-        </div>
-        <div class="stk-card-cta">View →</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  const container = document.getElementById('stk-cards');
-  container.innerHTML = html;
-  if (currentStkView === 'list') {
-    container.style.gridTemplateColumns = '1fr';
-  } else {
-    container.style.gridTemplateColumns = 'repeat(3,1fr)';
-  }
-}
-
 // ── Filter controls ───────────────────────────────────────
 function toggleStkPill(group, value, el) {
   // Single-select pill groups
   stkFilter[group] = value;
   el.closest('.stk-pill-row').querySelectorAll('.stk-pill').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  stkFilter.page = 1;
+  updateStkFdropSummaries();
   renderStockBrowse();
 }
 
@@ -9625,11 +10260,15 @@ function toggleStkMulti(group, value, el) {
   const idx = arr.indexOf(value);
   if (idx >= 0) { arr.splice(idx, 1); el.classList.remove('active'); }
   else           { arr.push(value);   el.classList.add('active'); }
+  stkFilter.page = 1;
+  updateStkFdropSummaries();
   renderStockBrowse();
 }
 
 function toggleStkSmsf() {
   stkFilter.smsf = document.getElementById('stk-smsf-toggle').checked;
+  stkFilter.page = 1;
+  updateStkFdropSummaries();
   renderStockBrowse();
 }
 
@@ -9652,32 +10291,163 @@ function updatePriceFilter() {
   const pct2 = range > 0 ? (max - stkPriceRange.min) / range * 100 : 100;
   const fill = document.getElementById('stk-range-fill');
   if (fill) { fill.style.left = pct1 + '%'; fill.style.right = (100 - pct2) + '%'; }
+  stkFilter.page = 1;
+  updateStkFdropSummaries();
   renderStockBrowse();
 }
 
 function resetStkFilters() {
-  stkFilter = { avail:'all', states:[], types:[], beds:'any', priceMin:stkPriceRange.min, priceMax:stkPriceRange.max, projStatus:'all', smsf:false, yieldMin:0, titleWindow:'any' };
+  stkFilter.avail = 'all';
+  stkFilter.states = [];
+  stkFilter.types = [];
+  stkFilter.beds = 'any';
+  stkFilter.priceMin = stkPriceRange.min;
+  stkFilter.priceMax = stkPriceRange.max;
+  stkFilter.projStatus = 'all';
+  stkFilter.smsf = false;
+  stkFilter.yieldMin = 0;
+  stkFilter.titleWindow = 'any';
+  stkFilter.search = '';
+  stkFilter.page = 1;
+
   // Reset pill UI
   document.querySelectorAll('#page-stock .stk-pill').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('#page-stock .stk-pill').forEach(b => {
-    if (['all','any'].includes(b.textContent.trim().toLowerCase())) b.classList.add('active');
+    const t = b.textContent.trim().toLowerCase();
+    if (t === 'all' || t === 'any') b.classList.add('active');
   });
-  document.getElementById('stk-smsf-toggle').checked = false;
-  document.getElementById('stk-range-min').value = stkPriceRange.min;
-  document.getElementById('stk-range-max').value = stkPriceRange.max;
-  document.getElementById('stk-price-min-lbl').textContent = fmtCurrencyShort(stkPriceRange.min);
-  document.getElementById('stk-price-max-lbl').textContent = fmtCurrencyShort(stkPriceRange.max);
+  const smsf = document.getElementById('stk-smsf-toggle'); if (smsf) smsf.checked = false;
+  const search = document.getElementById('stk-search'); if (search) search.value = '';
+  const minR = document.getElementById('stk-range-min'); if (minR) minR.value = stkPriceRange.min;
+  const maxR = document.getElementById('stk-range-max'); if (maxR) maxR.value = stkPriceRange.max;
+  const minL = document.getElementById('stk-price-min-lbl'); if (minL) minL.textContent = fmtCurrencyShort(stkPriceRange.min);
+  const maxL = document.getElementById('stk-price-max-lbl'); if (maxL) maxL.textContent = fmtCurrencyShort(stkPriceRange.max);
   const fill = document.getElementById('stk-range-fill');
   if (fill) { fill.style.left = '0%'; fill.style.right = '0%'; }
+  updateStkFdropSummaries();
   renderStockBrowse();
 }
 
-function setStkView(view, el) {
-  currentStkView = view;
-  document.querySelectorAll('.stk-view-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  const container = document.getElementById('stk-cards');
-  container.style.gridTemplateColumns = view === 'list' ? '1fr' : 'repeat(3,1fr)';
+// ── Map (Leaflet + markercluster) ─────────────────────────
+function renderStockMap(projects) {
+  const mapEl = document.getElementById('stk-map');
+  if (!mapEl) return;
+  if (!stkLeafletMap) {
+    stkLeafletMap = L.map(mapEl, {
+      center: [-27, 134],
+      zoom: 4,
+      zoomControl: false,
+      attributionControl: false,
+      minZoom: 3,
+      maxZoom: 18,
+      worldCopyJump: false
+    });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd', maxZoom: 19
+    }).addTo(stkLeafletMap);
+    // Zoom buttons sit at the bottom-left (just above the Locate me button).
+    L.control.zoom({ position: 'bottomleft' }).addTo(stkLeafletMap);
+    L.control.attribution({ prefix: false, position: 'bottomright' })
+      .addAttribution('<span style="font-size:9px;color:#555">© CARTO © OSM</span>')
+      .addTo(stkLeafletMap);
+    stkMarkerCluster = L.markerClusterGroup({
+      maxClusterRadius: 50,
+      showCoverageOnHover: false,
+      iconCreateFunction: function(cluster) {
+        const n = cluster.getChildCount();
+        const size = n >= 10 ? 44 : n >= 3 ? 36 : 30;
+        return L.divIcon({
+          html: `<div class="stk-cluster" style="width:${size}px;height:${size}px;">${n}</div>`,
+          className: '',
+          iconSize: [size, size]
+        });
+      }
+    });
+    stkLeafletMap.addLayer(stkMarkerCluster);
+  }
+
+  // Rebuild markers
+  stkMarkerCluster.clearLayers();
+  stkProjectMarkers = {};
+  const bounds = [];
+  projects.forEach(p => {
+    const lat = p.latitude != null ? Number(p.latitude) : null;
+    const lng = p.longitude != null ? Number(p.longitude) : null;
+    if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return;
+    const icon = L.divIcon({
+      html: '<div class="stk-pin"></div>',
+      className: 'stk-pin-wrap',
+      iconSize: [28, 28],
+      iconAnchor: [14, 26]
+    });
+    const m = L.marker([lat, lng], { icon, title: p.name || '' });
+    m.bindTooltip(`<strong>${p.name || ''}</strong><br><span style="color:#C8A951">${[p.suburb, p.state].filter(Boolean).join(' · ')}</span>`, { direction: 'top' });
+    m.on('click', function() { highlightStkRow(p.id, true); });
+    stkMarkerCluster.addLayer(m);
+    stkProjectMarkers[p.id] = m;
+    bounds.push([lat, lng]);
+  });
+
+  // Invalidate size first (the pane may have been hidden when init() ran),
+  // then apply the bounds — otherwise fitBounds calculates against a
+  // zero-sized container and zooms to a single pin.
+  const applyBounds = () => {
+    try { stkLeafletMap.invalidateSize(); } catch(e){}
+    if (bounds.length === 1) {
+      stkLeafletMap.setView(bounds[0], 13);
+    } else if (bounds.length > 1) {
+      // Pick a zoom that comfortably contains the bounds — biased one step
+      // tighter than the previous version so the default view isn't an
+      // empty continent when most pins cluster in one city.
+      const lats = bounds.map(b => b[0]);
+      const lngs = bounds.map(b => b[1]);
+      const span = Math.max(Math.max(...lats) - Math.min(...lats), Math.max(...lngs) - Math.min(...lngs));
+      let z = 12;
+      if (span > 0.3) z = 10;
+      if (span > 1)   z = 8;
+      if (span > 3)   z = 7;
+      if (span > 7)   z = 6;
+      if (span > 15)  z = 5;
+      stkLeafletMap.fitBounds(bounds, { padding: [40, 40], maxZoom: z });
+    }
+  };
+  // Run twice — once now, once after the next paint — so a pane that just
+  // transitioned from display:none picks up the correct dimensions.
+  applyBounds();
+  setTimeout(applyBounds, 60);
+}
+
+function toggleMapClustering() {
+  stkClusteringEnabled = document.getElementById('stk-mapkey-cluster').checked;
+  if (!stkLeafletMap || !stkMarkerCluster) return;
+  if (stkClusteringEnabled) {
+    stkMarkerCluster.enableClustering ? stkMarkerCluster.enableClustering() : null;
+    if (!stkLeafletMap.hasLayer(stkMarkerCluster)) stkLeafletMap.addLayer(stkMarkerCluster);
+  } else {
+    if (stkMarkerCluster.disableClustering) stkMarkerCluster.disableClustering();
+  }
+}
+function toggleMapPins() {
+  stkPinsVisible = document.getElementById('stk-mapkey-pins').checked;
+  if (!stkLeafletMap || !stkMarkerCluster) return;
+  if (stkPinsVisible) { if (!stkLeafletMap.hasLayer(stkMarkerCluster)) stkLeafletMap.addLayer(stkMarkerCluster); }
+  else { stkLeafletMap.removeLayer(stkMarkerCluster); }
+}
+
+function locateOnStkMap() {
+  if (!stkLeafletMap || !navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    stkLeafletMap.flyTo([pos.coords.latitude, pos.coords.longitude], 11);
+  }, () => { /* permission denied — silent */ });
+}
+
+function highlightStkRow(projId, scrollIntoView) {
+  const row = document.querySelector(`.stk-row[data-proj-id="${projId}"]`);
+  if (!row) return;
+  document.querySelectorAll('.stk-row.flash').forEach(r => r.classList.remove('flash'));
+  row.classList.add('flash');
+  if (scrollIntoView) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  setTimeout(() => row.classList.remove('flash'), 1500);
 }
 
 // ── Project detail ────────────────────────────────────────
@@ -9760,11 +10530,12 @@ function showPageDirect(page) {
   document.querySelectorAll('.page-view').forEach(p => { p.classList.remove('active'); p.style.display = ''; });
   const el = document.getElementById('page-' + page);
   if (el) { el.classList.add('active'); el.style.display = ''; }
+  // Map the destination page to the nav item that should appear active.
+  // Stock sub-pages roll up to Stock; otherwise match by the onclick page key.
+  const navKey = (page === 'stock-project' || page === 'stock-listing') ? 'stock' : page;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  // highlight Stock nav for sub-pages
-  document.querySelectorAll('.nav-item').forEach(n => {
-    if (n.textContent.trim().includes('Stock')) n.classList.add('active');
-  });
+  const navEl = document.querySelector(`.nav-item[onclick*="'${navKey}'"]`);
+  if (navEl) navEl.classList.add('active');
 }
 
 async function loadProjectStock(projectId) {
@@ -11190,56 +11961,424 @@ function buildKitHtml(s, research, brand) {
    STOCK PORTAL — .stk-* classes
    ================================================================ */
 
-/* ── Browse layout ───────────────────────────────────────────── */
-.stk-browse-layout {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  height: calc(100vh - 61px);
+/* ── Browse shell (new map-first layout) ─────────────────────── */
+.stk-browse-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--black-card);
+}
+/* When the Stock page is active, lock main-content to the viewport so
+   the shell fills exactly the area below the topbar with no body scroll. */
+#page-stock.page-view { display: none; }
+#page-stock.page-view.active { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.main-content:has(#page-stock.page-view.active) {
+  height: 100vh;
+  min-height: 100vh;
   overflow: hidden;
 }
 
-.stk-filters {
+.stk-header-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--gold-border);
+  flex-shrink: 0; gap: 12px;
+  background: var(--black);
+}
+.stk-header-right { display: flex; align-items: center; gap: 12px; }
+
+.stk-filter-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--gold-border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* Search input */
+.stk-search-wrap { position: relative; min-width: 220px; flex: 1 1 220px; max-width: 280px; }
+.stk-search-input {
+  width: 100%;
+  padding: 10px 36px 10px 14px;
+  background: var(--black-soft);
+  border: 1px solid var(--gold-border);
+  color: var(--white);
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.stk-search-input:focus { border-color: var(--gold); }
+.stk-search-input::placeholder { color: var(--grey-mid); }
+.stk-search-icon {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; color: var(--grey-mid); pointer-events: none;
+}
+
+/* Filter dropdown buttons */
+.stk-fdrop { position: relative; }
+.stk-fdrop-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  background: var(--black-soft);
+  border: 1px solid var(--gold-border);
+  color: var(--grey-pale);
+  cursor: pointer;
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 13px;
+  transition: all 0.15s;
+  min-width: 0;
+}
+.stk-fdrop-btn:hover { border-color: var(--gold); color: var(--gold); }
+.stk-fdrop.active .stk-fdrop-btn,
+.stk-fdrop.has-value .stk-fdrop-btn { border-color: var(--gold); color: var(--gold); }
+.stk-fdrop-label {
+  font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text-muted); display: block; line-height: 1.2;
+}
+.stk-fdrop.has-value .stk-fdrop-label { color: var(--gold); opacity: 0.85; }
+.stk-fdrop-value {
+  font-size: 13px; color: var(--white); display: block; line-height: 1.2;
+  white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis;
+}
+.stk-fdrop-caret { font-size: 10px; opacity: 0.7; margin-left: 2px; }
+.stk-fdrop-caret-icon { font-size: 13px; color: var(--gold); }
+.stk-fdrop-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  background: var(--gold); color: var(--black);
+  font-size: 11px; font-weight: 700;
+  border-radius: 50%;
+  font-family: 'DM Mono', monospace;
+}
+.stk-fdrop-pop {
+  position: absolute; top: calc(100% + 6px); left: 0;
+  /* Leaflet's overlayPane sits at z-index 400 and its controls at 800,
+     so dropdowns must clear those to stay above the map. */
+  z-index: 1100;
+  background: var(--black);
+  border: 1px solid var(--gold-border);
+  padding: 14px 16px;
+  min-width: 240px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+  display: none;
+}
+.stk-fdrop-pop-wide { min-width: 340px; }
+/* When the dropdown trigger sits near the right edge (e.g. More filters),
+   anchor the popover to the right edge of the trigger so it can't overflow. */
+.stk-fdrop-pop-right { left: auto; right: 0; }
+.stk-fdrop.open .stk-fdrop-pop { display: block; }
+
+.stk-clearall {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  background: transparent; border: 1px solid transparent;
+  color: var(--grey-light); cursor: pointer;
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 13px;
+  transition: color 0.15s;
+  margin-left: auto;
+}
+.stk-clearall:hover { color: var(--gold); }
+
+/* Body row */
+.stk-body { flex: 1; overflow: hidden; display: flex; min-height: 0; }
+.stk-body > * { flex: 1; min-width: 0; min-height: 0; }
+
+/* Projects MAP mode (map + right list) */
+.stk-projects-map { display: grid; grid-template-columns: minmax(0, 1fr) minmax(720px, 58%); height: 100%; }
+.stk-mapwrap { position: relative; background: var(--black-card); border-right: 1px solid var(--gold-border); }
+.stk-map { position: absolute; inset: 0; }
+.leaflet-container { background: var(--black-card); outline: none; font-family: 'Outfit', system-ui, sans-serif; }
+/* Tint Carto Dark Matter toward the brand navy. Combined sepia + hue-rotate
+   colourises the grey tiles, then a brand-coloured overlay (mix-blend-mode
+   colour) pulls the whole map firmly into the navy palette so the map flows
+   into the surrounding panel. */
+.stk-mapwrap .leaflet-tile {
+  filter: sepia(1) saturate(2.6) hue-rotate(180deg) brightness(1.15);
+}
+.stk-mapwrap .leaflet-tile-pane::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(21, 34, 56, 0.45);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Map key — top-left, where the zoom buttons used to sit */
+.stk-mapkey {
+  position: absolute; top: 16px; left: 16px; z-index: 500;
   background: var(--black-card);
-  border-right: 1px solid var(--gold-border);
-  overflow-y: auto;
-  padding: 20px 16px;
+  border: 1px solid var(--gold-border);
+  padding: 12px 14px;
+  min-width: 170px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.stk-mapkey-row { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 0; font-size: 12px; color: var(--grey-pale); }
+.stk-mapkey-row input { accent-color: var(--gold); }
+.stk-mapkey-divider { height: 1px; background: var(--gold-border); margin: 8px 0; }
+.stk-mapkey-legend {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--grey-pale);
+  padding: 3px 0;
+}
+/* Legend bubbles mirror the on-map clusters: outlined gold, transparent fill. */
+.stk-mapkey-cluster3, .stk-mapkey-cluster2, .stk-mapkey-cluster1 {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  background: rgba(200, 169, 81, 0.12);
+  color: var(--gold);
+  font-family: 'DM Mono', monospace; font-weight: 700;
+  font-size: 11px;
+  border: 1.5px solid var(--gold);
+  border-radius: 50%;
+}
+.stk-mapkey-pin { color: var(--gold); font-size: 16px; line-height: 1; }
+
+/* Leaflet zoom buttons — bottom-left of the map */
+.stk-mapwrap .leaflet-control-zoom {
+  border: none;
+  margin-left: 16px !important;
+  margin-bottom: 24px !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+.stk-mapwrap .leaflet-control-zoom a {
+  width: 40px !important; height: 40px !important; line-height: 40px !important;
+  /* Brand navy that visibly reads as blue against the tinted map.
+     !important needed to beat the older dashboard rule above. */
+  background: #1E3A5F !important;
+  color: var(--gold) !important;
+  border: 1px solid var(--gold-border) !important;
+  font-size: 22px !important;
+  font-weight: 400;
+  font-family: 'Outfit', system-ui, sans-serif;
+  text-decoration: none;
+}
+.stk-mapwrap .leaflet-control-zoom a:hover {
+  background: var(--gold-dim) !important;
+  color: var(--gold) !important;
+  border-color: var(--gold) !important;
+}
+.stk-mapwrap .leaflet-control-zoom a.leaflet-disabled {
+  opacity: 0.4;
+}
+.stk-mapwrap .leaflet-control-zoom-in { border-bottom: none !important; }
+
+/* Custom cluster + pin styles — glass-outlined gold so they read clearly
+   against the navy map but stay visually light/translucent. */
+.stk-cluster {
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(200, 169, 81, 0.12);
+  color: var(--gold);
+  font-family: 'DM Mono', monospace; font-weight: 700;
+  font-size: 14px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 4px rgba(200, 169, 81, 0.10),
+    0 0 14px rgba(200, 169, 81, 0.45),
+    inset 0 0 10px rgba(200, 169, 81, 0.18);
+  text-shadow: 0 0 4px rgba(200, 169, 81, 0.6);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.stk-pin {
+  position: relative;
+  width: 28px; height: 28px;
+  /* Solid gold body with a subtle highlight gradient for a glassy sheen. */
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 55%, #A88A36 100%);
+  border: 2px solid var(--gold);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 81, 0.35),
+    0 0 14px rgba(200, 169, 81, 0.55),
+    inset 1px 1px 4px rgba(255, 240, 200, 0.45),
+    inset -1px -2px 4px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+/* Inner "lens" circle — dark cut-out reads as the classic pin lens. */
+.stk-pin::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 10px; height: 10px;
+  background: var(--black-card);
+  border: 1.5px solid rgba(0, 0, 0, 0.35);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.5);
+}
+.stk-pin.active { box-shadow: 0 0 0 2px var(--gold), 0 0 20px rgba(200, 169, 81, 0.8); }
+.leaflet-marker-icon.stk-pin-wrap { background: transparent !important; border: none !important; }
+
+/* Right pane (list of projects beside map) */
+.stk-rightpane {
+  display: flex; flex-direction: column;
+  background: var(--black-card);
+  overflow: hidden;
+  min-width: 0;
+}
+.stk-rightpane-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--gold-border);
   flex-shrink: 0;
 }
-
-.stk-filters-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
+.stk-rightpane-count {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px; color: var(--white);
+}
+.stk-rightpane-sort { display: flex; align-items: center; gap: 10px; }
+.stk-rightpane-sort-label {
+  font-size: 13px; color: var(--text-muted);
+  font-family: 'DM Mono', monospace; letter-spacing: 0.4px;
+}
+.stk-rightpane-sort-select {
+  background: var(--black-soft); border: 1px solid var(--gold-border);
+  color: var(--gold); padding: 8px 28px 8px 12px;
+  font-family: 'Outfit', system-ui, sans-serif; font-size: 14px;
+  cursor: pointer; outline: none;
+  appearance: none; -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--gold) 50%), linear-gradient(135deg, var(--gold) 50%, transparent 50%);
+  background-position: calc(100% - 12px) 50%, calc(100% - 7px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.stk-rightpane-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+.stk-rightpane-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 22px; border-top: 1px solid var(--gold-border);
+  flex-shrink: 0;
+  font-size: 12px; color: var(--text-muted);
+  background: var(--black-card);
+}
+.stk-rightpane-footer-grid { padding: 18px 24px 24px; }
+.stk-pagesize { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--grey-pale); }
+.stk-pagesize select {
+  background: var(--black-soft); border: 1px solid var(--gold-border);
+  color: var(--gold); padding: 6px 26px 6px 10px; font-size: 14px;
+  appearance: none; -webkit-appearance: none; cursor: pointer; outline: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--gold) 50%), linear-gradient(135deg, var(--gold) 50%, transparent 50%);
+  background-position: calc(100% - 12px) 50%, calc(100% - 8px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
 }
 
-.stk-filters-title {
+/* Pager (‹ 1 2 ›) */
+.stk-pager { display: flex; align-items: center; gap: 6px; }
+.stk-pager-btn {
+  min-width: 36px; height: 36px;
+  padding: 0 10px;
+  background: transparent; border: 1px solid var(--gold-border);
+  color: var(--grey-pale);
+  font-size: 14px;
   font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.stk-filters-reset {
-  font-size: 13px;
-  color: var(--gold);
   cursor: pointer;
-  background: none;
-  border: none;
-  padding: 0;
-  opacity: 0.7;
+  transition: all 0.15s;
 }
-.stk-filters-reset:hover { opacity: 1; }
+.stk-pager-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+.stk-pager-btn.active {
+  background: var(--black-soft);
+  border-color: var(--gold);
+  color: var(--gold);
+  font-weight: 700;
+}
+.stk-pager-btn:disabled { opacity: 0.35; cursor: default; }
+.stk-pager-btn.active:disabled { opacity: 1; cursor: default; }
 
-.stk-filter-group { margin-bottom: 22px; }
+/* Right-pane row card — every row exactly the same height (Archer is the
+   reference). Image is a fixed 240×96 rectangle, centred vertically inside
+   the row so badge length never pushes the row taller. */
+.stk-row {
+  display: grid;
+  grid-template-columns: 240px 1fr auto auto;
+  gap: 0;
+  align-items: center;
+  height: 116px;
+  padding: 0 22px 0 0;
+  border-bottom: 1px solid rgba(201,168,76,0.10);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  position: relative;
+}
+.stk-row:hover { background: var(--black-hover); }
+.stk-row.flash { background: var(--gold-dim); border-color: var(--gold); }
+.stk-row-thumb {
+  width: 240px;
+  height: 96px;
+  background: linear-gradient(135deg, var(--black-hover) 0%, #1E1E18 100%);
+  position: relative; overflow: hidden;
+}
+.stk-row-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.stk-row-thumb-placeholder {
+  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 32px; color: rgba(201,168,76,0.25);
+}
+.stk-row-thumb-smsf {
+  position: absolute; top: 7px; left: 7px;
+  font-size: 10px; padding: 3px 7px;
+  background: rgba(201,168,76,0.92); color: var(--black);
+  font-family: 'DM Mono', monospace; font-weight: 700;
+  letter-spacing: 0.6px;
+}
+.stk-row-body {
+  display: flex; flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 14px 14px 14px 22px;
+  height: 96px;
+}
+.stk-row-body-top { min-width: 0; }
+.stk-row-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 21px; font-weight: 600;
+  color: var(--white); line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+.stk-row-loc { font-size: 14px; color: var(--grey-pale); }
+.stk-row-badges { display: flex; gap: 6px; flex-wrap: nowrap; min-width: 0; overflow: hidden; }
+.stk-row-badges .stk-badge { font-size: 12px !important; padding: 3px 9px !important; letter-spacing: 0.5px; flex-shrink: 0; }
+/* Fixed column widths so FROM / COMM / LOTS line up across every row,
+   regardless of value length (e.g. "$10k (5.5%)" vs "17%"). */
+.stk-row-stats {
+  display: grid;
+  grid-template-columns: 80px 124px 80px;
+  align-items: center;
+  padding: 12px 8px 12px 0;
+}
+.stk-row-stat { display: flex; flex-direction: column; gap: 5px; }
+.stk-row-stat-label {
+  font-size: 11px; letter-spacing: 1.3px; text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+}
+.stk-row-stat-val { font-size: 17px; color: var(--white); font-family: 'DM Mono', monospace; font-weight: 500; white-space: nowrap; }
+.stk-row-stat-comm .stk-row-stat-val { color: var(--gold); }
+.stk-row-side {
+  display: flex; flex-direction: column;
+  align-items: flex-end; justify-content: space-between;
+  padding: 12px 0 12px 22px;
+  min-width: 80px;
+  height: 96px;
+}
+.stk-row-side .stk-avail-chip,
+.stk-row-side .stk-badge { font-size: 12px !important; padding: 4px 11px !important; letter-spacing: 0.6px; }
+.stk-row-cta { font-size: 14px; color: var(--gold); font-family: 'DM Mono', monospace; letter-spacing: 0.4px; font-weight: 500; }
 
+/* Filter group (used inside More filters popover) */
+.stk-filter-group { margin-bottom: 18px; }
+.stk-filter-group:last-child { margin-bottom: 0; }
 .stk-filter-label {
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   display: block;
 }
 
@@ -11322,18 +12461,7 @@ function buildKitHtml(s, research, brand) {
 }
 .stk-toggle input:checked ~ .stk-toggle-thumb { transform: translateX(18px); }
 
-/* ── Cards area ──────────────────────────────────────────────── */
-.stk-main {
-  display: flex; flex-direction: column;
-  overflow: hidden; background: var(--black);
-}
-
-.stk-top-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 24px;
-  border-bottom: 1px solid var(--gold-border);
-  flex-shrink: 0; gap: 12px;
-}
+/* ── Browse tabs (top header row) ────────────────────────────── */
 .stk-browse-tabs { display: flex; gap: 0; }
 .stk-browse-tab {
   padding: 8px 20px; font-size: 13px; letter-spacing: 0.8px; text-transform: uppercase;
@@ -11380,12 +12508,29 @@ function buildKitHtml(s, research, brand) {
 .stk-sync-btn:hover:not(:disabled) { background: var(--gold-dim); border-color: var(--gold); }
 .stk-sync-btn:disabled { opacity: 0.5; cursor: default; }
 
-.stk-cards-wrap { flex: 1; overflow-y: auto; padding: 24px; }
+.stk-projects-grid-wrap {
+  flex: 1;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  background: var(--black-card);
+}
+.stk-projects-grid-wrap > .stk-cards { flex: 1; overflow-y: auto; padding: 24px; }
 
 .stk-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+}
+
+/* Responsive: stack map above right list on narrow viewports */
+@media (max-width: 1100px) {
+  .stk-projects-map { grid-template-columns: 1fr; grid-template-rows: 360px 1fr; }
+  .stk-mapwrap { border-right: none; border-bottom: 1px solid var(--gold-border); }
+}
+@media (max-width: 900px) {
+  .stk-filter-row { padding: 10px 14px; gap: 8px; }
+  .stk-fdrop.stk-fdrop-more { margin-left: 0; }
+  .stk-cards { grid-template-columns: 1fr; }
 }
 
 /* Empty / loading states */
@@ -11401,14 +12546,14 @@ function buildKitHtml(s, research, brand) {
 
 /* ── Project card ────────────────────────────────────────────── */
 .stk-card {
-  background: var(--black-card);
-  border: 1px solid transparent;
+  background: var(--black-soft);
+  border: 1px solid rgba(201,168,76,0.12);
   cursor: pointer;
   transition: all 0.15s;
   display: flex; flex-direction: column;
 }
 .stk-card:hover {
-  border-color: var(--gold-border);
+  border-color: var(--gold);
   background: var(--black-hover);
   transform: translateY(-1px);
 }
@@ -12357,6 +13502,488 @@ function buildKitHtml(s, research, brand) {
   /* Disclaimer */
   .kit-disclaimer-page .kit-page-body { padding-top: 12mm; }
   .kit-disclaimer-text { font-size: 9pt; color: #555; line-height: 1.6; margin-bottom: 4mm; font-family: Arial, sans-serif; }
+}
+
+/* ─── RESEARCH BROWSE (rsc-*) — mirrors Stock Portal shell ──────────────── */
+.rsc-browse-shell {
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0;
+  overflow: hidden;
+  background: var(--black-card);
+}
+#page-reports.page-view { display: none; }
+#page-reports.page-view.active {
+  display: flex; flex-direction: column; min-height: 0; flex: 1;
+}
+.main-content:has(#page-reports.page-view.active) {
+  height: 100vh; min-height: 100vh; overflow: hidden;
+}
+
+.rsc-header-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--gold-border);
+  flex-shrink: 0; gap: 12px;
+  background: var(--black);
+}
+.rsc-header-right { display: flex; align-items: center; gap: 12px; }
+.rsc-count { font-size: 15px; color: var(--grey-pale); }
+.rsc-count strong { color: var(--white); }
+
+.rsc-view-btns { display: flex; gap: 6px; }
+.rsc-view-btn {
+  padding: 7px 12px;
+  border: 1px solid var(--gold-border);
+  background: none; cursor: pointer;
+  font-size: 14px; color: var(--text-muted);
+  transition: all 0.15s;
+}
+.rsc-view-btn:hover, .rsc-view-btn.active {
+  border-color: var(--gold); color: var(--gold); background: var(--gold-dim);
+}
+
+.rsc-filter-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--gold-border);
+  flex-shrink: 0; flex-wrap: wrap;
+}
+.rsc-search-wrap { position: relative; min-width: 220px; flex: 1 1 220px; max-width: 280px; }
+.rsc-search-input {
+  width: 100%;
+  padding: 10px 36px 10px 14px;
+  background: var(--black-soft);
+  border: 1px solid var(--gold-border);
+  color: var(--white);
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 13px; outline: none;
+  transition: border-color 0.15s;
+}
+.rsc-search-input:focus { border-color: var(--gold); }
+.rsc-search-input::placeholder { color: var(--grey-mid); }
+.rsc-search-icon {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; color: var(--grey-mid); pointer-events: none;
+}
+
+.rsc-fdrop { position: relative; }
+.rsc-fdrop-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  background: var(--black-soft);
+  border: 1px solid var(--gold-border);
+  color: var(--grey-pale);
+  cursor: pointer;
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 13px;
+  transition: all 0.15s;
+  min-width: 0;
+}
+.rsc-fdrop-btn:hover { border-color: var(--gold); color: var(--gold); }
+.rsc-fdrop.active .rsc-fdrop-btn,
+.rsc-fdrop.has-value .rsc-fdrop-btn { border-color: var(--gold); color: var(--gold); }
+.rsc-fdrop-label {
+  font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text-muted); display: block; line-height: 1.2;
+}
+.rsc-fdrop.has-value .rsc-fdrop-label { color: var(--gold); opacity: 0.85; }
+.rsc-fdrop-value {
+  font-size: 13px; color: var(--white); display: block; line-height: 1.2;
+  white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis;
+}
+.rsc-fdrop-caret { font-size: 10px; opacity: 0.7; margin-left: 2px; }
+.rsc-fdrop-caret-icon { font-size: 13px; color: var(--gold); }
+.rsc-fdrop-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  background: var(--gold); color: var(--black);
+  font-size: 11px; font-weight: 700;
+  border-radius: 50%;
+  font-family: 'DM Mono', monospace;
+}
+.rsc-fdrop-pop {
+  position: absolute; top: calc(100% + 6px); left: 0;
+  z-index: 1100;
+  background: var(--black);
+  border: 1px solid var(--gold-border);
+  padding: 14px 16px;
+  min-width: 240px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+  display: none;
+}
+.rsc-fdrop-pop-wide { min-width: 340px; }
+.rsc-fdrop-pop-right { left: auto; right: 0; }
+.rsc-fdrop.open .rsc-fdrop-pop { display: block; }
+
+.rsc-clearall {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  background: transparent; border: 1px solid transparent;
+  color: var(--grey-light); cursor: pointer;
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 13px;
+  transition: color 0.15s;
+  margin-left: auto;
+}
+.rsc-clearall:hover { color: var(--gold); }
+
+.rsc-filter-group { margin-bottom: 18px; }
+.rsc-filter-group:last-child { margin-bottom: 0; }
+.rsc-filter-label {
+  font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 8px; display: block;
+}
+.rsc-toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.rsc-toggle-desc { font-size: 14px; color: var(--grey-pale); }
+
+.rsc-pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.rsc-pill {
+  padding: 7px 14px;
+  border: 1px solid var(--gold-border);
+  background: none; cursor: pointer;
+  font-size: 13px; font-weight: 500;
+  color: var(--grey-pale);
+  letter-spacing: 0.3px;
+  transition: all 0.15s;
+  font-family: 'Outfit', system-ui, sans-serif;
+}
+.rsc-pill:hover { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+.rsc-pill.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+/* Body row */
+.rsc-body { flex: 1; overflow: hidden; display: flex; min-height: 0; }
+.rsc-body > * { flex: 1; min-width: 0; min-height: 0; }
+
+/* Map mode (map + right list) */
+.rsc-projects-map { display: grid; grid-template-columns: minmax(0, 1fr) minmax(620px, 52%); height: 100%; }
+.rsc-mapwrap { position: relative; background: var(--black-card); border-right: 1px solid var(--gold-border); }
+.rsc-map { position: absolute; inset: 0; }
+.rsc-mapwrap .leaflet-container { background: var(--black-card); outline: none; font-family: 'Outfit', system-ui, sans-serif; }
+.rsc-mapwrap .leaflet-tile {
+  filter: sepia(1) saturate(2.6) hue-rotate(180deg) brightness(1.15);
+}
+.rsc-mapwrap .leaflet-tile-pane::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(21, 34, 56, 0.45);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.rsc-mapkey {
+  position: absolute; top: 16px; left: 16px; z-index: 500;
+  background: var(--black-card);
+  border: 1px solid var(--gold-border);
+  padding: 12px 14px;
+  min-width: 170px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.rsc-mapkey-row { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 0; font-size: 12px; color: var(--grey-pale); }
+.rsc-mapkey-row input { accent-color: var(--gold); }
+.rsc-mapkey-divider { height: 1px; background: var(--gold-border); margin: 8px 0; }
+.rsc-mapkey-legend {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--grey-pale);
+  padding: 3px 0;
+}
+.rsc-mapkey-cluster3, .rsc-mapkey-cluster2, .rsc-mapkey-cluster1 {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  background: rgba(200, 169, 81, 0.12);
+  color: var(--gold);
+  font-family: 'DM Mono', monospace; font-weight: 700;
+  font-size: 11px;
+  border: 1.5px solid var(--gold);
+  border-radius: 50%;
+}
+.rsc-mapkey-pin { color: var(--gold); font-size: 16px; line-height: 1; }
+
+.rsc-mapwrap .leaflet-control-zoom {
+  border: none;
+  margin-left: 16px !important;
+  margin-bottom: 24px !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+.rsc-mapwrap .leaflet-control-zoom a {
+  width: 40px !important; height: 40px !important; line-height: 40px !important;
+  background: #1E3A5F !important;
+  color: var(--gold) !important;
+  border: 1px solid var(--gold-border) !important;
+  font-size: 22px !important;
+  font-weight: 400;
+  font-family: 'Outfit', system-ui, sans-serif;
+  text-decoration: none;
+}
+.rsc-mapwrap .leaflet-control-zoom a:hover {
+  background: var(--gold-dim) !important;
+  color: var(--gold) !important;
+  border-color: var(--gold) !important;
+}
+.rsc-mapwrap .leaflet-control-zoom a.leaflet-disabled { opacity: 0.4; }
+.rsc-mapwrap .leaflet-control-zoom-in { border-bottom: none !important; }
+
+.rsc-cluster {
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(200, 169, 81, 0.12);
+  color: var(--gold);
+  font-family: 'DM Mono', monospace; font-weight: 700;
+  font-size: 14px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 4px rgba(200, 169, 81, 0.10),
+    0 0 14px rgba(200, 169, 81, 0.45),
+    inset 0 0 10px rgba(200, 169, 81, 0.18);
+  text-shadow: 0 0 4px rgba(200, 169, 81, 0.6);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.rsc-pin {
+  position: relative;
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 55%, #A88A36 100%);
+  border: 2px solid var(--gold);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow:
+    0 0 0 1px rgba(200, 169, 81, 0.35),
+    0 0 14px rgba(200, 169, 81, 0.55),
+    inset 1px 1px 4px rgba(255, 240, 200, 0.45),
+    inset -1px -2px 4px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+.rsc-pin::after {
+  content: '';
+  position: absolute; top: 50%; left: 50%;
+  width: 10px; height: 10px;
+  background: var(--black-card);
+  border: 1.5px solid rgba(0, 0, 0, 0.35);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.5);
+}
+.leaflet-marker-icon.rsc-pin-wrap { background: transparent !important; border: none !important; }
+
+/* Right pane (list of reports beside map) */
+.rsc-rightpane {
+  display: flex; flex-direction: column;
+  background: var(--black-card);
+  overflow: hidden;
+  min-width: 0;
+}
+.rsc-rightpane-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--gold-border);
+  flex-shrink: 0;
+}
+.rsc-rightpane-count {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px; color: var(--white);
+}
+.rsc-rightpane-sort { display: flex; align-items: center; gap: 10px; }
+.rsc-rightpane-sort-label {
+  font-size: 13px; color: var(--text-muted);
+  font-family: 'DM Mono', monospace; letter-spacing: 0.4px;
+}
+.rsc-rightpane-sort-select {
+  background: var(--black-soft); border: 1px solid var(--gold-border);
+  color: var(--gold); padding: 8px 28px 8px 12px;
+  font-family: 'Outfit', system-ui, sans-serif; font-size: 14px;
+  cursor: pointer; outline: none;
+  appearance: none; -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--gold) 50%), linear-gradient(135deg, var(--gold) 50%, transparent 50%);
+  background-position: calc(100% - 12px) 50%, calc(100% - 7px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.rsc-rightpane-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+.rsc-rightpane-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 22px; border-top: 1px solid var(--gold-border);
+  flex-shrink: 0;
+  font-size: 12px; color: var(--text-muted);
+  background: var(--black-card);
+}
+.rsc-rightpane-footer-grid { padding: 18px 24px 24px; }
+.rsc-pagesize { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--grey-pale); }
+.rsc-pagesize select {
+  background: var(--black-soft); border: 1px solid var(--gold-border);
+  color: var(--gold); padding: 6px 26px 6px 10px; font-size: 14px;
+  appearance: none; -webkit-appearance: none; cursor: pointer; outline: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--gold) 50%), linear-gradient(135deg, var(--gold) 50%, transparent 50%);
+  background-position: calc(100% - 12px) 50%, calc(100% - 8px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.rsc-pager { display: flex; align-items: center; gap: 6px; }
+.rsc-pager-btn {
+  min-width: 36px; height: 36px;
+  padding: 0 10px;
+  background: transparent; border: 1px solid var(--gold-border);
+  color: var(--grey-pale);
+  font-size: 14px;
+  font-family: 'DM Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rsc-pager-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+.rsc-pager-btn.active {
+  background: var(--black-soft);
+  border-color: var(--gold);
+  color: var(--gold);
+  font-weight: 700;
+}
+.rsc-pager-btn:disabled { opacity: 0.35; cursor: default; }
+.rsc-pager-btn.active:disabled { opacity: 1; cursor: default; }
+
+/* Row — fixed height shell wrapping the existing .research-item visuals.
+   We don't redefine the inner .ri-* classes (state chip, name, score badge);
+   they keep their look from the original `.research-item` definitions. */
+.rsc-row {
+  display: flex; align-items: center; gap: 18px;
+  padding: 14px 22px;
+  height: 96px;
+  border-bottom: 1px solid rgba(201,168,76,0.10);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  position: relative;
+}
+.rsc-row:hover { background: var(--black-hover); }
+.rsc-row.flash { background: var(--gold-dim); border-color: var(--gold); }
+.rsc-row .ri-state {
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--gold-dim);
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.rsc-row .ri-info { flex: 1; min-width: 0; }
+.rsc-row .ri-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 19px; font-weight: 600;
+  color: var(--white); line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin: 0;
+}
+.rsc-row .ri-meta {
+  font-size: 13px; color: var(--text-muted);
+  margin-top: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+.rsc-row .ri-score {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 4px;
+  flex-shrink: 0;
+}
+.rsc-row .score-badge { padding: 4px 11px; font-size: 12px; letter-spacing: 0.5px; }
+.rsc-row .ri-date { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+.rsc-row-cta {
+  font-size: 14px; color: var(--gold);
+  font-family: 'DM Mono', monospace; letter-spacing: 0.4px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* Card grid (list mode) */
+.rsc-projects-grid-wrap {
+  flex: 1;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  background: var(--black-card);
+}
+.rsc-projects-grid-wrap > .rsc-cards { flex: 1; overflow-y: auto; padding: 24px; }
+.rsc-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.rsc-card {
+  background: var(--black-soft);
+  border: 1px solid rgba(201,168,76,0.12);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex; flex-direction: column;
+  min-height: 260px;
+}
+.rsc-card:hover {
+  border-color: var(--gold);
+  background: var(--black-hover);
+  transform: translateY(-1px);
+}
+.rsc-card-hero {
+  height: 160px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--black-hover) 0%, #1E1E18 100%);
+}
+.rsc-card-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rsc-card-hero-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 56px; color: rgba(201,168,76,0.25);
+}
+.rsc-card-state {
+  position: absolute; top: 10px; left: 10px;
+  padding: 4px 9px;
+  font-family: 'DM Mono', monospace; font-weight: 700;
+  font-size: 11px; letter-spacing: 0.5px;
+  background: rgba(8,15,26,0.8);
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+}
+.rsc-card-rating {
+  position: absolute; top: 10px; right: 10px;
+}
+.rsc-card-body {
+  padding: 16px 18px 18px;
+  display: flex; flex-direction: column; gap: 8px;
+  flex: 1;
+}
+.rsc-card-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px; font-weight: 600;
+  color: var(--white); line-height: 1.25;
+}
+.rsc-card-meta { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.rsc-card-footer {
+  margin-top: auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid rgba(201,168,76,0.10);
+}
+.rsc-card-date { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+.rsc-card-cta {
+  font-size: 13px; color: var(--gold);
+  font-family: 'DM Mono', monospace; letter-spacing: 0.4px;
+  font-weight: 500;
+}
+
+/* Empty / loading states */
+.rsc-empty {
+  grid-column: 1/-1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.rsc-empty-icon { font-size: 32px; opacity: 0.4; margin-bottom: 12px; }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .rsc-projects-map { grid-template-columns: 1fr; grid-template-rows: 360px 1fr; }
+  .rsc-mapwrap { border-right: none; border-bottom: 1px solid var(--gold-border); }
+}
+@media (max-width: 900px) {
+  .rsc-filter-row { padding: 10px 14px; gap: 8px; }
+  .rsc-fdrop.rsc-fdrop-more { margin-left: 0; }
+  .rsc-cards { grid-template-columns: 1fr; }
 }
 </style>
 
@@ -13735,6 +15362,481 @@ function buildKitHtml(s, research, brand) {
       onFail();
     }
   }
+
+// ─────────────────────────────────────────────────────────────────────────
+// RESEARCH BROWSE (rsc-*) — Stock-Portal-style shell over liveResearch
+// ─────────────────────────────────────────────────────────────────────────
+let rscFilter = {
+  search: '',
+  states: [],          // multi-select: 'NSW' | 'VIC' | …
+  ratings: [],         // multi-select: 'Strong Buy' | 'Good Buy' | 'Watch' | 'Caution'
+  scoreMin: 0,         // single-select min: 0 | 60 | 70 | 80 | 90
+  yieldMin: 0,         // single-select min: 0 | 3 | 4 | 5 | 6
+  priceMax: 0,         // single-select max: 0 (any) | 500000 | … | 2000000
+  growthMin: 0,        // 0 | 4 | 6 | 8
+  vacancyMax: 0,       // 0 (any) | 1 | 2 | 3
+  exclusiveOnly: false,
+  updatedWithin: 'any', // 'any' | '7d' | '30d' | '90d'
+  page: 1,
+  pageSize: 10,
+  viewMode: 'map',
+  sort: 'score-desc',
+};
+let rscLeafletMap = null;
+let rscMarkerCluster = null;
+let rscMarkers = {};        // slug → marker
+let rscClusteringEnabled = true;
+let rscPinsVisible = true;
+let rscMapInited = false;
+
+// Format a date as "12 Apr" / "12 Apr '25" depending on age — matches the
+// existing dashboard list. Returns '—' when invalid.
+function rscFmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  const now = new Date();
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return d.toLocaleDateString('en-AU', sameYear
+    ? { day: 'numeric', month: 'short' }
+    : { day: 'numeric', month: 'short', year: '2-digit' });
+}
+
+function rscBadgeClass(rating) {
+  if (rating === 'Strong Buy' || rating === 'Good Buy') return 'high';
+  if (rating === 'Watch')   return 'med';
+  if (rating === 'Caution') return 'low';
+  return 'med';
+}
+
+function filteredResearch() {
+  const f = rscFilter;
+  const q = (f.search || '').trim().toLowerCase();
+  const now = Date.now();
+  const dayMs = 86400000;
+  return (liveResearch || []).filter(r => {
+    if (f.states.length && !f.states.includes(r.state_code)) return false;
+    if (f.ratings.length && !f.ratings.includes(r.rating)) return false;
+    if (f.scoreMin > 0) {
+      if (r.conviction_score == null || r.conviction_score < f.scoreMin) return false;
+    }
+    if (f.yieldMin > 0) {
+      if (r.avg_yield == null || r.avg_yield < f.yieldMin) return false;
+    }
+    if (f.priceMax > 0) {
+      if (r.median_price == null || r.median_price > f.priceMax) return false;
+    }
+    if (f.growthMin > 0) {
+      if (r.capital_growth_10yr == null || r.capital_growth_10yr < f.growthMin) return false;
+    }
+    if (f.vacancyMax > 0) {
+      if (r.vacancy_rate == null || r.vacancy_rate > f.vacancyMax) return false;
+    }
+    if (f.exclusiveOnly && !r.is_exclusive) return false;
+    if (f.updatedWithin !== 'any' && r.updated_at) {
+      const days = parseInt(f.updatedWithin, 10);
+      const age = (now - new Date(r.updated_at).getTime()) / dayMs;
+      if (!isFinite(age) || age > days) return false;
+    }
+    if (q) {
+      const hay = [r.suburb, r.region, r.state_code, r.thesis_short].filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function sortResearch(arr) {
+  const sorted = [...arr];
+  switch (rscFilter.sort) {
+    case 'score-desc':   sorted.sort((a,b)=>(b.conviction_score||-1)-(a.conviction_score||-1)); break;
+    case 'score-asc':    sorted.sort((a,b)=>(a.conviction_score||Infinity)-(b.conviction_score||Infinity)); break;
+    case 'updated-desc': sorted.sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0)); break;
+    case 'updated-asc':  sorted.sort((a,b)=>new Date(a.updated_at||0)-new Date(b.updated_at||0)); break;
+    case 'yield-desc':   sorted.sort((a,b)=>(b.avg_yield||-1)-(a.avg_yield||-1)); break;
+    case 'price-asc':    sorted.sort((a,b)=>(a.median_price||Infinity)-(b.median_price||Infinity)); break;
+    case 'price-desc':   sorted.sort((a,b)=>(b.median_price||0)-(a.median_price||0)); break;
+    case 'suburb-asc':   sorted.sort((a,b)=>(a.suburb||'').localeCompare(b.suburb||'')); break;
+  }
+  return sorted;
+}
+
+function renderResearchBrowse() {
+  const mapPane  = document.getElementById('rsc-projects-map');
+  const gridPane = document.getElementById('rsc-projects-grid-wrap');
+  if (!mapPane || !gridPane) return;
+  if (rscFilter.viewMode === 'map') {
+    mapPane.style.display = '';
+    gridPane.style.display = 'none';
+    renderResearchMapMode();
+  } else {
+    mapPane.style.display = 'none';
+    gridPane.style.display = '';
+    renderResearchListMode();
+  }
+}
+
+function renderResearchMapMode() {
+  const all = sortResearch(filteredResearch());
+  const total = all.length;
+  const countTxt = '<strong>' + total + '</strong> report' + (total !== 1 ? 's' : '');
+  const cEl = document.getElementById('rsc-count'); if (cEl) cEl.innerHTML = countTxt;
+  const rcEl = document.getElementById('rsc-rightpane-count'); if (rcEl) rcEl.textContent = total + (total === 1 ? ' report' : ' reports');
+
+  // Map: shows ALL filtered reports (not paginated)
+  renderResearchMap(all);
+
+  // Right list: paginated
+  const pageSize = rscFilter.pageSize;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (rscFilter.page > totalPages) rscFilter.page = totalPages;
+  const start = (rscFilter.page - 1) * pageSize;
+  const slice = all.slice(start, start + pageSize);
+  document.getElementById('rsc-rightpane-list').innerHTML = renderResearchRows(slice);
+  renderRscPager('rsc-pager', total);
+}
+
+function renderResearchListMode() {
+  const all = sortResearch(filteredResearch());
+  const total = all.length;
+  const cEl = document.getElementById('rsc-count');
+  if (cEl) cEl.innerHTML = '<strong>' + total + '</strong> report' + (total !== 1 ? 's' : '');
+
+  const pageSize = rscFilter.pageSize;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (rscFilter.page > totalPages) rscFilter.page = totalPages;
+  const start = (rscFilter.page - 1) * pageSize;
+  const slice = all.slice(start, start + pageSize);
+  const container = document.getElementById('rsc-cards');
+  if (!slice.length) {
+    container.innerHTML = '<div class="rsc-empty"><div class="rsc-empty-icon">◎</div>No reports match your filters.<br><button class="rsc-clearall" onclick="resetRscFilters()" style="margin-top:12px;">↺ Clear all</button></div>';
+  } else {
+    container.innerHTML = slice.map(renderResearchCardHtml).join('');
+  }
+  renderRscPager('rsc-grid-pager', total);
+}
+
+function renderResearchRows(reports) {
+  if (!reports.length) {
+    return '<div class="rsc-empty" style="padding:40px 20px;text-align:center;color:var(--grey-mid);"><div class="rsc-empty-icon">◎</div>No reports match your filters.</div>';
+  }
+  return reports.map(r => {
+    const badgeClass = rscBadgeClass(r.rating);
+    const name = (r.suburb || '—') + (r.region ? ' — ' + r.region : '');
+    return `
+    <div class="rsc-row" data-slug="${r.slug}" onclick="showResearch('${r.slug}')">
+      <div class="ri-state">${r.state_code || ''}</div>
+      <div class="ri-info">
+        <div class="ri-name">${name}</div>
+        <div class="ri-meta">${(r.thesis_short || '').replace(/"/g, '&quot;')}</div>
+      </div>
+      <div class="ri-score">
+        <div class="score-badge ${badgeClass}">${r.rating || '—'}</div>
+        <div class="ri-date">${rscFmtDate(r.updated_at)}</div>
+      </div>
+      <span class="rsc-row-cta">View →</span>
+    </div>`;
+  }).join('');
+}
+
+function renderResearchCardHtml(r) {
+  const badgeClass = rscBadgeClass(r.rating);
+  const heroSrc = r.cover_image_url || null;
+  const initial = (r.suburb || '?').charAt(0).toUpperCase();
+  const heroHtml = heroSrc
+    ? `<img src="${heroSrc}" alt="${(r.suburb||'').replace(/"/g,'&quot;')}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    : '';
+  const placeholderStyle = heroSrc ? 'style="display:none"' : '';
+  const name = (r.suburb || '—') + (r.region ? ' — ' + r.region : '');
+  return `
+  <div class="rsc-card" onclick="showResearch('${r.slug}')">
+    <div class="rsc-card-hero">
+      ${heroHtml}
+      <div class="rsc-card-hero-placeholder" ${placeholderStyle}>${initial}</div>
+      <div class="rsc-card-state">${r.state_code || ''}</div>
+      <div class="rsc-card-rating"><span class="score-badge ${badgeClass}" style="padding:4px 11px;font-size:12px;">${r.rating || '—'}</span></div>
+    </div>
+    <div class="rsc-card-body">
+      <div class="rsc-card-name">${name}</div>
+      <div class="rsc-card-meta">${(r.thesis_short || '').replace(/"/g, '&quot;')}</div>
+      <div class="rsc-card-footer">
+        <span class="rsc-card-date">${rscFmtDate(r.updated_at)}</span>
+        <span class="rsc-card-cta">View →</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderRscPager(elId, total) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const pageSize = rscFilter.pageSize;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const cur = Math.min(rscFilter.page, totalPages);
+  if (totalPages <= 1) {
+    el.innerHTML = '<button class="rsc-pager-btn active" disabled>1</button>';
+    return;
+  }
+  const buttons = [];
+  buttons.push(`<button class="rsc-pager-btn" ${cur === 1 ? 'disabled' : ''} onclick="gotoRscPage(${cur - 1})">‹</button>`);
+  const window_ = 5;
+  let start = Math.max(1, cur - Math.floor(window_ / 2));
+  let end = Math.min(totalPages, start + window_ - 1);
+  start = Math.max(1, end - window_ + 1);
+  for (let i = start; i <= end; i++) {
+    buttons.push(`<button class="rsc-pager-btn ${i === cur ? 'active' : ''}" onclick="gotoRscPage(${i})">${i}</button>`);
+  }
+  buttons.push(`<button class="rsc-pager-btn" ${cur === totalPages ? 'disabled' : ''} onclick="gotoRscPage(${cur + 1})">›</button>`);
+  el.innerHTML = buttons.join('');
+}
+
+function gotoRscPage(p) {
+  rscFilter.page = Math.max(1, p);
+  renderResearchBrowse();
+}
+
+function onRscPageSize(v, fromGrid) {
+  rscFilter.pageSize = parseInt(v, 10) || 10;
+  rscFilter.page = 1;
+  const a = document.getElementById('rsc-pagesize-select');
+  const b = document.getElementById('rsc-pagesize-select-grid');
+  if (a) a.value = String(rscFilter.pageSize);
+  if (b) b.value = String(rscFilter.pageSize);
+  renderResearchBrowse();
+}
+
+function onRscSort(v) {
+  rscFilter.sort = v;
+  rscFilter.page = 1;
+  renderResearchBrowse();
+}
+
+function onRscSearchInput() {
+  const v = document.getElementById('rsc-search').value;
+  rscFilter.search = v;
+  rscFilter.page = 1;
+  renderResearchBrowse();
+}
+
+function switchRscView(view, el) {
+  rscFilter.viewMode = view;
+  document.querySelectorAll('.rsc-view-btn').forEach(b => b.classList.remove('active'));
+  const headerBtn = document.getElementById(view === 'map' ? 'rsc-view-map-btn' : 'rsc-view-list-btn');
+  if (headerBtn) headerBtn.classList.add('active');
+  renderResearchBrowse();
+}
+
+// Filter dropdown popovers (separate listener — independent of stk-fdrop)
+function toggleRscFdrop(key, btn) {
+  const drop = btn.closest('.rsc-fdrop');
+  const wasOpen = drop.classList.contains('open');
+  document.querySelectorAll('.rsc-fdrop').forEach(d => d.classList.remove('open'));
+  if (!wasOpen) drop.classList.add('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.rsc-fdrop')) {
+    document.querySelectorAll('.rsc-fdrop').forEach(d => d.classList.remove('open'));
+  }
+});
+
+function setRscPill(group, value, el, displayLabel) {
+  rscFilter[group] = value;
+  el.closest('.rsc-pill-row').querySelectorAll('.rsc-pill').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  rscFilter.page = 1;
+  updateRscFdropSummaries();
+  renderResearchBrowse();
+}
+
+function toggleRscMulti(group, value, el) {
+  const arr = rscFilter[group];
+  const idx = arr.indexOf(value);
+  if (idx >= 0) { arr.splice(idx, 1); el.classList.remove('active'); }
+  else           { arr.push(value);   el.classList.add('active'); }
+  rscFilter.page = 1;
+  updateRscFdropSummaries();
+  renderResearchBrowse();
+}
+
+function toggleRscExclusive() {
+  rscFilter.exclusiveOnly = document.getElementById('rsc-exclusive-toggle').checked;
+  rscFilter.page = 1;
+  updateRscFdropSummaries();
+  renderResearchBrowse();
+}
+
+function updateRscFdropSummaries() {
+  const f = rscFilter;
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  const setHas = (key, has) => {
+    const dr = document.querySelector(`.rsc-fdrop[data-fdrop="${key}"]`);
+    if (dr) dr.classList.toggle('has-value', !!has);
+  };
+
+  set('rsc-fdrop-states-val', f.states.length ? f.states.join(', ') : 'Any');
+  setHas('states', f.states.length > 0);
+
+  set('rsc-fdrop-ratings-val', f.ratings.length ? (f.ratings.length === 1 ? f.ratings[0] : f.ratings.length + ' selected') : 'All');
+  setHas('ratings', f.ratings.length > 0);
+
+  set('rsc-fdrop-scoreMin-val', f.scoreMin > 0 ? f.scoreMin + '+' : 'Any');
+  setHas('scoreMin', f.scoreMin > 0);
+
+  set('rsc-fdrop-yieldMin-val', f.yieldMin > 0 ? f.yieldMin + '%+' : 'Any');
+  setHas('yieldMin', f.yieldMin > 0);
+
+  if (f.priceMax > 0) {
+    const m = f.priceMax >= 1000000
+      ? '≤$' + (f.priceMax / 1000000).toFixed(1).replace(/\.0$/, '') + 'm'
+      : '≤$' + Math.round(f.priceMax / 1000) + 'k';
+    set('rsc-fdrop-priceMax-val', m);
+  } else {
+    set('rsc-fdrop-priceMax-val', 'Any');
+  }
+  setHas('priceMax', f.priceMax > 0);
+
+  let extras = 0;
+  if (f.growthMin > 0)              extras++;
+  if (f.vacancyMax > 0)             extras++;
+  if (f.exclusiveOnly)              extras++;
+  if (f.updatedWithin !== 'any')    extras++;
+  const badge = document.getElementById('rsc-fdrop-more-badge');
+  if (badge) {
+    if (extras > 0) { badge.textContent = String(extras); badge.style.display = ''; }
+    else            { badge.style.display = 'none'; }
+  }
+  setHas('more', extras > 0);
+}
+
+function resetRscFilters() {
+  rscFilter.search = '';
+  rscFilter.states = [];
+  rscFilter.ratings = [];
+  rscFilter.scoreMin = 0;
+  rscFilter.yieldMin = 0;
+  rscFilter.priceMax = 0;
+  rscFilter.growthMin = 0;
+  rscFilter.vacancyMax = 0;
+  rscFilter.exclusiveOnly = false;
+  rscFilter.updatedWithin = 'any';
+  rscFilter.page = 1;
+
+  // Reset pill UI
+  document.querySelectorAll('#page-reports .rsc-pill').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#page-reports .rsc-pill').forEach(b => {
+    const t = b.textContent.trim().toLowerCase();
+    if (t === 'all' || t === 'any') b.classList.add('active');
+  });
+  const exclEl = document.getElementById('rsc-exclusive-toggle'); if (exclEl) exclEl.checked = false;
+  const searchEl = document.getElementById('rsc-search'); if (searchEl) searchEl.value = '';
+  updateRscFdropSummaries();
+  renderResearchBrowse();
+}
+
+// ── Map (Leaflet + markercluster) — research version ──────────────────────
+function renderResearchMap(reports) {
+  const mapEl = document.getElementById('rsc-map');
+  if (!mapEl) return;
+  if (!rscLeafletMap) {
+    rscLeafletMap = L.map(mapEl, {
+      center: [-27, 134],
+      zoom: 4,
+      zoomControl: false,
+      attributionControl: false,
+      minZoom: 3, maxZoom: 18,
+      worldCopyJump: false,
+    });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd', maxZoom: 19,
+    }).addTo(rscLeafletMap);
+    L.control.zoom({ position: 'bottomleft' }).addTo(rscLeafletMap);
+    L.control.attribution({ prefix: false, position: 'bottomright' })
+      .addAttribution('<span style="font-size:9px;color:#555">© CARTO © OSM</span>')
+      .addTo(rscLeafletMap);
+    rscMarkerCluster = L.markerClusterGroup({
+      maxClusterRadius: 50,
+      showCoverageOnHover: false,
+      iconCreateFunction: function(cluster) {
+        const n = cluster.getChildCount();
+        const size = n >= 10 ? 44 : n >= 3 ? 36 : 30;
+        return L.divIcon({
+          html: `<div class="rsc-cluster" style="width:${size}px;height:${size}px;">${n}</div>`,
+          className: '',
+          iconSize: [size, size],
+        });
+      }
+    });
+    rscLeafletMap.addLayer(rscMarkerCluster);
+    rscMapInited = true;
+  }
+
+  rscMarkerCluster.clearLayers();
+  rscMarkers = {};
+  const bounds = [];
+  reports.forEach(r => {
+    const lat = r.map_lat != null ? Number(r.map_lat) : null;
+    const lng = r.map_lng != null ? Number(r.map_lng) : null;
+    if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return;
+    const icon = L.divIcon({
+      html: '<div class="rsc-pin"></div>',
+      className: 'rsc-pin-wrap',
+      iconSize: [28, 28],
+      iconAnchor: [14, 26],
+    });
+    const m = L.marker([lat, lng], { icon, title: r.suburb || '' });
+    m.bindTooltip(`<strong>${r.suburb || ''}</strong><br><span style="color:#C8A951">${[r.state_code, r.rating].filter(Boolean).join(' · ')}</span>`, { direction: 'top' });
+    m.on('click', function() { highlightRscRow(r.slug, true); });
+    rscMarkerCluster.addLayer(m);
+    rscMarkers[r.slug] = m;
+    bounds.push([lat, lng]);
+  });
+
+  const applyBounds = () => {
+    try { rscLeafletMap.invalidateSize(); } catch(e){}
+    if (bounds.length === 1) {
+      rscLeafletMap.setView(bounds[0], 13);
+    } else if (bounds.length > 1) {
+      const lats = bounds.map(b => b[0]);
+      const lngs = bounds.map(b => b[1]);
+      const span = Math.max(Math.max(...lats) - Math.min(...lats), Math.max(...lngs) - Math.min(...lngs));
+      let z = 12;
+      if (span > 0.3) z = 10;
+      if (span > 1)   z = 8;
+      if (span > 3)   z = 7;
+      if (span > 7)   z = 6;
+      if (span > 15)  z = 5;
+      rscLeafletMap.fitBounds(bounds, { padding: [40, 40], maxZoom: z });
+    }
+  };
+  applyBounds();
+  setTimeout(applyBounds, 60);
+}
+
+function toggleRscMapClustering() {
+  rscClusteringEnabled = document.getElementById('rsc-mapkey-cluster').checked;
+  if (!rscLeafletMap || !rscMarkerCluster) return;
+  if (rscClusteringEnabled) {
+    rscMarkerCluster.enableClustering ? rscMarkerCluster.enableClustering() : null;
+    if (!rscLeafletMap.hasLayer(rscMarkerCluster)) rscLeafletMap.addLayer(rscMarkerCluster);
+  } else {
+    if (rscMarkerCluster.disableClustering) rscMarkerCluster.disableClustering();
+  }
+}
+function toggleRscMapPins() {
+  rscPinsVisible = document.getElementById('rsc-mapkey-pins').checked;
+  if (!rscLeafletMap || !rscMarkerCluster) return;
+  if (rscPinsVisible) { if (!rscLeafletMap.hasLayer(rscMarkerCluster)) rscLeafletMap.addLayer(rscMarkerCluster); }
+  else { rscLeafletMap.removeLayer(rscMarkerCluster); }
+}
+
+function highlightRscRow(slug, scrollIntoView) {
+  const row = document.querySelector(`.rsc-row[data-slug="${slug}"]`);
+  if (!row) return;
+  document.querySelectorAll('.rsc-row.flash').forEach(r => r.classList.remove('flash'));
+  row.classList.add('flash');
+  if (scrollIntoView) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  setTimeout(() => row.classList.remove('flash'), 1500);
+}
 </script>
 
 </body>

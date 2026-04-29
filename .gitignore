@@ -12,3 +12,9 @@
 Thumbs.db
 *.swp
 *.swo
+
+# Test / screenshot artefacts (browser test scratch files)
+.playwright-mcp/
+tmp-research/
+stock-*.png
+rsc-redesign-*.png

@@ -171,6 +171,38 @@ function getLocation(item: any, colId: string): string | null {
   return null
 }
 
+// Returns { lat, lng } if the Monday location column has been geocoded.
+// Monday stores coords inside the column's JSON value when the user picks
+// an address from the dropdown (vs. typing free-text).
+function getLocationCoords(item: any, colId: string): { lat: number, lng: number } | null {
+  const col = getCol(item, colId)
+  if (!col || !col.value) return null
+  try {
+    const v = JSON.parse(col.value)
+    const lat = v.lat != null ? Number(v.lat) : null
+    const lng = v.lng != null ? Number(v.lng) : null
+    if (lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) return { lat, lng }
+  } catch {}
+  return null
+}
+
+// Geocode an address via OpenStreetMap Nominatim. Free, no API key, but
+// limited to 1 req/sec — caller must rate-limit. Returns null on miss.
+async function geocodeAddress(query: string): Promise<{ lat: number, lng: number } | null> {
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=au&q=' + encodeURIComponent(query)
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': 'tpch-portal-sync/1.0 (admin@tpch.com.au)' } })
+    if (!res.ok) return null
+    const arr = await res.json()
+    if (!Array.isArray(arr) || !arr.length) return null
+    const lat = parseFloat(arr[0].lat), lng = parseFloat(arr[0].lon)
+    if (isNaN(lat) || isNaN(lng)) return null
+    return { lat, lng }
+  } catch {
+    return null
+  }
+}
+
 function getLongText(item: any, colId: string): string | null {
   const col = getCol(item, colId)
   if (!col) return null
@@ -396,6 +428,9 @@ function mapDeal(item: any): Record<string, any> {
 
 function mapProject(item: any): Record<string, any> {
   const videoText = getText(item, PROJECT_COLS.video)
+  // Pull lat/lng from Monday's location column if present. Geocoding fallback
+  // happens later (after upsert) so we don't slow down the per-row mapper.
+  const coords = getLocationCoords(item, PROJECT_COLS.address)
 
   return {
     id:                       String(item.id),
@@ -418,6 +453,10 @@ function mapProject(item: any): Record<string, any> {
     commission_payment_terms: getText(item, PROJECT_COLS.commPaymentTerms),
     commission_notes:         getLongText(item, PROJECT_COLS.commNotes),
     smsf_eligible:            getText(item, PROJECT_COLS.smsfEligible)?.toLowerCase() === 'yes',
+    // Only emit lat/lng when Monday gave us coords — leaving them out of the
+    // upsert object preserves any value that already exists (e.g. set by
+    // Nominatim fallback below or admin edit) and avoids clobbering it.
+    ...(coords ? { latitude: coords.lat, longitude: coords.lng } : {}),
     // photo_urls managed separately in step 1b via Supabase Storage
     document_urls:            [getLink(item, PROJECT_COLS.brochure)].filter(Boolean) as string[] || null,
     video_urls:               videoText ? [videoText] : null,
@@ -557,6 +596,45 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
     } else {
       projectCount += batch.length
     }
+  }
+
+  // 1a. Geocode any project that has an address but still no coords.
+  // Uses Nominatim (1 req/sec) and only patches latitude/longitude so any
+  // other admin-edited fields are untouched. Failures are logged, not fatal.
+  try {
+    const { data: needsGeocode } = await supabase
+      .from('projects')
+      .select('id, name, suburb, state, address, latitude, longitude')
+      .is('latitude', null)
+    const candidates = (needsGeocode || []).filter(p => p.address || p.suburb || p.state)
+    if (candidates.length > 0) {
+      console.log(`Geocoding ${candidates.length} project(s) without coords via Nominatim`)
+      let geocodedCount = 0
+      for (const p of candidates) {
+        const query = (p.address && p.address.trim())
+          || ([p.suburb, p.state].filter(Boolean).join(', ') + ', Australia')
+        const coords = await geocodeAddress(query)
+        if (coords) {
+          const { error: patchErr } = await supabase
+            .from('projects')
+            .update({ latitude: coords.lat, longitude: coords.lng })
+            .eq('id', p.id)
+          if (patchErr) {
+            console.error(`Geocode PATCH ${p.name} failed:`, patchErr.message)
+          } else {
+            geocodedCount++
+          }
+        } else {
+          console.log(`Geocode miss for ${p.name} (${query})`)
+        }
+        // Nominatim usage policy: max 1 req/sec
+        await new Promise(r => setTimeout(r, 1100))
+      }
+      console.log(`Geocoded ${geocodedCount}/${candidates.length} project(s)`)
+    }
+  } catch (e) {
+    console.error('Geocode pass failed:', e)
+    errors.push(`Geocode: ${(e as Error).message}`)
   }
 
   // 1b. Download & store project assets → Supabase Storage
