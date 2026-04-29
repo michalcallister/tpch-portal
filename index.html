@@ -13202,8 +13202,20 @@ function buildKitHtml(s, research, brand) {
       || null;
     const hero = document.getElementById('fly-hero');
     if (heroUrl) {
+      // Paint the raw URL immediately so the hero always shows. Then probe
+      // the Supabase image-transform endpoint and only upgrade to the resized
+      // version if it actually loads — projects without image-transformations
+      // enabled return 403 and would otherwise leave the hero blank.
+      const safeRaw = heroUrl.replace(/'/g, "%27");
+      hero.style.backgroundImage = "url('" + safeRaw + "')";
       const tx = flyerThumbUrl(heroUrl, 1600, 900, 75);
-      hero.style.backgroundImage = "url('" + tx.replace(/'/g, "%27") + "')";
+      if (tx && tx !== heroUrl) {
+        const probe = new Image();
+        probe.onload = () => {
+          hero.style.backgroundImage = "url('" + tx.replace(/'/g, "%27") + "')";
+        };
+        probe.src = tx;
+      }
     }
 
     // ── "Prepared for [Client]" block in header ──
