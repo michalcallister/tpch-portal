@@ -12544,6 +12544,9 @@ function switchLotTab(tab, el) {
 
 // ── Navigation ────────────────────────────────────────────
 function stkBack() {
+  // Clear project context so a subsequent listing-back from the flat
+  // stock list doesn't return to a stale (now empty) project page.
+  currentProjectId = null;
   showPage('stock', document.querySelector('.nav-item[onclick*="\'stock\'"]'));
 }
 
@@ -12637,7 +12640,14 @@ async function saveDescription() {
 }
 
 function stkListingBack() {
-  showPageDirect('stock-project');
+  // If the listing was opened from a project page (currentProjectId set
+  // by showStockProject), return to that project. Otherwise the listing
+  // came from the flat stock browse — return to the stock list.
+  if (currentProjectId) {
+    showPageDirect('stock-project');
+  } else {
+    showPage('stock', document.querySelector('.nav-item[onclick*="\'stock\'"]'));
+  }
 }
 
 // ── Reservation System ────────────────────────────────────
@@ -12647,7 +12657,7 @@ let _myReservations = [];
 
 function openReserveModal() {
   if (!currentPartnerRecord) return;
-  const s = allStockItems.find(x => x.id === currentStockId);
+  const s = allStockItems.find(x => x.id === currentStockId) || allAvailableStock.find(x => x.id === currentStockId);
   if (!s) return;
 
   // Check if already reserved
@@ -12677,7 +12687,7 @@ function closeReserveModal() {
 }
 
 async function submitReservation() {
-  const s = allStockItems.find(x => x.id === currentStockId);
+  const s = allStockItems.find(x => x.id === currentStockId) || allAvailableStock.find(x => x.id === currentStockId);
   if (!s || !currentPartnerRecord) return;
 
   const clientName  = (document.getElementById('rsv-client-name').value  || '').trim();
@@ -13110,7 +13120,7 @@ async function removeFromList(itemId, listId) {
 
 function openSaveToListModal() {
   if (!currentPartnerRecord) return;
-  const s = allStockItems.find(x => x.id === currentStockId);
+  const s = allStockItems.find(x => x.id === currentStockId) || allAvailableStock.find(x => x.id === currentStockId);
   if (!s) return;
   document.getElementById('lst-save-prop-name').textContent = s.name || '—';
   document.getElementById('lst-new-name').value = '';
@@ -13151,7 +13161,7 @@ async function renderSaveToListOptions(s) {
 }
 
 async function addToExistingList(listId, listName) {
-  const s = allStockItems.find(x => x.id === currentStockId);
+  const s = allStockItems.find(x => x.id === currentStockId) || allAvailableStock.find(x => x.id === currentStockId);
   if (!s) return;
   try {
     const res = await fetch(SUPABASE_URL + '/rest/v1/shortlist_items', {
@@ -13178,7 +13188,7 @@ async function addToExistingList(listId, listName) {
 }
 
 async function createListAndSave() {
-  const s = allStockItems.find(x => x.id === currentStockId);
+  const s = allStockItems.find(x => x.id === currentStockId) || allAvailableStock.find(x => x.id === currentStockId);
   if (!s) return;
   const name = (document.getElementById('lst-new-name').value || '').trim();
   if (!name) return;
@@ -13204,7 +13214,7 @@ async function createListAndSave() {
 // ── Investor Kit Generation ──────────────────────────────
 
 async function generateInvestorKit() {
-  const s = allStockItems.find(x => x.id === currentStockId);
+  const s = allStockItems.find(x => x.id === currentStockId) || allAvailableStock.find(x => x.id === currentStockId);
   if (!s) return;
 
   // Determine branding
