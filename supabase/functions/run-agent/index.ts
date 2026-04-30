@@ -27,6 +27,17 @@ const corsHeaders = {
 }
 
 // ── Claude API call with web search ─────────────────────
+// Anthropic pricing in USD per million tokens. Web-search server-tool usage
+// is billed separately by Anthropic and NOT captured here — cost figures will
+// under-report by ~10c per Opus run when web_search makes lots of queries.
+const MODEL_PRICING: Record<string, { in: number; out: number }> = {
+  'claude-haiku-4-5-20251001':  { in: 1,  out: 5  },
+  'claude-haiku-4-5':           { in: 1,  out: 5  },
+  'claude-sonnet-4-6':          { in: 3,  out: 15 },
+  'claude-opus-4-7':            { in: 15, out: 75 },
+}
+
+// Returns the response text PLUS usage so callers can persist cost into agent_runs.
 async function callClaude(systemPrompt: string, userPrompt: string, model = 'claude-sonnet-4-6') {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -50,7 +61,17 @@ async function callClaude(systemPrompt: string, userPrompt: string, model = 'cla
   const data = await res.json()
   // Extract text blocks from the response (web search responses have mixed content types)
   const textBlocks = (data.content || []).filter((b: any) => b.type === 'text')
-  return textBlocks.map((b: any) => b.text).join('\n') || ''
+  const text = textBlocks.map((b: any) => b.text).join('\n') || ''
+  return { text, usage: data.usage || null, model }
+}
+
+// Compute cost in micro-USD from a Claude usage object.
+function costMicros(model: string, usage: { input_tokens?: number; output_tokens?: number } | null): number | null {
+  if (!usage) return null
+  const inTok  = usage.input_tokens  || 0
+  const outTok = usage.output_tokens || 0
+  const price  = MODEL_PRICING[model] || { in: 3, out: 15 }
+  return Math.round(inTok * price.in + outTok * price.out)
 }
 
 // ── Investment Analysis Agent ────────────────────────────
@@ -169,9 +190,24 @@ Return ONLY the JSON object, no other text.`
   const model = testMode ? 'claude-haiku-4-5-20251001' : 'claude-opus-4-7'
   await addLog(runId, `Calling Claude API (${testMode ? 'TEST — Haiku 4.5' : 'Opus 4.7'}) with web search enabled...`)
 
-  const raw = await callClaude(systemPrompt, userPrompt, model)
+  const { text: raw, usage } = await callClaude(systemPrompt, userPrompt, model)
 
   await addLog(runId, `Claude response received (${raw.length} chars)`)
+
+  // Persist token usage + cost on the existing agent_runs row.
+  // Excludes web-search server-tool fees (billed separately by Anthropic).
+  try {
+    const cost = costMicros(model, usage)
+    if (usage) {
+      await sb.from('agent_runs').update({
+        model_used:      model,
+        input_tokens:    usage.input_tokens  || 0,
+        output_tokens:   usage.output_tokens || 0,
+        cost_usd_micros: cost,
+      }).eq('id', runId)
+      await addLog(runId, `Token usage: ${usage.input_tokens} in / ${usage.output_tokens} out (model cost ≈ $${((cost || 0) / 1_000_000).toFixed(4)} USD, excludes web search fees)`)
+    }
+  } catch (_) { /* never block primary flow on telemetry */ }
 
   // Parse — extract JSON from response (web search may add text around it)
   let result: any

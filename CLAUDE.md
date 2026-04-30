@@ -44,6 +44,109 @@ Whatever's at the top is current.
 
 ---
 
+## Partner-facing changelog
+
+The "Version" link in the bottom-left of the sidebar opens a modal driven
+by the `CHANGELOG` array in [index.html](index.html) (search for
+`const CHANGELOG = [`). Every entry is visible to every partner, so the
+bar is **only changes that make the portal better for them**.
+
+### When to add an entry
+
+Add (or update) an entry whenever you ship a change a partner would
+notice and care about. **Examples that qualify:**
+
+- A new feature or page partners can use (e.g. "Request a feature",
+  "Team Deals", a new column in the deal pipeline).
+- A redesign, layout shift, or material visual change to a surface
+  partners spend time in.
+- A new piece of intelligence (e.g. "Suburb Research now shows pillar
+  X", "Stock map clusters above 8 pins").
+- Behaviour changes that affect their workflow (e.g. "Reservations
+  now expire after 14 days, not 7").
+
+**Skip the entry for:**
+
+- Internal refactors with no visible effect.
+- Admin-only / TPCH-team-only features (admin password reset,
+  enquiries dashboard tweaks, sync-monday changes).
+- Bug fixes that restore expected behaviour without altering it.
+- Edge-function or infrastructure changes invisible to partners.
+- Doc, comment, or code-style work.
+
+If you're unsure whether something qualifies, default to **not** adding
+an entry. The log loses value if it's noisy.
+
+### Format
+
+Prepend (newest first) to the `CHANGELOG` array:
+
+```js
+{
+  version: '2.1',
+  date:    '30 Apr 2026',     // human-readable, no leading zeros
+  title:   'Short headline',  // one line, sentence case, no marketing fluff
+  items: [
+    'One CP-facing change per bullet.',
+    'Second-person friendly ("you can now…"), not technical.',
+    'No internal IDs, file paths, or function names.',
+  ],
+},
+```
+
+### Version bump rule
+
+- Bump the **minor** (1.5 → 1.6) for incremental ships: a new feature,
+  a polish pass, a workflow tweak.
+- Bump the **major** (1.x → 2.0) for redesigns or pages that change how
+  partners use the portal.
+- Don't reuse a version. If you've already shipped 1.5 and need to
+  amend it, bump to 1.6.
+- **Don't auto-tag in git** — that's still user-driven (see Versioning
+  policy above). The changelog and the git tags are independent: the
+  changelog ships as soon as the entry hits `main`; tags only happen
+  when Mick says so.
+
+### Commit-time workflow (this is the operating procedure)
+
+The changelog reflects **shipped** state, so a new entry only ever
+lands in the same commit that ships the change to `main`. No entry
+during local iteration; no entry "in advance".
+
+When Mick asks for a commit (or commit + push), follow this loop
+**before** running `git commit`:
+
+1. `git diff --staged` (or `git diff HEAD` if files aren't staged
+   yet) — read the actual changes, don't guess from memory.
+2. Classify each change against the qualifies/skip lists above.
+   Default to **skip** if borderline.
+3. **Outcomes:**
+   - **No qualifying changes** → no changelog touch, no version
+     bump, commit as-is.
+   - **One or more qualifying changes** → prepend ONE new entry to
+     the `CHANGELOG` array in [index.html](index.html), bump per
+     the rule above, list each qualifying change as its own bullet
+     under the same entry. Stage the `index.html` change so it
+     goes in the same commit.
+4. **One commit = at most one version entry.** Don't add two
+   entries in one commit. If a commit bundles a CP-facing change
+   plus refactors, the refactors don't get bullets — they're
+   absorbed silently.
+5. Use today's date for the entry. Get it via the `currentDate` in
+   the system context, not from memory.
+
+If Mick asks to amend or rewrite a recent commit, update the
+matching CHANGELOG entry rather than adding a new one. If he asks
+to revert a CP-facing change, remove the relevant bullet (and the
+whole entry if that was the only bullet).
+
+**Don't ask permission to add the entry** — just do it as part of
+the commit prep and mention it briefly in the commit summary
+("bump to v2.1 with changelog entry"). If Mick disagrees with the
+classification, he'll say so and you can amend.
+
+---
+
 ## Other repo notes
 
 - Single-file SPA at [index.html](index.html) — no build step.

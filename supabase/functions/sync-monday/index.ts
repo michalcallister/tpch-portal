@@ -253,9 +253,54 @@ function getBoardRelationNames(item: any, colId: string): string | null {
   return col.text?.trim() || null
 }
 
+// ── Cost tracking ────────────────────────────────────────────
+// Only logs the AI description-generator portion of sync-monday.
+// The rest of the sync (Monday.com API, geocoding, image upload) is free.
+const MODEL_PRICING: Record<string, { in: number; out: number }> = {
+  'claude-haiku-4-5-20251001':  { in: 1,  out: 5  },
+  'claude-haiku-4-5':           { in: 1,  out: 5  },
+  'claude-sonnet-4-6':          { in: 3,  out: 15 },
+  'claude-opus-4-7':            { in: 15, out: 75 },
+}
+
+const SYNC_AGENT_SLUG = 'sync-monday'
+
+async function logSyncAgentRun(sb: any, opts: {
+  model: string
+  usage?: { input_tokens?: number; output_tokens?: number } | null
+  status?: 'completed' | 'failed'
+  startedAt: number
+  projectId?: string | null
+  errorMessage?: string | null
+}) {
+  try {
+    if (!opts.usage) return
+    const inTok  = opts.usage.input_tokens  || 0
+    const outTok = opts.usage.output_tokens || 0
+    const price  = MODEL_PRICING[opts.model] || { in: 1, out: 5 }
+    const cost   = Math.round(inTok * price.in + outTok * price.out)
+    const { data: agent } = await sb.from('agents').select('id').eq('slug', SYNC_AGENT_SLUG).single()
+    if (!agent) return
+    await sb.from('agent_runs').insert({
+      agent_id:        agent.id,
+      project_id:      opts.projectId || null,
+      status:          opts.status || 'completed',
+      triggered_by:    'sync-monday-cron',
+      started_at:      new Date(opts.startedAt).toISOString(),
+      completed_at:    new Date().toISOString(),
+      duration_ms:     Date.now() - opts.startedAt,
+      model_used:      opts.model,
+      input_tokens:    inTok,
+      output_tokens:   outTok,
+      cost_usd_micros: cost,
+      error:           opts.errorMessage || null,
+    })
+  } catch (_) { /* never block sync on telemetry */ }
+}
+
 // ── AI description generator ─────────────────────────────────
 
-async function generateProjectDescription(p: Record<string, any>): Promise<string | null> {
+async function generateProjectDescription(p: Record<string, any>, sb?: any): Promise<string | null> {
   if (!CLAUDE_API_KEY) return null
   const prompt = `You are a professional property investment analyst writing for an Australian property portal used by financial advisers and buyers agents.
 
@@ -284,6 +329,8 @@ End with: <p><strong>Summary:</strong> [2-sentence investor blurb]</p>
 
 Return only the HTML content, no preamble or explanation.`
 
+  const startedAt = Date.now()
+  const model = 'claude-haiku-4-5-20251001'
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -293,17 +340,22 @@ Return only the HTML content, no preamble or explanation.`
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model,
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
       }),
     })
-    if (!res.ok) return null
+    if (!res.ok) {
+      if (sb) await logSyncAgentRun(sb, { model, startedAt, status: 'failed', projectId: p.id, errorMessage: `Claude API ${res.status}` })
+      return null
+    }
     const json = await res.json()
+    if (sb) await logSyncAgentRun(sb, { model, startedAt, status: 'completed', projectId: p.id, usage: json.usage })
     let text: string = json.content?.[0]?.text || null
     if (text) text = text.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim()
     return text || null
-  } catch {
+  } catch (e) {
+    if (sb) await logSyncAgentRun(sb, { model, startedAt, status: 'failed', projectId: p.id, errorMessage: (e as Error).message })
     return null
   }
 }
@@ -583,6 +635,13 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
   const projectDataMap: Record<string, any> = {}
   projectRows.forEach(p => { projectDataMap[String(p.id)] = p })
 
+  // Pre-fetch existing project IDs so we can emit new_project events to
+  // stock_events (powers the dashboard's Stock Radar feed).
+  const incomingProjectIds = projectRows.map(p => String(p.id))
+  const { data: existingProjectRows } = await supabase
+    .from('projects').select('id').in('id', incomingProjectIds)
+  const existingProjectIds = new Set((existingProjectRows || []).map((p: any) => p.id))
+
   // Upsert in batches of 100
   let projectCount = 0
   for (let i = 0; i < projectRows.length; i += 100) {
@@ -596,6 +655,21 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
     } else {
       projectCount += batch.length
     }
+  }
+
+  // 1c. Emit new_project events for projects we hadn't seen before this sync.
+  const newProjectEvents = projectRows
+    .filter(p => !existingProjectIds.has(p.id))
+    .map(p => ({
+      event_type: 'new_project',
+      project_id: p.id,
+      severity: 'high',
+      payload: { name: p.name, suburb: p.suburb, state: p.state },
+    }))
+  if (newProjectEvents.length) {
+    const { error } = await supabase.from('stock_events').insert(newProjectEvents)
+    if (error) errors.push(`Stock events (new_project): ${error.message}`)
+    else console.log(`Recorded ${newProjectEvents.length} new_project event(s)`)
   }
 
   // 1a. Geocode any project that has an address but still no coords.
@@ -721,6 +795,17 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
 
   const stockRows = stockItems.map(item => mapStock(item, projectNameMap, projectDataMap))
 
+  // Pre-fetch existing stock so we can detect price/status/new-lot deltas
+  // and emit stock_events. Threshold: ignore price changes <1% (rounding noise).
+  const incomingStockIds = stockRows.map(s => String(s.id))
+  const { data: existingStockRows } = await supabase
+    .from('stock')
+    .select('id, total_contract, availability, project_id, name')
+    .in('id', incomingStockIds)
+  const existingStockMap = new Map(
+    (existingStockRows || []).map((s: any) => [s.id, s])
+  )
+
   let stockCount = 0
   for (let i = 0; i < stockRows.length; i += 100) {
     const batch = stockRows.slice(i, i + 100)
@@ -733,6 +818,81 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
     } else {
       stockCount += batch.length
     }
+  }
+
+  // 2a. Derive stock_events from the diff between existing and incoming.
+  //     - new_lot: stock id not seen before AND its project already existed
+  //                (new stock under a brand-new project is implied by the
+  //                project event above — don't double-fire).
+  //     - price_drop / price_rise: total_contract delta ≥ 1%.
+  //     - sold:    availability flipped TO Sold.
+  //     - status_change: any other availability flip (Available ↔ Reserved etc.).
+  const PRICE_DELTA_PCT_MIN = 1.0
+  const stockEvents: Record<string, any>[] = []
+  for (const row of stockRows) {
+    const prev = existingStockMap.get(row.id) as any
+    if (!prev) {
+      if (row.project_id && existingProjectIds.has(row.project_id)) {
+        stockEvents.push({
+          event_type: 'new_lot',
+          stock_id:   row.id,
+          project_id: row.project_id,
+          severity:   'high',
+          payload: {
+            name:         row.name,
+            project_name: row.project_name,
+            price:        row.total_contract,
+          },
+        })
+      }
+      continue
+    }
+
+    const prevPrice = prev.total_contract != null ? Number(prev.total_contract) : null
+    const newPrice  = row.total_contract  != null ? Number(row.total_contract)  : null
+    if (prevPrice != null && newPrice != null && prevPrice > 0 && prevPrice !== newPrice) {
+      const delta = newPrice - prevPrice
+      const pct   = (delta / prevPrice) * 100
+      if (Math.abs(pct) >= PRICE_DELTA_PCT_MIN) {
+        stockEvents.push({
+          event_type: pct < 0 ? 'price_drop' : 'price_rise',
+          stock_id:   row.id,
+          project_id: row.project_id,
+          severity:   'high',
+          payload: {
+            name:      row.name,
+            old_price: prevPrice,
+            new_price: newPrice,
+            delta,
+            pct:       Math.round(pct * 10) / 10,
+          },
+        })
+      }
+    }
+
+    if (prev.availability !== row.availability && row.availability) {
+      const wentToSold = row.availability === 'Sold'
+      stockEvents.push({
+        event_type: wentToSold ? 'sold' : 'status_change',
+        stock_id:   row.id,
+        project_id: row.project_id,
+        severity:   wentToSold || prev.availability === 'Sold' ? 'high' : 'med',
+        payload: {
+          name:       row.name,
+          old_status: prev.availability,
+          new_status: row.availability,
+        },
+      })
+    }
+  }
+
+  if (stockEvents.length) {
+    for (let i = 0; i < stockEvents.length; i += 100) {
+      const batch = stockEvents.slice(i, i + 100)
+      const { error } = await supabase.from('stock_events').insert(batch)
+      if (error) errors.push(`Stock events (stock): ${error.message}`)
+    }
+    console.log(`Recorded ${stockEvents.length} stock event(s)`)
   }
 
   // 2b. Download & store floor plan files in Supabase Storage
@@ -813,6 +973,32 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
   console.log(`Fetched ${dealItems.length} deal items`)
 
   const dealRows = dealItems.map(mapDeal)
+
+  // Pre-fetch existing deal stages so we can keep stage_changed_at honest.
+  // - new deal:           stage_changed_at = now()
+  // - existing, stage X→Y: stage_changed_at = now()
+  // - existing, no stage change: preserve previous stage_changed_at
+  // Powers the Deal Cockpit "stalled deals" action queue.
+  const incomingDealIds = dealRows.map(d => String(d.id))
+  const { data: existingDealRows } = await supabase
+    .from('partner_deals')
+    .select('id, stage, stage_changed_at')
+    .in('id', incomingDealIds)
+  const existingDealMap = new Map(
+    (existingDealRows || []).map((d: any) => [d.id, d])
+  )
+  const stageChangeNow = new Date().toISOString()
+  for (const row of dealRows) {
+    const prev = existingDealMap.get(row.id) as any
+    if (!prev) {
+      row.stage_changed_at = stageChangeNow
+    } else if ((prev.stage || null) !== (row.stage || null)) {
+      row.stage_changed_at = stageChangeNow
+    } else {
+      row.stage_changed_at = prev.stage_changed_at
+    }
+  }
+
   let dealCount = 0
   for (let i = 0; i < dealRows.length; i += 100) {
     const batch = dealRows.slice(i, i + 100)
@@ -907,7 +1093,7 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
       .limit(3)
     for (const p of (needsDesc || [])) {
       console.log(`Generating description for: ${p.name}`)
-      const description = await generateProjectDescription(p)
+      const description = await generateProjectDescription(p, supabase)
       if (description) {
         const { error } = await supabase.from('projects').update({ description }).eq('id', p.id)
         if (error) errors.push(`Description for ${p.name}: ${error.message}`)
