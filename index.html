@@ -11052,12 +11052,13 @@ function fmtComm(s) {
   const flat = s.channel_comm_flat;
   const pct  = s.channel_comm_pct;
   const total = s.total_contract;
-  // Display order: percentage first, then "+ $amount" when both are present.
-  if (flat && pct)  return pct + '% + ' + fmtCurrency(flat);
+  // Display the resolved dollar amount only. Percentage commissions are
+  // converted to a dollar figure using total_contract; when both pct and
+  // a flat top-up are present, they're summed.
+  if (pct && total) return fmtCurrency(Math.round(total * pct / 100) + (flat || 0));
   if (flat)         return fmtCurrency(flat);
-  if (pct && total) return pct + '% + ' + fmtCurrency(Math.round(total * pct / 100));
-  if (pct)          return pct + '%';
   if (s.channel_commission) return fmtCurrency(s.channel_commission);
+  if (pct)          return pct + '%';   // pct without total — can't resolve to $
   return '—';
 }
 function commSortVal(s) {
