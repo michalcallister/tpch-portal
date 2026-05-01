@@ -766,6 +766,20 @@
   .brief-pulse-neutral  .brief-pulse-icon { color: var(--gold); opacity: 0.7; }
   .brief-pulse-text {
     font-size: 14px; color: var(--white); line-height: 1.5;
+    flex: 1;
+  }
+  .brief-pulse-source {
+    margin-top: 6px;
+    font-size: 11px; letter-spacing: 0.4px;
+    color: var(--gold); opacity: 0.85;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .brief-pulse-source:hover { opacity: 1; text-decoration: underline; }
+  .brief-pulse-source-plain {
+    margin-top: 6px;
+    font-size: 11px; letter-spacing: 0.4px;
+    color: var(--grey-pale); opacity: 0.75;
   }
   .brief-pipeline { display: flex; flex-direction: column; gap: 8px; }
   .brief-pipeline-item {
@@ -3276,7 +3290,7 @@
             <button onclick="rv2Back()" class="rv2-back-btn">← Back</button>
             <div id="rv2-breadcrumb" class="rv2-breadcrumb"></div>
             <div class="rv2-topbar-actions">
-              <button id="rv2-share-btn" class="rv2-action-btn" disabled title="Coming Phase 3">Share with client</button>
+              <button id="rv2-share-btn" class="rv2-action-btn" onclick="openShareResearchModal(window.rv2Current?.slug)">Share with client</button>
             </div>
           </div>
         </div>
@@ -3822,23 +3836,23 @@
 
       <!-- Stats bar -->
       <div class="stk-proj-stats-bar">
-        <div class="stk-proj-stat">
-          <div class="stk-proj-stat-label">Available</div>
+        <div class="stk-proj-stat" data-hl-stat="avail">
+          <div class="stk-proj-stat-label" id="spj-avail-label">Available</div>
           <div class="stk-proj-stat-value gold" id="spj-avail-count">—</div>
         </div>
-        <div class="stk-proj-stat">
+        <div class="stk-proj-stat" data-hl-stat="price">
           <div class="stk-proj-stat-label">Price From</div>
           <div class="stk-proj-stat-value" id="spj-price-from">—</div>
         </div>
-        <div class="stk-proj-stat">
+        <div class="stk-proj-stat" data-hl-stat="total">
           <div class="stk-proj-stat-label">Total Lots</div>
           <div class="stk-proj-stat-value" id="spj-total-lots">—</div>
         </div>
-        <div class="stk-proj-stat">
+        <div class="stk-proj-stat" data-hl-hide>
           <div class="stk-proj-stat-label">Developer</div>
           <div class="stk-proj-stat-value" id="spj-developer" style="font-size:13px">—</div>
         </div>
-        <div class="stk-proj-stat" id="spj-completion-stat">
+        <div class="stk-proj-stat" id="spj-completion-stat" data-hl-hide>
           <div class="stk-proj-stat-label">Est. Completion</div>
           <div class="stk-proj-stat-value" id="spj-completion" style="font-size:13px">—</div>
         </div>
@@ -3846,17 +3860,17 @@
 
       <!-- Tab nav -->
       <div class="stk-tab-nav">
-        <button class="stk-tab-btn active" onclick="switchProjTab('overview',this)">Overview</button>
+        <button class="stk-tab-btn active" onclick="switchProjTab('overview',this)" data-hl-hide>Overview</button>
         <button class="stk-tab-btn" onclick="switchProjTab('stock',this)">Stock</button>
-        <button class="stk-tab-btn" onclick="switchProjTab('analysis',this)">Analysis</button>
-        <button class="stk-tab-btn" id="spj-gallery-tab-btn" onclick="switchProjTab('gallery',this)" style="display:none;">Gallery</button>
+        <button class="stk-tab-btn" onclick="switchProjTab('analysis',this)" data-hl-hide>Analysis</button>
+        <button class="stk-tab-btn" id="spj-gallery-tab-btn" onclick="switchProjTab('gallery',this)" style="display:none;" data-hl-hide>Gallery</button>
       </div>
 
       <!-- Scrollable tab content area -->
       <div id="spj-scroll-area" style="flex:1;overflow-y:auto;overflow-x:hidden;">
 
       <!-- Tab: Overview -->
-      <div class="stk-tab-content active" id="spj-tab-overview">
+      <div class="stk-tab-content active" id="spj-tab-overview" data-hl-hide>
         <div class="stk-overview-grid">
           <div>
             <div class="stk-detail-section">
@@ -3928,7 +3942,7 @@
       </div>
 
       <!-- Tab: Analysis -->
-      <div class="stk-tab-content" id="spj-tab-analysis">
+      <div class="stk-tab-content" id="spj-tab-analysis" data-hl-hide>
         <div class="ia-wrap">
 
           <!-- Admin edit button -->
@@ -4228,6 +4242,11 @@
         </div>
       </div>
 
+      <!-- HL Facade hero (shown when hl_facade_url is set) -->
+      <div id="slg-facade-hero" style="display:none;width:100%;background:#000;border-bottom:1px solid var(--gold-border);cursor:zoom-in;" onclick="openFacadeLightbox()">
+        <img id="slg-facade-img" src="" alt="Facade" style="width:100%;display:block;max-height:420px;object-fit:cover;">
+      </div>
+
       <!-- Specs bar -->
       <div class="stk-spec-row">
         <div class="stk-spec-item">🛏 <span id="slg-beds">—</span> Bed</div>
@@ -4245,7 +4264,9 @@
         <div class="stk-lot-main">
           <div class="stk-tab-nav stk-lot-tabs">
             <button class="stk-tab-btn active" onclick="switchLotTab('details',this)">Details</button>
-            <button class="stk-tab-btn" onclick="switchLotTab('investment',this)">Investment</button>
+            <button class="stk-tab-btn" id="slg-location-tab-btn" onclick="switchLotTab('location',this)" style="display:none;">Location Highlights</button>
+            <button class="stk-tab-btn" id="slg-inclusions-tab-btn" onclick="switchLotTab('inclusions',this)" style="display:none;">Inclusions</button>
+            <button class="stk-tab-btn" id="slg-investment-tab-btn" onclick="switchLotTab('investment',this)">Investment</button>
             <button class="stk-tab-btn" onclick="switchLotTab('commission',this)">Commission</button>
           </div>
 
@@ -4262,6 +4283,7 @@
             </div>
             <div class="stk-detail-section">
               <div class="stk-detail-section-title">Pricing</div>
+              <div class="stk-detail-row" id="slg-contract-type-row" style="display:none;"><span class="stk-detail-key">Contract Type</span><span class="stk-detail-val gold">Fixed Price - Full Turnkey</span></div>
               <div class="stk-detail-row" id="slg-land-price-row" style="display:none;"><span class="stk-detail-key">Land Price</span><span class="stk-detail-val" id="slg-land-price">—</span></div>
               <div class="stk-detail-row" id="slg-build-price-row" style="display:none;"><span class="stk-detail-key">Build Price</span><span class="stk-detail-val" id="slg-build-price">—</span></div>
               <div class="stk-detail-row"><span class="stk-detail-key">Total Contract Price</span><span class="stk-detail-val gold" id="slg-total-price">—</span></div>
@@ -4287,6 +4309,82 @@
                 <a id="slg-floor-plan-pdf-link" href="#" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;color:var(--gold);text-decoration:none;letter-spacing:0.5px;">Open in new tab ↗</a>
               </div>
             </div>
+          </div>
+
+          <!-- Tab: Inclusions (H&L only — visible when hl_inclusions is set) -->
+          <div class="stk-tab-content" id="slg-tab-inclusions" style="padding:28px 32px;">
+            <div class="stk-detail-section">
+              <div class="stk-detail-section-title">What's Included</div>
+              <div id="slg-inclusions-content" style="font-size:13px;color:var(--grey-light);line-height:1.8;white-space:pre-wrap;">—</div>
+            </div>
+          </div>
+
+          <!-- Tab: Location Highlights (H&L only) -->
+          <div class="stk-tab-content" id="slg-tab-location" style="padding:28px 32px;">
+            <div class="stk-detail-section-title" id="slg-loc-suburb" style="margin-bottom:16px;">Location Highlights</div>
+
+            <!-- Empty state (shown when no suburb_research exists) -->
+            <div class="stk-loc-empty" id="slg-loc-empty" style="display:none;">
+              Suburb research is in progress for <span id="slg-loc-empty-suburb">this suburb</span>. We'll surface vacancy, pricing and yield data here once it's published.
+            </div>
+
+            <!-- Hero stat row -->
+            <div class="stk-loc-stats" id="slg-loc-stats" style="display:none;">
+              <div class="stk-loc-stat">
+                <div class="stk-loc-stat-label">Median Price</div>
+                <div class="stk-loc-stat-value" id="slg-loc-median">—</div>
+              </div>
+              <div class="stk-loc-stat">
+                <div class="stk-loc-stat-label">Weekly Rent</div>
+                <div class="stk-loc-stat-value" id="slg-loc-rent">—</div>
+              </div>
+              <div class="stk-loc-stat">
+                <div class="stk-loc-stat-label">Vacancy Rate</div>
+                <div class="stk-loc-stat-value" id="slg-loc-vacancy">—</div>
+              </div>
+              <div class="stk-loc-stat">
+                <div class="stk-loc-stat-label">Gross Yield</div>
+                <div class="stk-loc-stat-value" id="slg-loc-yield">—</div>
+              </div>
+            </div>
+
+            <!-- Market trends (only shown if at least one pillar has chart_data) -->
+            <div id="slg-loc-trends" style="display:none;">
+              <div class="stk-detail-section-title">Market Trends</div>
+              <div class="stk-loc-trends-grid">
+                <div class="stk-loc-trend-card" id="slg-loc-trend-price-card" style="display:none;">
+                  <div class="stk-loc-trend-title">Median Price</div>
+                  <svg id="slg-loc-trend-price" preserveAspectRatio="none"></svg>
+                </div>
+                <div class="stk-loc-trend-card" id="slg-loc-trend-rent-card" style="display:none;">
+                  <div class="stk-loc-trend-title">Weekly Rent</div>
+                  <svg id="slg-loc-trend-rent" preserveAspectRatio="none"></svg>
+                </div>
+                <div class="stk-loc-trend-card" id="slg-loc-trend-vacancy-card" style="display:none;">
+                  <div class="stk-loc-trend-title">Vacancy Rate</div>
+                  <svg id="slg-loc-trend-vacancy" preserveAspectRatio="none"></svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Comparable sales (only shown if comparable_sales has entries) -->
+            <div class="stk-detail-section" id="slg-loc-comps" style="display:none;">
+              <div class="stk-detail-section-title">Recent Comparable Sales</div>
+              <table class="stk-stock-table" style="margin-top:8px;">
+                <thead>
+                  <tr>
+                    <th>Address</th>
+                    <th>Beds</th>
+                    <th>Sale Price</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="slg-loc-comps-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- Source / freshness footer -->
+            <div class="stk-loc-source" id="slg-loc-source" style="display:none;">—</div>
           </div>
 
           <!-- Tab: Investment -->
@@ -7155,6 +7253,22 @@
 
   const CHANGELOG = [
     {
+      version: '3.0',
+      date: '1 May 2026',
+      title: 'House & Land first-class + shareable Suburb Research',
+      items: [
+        'House & Land projects now open straight into a stock-focused view — clean stat strip (Total Lots, Total Available, Price From), no Overview or Analysis tabs to wade through.',
+        'New hero facade image at the top of every House & Land property page (uploaded via Monday).',
+        'New "Inclusions" tab on each House & Land property listing what\'s in the package — fixtures, finishes, the lot.',
+        'New "Contract Type — Fixed Price · Full Turnkey" row at the top of pricing on House & Land lots.',
+        'New "Location Highlights" tab on House & Land properties — suburb-level vacancy, asking prices, weekly rents and gross yield, with trend charts where data exists.',
+        'House & Land lots now show as individual pins on the Stock map at their actual address, instead of all collapsing under a single project pin.',
+        'Investment tab is hidden on House & Land lots (the metrics behind it don\'t apply to land packages).',
+        'Property flyer for House & Land lots replaces the Project Overview with Location Highlights and a dedicated Inclusions section.',
+        'New shareable, white-labelled Suburb Research view — open any published suburb report and click "Share with client" to send a brand-skinned link with your logo, your colours, your contact card, and a suburb-boundary map at the top.',
+      ]
+    },
+    {
       version: '2.0',
       date: '30 Apr 2026',
       title: 'Partner cockpit, Morning Brief, Ask TPCH + a fresher shell',
@@ -7317,9 +7431,10 @@
     applyNavForRole(false, false);
   }
   document.addEventListener('DOMContentLoaded', () => {
-    // Public flyer route — short-circuit the entire portal boot.
-    // The flyer screen handles its own data fetching and rendering.
-    if (typeof flyerParseHash === 'function' && flyerParseHash()) return;
+    // Public flyer / research routes — short-circuit the entire portal boot.
+    // Each screen handles its own data fetching and rendering.
+    if (typeof flyerParseHash    === 'function' && flyerParseHash())    return;
+    if (typeof researchParseHash === 'function' && researchParseHash()) return;
 
     const _todayEl = document.getElementById('topbar-today');
     if (_todayEl) _todayEl.textContent = new Date().toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
@@ -9622,9 +9737,19 @@
       html += pulse.map(p => {
         const kind = ['tailwind','headwind','neutral'].includes(p.kind) ? p.kind : 'neutral';
         const icon = kind === 'tailwind' ? '↗' : kind === 'headwind' ? '↘' : '→';
+        // Source line: link if we have a URL, plain text if only a name, nothing otherwise.
+        let sourceHtml = '';
+        if (p.source_url && p.source_name) {
+          sourceHtml = `<a class="brief-pulse-source" href="${escHtml(p.source_url)}" target="_blank" rel="noopener noreferrer">Source: ${escHtml(p.source_name)} ↗</a>`;
+        } else if (p.source_name) {
+          sourceHtml = `<div class="brief-pulse-source-plain">Source: ${escHtml(p.source_name)}</div>`;
+        }
         return `<div class="brief-pulse-row brief-pulse-${kind}">
           <div class="brief-pulse-icon">${icon}</div>
-          <div class="brief-pulse-text">${escHtml(p.stat || '')}</div>
+          <div class="brief-pulse-text">
+            ${escHtml(p.stat || '')}
+            ${sourceHtml}
+          </div>
         </div>`;
       }).join('');
       html += '</div>';
@@ -10165,6 +10290,7 @@
         return;
       }
       rv2Current = d;
+      window.rv2Current = d;  // exposed for the share button (inline handler)
       rv2Render(d);
       document.getElementById('rv2-loading').style.display = 'none';
       document.getElementById('rv2-report').style.display = '';
@@ -10557,8 +10683,8 @@
       <div class="rv2-source-row">
         <div class="rv2-source-tag">${rv2Esc(s.tag)}</div>
         <div class="rv2-source-meta">
-          <b>${rv2Esc(s.publisher)}</b> · ${rv2Esc(s.title)}${s.date ? ' · ' + rv2Date(s.date) : ''}<br>
-          <a href="${rv2Esc(s.url)}" target="_blank" rel="noopener">${rv2Esc(s.url)}</a>
+          <a href="${rv2Esc(s.url)}" target="_blank" rel="noopener" class="rv2-source-title"><b>${rv2Esc(s.publisher)}</b> · ${rv2Esc(s.title)}</a>${s.date ? ' · ' + rv2Date(s.date) : ''}<br>
+          <a href="${rv2Esc(s.url)}" target="_blank" rel="noopener">${rv2Esc(s.url)} ↗</a>
         </div>
       </div>`).join('');
 
@@ -10580,7 +10706,7 @@
     return `
       <div class="rv2-sb-card">
         <div class="rv2-sb-conviction">
-          <div class="rv2-sb-conviction-label">TPCH Conviction</div>
+          <div class="rv2-sb-conviction-label">Conviction</div>
           <div class="rv2-sb-conviction-rating" style="color:${ratingCol};">${rv2Esc(d.rating)}</div>
           <div class="rv2-sb-conviction-score"><b>${d.conviction_score}</b> / 100</div>
         </div>
@@ -10597,14 +10723,14 @@
           <div class="rv2-sb-row"><span class="rv2-sb-row-label">Pop. Growth</span><span class="rv2-sb-row-value">${d.pop_growth_pct != null ? '+' + Number(d.pop_growth_pct).toFixed(1) + '%' : '—'}</span></div>
         </div>
       </div>
-      <div class="rv2-sb-card">
+      <div class="rv2-sb-card rv2-sb-distribution">
         <div class="rv2-sb-card-head">Distribution</div>
         <div class="rv2-sb-actions">
-          <button class="rv2-sb-action-btn primary" disabled title="Coming Phase 3">Share with client</button>
+          <button class="rv2-sb-action-btn primary" onclick="openShareResearchModal(window.rv2Current?.slug)">Share with client</button>
           <button class="rv2-sb-action-btn" disabled title="Coming Phase 3">White-label PDF</button>
         </div>
       </div>
-      <div style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6;padding:0 8px;">
+      <div class="rv2-sb-credit" style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6;padding:0 8px;">
         Drafted by Claude Opus 4.7 · ${d.model_used || 'claude-opus-4-7'}<br>
         Last updated ${rv2Date(d.updated_at)}
       </div>`;
@@ -11156,6 +11282,12 @@ function stkTypeBadgeClass(type) {
   if (t.includes('townhouse'))  return 'stk-badge-townhouse';
   if (t.includes('house') || t.includes('land') || t === 'h&l') return 'stk-badge-hl';
   return '';
+}
+function isHouseAndLandProject(p) {
+  const t = (p?.development_type || '').toLowerCase();
+  // "townhouse" contains "house"; exclude before the house/land check.
+  if (t.includes('townhouse') || t.includes('apartment')) return false;
+  return t.includes('house') || t.includes('land') || t === 'h&l';
 }
 function stkAvailBadgeClass(a) {
   if (!a) return 'stk-badge-settled';
@@ -11789,7 +11921,21 @@ function renderStockMap(projects) {
   stkMarkerCluster.clearLayers();
   stkProjectMarkers = {};
   const bounds = [];
+
+  // For H&L projects, prefer per-lot pins (using the stock item's own
+  // geocoded address) so partners can see exactly where each lot sits in
+  // an estate. Fall back to the project pin when no lot has coords yet
+  // (e.g. before sync-monday's geocoding pass has caught up).
+  const hlLotPins = (allAvailableStock || []).filter(s => {
+    if (!isHouseAndLandProject(s)) return false;
+    const lat = s.latitude  != null ? Number(s.latitude)  : null;
+    const lng = s.longitude != null ? Number(s.longitude) : null;
+    return lat != null && lng != null && !isNaN(lat) && !isNaN(lng);
+  });
+  const hlProjectsWithLotPins = new Set(hlLotPins.map(s => s.project_id));
+
   projects.forEach(p => {
+    if (isHouseAndLandProject(p) && hlProjectsWithLotPins.has(p.id)) return;
     const lat = p.latitude != null ? Number(p.latitude) : null;
     const lng = p.longitude != null ? Number(p.longitude) : null;
     if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return;
@@ -11804,6 +11950,23 @@ function renderStockMap(projects) {
     m.on('click', function() { highlightStkRow(p.id, true); });
     stkMarkerCluster.addLayer(m);
     stkProjectMarkers[p.id] = m;
+    bounds.push([lat, lng]);
+  });
+
+  hlLotPins.forEach(s => {
+    const lat = Number(s.latitude);
+    const lng = Number(s.longitude);
+    const icon = L.divIcon({
+      html: '<div class="stk-pin"></div>',
+      className: 'stk-pin-wrap',
+      iconSize: [28, 28],
+      iconAnchor: [14, 26]
+    });
+    const m = L.marker([lat, lng], { icon, title: s.name || '' });
+    const lotLabel = [s.lot_number ? 'Lot ' + s.lot_number : null, s.street].filter(Boolean).join(' · ');
+    m.bindTooltip(`<strong>${s.project_name || s.name || ''}</strong><br><span style="color:#C8A951">${lotLabel || [s.suburb, s.state].filter(Boolean).join(' · ')}</span>`, { direction: 'top' });
+    m.on('click', function() { showStockListing(s.id); });
+    stkMarkerCluster.addLayer(m);
     bounds.push([lat, lng]);
   });
 
@@ -11876,6 +12039,10 @@ async function showStockProject(id) {
   if (!p) return;
   recordPartnerView('project', id);
 
+  const isHL = isHouseAndLandProject(p);
+  document.getElementById('page-stock-project').classList.toggle('h-and-l-mode', isHL);
+  document.getElementById('spj-avail-label').textContent = isHL ? 'Total Available' : 'Available';
+
   // Populate header
   document.getElementById('spj-name').textContent = p.name || '—';
   document.getElementById('spj-location').textContent =
@@ -11941,7 +12108,11 @@ async function showStockProject(id) {
   }
 
   // Switch page and load stock
-  switchProjTab('overview', document.querySelector('#page-stock-project .stk-tab-btn'));
+  const defaultTab = isHL ? 'stock' : 'overview';
+  const defaultBtn = document.querySelector(
+    `#page-stock-project .stk-tab-btn[onclick*="'${defaultTab}'"]`
+  );
+  switchProjTab(defaultTab, defaultBtn);
   showPageDirect('stock-project');
   await loadProjectStock(id);
 }
@@ -11975,6 +12146,14 @@ async function loadProjectStock(projectId) {
     const prices = allStockItems.map(s => s.total_contract).filter(Boolean);
     document.getElementById('spj-price-from').textContent =
       prices.length ? 'From ' + fmtCurrency(Math.min(...prices)) : '—';
+    // H&L mode: Total Lots = available + reserved (live, not project
+    // volume); Total Available = just Available (excludes Reserved).
+    const _projForHL = allProjects.find(x => x.id === projectId);
+    if (isHouseAndLandProject(_projForHL)) {
+      document.getElementById('spj-total-lots').textContent = available.length + ' lots';
+      const justAvailable = allStockItems.filter(s => s.availability === 'Available').length;
+      document.getElementById('spj-avail-count').textContent = justAvailable + ' lots';
+    }
 
     lotFilter = { beds: 'any', avail: 'all' };
     renderStockTable();
@@ -12447,12 +12626,40 @@ function showStockListing(id) {
     } else {
       fpPdf.style.display = 'none';
       document.getElementById('slg-floor-plan-img').src = s.floor_plan_url;
-      document.getElementById('floor-plan-lightbox-img').src = s.floor_plan_url;
       fpThumb.style.display = '';
     }
   } else {
     fpSection.style.display = 'none';
   }
+
+  // HL Facade hero — first thing partners see for House & Land properties.
+  const facadeHero = document.getElementById('slg-facade-hero');
+  if (s.hl_facade_url) {
+    document.getElementById('slg-facade-img').src = s.hl_facade_url;
+    facadeHero.style.display = '';
+  } else {
+    facadeHero.style.display = 'none';
+  }
+
+  // HL Inclusions tab — only visible when the field is populated.
+  const inclTabBtn  = document.getElementById('slg-inclusions-tab-btn');
+  const inclContent = document.getElementById('slg-inclusions-content');
+  if (s.hl_inclusions && s.hl_inclusions.trim()) {
+    inclTabBtn.style.display = '';
+    inclContent.textContent  = s.hl_inclusions;
+  } else {
+    inclTabBtn.style.display = 'none';
+    inclContent.textContent  = '—';
+  }
+
+  // H&L-specific listing tweaks: hide Investment tab (no data flows there),
+  // surface a "Fixed Price - Full Turnkey" row at the top of Pricing, and
+  // surface the suburb-research-driven Location Highlights tab.
+  const _isHLListing = isHouseAndLandProject(s);
+  document.getElementById('slg-investment-tab-btn').style.display = _isHLListing ? 'none' : '';
+  document.getElementById('slg-contract-type-row').style.display  = _isHLListing ? '' : 'none';
+  document.getElementById('slg-location-tab-btn').style.display   = _isHLListing ? '' : 'none';
+  if (_isHLListing) loadLocationHighlights(s.suburb, s.state);
 
   // Investment tab
   document.getElementById('slg-rates').textContent       = fmtCurrency(s.rates_annual);
@@ -12543,6 +12750,137 @@ function switchLotTab(tab, el) {
   if (el) el.classList.add('active');
 }
 
+// ── Location Highlights (suburb research surfaced on H&L lots) ───
+const locationDataCache = {};
+async function loadLocationHighlights(suburb, state) {
+  if (!suburb || !state) { renderLocationTab(null, suburb, state); return; }
+  const slug = (suburb + '-' + state).toLowerCase().replace(/\s+/g, '-');
+  if (locationDataCache[slug] !== undefined) {
+    renderLocationTab(locationDataCache[slug], suburb, state);
+    return;
+  }
+  try {
+    const buildOpts = () => ({
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
+    });
+    const res = await fetchWithAuthRetry(
+      SUPABASE_URL + '/rest/v1/suburb_research?slug=eq.' + encodeURIComponent(slug)
+        + '&select=slug,suburb,state_code,median_price,weekly_rent,vacancy_rate,avg_yield,'
+        + 'pillars,comparable_sales,sources,updated_at,published_at,status',
+      buildOpts
+    );
+    const arr = (res && res.ok) ? await res.json() : [];
+    const row = arr.find(r => r.status === 'published') || arr[0] || null;
+    locationDataCache[slug] = row;
+    renderLocationTab(row, suburb, state);
+  } catch (e) {
+    console.warn('loadLocationHighlights failed:', e);
+    renderLocationTab(null, suburb, state);
+  }
+}
+
+function renderLocationTab(row, suburb, state) {
+  const heading = document.getElementById('slg-loc-suburb');
+  const empty   = document.getElementById('slg-loc-empty');
+  const stats   = document.getElementById('slg-loc-stats');
+  const trends  = document.getElementById('slg-loc-trends');
+  const comps   = document.getElementById('slg-loc-comps');
+  const source  = document.getElementById('slg-loc-source');
+  const suburbLabel = [suburb, state].filter(Boolean).join(', ') || 'this suburb';
+  if (heading) heading.textContent = 'Location Highlights — ' + suburbLabel;
+
+  if (!row) {
+    document.getElementById('slg-loc-empty-suburb').textContent = suburbLabel;
+    empty.style.display  = '';
+    stats.style.display  = 'none';
+    trends.style.display = 'none';
+    comps.style.display  = 'none';
+    source.style.display = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  stats.style.display = '';
+
+  // Hero stats
+  document.getElementById('slg-loc-median').textContent  = fmtCurrency(row.median_price);
+  document.getElementById('slg-loc-rent').textContent    = row.weekly_rent != null ? fmtCurrency(row.weekly_rent) + '/wk' : '—';
+  document.getElementById('slg-loc-vacancy').textContent = row.vacancy_rate != null ? Number(row.vacancy_rate).toFixed(1) + '%' : '—';
+  document.getElementById('slg-loc-yield').textContent   = row.avg_yield != null    ? Number(row.avg_yield).toFixed(2) + '%'  : '—';
+
+  // Trend sparklines — only render charts whose pillar has chart_data.items
+  const pillars = row.pillars || {};
+  const trendSpecs = [
+    { pillarKey: 'price_growth',  cardId: 'slg-loc-trend-price-card',   svgId: 'slg-loc-trend-price' },
+    { pillarKey: 'rent_trend',    cardId: 'slg-loc-trend-rent-card',    svgId: 'slg-loc-trend-rent' },
+    { pillarKey: 'vacancy_trend', cardId: 'slg-loc-trend-vacancy-card', svgId: 'slg-loc-trend-vacancy' },
+  ];
+  let anyTrend = false;
+  trendSpecs.forEach(spec => {
+    const items = pillars?.[spec.pillarKey]?.chart_data?.items || [];
+    const card  = document.getElementById(spec.cardId);
+    const svg   = document.getElementById(spec.svgId);
+    if (renderSparkline(svg, items)) {
+      card.style.display = '';
+      anyTrend = true;
+    } else {
+      card.style.display = 'none';
+    }
+  });
+  trends.style.display = anyTrend ? '' : 'none';
+
+  // Comparable sales (top 5, most recent first if dates available)
+  const compsArr = Array.isArray(row.comparable_sales) ? row.comparable_sales.slice() : [];
+  if (compsArr.length) {
+    compsArr.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    const top = compsArr.slice(0, 5);
+    document.getElementById('slg-loc-comps-tbody').innerHTML = top.map(c => {
+      const dateStr = c.date ? new Date(c.date).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) : '—';
+      return `<tr>
+        <td>${c.address || '—'}</td>
+        <td>${c.beds != null ? c.beds : '—'}</td>
+        <td>${fmtCurrency(c.price)}</td>
+        <td style="white-space:nowrap;">${dateStr}</td>
+      </tr>`;
+    }).join('');
+    comps.style.display = '';
+  } else {
+    comps.style.display = 'none';
+  }
+
+  // Source / freshness footer
+  const srcArr = Array.isArray(row.sources) ? row.sources.slice(0, 2) : [];
+  const srcNames = srcArr.map(s => s.name || s.publisher).filter(Boolean).join(', ');
+  const stamp = row.updated_at || row.published_at;
+  const stampStr = stamp ? new Date(stamp).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+  const parts = [];
+  if (srcNames) parts.push('Source: ' + srcNames);
+  if (stampStr) parts.push('Updated ' + stampStr);
+  source.textContent = parts.join(' · ') || '—';
+  source.style.display = parts.length ? '' : 'none';
+}
+
+function renderSparkline(svgEl, points, opts) {
+  opts = opts || {};
+  if (!svgEl) return false;
+  const ys = (points || [])
+    .map(p => Number(p && (p.value ?? p.y)))
+    .filter(v => !isNaN(v));
+  if (ys.length < 2) { svgEl.innerHTML = ''; return false; }
+  const w = opts.width || 280, h = opts.height || 60, pad = 4;
+  const min = Math.min(...ys), max = Math.max(...ys);
+  const range = max - min || 1;
+  const stepX = (w - pad * 2) / (ys.length - 1);
+  const coords = ys.map((v, i) => [pad + i * stepX, h - pad - ((v - min) / range) * (h - pad * 2)]);
+  const path = coords.map(([x, y], i) => (i ? 'L' : 'M') + x.toFixed(1) + ',' + y.toFixed(1)).join(' ');
+  const last = coords[coords.length - 1];
+  svgEl.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+  svgEl.innerHTML =
+    '<path d="' + path + '" fill="none" stroke="var(--gold)" stroke-width="1.5"/>' +
+    '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="2.5" fill="var(--gold)"/>';
+  return true;
+}
+
 // ── Navigation ────────────────────────────────────────────
 function stkBack() {
   // Clear project context so a subsequent listing-back from the flat
@@ -12552,6 +12890,13 @@ function stkBack() {
 }
 
 function openFloorPlanLightbox() {
+  document.getElementById('floor-plan-lightbox-img').src = document.getElementById('slg-floor-plan-img').src;
+  document.getElementById('floor-plan-lightbox').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function openFacadeLightbox() {
+  // Reuses the floor-plan lightbox container; src is swapped on each open.
+  document.getElementById('floor-plan-lightbox-img').src = document.getElementById('slg-facade-img').src;
   document.getElementById('floor-plan-lightbox').style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }
@@ -14191,6 +14536,32 @@ function buildKitHtml(s, research, brand) {
 #page-stock-project #spj-tab-stock .stk-stock-table {
   min-width: 1280px;
 }
+/* House & Land mode: hide overview/analysis/gallery tabs and the stats
+   tiles that don't apply to land lots. Toggled by showStockProject(). */
+#page-stock-project.h-and-l-mode [data-hl-hide] { display: none !important; }
+/* H&L stats bar order: Total Lots, Total Available, Price From. */
+#page-stock-project.h-and-l-mode .stk-proj-stat[data-hl-stat="total"] { order: 1; }
+#page-stock-project.h-and-l-mode .stk-proj-stat[data-hl-stat="avail"] { order: 2; }
+#page-stock-project.h-and-l-mode .stk-proj-stat[data-hl-stat="price"] { order: 3; }
+
+/* Location Highlights tab — suburb research surfaced on H&L lots. */
+.stk-loc-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--gold-border);
+  border: 1px solid var(--gold-border);
+  margin-bottom: 24px;
+}
+.stk-loc-stat       { background: var(--black-card); padding: 14px 18px; }
+.stk-loc-stat-label { font-size: 10px; letter-spacing: 0.08em; color: var(--grey-mid); text-transform: uppercase; margin-bottom: 6px; }
+.stk-loc-stat-value { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--gold); }
+.stk-loc-trends-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 8px; margin-bottom: 24px; }
+.stk-loc-trend-card  { border: 1px solid var(--gold-border); padding: 14px; background: rgba(8,15,26,0.5); }
+.stk-loc-trend-title { font-size: 11px; letter-spacing: 0.08em; color: var(--grey-light); text-transform: uppercase; margin-bottom: 8px; }
+.stk-loc-trend-card svg { width: 100%; height: 60px; display: block; }
+.stk-loc-source { font-size: 11px; color: var(--grey-mid); margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--gold-border); }
+.stk-loc-empty  { text-align: center; padding: 40px 20px; color: var(--grey-mid); font-size: 13px; line-height: 1.7; }
 
 /* Horizontal-scroll wrapper for wide stock tables */
 .stk-table-scroll {
@@ -15595,6 +15966,32 @@ function buildKitHtml(s, research, brand) {
   </div>
 </div>
 
+<!-- ── Share Suburb Research Modal ───────────────────────── -->
+<div id="share-research-overlay" class="rsv-overlay" style="display:none;" onclick="if(event.target===this)closeShareResearchModal()">
+  <div class="rsv-modal" style="max-width:520px;">
+    <div class="rsv-modal-header">
+      <div class="rsv-modal-title">Share suburb research</div>
+      <button class="rsv-modal-close" onclick="closeShareResearchModal()">✕</button>
+    </div>
+    <div class="rsv-modal-body">
+      <p style="font-size:13px;color:var(--grey-pale);margin:0 0 14px;line-height:1.55;">
+        Send this link to a partner or client. Anyone with the link can view the research — it doesn't require a login. The page is white-labelled with your brand.
+      </p>
+      <label class="form-label" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Prepared for (optional)</label>
+      <input class="form-input" type="text" id="share-research-recipient" placeholder="Recipient's full name" maxlength="80" oninput="rsrShareSync()" style="margin-top:6px;margin-bottom:14px;">
+      <label class="form-label" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Research link</label>
+      <div style="display:flex;gap:8px;margin-top:6px;align-items:stretch;">
+        <input class="form-input" type="text" id="share-research-url" readonly onfocus="this.select()" onclick="this.select()" style="flex:1;font-family:'DM Mono',monospace;font-size:12px;">
+        <button class="btn-primary" id="share-research-copy-btn" onclick="copyShareResearchLink()" style="white-space:nowrap;padding:0 18px;font-size:13px;">Copy link</button>
+      </div>
+      <div id="share-research-status" style="font-size:12px;color:var(--gold);margin-top:10px;min-height:18px;"></div>
+      <div style="margin-top:14px;display:flex;justify-content:flex-end;">
+        <a id="share-research-preview-btn" href="#" target="_blank" rel="noopener" class="btn-outline" style="padding:9px 16px;font-size:12px;text-decoration:none;">↗ Preview research in new tab</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Share Flyer Modal ─────────────────────────────────── -->
 <div id="share-flyer-overlay" class="rsv-overlay" style="display:none;" onclick="if(event.target===this)closeShareFlyerModal()">
   <div class="rsv-modal" style="max-width:520px;">
@@ -15923,6 +16320,47 @@ function buildKitHtml(s, research, brand) {
   }
   .fly-footer a { color: var(--f-muted); }
 
+  /* Inclusions — H&L only; renders the per-lot inclusions list. */
+  #screen-flyer .fly-inclusions {
+    background: var(--f-surface);
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 18px 22px;
+    font-size: 14px; line-height: 1.7;
+    color: var(--f-text);
+    white-space: pre-wrap;
+  }
+
+  /* Location Highlights — surfaces suburb_research data on H&L flyers. */
+  #screen-flyer .fly-loc-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.08);
+    margin: 18px 0 28px;
+  }
+  #screen-flyer .fly-loc-stat       { background: var(--f-surface); padding: 16px 18px; }
+  #screen-flyer .fly-loc-stat-label { font-size: 10px; letter-spacing: 0.08em; color: var(--f-muted); text-transform: uppercase; margin-bottom: 6px; }
+  #screen-flyer .fly-loc-stat-value { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: var(--f-accent); }
+  #screen-flyer .fly-loc-trends-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+  #screen-flyer .fly-loc-trend-card  { border: 1px solid rgba(0,0,0,0.08); padding: 14px; background: var(--f-surface); }
+  #screen-flyer .fly-loc-trend-title { font-size: 11px; letter-spacing: 0.08em; color: var(--f-muted); text-transform: uppercase; margin-bottom: 8px; }
+  #screen-flyer .fly-loc-trend-card svg { width: 100%; height: 60px; display: block; }
+  #screen-flyer .fly-loc-comps-title { font-size: 13px; font-weight: 600; color: var(--f-text); margin: 12px 0 10px; letter-spacing: 0.02em; }
+  #screen-flyer .fly-loc-comps-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  #screen-flyer .fly-loc-comps-table th {
+    text-align: left; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--f-muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,0.12);
+  }
+  #screen-flyer .fly-loc-comps-table td { padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.06); color: var(--f-text); }
+  #screen-flyer .fly-loc-comps-table tr:last-child td { border-bottom: none; }
+  #screen-flyer .fly-loc-source { font-size: 11px; color: var(--f-muted); margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.08); }
+  #screen-flyer .fly-loc-empty  { color: var(--f-muted); font-size: 14px; line-height: 1.7; margin-top: 8px; }
+  @media (max-width: 720px) {
+    #screen-flyer .fly-loc-stats { grid-template-columns: repeat(2, 1fr); }
+    #screen-flyer .fly-loc-trends-grid { grid-template-columns: 1fr; }
+  }
+
   /* Lightbox — navigable carousel with arrows, counter, and thumbnail strip. */
   .fly-lightbox {
     position: fixed; inset: 0; z-index: 9999;
@@ -16041,6 +16479,182 @@ function buildKitHtml(s, research, brand) {
     .fly-section { page-break-inside: avoid; }
     #fly-map { height: 320px; }
   }
+
+  /* ── Suburb Research (public share) ─────────────────────────────
+     Wrapper hosts the existing #page-research-v2 (admin layout) and
+     overrides the portal's dark-theme CSS vars with the partner's
+     white-label palette so headings/metrics pick up the brand colour. */
+  #screen-research {
+    display: none;
+    /* White-label palette tokens (mirrors #screen-flyer; defined here so
+       child #page-research-v2 inherits when nested). */
+    --f-bg:        #FAFAF7;
+    --f-surface:   #FFFFFF;
+    --f-text:      #1A1A1A;
+    --f-muted:     #6B6B6B;
+    /* --f-accent is the dark surface colour (filled contact card etc).
+       --f-primary is the partner's primary brand colour (orange for Forge,
+       used for headings + key data points).  flyerApplyBrandColours()
+       overrides both at runtime; defaults below cover unbranded fallback. */
+    --f-accent:    #1E2733;
+    --f-primary:   var(--f-accent);
+    --f-on-accent: rgba(255,255,255,0.6);
+
+    background: var(--f-bg);
+    color: var(--f-text);
+    font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
+    line-height: 1.5;
+    min-height: 100vh;
+
+    /* Override portal dark-theme tokens for white-label rendering. */
+    --gold:        var(--f-primary);
+    --gold-light:  var(--f-primary);
+    --gold-pale:   var(--f-primary);
+    --gold-dim:    rgba(0, 0, 0, 0.04);
+    --gold-border: rgba(0, 0, 0, 0.10);
+    --black:       var(--f-bg);
+    --black-soft:  var(--f-bg);
+    --black-card:  var(--f-surface);
+    --black-hover: var(--f-surface);
+    --grey:        rgba(0, 0, 0, 0.08);
+    --grey-mid:    var(--f-muted);
+    --grey-light:  var(--f-text);
+    --grey-pale:   var(--f-text);
+    --text-muted:  var(--f-muted);
+    --white:       var(--f-text);
+  }
+  #screen-research.active { display: block; }
+
+  /* Partner-branded header — always uses brand_accent surface so partner
+     logos (most are white-on-transparent or coloured-on-dark) stay visible. */
+  #screen-research .fly-header {
+    background: var(--f-accent);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  #screen-research .fly-logo-fallback        { color: #FFF; }
+  #screen-research .fly-header-website       { color: rgba(255, 255, 255, 0.78); }
+  #screen-research .fly-header-website:hover { color: #FFF; }
+  #screen-research .pf-eyebrow               { color: rgba(255, 255, 255, 0.55); }
+  #screen-research .pf-name                  { color: #FFF; }
+
+  /* Hide admin-only sidebar pieces on the public flyer. */
+  #screen-research .rv2-sb-distribution { display: none !important; }
+  #screen-research .rv2-sb-credit       { display: none !important; }
+
+  /* Contact buttons — admin's .fly-contact-btn rules are scoped to
+     #screen-flyer; replicate inside #screen-research. Keep base buttons
+     translucent with white text; primary uses white bg + brand-primary
+     text so the call-to-action pops in the partner colour. */
+  #screen-research .fly-contact-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px; border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 3px; color: #FFF !important;
+    font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px;
+    transition: background 0.15s; text-decoration: none;
+  }
+  #screen-research .fly-contact-btn:hover { background: rgba(255, 255, 255, 0.08); text-decoration: none; }
+  #screen-research .fly-contact-btn-primary {
+    background: #FFF; color: var(--f-primary) !important; border-color: #FFF;
+  }
+  #screen-research .fly-contact-btn-primary:hover { background: #F0F0EC; }
+
+  /* Map header — full-bleed, overlay card with suburb name + meta. */
+  #screen-research .rsr-map-wrap { position: relative; width: 100%; height: 360px; background: #1A1A1A; overflow: hidden; }
+  #screen-research #rsr-map { position: absolute; inset: 0; }
+  #screen-research #rsr-map .leaflet-control-attribution { font-size: 9px; color: rgba(255,255,255,0.4); background: transparent; }
+  #screen-research .rsr-map-overlay {
+    position: absolute; left: 32px; bottom: 28px;
+    background: var(--f-surface); padding: 16px 22px;
+    border-left: 3px solid var(--f-accent);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    max-width: 480px;
+  }
+  #screen-research .rsr-map-eyebrow { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--f-muted); margin-bottom: 4px; }
+  #screen-research .rsr-map-suburb  { font-family: 'Playfair Display', Georgia, serif; font-size: 26px; font-weight: 600; color: var(--f-text); line-height: 1.2; }
+  #screen-research .rsr-map-meta    { font-size: 13px; color: var(--f-muted); margin-top: 4px; letter-spacing: 0.02em; }
+
+  /* The mounted #page-research-v2 inherits the var overrides above; force
+     the local background since the admin page sets its own. */
+  #screen-research #page-research-v2 {
+    background: var(--f-bg) !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  /* Hide admin chrome that doesn't belong on a public flyer. */
+  #screen-research .rv2-topbar { display: none !important; }
+  #screen-research .rv2-draft-banner { display: none !important; }
+
+  /* Sticky nav: keep, but soften the dark-theme background. The admin
+     stylesheet pins it 51px down to clear .rv2-topbar; we hide the topbar
+     in public mode, so the nav should pin to the very top instead. */
+  #screen-research .rv2-nav {
+    background: var(--f-surface) !important;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    top: 0 !important;
+  }
+  #screen-research .rv2-nav-tab { color: var(--f-muted) !important; }
+  #screen-research .rv2-nav-tab.active { color: var(--f-accent) !important; }
+
+  /* Headings + key data points pick up the partner's brand-primary colour
+     (orange for Forge Legacy). The dark --f-accent stays for filled
+     surfaces like the contact card. */
+  #screen-research .rv2-cover-title,
+  #screen-research .rv2-cover-eyebrow,
+  #screen-research .rv2-group-title,
+  #screen-research .rv2-headline,
+  #screen-research .rv2-section h2,
+  #screen-research .rv2-section h3,
+  #screen-research .rv2-overline,
+  #screen-research .rv2-stat-tile-value,
+  #screen-research .rv2-sb-conviction-score b,
+  #screen-research .rsr-map-suburb { color: var(--f-primary) !important; }
+  /* Map polygon stroke / overlay border use the primary brand colour. */
+  #screen-research .rsr-map-overlay { border-left-color: var(--f-primary); }
+
+  /* Body text + narrative readability on light bg. */
+  #screen-research,
+  #screen-research .rv2-narrative,
+  #screen-research .rv2-thesis-text,
+  #screen-research .rv2-dim-reasoning,
+  #screen-research .rv2-stat-tile-label,
+  #screen-research .rv2-cover-meta,
+  #screen-research .rv2-endorsement-card,
+  #screen-research .rv2-endorsement-excerpt,
+  #screen-research .rv2-counter-excerpt,
+  #screen-research .rv2-response-text,
+  #screen-research .rv2-source-row,
+  #screen-research .rv2-table td,
+  #screen-research .rv2-sb-row-value { color: var(--f-text); }
+
+  #screen-research .rv2-section,
+  #screen-research .rv2-thesis-block,
+  #screen-research .rv2-endorsement-card,
+  #screen-research .rv2-counter,
+  #screen-research .rv2-sb-card { background: var(--f-surface); border-color: rgba(0,0,0,0.08); }
+
+  /* Contact card (bottom of public flyer). */
+  #screen-research .rsr-contact-section { padding: 0 24px 0; max-width: 1200px; margin: 24px auto 0; }
+  #screen-research .fly-contact         { background: var(--f-accent); color: #fff; }
+
+  /* Footer */
+  #screen-research .fly-footer {
+    border-top: 1px solid rgba(0,0,0,0.08);
+    color: var(--f-muted); padding: 24px;
+    text-align: center; font-size: 11px; letter-spacing: 1px;
+  }
+  #screen-research .fly-footer a { color: var(--f-muted); }
+
+  @media (max-width: 980px) {
+    #screen-research .rsr-map-overlay { left: 16px; right: 16px; max-width: none; }
+    #screen-research .rsr-map-wrap    { height: 280px; }
+  }
+
+  /* Print */
+  @media print {
+    #screen-research .rsr-map-wrap { height: 240px; page-break-inside: avoid; }
+    #screen-research .rv2-section  { page-break-inside: avoid; }
+  }
 </style>
 
 <div id="screen-flyer" class="screen">
@@ -16094,6 +16708,61 @@ function buildKitHtml(s, research, brand) {
         <div id="fly-overview" class="fly-prose"></div>
       </section>
 
+      <section class="fly-section" id="fly-inclusions-section" style="display:none;">
+        <div class="fly-section-title">Inclusions</div>
+        <div class="fly-inclusions" id="fly-inclusions">—</div>
+      </section>
+
+      <section class="fly-section" id="fly-location-section" style="display:none;">
+        <div class="fly-section-title">Location Highlights</div>
+        <h2 id="fly-location-suburb">—</h2>
+
+        <!-- Empty state when no suburb_research row exists yet -->
+        <p class="fly-loc-empty" id="fly-loc-empty" style="display:none;">
+          Suburb research is in progress for this location. Pricing, rent and yield trends will be added shortly.
+        </p>
+
+        <!-- 4 hero metrics -->
+        <div class="fly-loc-stats" id="fly-loc-stats" style="display:none;">
+          <div class="fly-loc-stat"><div class="fly-loc-stat-label">Median Price</div><div class="fly-loc-stat-value" id="fly-loc-median">—</div></div>
+          <div class="fly-loc-stat"><div class="fly-loc-stat-label">Weekly Rent</div><div class="fly-loc-stat-value" id="fly-loc-rent">—</div></div>
+          <div class="fly-loc-stat"><div class="fly-loc-stat-label">Vacancy Rate</div><div class="fly-loc-stat-value" id="fly-loc-vacancy">—</div></div>
+          <div class="fly-loc-stat"><div class="fly-loc-stat-label">Gross Yield</div><div class="fly-loc-stat-value" id="fly-loc-yield">—</div></div>
+        </div>
+
+        <!-- Trend sparklines (rendered only when chart_data is present) -->
+        <div id="fly-loc-trends" style="display:none;">
+          <div class="fly-loc-trends-grid">
+            <div class="fly-loc-trend-card" id="fly-loc-trend-price-card" style="display:none;">
+              <div class="fly-loc-trend-title">Median Price</div>
+              <svg id="fly-loc-trend-price" preserveAspectRatio="none"></svg>
+            </div>
+            <div class="fly-loc-trend-card" id="fly-loc-trend-rent-card" style="display:none;">
+              <div class="fly-loc-trend-title">Weekly Rent</div>
+              <svg id="fly-loc-trend-rent" preserveAspectRatio="none"></svg>
+            </div>
+            <div class="fly-loc-trend-card" id="fly-loc-trend-vacancy-card" style="display:none;">
+              <div class="fly-loc-trend-title">Vacancy Rate</div>
+              <svg id="fly-loc-trend-vacancy" preserveAspectRatio="none"></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comparable sales -->
+        <div id="fly-loc-comps" style="display:none;">
+          <h3 class="fly-loc-comps-title">Recent Comparable Sales</h3>
+          <table class="fly-loc-comps-table">
+            <thead>
+              <tr><th>Address</th><th>Beds</th><th>Sale Price</th><th>Date</th></tr>
+            </thead>
+            <tbody id="fly-loc-comps-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Source / freshness -->
+        <div class="fly-loc-source" id="fly-loc-source" style="display:none;">—</div>
+      </section>
+
       <section class="fly-section" id="fly-gallery-section" style="display:none;">
         <div class="fly-section-title">Gallery</div>
         <div id="fly-gallery" class="fly-gallery"></div>
@@ -16138,6 +16807,68 @@ function buildKitHtml(s, research, brand) {
     </div>
     <button id="fly-lightbox-next" class="fly-lightbox-nav next" onclick="flyLightboxStep(1)" aria-label="Next">›</button>
     <div id="fly-lightbox-thumbs" class="fly-lightbox-thumbs" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- ── PUBLIC SHAREABLE SUBURB RESEARCH ────────────────────────
+     URL: portal.tpch.com.au/#research/<slug>/<partnerId>
+     White-label wrapper. The actual research body is the same
+     `#page-research-v2` the admin sees — moved into the mount
+     point at render time so the public flyer is pixel-equivalent
+     with portal-var overrides flipping the dark theme to the
+     partner's brand colours. -->
+<div id="screen-research" class="screen">
+  <div id="rsr-loading" class="fly-state">
+    <h2>Loading suburb research…</h2>
+  </div>
+
+  <div id="rsr-content" style="display:none;">
+    <header class="fly-header">
+      <div class="fly-header-inner">
+        <div class="fly-header-left">
+          <img id="rsr-logo" class="fly-logo" alt="" style="display:none;">
+          <div id="rsr-logo-fallback" class="fly-logo-fallback"></div>
+        </div>
+        <div id="rsr-prepared-for" class="fly-header-center fly-prepared-for-header" style="display:none;">
+          <span class="pf-eyebrow">Prepared for</span>
+          <span class="pf-name"></span>
+        </div>
+        <a id="rsr-header-website" class="fly-header-right fly-header-website" href="#" target="_blank" rel="noopener" style="display:none;"></a>
+      </div>
+    </header>
+
+    <!-- Suburb map at top (boundary polygon when available, pin fallback) -->
+    <div class="rsr-map-wrap">
+      <div id="rsr-map"></div>
+      <div class="rsr-map-overlay">
+        <div class="rsr-map-eyebrow">Suburb Research</div>
+        <div class="rsr-map-suburb" id="rsr-map-suburb">—</div>
+        <div class="rsr-map-meta" id="rsr-map-meta">—</div>
+      </div>
+    </div>
+
+    <!-- Mount point: #page-research-v2 is moved here at render time -->
+    <div id="rsr-mount"></div>
+
+    <!-- Contact card -->
+    <section class="rsr-contact-section">
+      <div class="fly-contact">
+        <div class="fly-contact-eyebrow">Speak with</div>
+        <div id="rsr-contact-name" class="fly-contact-name">—</div>
+        <div id="rsr-contact-company" class="fly-contact-company"></div>
+        <div class="fly-contact-links">
+          <a id="rsr-contact-phone" class="fly-contact-btn fly-contact-btn-primary" href="#" style="display:none;">Call</a>
+          <a id="rsr-contact-email" class="fly-contact-btn" href="#" style="display:none;">Email</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="fly-footer">
+      <span id="rsr-footer-name"></span>
+      <span id="rsr-footer-sep" style="margin: 0 10px;">·</span>
+      <a id="rsr-footer-website" href="#" target="_blank" rel="noopener"></a>
+      <span id="rsr-footer-version" style="display:block;margin-top:8px;font-size:10px;letter-spacing:1px;color:var(--f-muted);"></span>
+    </footer>
   </div>
 </div>
 
@@ -16299,6 +17030,101 @@ function buildKitHtml(s, research, brand) {
     }
   }
 
+  function flyerRenderSparkline(svgEl, points) {
+    if (!svgEl) return false;
+    const ys = (points || [])
+      .map(pt => Number(pt && (pt.value ?? pt.y)))
+      .filter(v => !isNaN(v));
+    if (ys.length < 2) { svgEl.innerHTML = ''; return false; }
+    const w = 280, h = 60, pad = 4;
+    const min = Math.min(...ys), max = Math.max(...ys);
+    const range = max - min || 1;
+    const stepX = (w - pad * 2) / (ys.length - 1);
+    const coords = ys.map((v, i) => [pad + i * stepX, h - pad - ((v - min) / range) * (h - pad * 2)]);
+    const path = coords.map(([x, y], i) => (i ? 'L' : 'M') + x.toFixed(1) + ',' + y.toFixed(1)).join(' ');
+    const last = coords[coords.length - 1];
+    svgEl.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    svgEl.innerHTML =
+      '<path d="' + path + '" fill="none" stroke="var(--f-accent)" stroke-width="1.5"/>' +
+      '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="2.5" fill="var(--f-accent)"/>';
+    return true;
+  }
+
+  function flyerRenderLocationHighlights(row, suburb, state) {
+    const section = document.getElementById('fly-location-section');
+    const empty   = document.getElementById('fly-loc-empty');
+    const stats   = document.getElementById('fly-loc-stats');
+    const trends  = document.getElementById('fly-loc-trends');
+    const comps   = document.getElementById('fly-loc-comps');
+    const source  = document.getElementById('fly-loc-source');
+    const heading = document.getElementById('fly-location-suburb');
+    const suburbLabel = [suburb, state].filter(Boolean).join(', ') || 'this suburb';
+    section.style.display = '';
+    heading.textContent = suburbLabel;
+
+    if (!row) {
+      empty.style.display  = '';
+      stats.style.display  = 'none';
+      trends.style.display = 'none';
+      comps.style.display  = 'none';
+      source.style.display = 'none';
+      return;
+    }
+
+    empty.style.display = 'none';
+    stats.style.display = '';
+
+    const fmtMoney = n => (n != null && !isNaN(n)) ? '$' + Math.round(n).toLocaleString('en-AU') : '—';
+    document.getElementById('fly-loc-median').textContent  = fmtMoney(row.median_price);
+    document.getElementById('fly-loc-rent').textContent    = row.weekly_rent != null ? fmtMoney(row.weekly_rent) + '/wk' : '—';
+    document.getElementById('fly-loc-vacancy').textContent = row.vacancy_rate != null ? Number(row.vacancy_rate).toFixed(1) + '%' : '—';
+    document.getElementById('fly-loc-yield').textContent   = row.avg_yield != null    ? Number(row.avg_yield).toFixed(2) + '%'  : '—';
+
+    const pillars = row.pillars || {};
+    const trendSpecs = [
+      { key: 'price_growth',  cardId: 'fly-loc-trend-price-card',   svgId: 'fly-loc-trend-price' },
+      { key: 'rent_trend',    cardId: 'fly-loc-trend-rent-card',    svgId: 'fly-loc-trend-rent' },
+      { key: 'vacancy_trend', cardId: 'fly-loc-trend-vacancy-card', svgId: 'fly-loc-trend-vacancy' }
+    ];
+    let anyTrend = false;
+    trendSpecs.forEach(spec => {
+      const items = pillars?.[spec.key]?.chart_data?.items || [];
+      const card  = document.getElementById(spec.cardId);
+      const svg   = document.getElementById(spec.svgId);
+      if (flyerRenderSparkline(svg, items)) {
+        card.style.display = '';
+        anyTrend = true;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+    trends.style.display = anyTrend ? '' : 'none';
+
+    const compsArr = Array.isArray(row.comparable_sales) ? row.comparable_sales.slice() : [];
+    if (compsArr.length) {
+      compsArr.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      const top = compsArr.slice(0, 5);
+      document.getElementById('fly-loc-comps-tbody').innerHTML = top.map(c => {
+        const dateStr = c.date ? new Date(c.date).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) : '—';
+        const safe = s => String(s ?? '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return '<tr><td>' + safe(c.address) + '</td><td>' + safe(c.beds) + '</td><td>' + fmtMoney(c.price) + '</td><td>' + safe(dateStr) + '</td></tr>';
+      }).join('');
+      comps.style.display = '';
+    } else {
+      comps.style.display = 'none';
+    }
+
+    const srcArr = Array.isArray(row.sources) ? row.sources.slice(0, 2) : [];
+    const srcNames = srcArr.map(s => s && (s.name || s.publisher)).filter(Boolean).join(', ');
+    const stamp = row.updated_at || row.published_at;
+    const stampStr = stamp ? new Date(stamp).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+    const parts = [];
+    if (srcNames) parts.push('Source: ' + srcNames);
+    if (stampStr) parts.push('Updated ' + stampStr);
+    source.textContent = parts.join(' · ') || '';
+    source.style.display = parts.length ? '' : 'none';
+  }
+
   function flyerRender(p) {
     const stock   = p.stock;
     const project = p.project;
@@ -16405,23 +17231,50 @@ function buildKitHtml(s, research, brand) {
     document.getElementById('fly-price').textContent = stock.total_contract ? flyerFmtCurrency(stock.total_contract) : '—';
     document.getElementById('fly-rent').textContent  = stock.rent_per_week ? '$' + Math.round(stock.rent_per_week).toLocaleString('en-AU') : '—';
 
-    // ── Project overview ──
-    // Descriptions in the DB carry HTML markup (<h3>, <p>, <ul>, <strong>).
-    // Detect and run through an allowlist sanitiser; plain text falls through
-    // to textContent so existing whitespace-only descriptions still work.
-    document.getElementById('fly-project-name').textContent = project.name || '';
-    const overviewEl = document.getElementById('fly-overview');
-    const desc = (project.description || '').trim();
-    if (desc) {
-      if (/<[a-z][^>]*>/i.test(desc)) {
-        overviewEl.classList.add('fly-prose-html');
-        overviewEl.innerHTML = flyerSanitiseHtml(desc);
+    // ── Project overview / Location Highlights ──
+    // For H&L lots, the project narrative is replaced with a suburb-level
+    // Location Highlights block (median price, rent, vacancy, yield, trends,
+    // comparable sales). For everything else, render the project description.
+    const _devType = String(stock.development_type || project.development_type || '').toLowerCase();
+    const _isHL = !/(townhouse|apartment)/.test(_devType) && /(house|land|h&l)/.test(_devType);
+
+    if (_isHL) {
+      document.getElementById('fly-overview-section').style.display = 'none';
+      // Lots in multi-suburb portfolio projects carry the suburb on the stock
+      // row, not the project — prefer stock, fall back to project.
+      const locSuburb = stock.suburb || project.suburb || null;
+      const locState  = stock.state  || project.state  || null;
+      flyerRenderLocationHighlights(p.suburb_research, locSuburb, locState);
+
+      // Inclusions section — H&L only, only when populated.
+      const inclSec = document.getElementById('fly-inclusions-section');
+      const inclEl  = document.getElementById('fly-inclusions');
+      const inclTxt = (stock.hl_inclusions || '').trim();
+      if (inclTxt) {
+        inclEl.textContent = inclTxt;
+        inclSec.style.display = '';
       } else {
-        overviewEl.classList.remove('fly-prose-html');
-        overviewEl.textContent = desc;
+        inclSec.style.display = 'none';
       }
     } else {
-      document.getElementById('fly-overview-section').style.display = 'none';
+      document.getElementById('fly-location-section').style.display = 'none';
+      document.getElementById('fly-inclusions-section').style.display = 'none';
+      const overviewSec = document.getElementById('fly-overview-section');
+      document.getElementById('fly-project-name').textContent = project.name || '';
+      const overviewEl = document.getElementById('fly-overview');
+      const desc = (project.description || '').trim();
+      if (desc) {
+        overviewSec.style.display = '';
+        if (/<[a-z][^>]*>/i.test(desc)) {
+          overviewEl.classList.add('fly-prose-html');
+          overviewEl.innerHTML = flyerSanitiseHtml(desc);
+        } else {
+          overviewEl.classList.remove('fly-prose-html');
+          overviewEl.textContent = desc;
+        }
+      } else {
+        overviewSec.style.display = 'none';
+      }
     }
 
     // ── Gallery (project photos) ──
@@ -16527,8 +17380,13 @@ function buildKitHtml(s, research, brand) {
   //                  white stays in place. This is the "fall back to white on
   //                  the blue" path for partners with unusable primaries.
   function flyerApplyBrandColours(primary, accent) {
-    const root = document.getElementById('screen-flyer');
-    if (!root) return;
+    // Apply to BOTH the property flyer and the suburb-research screen so
+    // partners see consistent brand colours across all white-label outputs.
+    const roots = [
+      document.getElementById('screen-flyer'),
+      document.getElementById('screen-research'),
+    ].filter(Boolean);
+    if (!roots.length) return;
     const validHex = /^#[0-9a-fA-F]{6}$/;
     const p = validHex.test(primary || '') ? primary : null;
     const a = validHex.test(accent  || '') ? accent  : null;
@@ -16536,12 +17394,13 @@ function buildKitHtml(s, research, brand) {
     const surfaceColour = (a && flyerLuminance(a) < flyerLuminance(p))
       ? a
       : flyerDarkenHex(p, 0.7);
-    root.style.setProperty('--f-accent', surfaceColour);
-
-    if (flyerLuminance(p) < 0.62) {
-      root.style.setProperty('--f-primary', p);
-      if (p.toLowerCase() !== surfaceColour.toLowerCase()) {
-        root.style.setProperty('--f-on-accent', p);
+    for (const root of roots) {
+      root.style.setProperty('--f-accent', surfaceColour);
+      if (flyerLuminance(p) < 0.62) {
+        root.style.setProperty('--f-primary', p);
+        if (p.toLowerCase() !== surfaceColour.toLowerCase()) {
+          root.style.setProperty('--f-on-accent', p);
+        }
       }
     }
   }
@@ -16866,6 +17725,349 @@ function buildKitHtml(s, research, brand) {
       } catch (_) {
         if (status) status.textContent = 'Could not copy automatically — select the link above and press Ctrl+C / ⌘+C.';
       }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext !== false) {
+      navigator.clipboard.writeText(url).then(onSuccess, onFail);
+    } else {
+      onFail();
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // Public Suburb Research — white-labelled, mirrors the flyer
+  // URL: portal.tpch.com.au/#research/<slug>/<partnerId>?for=<name>
+  // ════════════════════════════════════════════════════════════
+
+  const RSR_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  let _rsrMap = null;
+
+  function researchParseHash() {
+    const raw = location.hash.replace(/^#/, '');
+    if (!raw) return null;
+    const [path, query] = raw.split('?');
+    const parts = path.split('/').filter(Boolean);
+    if (parts[0] !== 'research' || parts.length !== 3) return null;
+    const slug = decodeURIComponent(parts[1]).toLowerCase();
+    const partnerId = parts[2];
+    if (!RSR_UUID_RE.test(partnerId)) return null;
+    let preparedFor = null;
+    if (query) {
+      const params = new URLSearchParams(query);
+      const forVal = params.get('for');
+      if (forVal) preparedFor = forVal.replace(/[<>"\\\\]/g, '').trim().slice(0, 80) || null;
+    }
+    return { slug, partnerId, preparedFor };
+  }
+
+  function researchEnter() {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.body.classList.add('flyer-active');  // reuse flyer body class to kill chrome
+    const screen = document.getElementById('screen-research');
+    if (screen) screen.classList.add('active');
+    const topbar = document.querySelector('.topbar');
+    if (topbar) topbar.style.display = 'none';
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) sidebar.style.display = 'none';
+    // Move #page-research-v2 into our wrapper so the public flyer uses the
+    // same DOM the admin sees. rv2Render() will populate it directly.
+    const adminPage = document.getElementById('page-research-v2');
+    const mount     = document.getElementById('rsr-mount');
+    if (adminPage && mount && adminPage.parentNode !== mount) {
+      mount.appendChild(adminPage);
+    }
+    if (adminPage) {
+      adminPage.classList.add('active');
+      adminPage.style.display = '';
+      // Force the report container visible regardless of admin loading-state
+      const report = document.getElementById('rv2-report');
+      if (report) report.style.display = '';
+      const loading = document.getElementById('rv2-loading');
+      if (loading) loading.style.display = 'none';
+      const error = document.getElementById('rv2-error');
+      if (error) error.style.display = 'none';
+    }
+  }
+
+  function researchShowError(msg) {
+    const loading = document.getElementById('rsr-loading');
+    if (loading) {
+      loading.innerHTML = '<h2>' + msg + '</h2><p style="color:var(--f-muted);">Please request a new link from the person who shared this with you.</p>';
+    }
+  }
+
+  async function researchLoad() {
+    const route = researchParseHash();
+    if (!route) { researchShowError('This research link is invalid.'); return; }
+    researchEnter();
+
+    let payload;
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_research_payload', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ p_slug: route.slug, p_partner_id: route.partnerId }),
+      });
+      if (!res.ok) throw new Error('Server error ' + res.status);
+      payload = await res.json();
+    } catch (e) {
+      researchShowError('Unable to load this suburb research.');
+      return;
+    }
+
+    if (!payload || payload.error || !payload.research || !payload.partner) {
+      researchShowError('This research is not available.');
+      return;
+    }
+
+    researchRender(payload, route);
+  }
+
+  function researchRender(p, route) {
+    const r = p.research, partner = p.partner;
+
+    // Brand colours: drives --f-accent which the public-research wrapper
+    // forwards to --gold so admin templates re-skin to the partner palette.
+    if (typeof flyerApplyBrandColours === 'function') {
+      flyerApplyBrandColours(partner.brand_primary, partner.brand_accent);
+    }
+
+    // Header (logo / prepared-for / website) — same pattern as flyer
+    const logoEl = document.getElementById('rsr-logo');
+    const logoFb = document.getElementById('rsr-logo-fallback');
+    if (partner.logo_url) {
+      logoEl.src = partner.logo_url; logoEl.alt = partner.company_name || ''; logoEl.style.display = '';
+      logoFb.style.display = 'none';
+      if (typeof flyerAdaptHeaderToLogo === 'function') flyerAdaptHeaderToLogo(partner.logo_url);
+    } else {
+      logoEl.style.display = 'none';
+      logoFb.textContent = partner.company_name || '';
+      logoFb.style.display = '';
+    }
+    if (partner.website) {
+      const w = document.getElementById('rsr-header-website');
+      const display = partner.website.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+      w.textContent = display;
+      w.href = /^https?:\/\//i.test(partner.website) ? partner.website : 'https://' + partner.website;
+      w.style.display = '';
+    }
+    if (route?.preparedFor) {
+      const pf = document.getElementById('rsr-prepared-for');
+      if (pf) { pf.querySelector('.pf-name').textContent = route.preparedFor; pf.style.display = ''; }
+    }
+
+    // Map header
+    document.getElementById('rsr-map-suburb').textContent = (r.suburb || '—') + (r.state_code ? ', ' + r.state_code : '');
+    const metaParts = [r.lga, r.region, r.postcode].filter(Boolean);
+    document.getElementById('rsr-map-meta').textContent = metaParts.join(' · ') || '';
+    document.title = (r.suburb || 'Suburb') + ' · Suburb Research — ' + (partner.company_name || 'TPCH');
+    researchInitMap(r);
+
+    // Body — render via the admin's rv2Render so the public flyer matches
+    // the portal pixel-for-pixel (just with brand-colour overrides).
+    if (typeof rv2Render === 'function') {
+      try { rv2Render(r); } catch (e) { console.error('rv2Render failed:', e); }
+      // The admin scrollspy listens on #page-research-v2's own scroll, but
+      // in public mode the page is nested with overflow:visible and the
+      // window scrolls instead. Wire up a window-based scrollspy + custom
+      // anchor handler so the sticky nav highlights and jumps correctly.
+      researchAttachScrollspy();
+    }
+
+    // Contact card
+    document.getElementById('rsr-contact-name').textContent    = partner.full_name || 'Your advisor';
+    document.getElementById('rsr-contact-company').textContent = partner.company_name || '';
+    if (partner.phone) {
+      const a = document.getElementById('rsr-contact-phone');
+      a.href = 'tel:' + partner.phone.replace(/\s+/g, '');
+      a.textContent = '📞 ' + partner.phone;
+      a.style.display = '';
+    }
+    if (partner.email) {
+      const a = document.getElementById('rsr-contact-email');
+      a.href = 'mailto:' + partner.email + '?subject=' + encodeURIComponent('Enquiry: ' + (r.suburb || 'Suburb research'));
+      a.textContent = '✉ ' + partner.email;
+      a.style.display = '';
+    }
+
+    // Footer
+    document.getElementById('rsr-footer-name').textContent = partner.company_name || '';
+    if (partner.website) {
+      const f = document.getElementById('rsr-footer-website');
+      f.textContent = partner.website.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+      f.href = /^https?:\/\//i.test(partner.website) ? partner.website : 'https://' + partner.website;
+    } else {
+      document.getElementById('rsr-footer-sep').style.display = 'none';
+    }
+    if (r.published_at) {
+      const stamp = new Date(r.published_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+      document.getElementById('rsr-footer-version').textContent = 'Research published ' + stamp + (r.version ? ' · v' + r.version : '');
+    }
+
+    document.getElementById('rsr-content').style.display = '';
+    document.getElementById('rsr-loading').style.display = 'none';
+  }
+
+  function researchInitMap(r) {
+    const mount = document.getElementById('rsr-map');
+    if (!mount) return;
+    if (typeof L === 'undefined') return;  // Leaflet should be loaded; quietly skip if not
+    if (_rsrMap) { _rsrMap.remove(); _rsrMap = null; }
+
+    const lat = r.centroid_lat != null ? Number(r.centroid_lat) : null;
+    const lng = r.centroid_lng != null ? Number(r.centroid_lng) : null;
+    if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) {
+      mount.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:13px;">Map unavailable for this suburb.</div>';
+      return;
+    }
+
+    _rsrMap = L.map('rsr-map', {
+      center: [lat, lng], zoom: 13,
+      zoomControl: true, scrollWheelZoom: false, attributionControl: true,
+    });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO', maxZoom: 19, subdomains: 'abcd',
+    }).addTo(_rsrMap);
+
+    // Suburb boundary polygon (when available); fit map to the polygon's bounds.
+    if (r.boundary_geojson && (r.boundary_geojson.type === 'Polygon' || r.boundary_geojson.type === 'MultiPolygon')) {
+      // Resolve --f-primary from the research wrapper scope (Leaflet's SVG
+      // won't honour var() so we substitute a real hex).
+      const wrapper = document.getElementById('screen-research') || document.documentElement;
+      const brand = getComputedStyle(wrapper).getPropertyValue('--f-primary').trim()
+                 || getComputedStyle(wrapper).getPropertyValue('--f-accent').trim()
+                 || '#1E2733';
+      const layer = L.geoJSON(r.boundary_geojson, {
+        style: () => ({ color: brand, weight: 2.5, opacity: 0.95, fillColor: brand, fillOpacity: 0.14 }),
+      });
+      layer.addTo(_rsrMap);
+      // maxZoom cap stops Leaflet zooming into a single street when the
+      // suburb polygon is small — we want to see the whole shape.
+      try { _rsrMap.fitBounds(layer.getBounds(), { padding: [24, 24], maxZoom: 13 }); } catch (_) {}
+    } else {
+      // Pin fallback when no polygon. Force suburb-level zoom (~12) so we
+      // don't drop on a single street.
+      L.marker([lat, lng]).addTo(_rsrMap);
+      _rsrMap.setView([lat, lng], 12);
+    }
+    // Make sure the map sizes correctly after the parent wrap finishes laying out.
+    setTimeout(() => { try { _rsrMap.invalidateSize(); } catch(_){} }, 60);
+  }
+
+  let _rsrScrollHandler = null;
+  function researchAttachScrollspy() {
+    if (_rsrScrollHandler) {
+      window.removeEventListener('scroll', _rsrScrollHandler);
+      _rsrScrollHandler = null;
+    }
+    const sectionKeys = ['overview','market','demand','supply','risk','press','sources'];
+    const sections = sectionKeys
+      .map(k => ({ key: k, el: document.getElementById('rv2-sec-' + k) }))
+      .filter(x => x.el);
+    if (!sections.length) return;
+    const tabs = Array.from(document.querySelectorAll('#screen-research .rv2-nav-tab'));
+    if (!tabs.length) return;
+
+    // Override the anchor click so we scroll the window (not the page),
+    // and don't pollute location.hash (which would clobber #research/...).
+    tabs.forEach(t => {
+      t.addEventListener('click', ev => {
+        const href = t.getAttribute('href') || '';
+        if (!href.startsWith('#rv2-sec-')) return;
+        const target = document.getElementById(href.slice(1));
+        if (!target) return;
+        ev.preventDefault();
+        const navHeight = document.querySelector('#screen-research .rv2-nav')?.offsetHeight || 60;
+        const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 12;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      });
+    });
+
+    _rsrScrollHandler = () => {
+      // Match admin's scrollspy: a section is "active" once its top has
+      // scrolled within ~200px of the nav line (matches rv2AttachScrollspy
+      // which uses scrollTop+200). Tighter than that flickers between
+      // sections; looser than that lights up the next section too early.
+      let active = sections[0].key;
+      for (const s of sections) {
+        if (s.el.getBoundingClientRect().top <= 200) active = s.key;
+      }
+      tabs.forEach(t => {
+        t.classList.toggle('active', t.getAttribute('href') === '#rv2-sec-' + active);
+      });
+    };
+    window.addEventListener('scroll', _rsrScrollHandler, { passive: true });
+    _rsrScrollHandler();  // run once now to set initial active state
+  }
+
+  // Self-bootstrap on hash change + initial load (mirrors flyer's IIFE pattern).
+  (function () {
+    window.addEventListener('hashchange', () => {
+      if (researchParseHash()) researchLoad();
+    });
+    if (!researchParseHash()) return;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', researchLoad);
+    } else {
+      researchLoad();
+    }
+  })();
+
+  // ── Share Suburb Research modal (opened from admin / portal) ────
+  function rsrShareBuildUrl() {
+    const slug = (document.getElementById('share-research-overlay')?.dataset.slug || '').trim();
+    const partnerId = currentPartnerRecord?.partner_id || '';
+    let url = location.origin + location.pathname + '#research/' + slug + '/' + partnerId;
+    const recipient = (document.getElementById('share-research-recipient')?.value || '').trim();
+    if (recipient) url += '?for=' + encodeURIComponent(recipient);
+    return url;
+  }
+  function rsrShareSync() {
+    const url = rsrShareBuildUrl();
+    const input = document.getElementById('share-research-url');
+    const preview = document.getElementById('share-research-preview-btn');
+    if (input) input.value = url;
+    if (preview) preview.href = url;
+  }
+  function openShareResearchModal(slug) {
+    const overlay = document.getElementById('share-research-overlay');
+    if (!overlay) return;
+    if (!currentPartnerRecord?.partner_id) {
+      alert('Sharing requires a partner profile linked to your account.');
+      return;
+    }
+    overlay.dataset.slug = slug || (overlay.dataset.slug || '');
+    const recipient = document.getElementById('share-research-recipient');
+    if (recipient) recipient.value = '';
+    const status = document.getElementById('share-research-status');
+    if (status) status.textContent = '';
+    const copyBtn = document.getElementById('share-research-copy-btn');
+    if (copyBtn) copyBtn.textContent = 'Copy link';
+    rsrShareSync();
+    overlay.style.display = 'flex';
+  }
+  function closeShareResearchModal() {
+    const overlay = document.getElementById('share-research-overlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+  function copyShareResearchLink() {
+    const input = document.getElementById('share-research-url');
+    const status = document.getElementById('share-research-status');
+    const copyBtn = document.getElementById('share-research-copy-btn');
+    if (!input) return;
+    const url = input.value;
+    const onSuccess = () => {
+      if (copyBtn) copyBtn.textContent = '✓ Copied';
+      if (status)  status.textContent = 'Link copied. Send it to your partner or client.';
+      setTimeout(() => { if (copyBtn) copyBtn.textContent = 'Copy link'; }, 2400);
+    };
+    const onFail = () => {
+      input.focus(); input.select();
+      try { document.execCommand('copy'); onSuccess(); }
+      catch (_) { if (status) status.textContent = 'Could not copy automatically — select and Ctrl+C.'; }
     };
     if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext !== false) {
       navigator.clipboard.writeText(url).then(onSuccess, onFail);

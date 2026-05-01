@@ -124,6 +124,8 @@ const STOCK_COLS = {
   practicalCompletion:'numbers9',
   totalCommission:    'formula52',
   floorPlan:          'files',
+  hlInclusions:       'long_text_mm2x3w9p',  // House & Land inclusions list
+  hlFacade:           'file_mm2xrah9',       // House & Land facade image
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -609,7 +611,8 @@ function mapStock(item: any, projectNameMap: Record<string, string>, projectData
     enclosed_stage_comm:    getNum(item, STOCK_COLS.enclosedStage),
     pc_stage_comm:          getNum(item, STOCK_COLS.practicalCompletion),
     smsf_eligible:          smsfEligible,
-    // floor_plan_url is set separately in step 2b via Supabase Storage upload
+    hl_inclusions:          getLongText(item, STOCK_COLS.hlInclusions),
+    // floor_plan_url and hl_facade_url are set separately in step 2b via Supabase Storage upload
     last_synced_at:         new Date().toISOString(),
   }
 }
@@ -895,25 +898,76 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
     console.log(`Recorded ${stockEvents.length} stock event(s)`)
   }
 
-  // 2b. Download & store floor plan files in Supabase Storage
-  // 2b. Download & store floor plan files from Monday.com assets → Supabase Storage
-  // File column values are null in GraphQL; assets array is the correct source.
-  const itemsWithAssets = stockItems.filter(item => item.assets?.length > 0)
-  if (itemsWithAssets.length > 0) {
-    const fileItemIds = itemsWithAssets.map(i => String(i.id))
+  // 2a2. Geocode H&L stock addresses for the lot-level map view.
+  // Apartments / townhouses share a project-level pin and don't need
+  // per-lot coords. Same Nominatim throttle as the project pass (1 req/sec).
+  try {
+    const { data: needsStockGeocode } = await supabase
+      .from('stock')
+      .select('id, name, street, suburb, state, development_type')
+      .is('latitude', null)
+    const hlCandidates = (needsStockGeocode || []).filter((s: any) => {
+      const t = String(s.development_type || '').toLowerCase()
+      if (t.includes('townhouse') || t.includes('apartment')) return false
+      if (!(t.includes('house') || t.includes('land') || t === 'h&l')) return false
+      return s.street && s.street.trim()
+    })
+    if (hlCandidates.length > 0) {
+      console.log(`Geocoding ${hlCandidates.length} H&L stock item(s) via Nominatim`)
+      let geocodedCount = 0
+      for (const s of hlCandidates) {
+        const query = [s.street, s.suburb, s.state, 'Australia'].filter(Boolean).join(', ')
+        const coords = await geocodeAddress(query)
+        if (coords) {
+          const { error: patchErr } = await supabase
+            .from('stock')
+            .update({ latitude: coords.lat, longitude: coords.lng })
+            .eq('id', s.id)
+          if (patchErr) console.error(`Stock geocode PATCH ${s.name} failed:`, patchErr.message)
+          else geocodedCount++
+        } else {
+          console.log(`Stock geocode miss for ${s.name} (${query})`)
+        }
+        await new Promise(r => setTimeout(r, 1100))
+      }
+      console.log(`Geocoded ${geocodedCount}/${hlCandidates.length} H&L stock item(s)`)
+    }
+  } catch (e) {
+    console.error('Stock geocode pass failed:', e)
+    errors.push(`Stock geocode: ${(e as Error).message}`)
+  }
+
+  // 2b. Download & store stock file-column assets → Supabase Storage.
+  // Each file column on the Property board (Floor Plan, HL Facade) is
+  // synced into its own bucket. Per-column lookup means we don't rely on
+  // item.assets[0] — that's brittle when an item has multiple file columns.
+  const STOCK_FILE_SPECS = [
+    { colId: STOCK_COLS.floorPlan, bucket: 'floor-plans', fileName: 'floor-plan', dbColumn: 'floor_plan_url' },
+    { colId: STOCK_COLS.hlFacade,  bucket: 'hl-facades',  fileName: 'hl-facade',  dbColumn: 'hl_facade_url'  },
+  ] as const
+  for (const spec of STOCK_FILE_SPECS) {
+    const candidates = stockItems.filter(item => {
+      const col = item.column_values?.find((c: any) => c.id === spec.colId)
+      return col?.files?.length > 0
+    })
+    if (!candidates.length) continue
+
+    const ids = candidates.map(i => String(i.id))
     const { data: alreadyStored } = await supabase
-      .from('stock').select('id').in('id', fileItemIds).not('floor_plan_url', 'is', null)
+      .from('stock').select(`id, ${spec.dbColumn}`).in('id', ids).not(spec.dbColumn, 'is', null)
     const storedSet = new Set((alreadyStored || []).map((r: any) => r.id))
 
-    for (const item of itemsWithAssets) {
+    for (const item of candidates) {
       const stockId = String(item.id)
       if (storedSet.has(stockId)) continue
       try {
-        const asset = item.assets[0]
-        console.log(`Floor plan asset for ${item.name}:`, JSON.stringify({ name: asset.name, url: asset.url, public_url: asset.public_url }))
+        const col   = item.column_values.find((c: any) => c.id === spec.colId)
+        const file  = col.files[0]
+        const asset = file.asset || {}
+        const fileName = file.name || asset.name || `${spec.fileName}-asset`
 
-        // public_url is a CDN link — no auth header (auth header causes 400 on CDN)
-        // url is Monday.com's authenticated endpoint — needs auth header
+        // public_url is a CDN link — no auth header (auth header causes 400).
+        // url is Monday.com's authenticated endpoint — needs auth header.
         let res: Response | null = null
         if (asset.public_url) {
           res = await fetch(asset.public_url)
@@ -922,22 +976,22 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
         if (!res && asset.url) {
           res = await fetch(asset.url, { headers: { 'Authorization': MONDAY_TOKEN } })
         }
-        if (!res || !res.ok) { errors.push(`Floor plan download failed: ${item.name} (${res?.status ?? 'no URL'})`); continue }
+        if (!res || !res.ok) { errors.push(`${spec.fileName} download failed: ${item.name} (${res?.status ?? 'no URL'})`); continue }
 
         const bytes = await res.arrayBuffer()
-        const ext   = (asset.name?.split('.').pop() || 'jpg').toLowerCase()
+        const ext   = (fileName.split('.').pop() || 'jpg').toLowerCase()
         const mime  = ext === 'pdf' ? 'application/pdf' : `image/${ext}`
-        const path  = `stock/${stockId}/floor-plan.${ext}`
+        const path  = `stock/${stockId}/${spec.fileName}.${ext}`
 
         const { error: upErr } = await supabase.storage
-          .from('floor-plans').upload(path, bytes, { upsert: true, contentType: mime })
-        if (upErr) { errors.push(`Floor plan upload failed: ${item.name}: ${upErr.message}`); continue }
+          .from(spec.bucket).upload(path, bytes, { upsert: true, contentType: mime })
+        if (upErr) { errors.push(`${spec.fileName} upload failed: ${item.name}: ${upErr.message}`); continue }
 
-        const { data: urlData } = supabase.storage.from('floor-plans').getPublicUrl(path)
-        await supabase.from('stock').update({ floor_plan_url: urlData.publicUrl }).eq('id', stockId)
-        console.log(`Floor plan stored for ${item.name}: ${urlData.publicUrl}`)
+        const { data: urlData } = supabase.storage.from(spec.bucket).getPublicUrl(path)
+        await supabase.from('stock').update({ [spec.dbColumn]: urlData.publicUrl }).eq('id', stockId)
+        console.log(`${spec.fileName} stored for ${item.name}: ${urlData.publicUrl}`)
       } catch (e: any) {
-        errors.push(`Floor plan error for ${item.name}: ${e.message}`)
+        errors.push(`${spec.fileName} error for ${item.name}: ${e.message}`)
       }
     }
   }

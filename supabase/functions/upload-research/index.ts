@@ -451,6 +451,28 @@ Deno.serve(async (req) => {
       created_by: triggered_by || 'upload-research',
     })
 
+    // 11) Fetch the suburb boundary polygon (Nominatim) for the public flyer's
+    //     map header. Skipped if the row already has one. Failures don't fail
+    //     the upload — the public flyer falls back to a centroid pin.
+    if (!inserted.boundary_geojson) {
+      try {
+        await fetch(
+          Deno.env.get('SUPABASE_URL') + '/functions/v1/fetch-suburb-boundary',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':  'application/json',
+              'Authorization': 'Bearer ' + Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+              'apikey':        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+            },
+            body: JSON.stringify({ slug: inserted.slug }),
+          },
+        )
+      } catch (e) {
+        console.warn(`Boundary fetch failed for ${inserted.slug}:`, (e as Error).message)
+      }
+    }
+
     return new Response(JSON.stringify({
       success: true,
       run_id: run.id,
