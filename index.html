@@ -2675,7 +2675,7 @@
     <!-- Form view -->
     <div id="enquiry-form-wrap">
       <h1 class="enquiry-heading">Join our network.</h1>
-      <p class="enquiry-sub">Complete the form below and our team will review your application. All applications are assessed individually — you'll hear from us within 1–2 business days.</p>
+      <p class="enquiry-sub">Complete the form below and our team will review your application. All applications are assessed individually. You'll hear from us within 1–2 business days.</p>
 
       <div id="enquiry-error" class="enquiry-error"></div>
 
@@ -2709,10 +2709,6 @@
           <div class="form-group">
             <label class="form-label">ABN</label>
             <input class="form-input" type="text" id="eq-abn" placeholder="XX XXX XXX XXX">
-          </div>
-          <div class="form-group">
-            <label class="form-label">AFSL or ACL Number <span class="enquiry-optional">optional</span></label>
-            <input class="form-input" type="text" id="eq-afsl" placeholder="e.g. 123456">
           </div>
           <div class="form-group full">
             <label class="form-label">Registered Business Address</label>
@@ -2838,7 +2834,7 @@
         <div class="enquiry-success-icon">◉</div>
         <h2>Application received.</h2>
         <p>Thank you for applying to join the TPCH Channel Partner network. Our team will review your application and be in touch within 1–2 business days.<br><br>
-        <span style="color:var(--gold);">Check your inbox — you'll receive a confirmation shortly.</span></p>
+        <span style="color:var(--gold);">Check your inbox. You'll receive a confirmation shortly.</span></p>
       </div>
     </div>
 
@@ -7027,7 +7023,6 @@
       phone:            document.getElementById('eq-phone').value.trim(),
       company_name:     document.getElementById('eq-company').value.trim(),
       abn:              document.getElementById('eq-abn').value.trim().replace(/\s/g,''),
-      afsl_acl:         document.getElementById('eq-afsl').value.trim(),
       registered_address: document.getElementById('eq-address').value.trim(),
       website:          document.getElementById('eq-website').value.trim(),
       linkedin_url:     document.getElementById('eq-linkedin').value.trim(),
