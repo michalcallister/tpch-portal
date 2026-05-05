@@ -17,8 +17,24 @@ Thumbs.db
 *.swp
 *.swo
 
+# Skill dependencies — installed locally, not version-controlled
+.claude/skills/**/node_modules/
+.claude/skills/tpch-doc.zip
+.claude/skills/ui-ux-pro-max/scripts/__pycache__/
+
+# Scheduled-task lock
+.claude/scheduled_tasks.lock
+
 # Test / screenshot artefacts (browser test scratch files)
 .playwright-mcp/
 tmp-research/
 stock-*.png
 rsc-redesign-*.png
+sidebar-*.png
+topbar-*.png
+modal-*.png
+project-stock-*.png
+version-history-*.png
+research-*.png
+login-screen.png
+all-stock-check.png

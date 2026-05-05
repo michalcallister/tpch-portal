@@ -40,7 +40,7 @@ Whatever's at the top is current.
 | Tag | Commit | Scope |
 |---|---|---|
 | `v1` | `d113a55` | Pre-redesign baseline. Stock portal still on left-rail filters and 3-column card grid; no map, no project lat/lng. |
-| `v2` | `10f4e71` | Stock portal map-first redesign. Top-row filters, Leaflet map with clustered glass-gold pins, paginated right-pane list, brand-tinted Carto tiles, 401 self-healing fetch retry, sync-monday auto-geocoding, pct-first comm format. See [STOCK_PORTAL_DESIGN.md](STOCK_PORTAL_DESIGN.md) for full design reference. |
+| `v2` | `10f4e71` | Stock portal map-first redesign. Top-row filters, Leaflet map with clustered glass-gold pins, paginated right-pane list, brand-tinted Carto tiles, 401 self-healing fetch retry, sync-monday auto-geocoding, pct-first comm format. See [STOCK_PORTAL_DESIGN.md](docs/STOCK_PORTAL_DESIGN.md) for full design reference. |
 
 ---
 
@@ -150,13 +150,42 @@ classification, he'll say so and you can amend.
 ## Other repo notes
 
 - Single-file SPA at [index.html](index.html) — no build step.
-- Supabase project: `oreklvbzwgbufbkvvzny`. Edge functions live under
-  `supabase/functions/`. Deploy individually via `supabase functions
-  deploy <name>`.
 - Static site is hosted on GitHub Pages; pushing to `main` auto-deploys.
 - The page is gated by partner/admin login — `currentAuthToken` /
   `currentRefreshToken` drive every authenticated REST call. Use
   `fetchWithAuthRetry()` for new fetches that need to survive a 401.
 - Stock-portal design conventions (colours, layout, components) are
-  captured in [STOCK_PORTAL_DESIGN.md](STOCK_PORTAL_DESIGN.md) — apply
+  captured in [STOCK_PORTAL_DESIGN.md](docs/STOCK_PORTAL_DESIGN.md) — apply
   the same patterns to other browse pages.
+
+## Folder layout
+
+Tidy as of 2026-05-05. Anything not in this list at the repo root is
+either site-critical (`index.html`, `landing.html`, `hero-bg.jpg`,
+`TPCH_Marketing_Agreement_v1.docx`, `CNAME`) or a config/dotfile.
+
+| Folder | What lives there |
+|---|---|
+| [supabase/functions/](supabase/functions/) | All 16 edge functions. Deploy via `supabase functions deploy <name>`. |
+| [db/migrations/](db/migrations/) | All 22 SQL scripts applied to the Supabase project. Pasted into the dashboard SQL Editor — no CLI runner. |
+| [docs/](docs/) | `PROJECT.md`, `SECURITY_HARDENING_DEPLOY.md`, `STOCK_PORTAL_DESIGN.md`. |
+| [scripts/](scripts/) | One-off Node backfill scripts. |
+| [_archive/](_archive/) | Dead code preserved for reference; safe to delete. |
+
+## Supabase edge functions — deploy gotchas
+
+- Project: `oreklvbzwgbufbkvvzny`.
+- The folder name under `supabase/functions/` MUST match the Supabase
+  function **slug** for `supabase functions deploy <name>` to update
+  the existing function rather than create a new one.
+- **`process-enquiry` is special**: its slug on Supabase is
+  `quick-function` (display name `process-enquiry`). To redeploy the
+  existing function, run **`supabase functions deploy quick-function
+  --project-ref oreklvbzwgbufbkvvzny`** with the source temporarily
+  copied/symlinked into `supabase/functions/quick-function/`. Or use
+  the dashboard. Do not run `supabase functions deploy process-enquiry`
+  blindly — it will create a duplicate function with no webhook.
+- **`fetch-suburb-boundary` has no local source** — it's deployed
+  (version 1, created 2026-05-01) but was authored in the dashboard.
+  Pull it down with `supabase functions download fetch-suburb-boundary`
+  before editing.
