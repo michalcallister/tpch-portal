@@ -4,6 +4,10 @@
 .env
 .env.local
 
+# Claude Code permission allowlist — captured Bash patterns can leak
+# secrets that were on the command line at approval time.
+.claude/settings.local.json
+
 # Build / deploy artefacts
 .deploy-payload.json
 
