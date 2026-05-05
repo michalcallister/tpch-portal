@@ -1186,7 +1186,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        success: true,
+        success: result.errors.length === 0,
         synced_at: new Date().toISOString(),
         projects: result.projects,
         stock: result.stock,

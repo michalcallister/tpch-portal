@@ -13271,6 +13271,7 @@ async function syncMonday() {
       },
     });
     const data = await res.json();
+    const errCount = Array.isArray(data.errors) ? data.errors.length : 0;
     if (data.success) {
       btn.textContent = `✓ Synced (${data.projects}p / ${data.stock}s)`;
       setTimeout(() => {
@@ -13278,6 +13279,16 @@ async function syncMonday() {
         btn.disabled = false;
         loadStockProjects();
       }, 3000);
+    } else if (errCount > 0) {
+      btn.textContent = `⚠ Synced with ${errCount} error${errCount === 1 ? '' : 's'}`;
+      btn.title = data.errors.join('\n');
+      console.warn('Sync errors:', data.errors);
+      setTimeout(() => {
+        btn.textContent = '⟳ Sync Now';
+        btn.disabled = false;
+        btn.title = '';
+        loadStockProjects();
+      }, 6000);
     } else {
       btn.textContent = '✗ Sync failed';
       console.error('Sync error:', data.error || data.errors);
