@@ -781,6 +781,23 @@
     font-size: 11px; letter-spacing: 0.4px;
     color: var(--grey-pale); opacity: 0.75;
   }
+  /* v2-news shape: clickable headline + supporting summary */
+  .brief-pulse-headline {
+    display: inline-block;
+    font-size: 14px; font-weight: 600;
+    color: var(--gold); text-decoration: none;
+    line-height: 1.4;
+  }
+  .brief-pulse-headline:hover { text-decoration: underline; }
+  .brief-pulse-headline-plain {
+    font-size: 14px; font-weight: 600;
+    color: var(--white); line-height: 1.4;
+  }
+  .brief-pulse-summary {
+    margin-top: 4px;
+    font-size: 13px; color: var(--white); opacity: 0.88;
+    line-height: 1.5;
+  }
   .brief-pipeline { display: flex; flex-direction: column; gap: 8px; }
   .brief-pipeline-item {
     display: flex; gap: 12px; align-items: flex-start;
@@ -7248,6 +7265,16 @@
 
   const CHANGELOG = [
     {
+      version: '3.1',
+      date: '6 May 2026',
+      title: 'Morning Brief now reads the news',
+      items: [
+        'Your Morning Brief now surfaces four real Australian property news articles published in the last day or two — clickable headlines, a short summary in plain English, and a publication + date footer so you can see the source at a glance.',
+        'Articles are pulled from a curated allow-list of reputable AU outlets — Urban Developer, CoreLogic, Property Update, Macro Business, Your Investment Property, Real Estate Business, plus the RBA, ABS and SQM Research for data releases.',
+        'The "Send this to your clients" paragraph is now drawn from what the day\'s coverage collectively says about the market, instead of recycling the same four data series each morning.',
+      ]
+    },
+    {
       version: '3.0',
       date: '1 May 2026',
       title: 'House & Land first-class + shareable Suburb Research',
@@ -9724,7 +9751,9 @@
 
     let html = '';
 
-    // Market pulse
+    // Market pulse — supports both v2-news shape (headline + summary + published_date)
+    // and the legacy v1 shape (stat). v1 fallback can be removed once all stored
+    // briefs have rolled over to v2-news.
     const pulse = Array.isArray(partnerBrief.market_pulse) ? partnerBrief.market_pulse : [];
     if (pulse.length) {
       html += '<div class="brief-section">';
@@ -9732,7 +9761,34 @@
       html += pulse.map(p => {
         const kind = ['tailwind','headwind','neutral'].includes(p.kind) ? p.kind : 'neutral';
         const icon = kind === 'tailwind' ? '↗' : kind === 'headwind' ? '↘' : '→';
-        // Source line: link if we have a URL, plain text if only a name, nothing otherwise.
+
+        // v2-news shape: clickable headline + 1-2-sentence summary + publication · date footer
+        if (p.headline) {
+          const headlineHtml = p.source_url
+            ? `<a class="brief-pulse-headline" href="${escHtml(p.source_url)}" target="_blank" rel="noopener noreferrer">${escHtml(p.headline)} ↗</a>`
+            : `<div class="brief-pulse-headline-plain">${escHtml(p.headline)}</div>`;
+          let footerBits = [];
+          if (p.source_name) footerBits.push(escHtml(p.source_name));
+          if (p.published_date) {
+            try {
+              const d = new Date(p.published_date + 'T00:00:00');
+              footerBits.push(d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }));
+            } catch (_) { footerBits.push(escHtml(p.published_date)); }
+          }
+          const footerHtml = footerBits.length
+            ? `<div class="brief-pulse-source-plain">${footerBits.join(' · ')}</div>`
+            : '';
+          return `<div class="brief-pulse-row brief-pulse-${kind}">
+            <div class="brief-pulse-icon">${icon}</div>
+            <div class="brief-pulse-text">
+              ${headlineHtml}
+              <div class="brief-pulse-summary">${escHtml(p.summary || '')}</div>
+              ${footerHtml}
+            </div>
+          </div>`;
+        }
+
+        // Legacy v1 shape — single stat line + source attribution
         let sourceHtml = '';
         if (p.source_url && p.source_name) {
           sourceHtml = `<a class="brief-pulse-source" href="${escHtml(p.source_url)}" target="_blank" rel="noopener noreferrer">Source: ${escHtml(p.source_name)} ↗</a>`;

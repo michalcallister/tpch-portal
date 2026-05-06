@@ -4,7 +4,11 @@
 //
 // Generates the daily Morning Brief shown on the partner dashboard.
 // Two sections per brief:
-//   1. market_pulse — 2-4 bullets of defensible market reads
+//   1. market_pulse — 4 real Australian property news articles, fetched
+//                     via Claude's server-side web_search tool from a
+//                     curated allow-list of reputable AU outlets. Each
+//                     item carries headline, summary, source_name,
+//                     source_url, and published_date.
 //   2. send_this    — one general market-read paragraph the partner can
 //                     broadcast to their client list (NOT project-specific)
 //
@@ -35,27 +39,80 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-// ── Brand-faithful brief author prompt ────────────────────────
-const BRIEF_SYSTEM_PROMPT = `You are the TPCH Morning Brief author. Each morning you write a short, opinionated brief for one channel partner. Your audience is a busy buyer's agent or financial adviser who logs in once a day and wants two things in 30 seconds:
+// ── Curated AU real-estate news allow-list ────────────────────
+// Web search is restricted to these domains. The big mainstream mastheads
+// (AFR, The Australian, SMH, The Age, ABC, news.com.au, Domain,
+// realestate.com.au) all block Anthropic's web-search crawler in robots.txt
+// as of 2026-05, so they're omitted here — including them would 400 the
+// whole call. We're left with specialist property/investment publications,
+// commercial / new-build portals, and the official data houses.
+const AU_NEWS_ALLOW_LIST = [
+  // Property portals with editorial (commercial + new-build)
+  'commercialrealestate.com.au',
+  'view.com.au',
+  // Specialist property / investment press
+  'propertyupdate.com.au',
+  'realestatebusiness.com.au',
+  'yourinvestmentpropertymag.com.au',
+  'apimagazine.com.au',
+  'urban.com.au',
+  'eliteagent.com',
+  'macrobusiness.com.au',
+  // Data houses (often publish their own news / commentary)
+  'corelogic.com.au',
+  'sqmresearch.com.au',
+  'rba.gov.au',
+  'abs.gov.au',
+]
 
-1. A read on the residential property market — short bullets they could quote to a client.
+// ── Brand-faithful brief author prompt ────────────────────────
+const BRIEF_SYSTEM_PROMPT = `You are the TPCH Morning Brief author. Each morning you research and write a brief for one channel partner. Your audience is a busy buyer's agent or financial adviser who logs in once a day and wants two things in 30 seconds:
+
+1. Four current Australian property news articles they could send to a client or quote in a meeting today.
 2. One short paragraph they can copy-paste straight to their entire client base right now — a general market read, NOT about any specific project.
 
 ${TPCH_TONE_RULES}
 
-ADDITIONAL RULES FOR THIS BRIEF FORMAT:
-- Personalise market_pulse to the partner's actual book where useful. If most of their book is QLD, lean into QLD data. But the bullets should still be defensible market reads, not partner-specific deal commentary.
-- Every bullet in market_pulse must contain at least one concrete number, percentage, or named source. No platitudes.
-- send_this paragraph: 50–90 words, a general market update the partner can broadcast to their whole client list. Addressed to "[Client first name]" as a placeholder. Plain English. No marketing fluff. NEVER mention a specific project, suburb-of-the-week, lot, or property — this is a market commentary, not a sales push. Think: "what's the one useful thing you'd text every client this morning?"
-- If you have no defensible market signal at all (no suburb research, no events of substance), return null for send_this. Do not fabricate.
+YOUR RESEARCH PROCESS:
+- Use the web_search tool 3–5 times to find the most relevant Australian residential property market news.
+- Strongly prefer articles published in the last 24–48 hours. Only extend to the last 7 days if recent coverage is genuinely thin on the chosen angle.
+- Always include "Australia" or a state/city name in your queries to bias to AU sources. Bias to current dates ("today", "this week", current month/year).
+- Vary your queries across themes: macro (RBA, lending, prices, inflation), regional (Brisbane, Perth, Melbourne, Sydney, regional QLD/WA), and supply/demand (auctions, listings, rents, approvals, completions).
+- If the partner's tracked book is concentrated in one state or suburb, lean queries toward that geography — but do NOT name a specific project, lot, or property in any output.
 
-OUTPUT — strict JSON only, no preamble, no markdown fences. Schema:
+ARTICLE SELECTION:
+- Pick exactly 4 articles. Each from a different angle — don't pick 4 articles all about the same single story.
+- Prefer substantive analysis from urban.com.au (new-build / development), CoreLogic, propertyupdate.com.au, macrobusiness.com.au, the RBA, ABS, and SQM Research over thin agent-industry write-ups.
+- Skip listicles, sponsored content, agent self-promotion, or "10 hottest suburbs" filler. We want substance.
+
+FORMAT RULES (per article):
+- headline: the article's actual headline (or a tight ≤120-char paraphrase if the original is sensational/clickbait).
+- summary: 1–2 sentences in TPCH voice. Lead with the substantive fact (number, decision, trend), not the journalist's framing. Plain English.
+- kind: "tailwind" if the article suggests support for property values/demand; "headwind" if it suggests pressure; "neutral" otherwise.
+- source_name: the publication (e.g. "Urban Developer", "CoreLogic", "Property Update", "Macro Business", "Your Investment Property", "RBA", "ABS").
+- source_url: the actual article URL you cited (must be a real URL returned by the search tool — do not invent).
+- published_date: ISO-8601 (YYYY-MM-DD). Use the article's publication date.
+
+SEND_THIS paragraph:
+- 50–90 words. Addressed to "[Client first name]" as a placeholder.
+- Synthesise what the day's coverage collectively says about the market. Don't restate every article — give the partner the one useful read they'd text every client this morning.
+- Plain English. No marketing fluff. NEVER mention a specific project, suburb-of-the-week, lot, or property — this is general market commentary.
+- If the day's coverage is genuinely thin and you cannot synthesise a defensible market read, return null for send_this. Do not fabricate.
+
+OUTPUT — strict JSON only, no preamble, no markdown fences. Return EXACTLY this schema:
 {
-  "market_pulse": [{ "stat": string, "kind": "tailwind" | "headwind" | "neutral" }],
+  "market_pulse": [{
+    "headline": string,
+    "summary": string,
+    "kind": "tailwind" | "headwind" | "neutral",
+    "source_name": string,
+    "source_url": string,
+    "published_date": string
+  }],
   "send_this": null | { "paragraph": string }
 }
 
-Return between 2 and 4 market_pulse items.`
+Return exactly 4 market_pulse items.`
 
 // ── Per-partner context gather ────────────────────────────────
 type Ctx = {
@@ -291,9 +348,18 @@ async function callClaudeForBrief(systemPrompt: string, userPrompt: string, trig
       },
       body: JSON.stringify({
         model,
-        max_tokens: 2000,
+        max_tokens: 4000,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
+        // Server-side web search restricted to the curated AU news allow-list.
+        // max_uses caps cost (~$0.01/search) and bounds latency. 5 is enough
+        // to find 4 well-varied articles in practice.
+        tools: [{
+          type: 'web_search_20250305',
+          name: 'web_search',
+          allowed_domains: AU_NEWS_ALLOW_LIST,
+          max_uses: 5,
+        }],
       }),
     })
   } catch (e) {
@@ -309,25 +375,107 @@ async function callClaudeForBrief(systemPrompt: string, userPrompt: string, trig
   await logAgentRun({ model, startedAt, status: 'completed', triggeredBy, usage: data.usage })
 
   const text = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n').trim()
-  const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
+  const extracted = extractJsonObject(text)
+  if (!extracted) {
+    throw new Error(`Brief JSON parse failed: no JSON object found in model output. Raw: ${text.slice(0, 400)}`)
+  }
   let parsed: any
   try {
-    parsed = JSON.parse(cleaned)
+    parsed = JSON.parse(extracted)
   } catch (e) {
-    throw new Error(`Brief JSON parse failed: ${(e as Error).message}. Raw: ${cleaned.slice(0, 400)}`)
+    throw new Error(`Brief JSON parse failed: ${(e as Error).message}. Raw: ${extracted.slice(0, 400)}`)
   }
   return parsed
 }
 
+// Pull the first JSON object out of arbitrary model output. Handles:
+//   - bare JSON
+//   - JSON wrapped in ```json ... ``` fences
+//   - JSON preceded by reasoning narration like "Now I have... Here is the brief:"
+// Done by string-walking with quote/escape awareness — JSON.parse already
+// handles the rest, and a brace-balance walk avoids regex pathologies on
+// objects that contain "}" inside string values.
+function extractJsonObject(s: string): string | null {
+  if (!s) return null
+  // Prefer fenced content if present — gives the model an unambiguous wrapper.
+  const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  const candidate = fence ? fence[1] : s
+  const start = candidate.indexOf('{')
+  if (start < 0) return null
+  let depth = 0
+  let inStr = false
+  let esc = false
+  for (let i = start; i < candidate.length; i++) {
+    const c = candidate[i]
+    if (inStr) {
+      if (esc) { esc = false; continue }
+      if (c === '\\') { esc = true; continue }
+      if (c === '"') inStr = false
+      continue
+    }
+    if (c === '"') { inStr = true; continue }
+    if (c === '{') depth++
+    else if (c === '}') {
+      depth--
+      if (depth === 0) return candidate.slice(start, i + 1)
+    }
+  }
+  return null
+}
+
 // ── Validate model output before insert ───────────────────────
 function validateBrief(b: any): { market_pulse: any[]; pipeline_lines: string[]; send_this: any } {
+  // Source URL must be http(s) on a real-looking domain on our allow-list.
+  // (The model is told to use the search tool; this is a belt-and-braces
+  // backstop in case it ever invents a URL.)
+  const allowSet = new Set(AU_NEWS_ALLOW_LIST)
+  const isValidArticleUrl = (u: any): boolean => {
+    if (typeof u !== 'string') return false
+    try {
+      const url = new URL(u.trim())
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return false
+      const host = url.hostname.toLowerCase().replace(/^www\./, '')
+      // Match either the bare domain or any subdomain of an allow-listed root.
+      for (const root of allowSet) {
+        if (host === root || host.endsWith('.' + root)) return true
+      }
+      return false
+    } catch { return false }
+  }
+  // ISO-ish date (YYYY-MM-DD). Tolerate full timestamps by truncating.
+  const normaliseDate = (d: any): string | null => {
+    if (typeof d !== 'string') return null
+    const m = d.trim().match(/^(\d{4})-(\d{2})-(\d{2})/)
+    return m ? m[0] : null
+  }
+  const trimTo = (s: string, max: number) => s.length <= max ? s : s.slice(0, max - 1).trimEnd() + '…'
+  // TPCH brand rule: never use em dashes (—). The model regularly ignores
+  // this even when told. Strip on ingest with sensible whitespace handling.
+  // " — " → ". "; "X—Y" → "X, Y"; standalone " — " at start/end → ", ".
+  // Also strip any en dashes the model leans on when told no em dashes.
+  const stripEmDashes = (s: string) => s
+    .replace(/\s*[—–]\s*/g, ', ')
+    .replace(/, ([.,;:!?])/g, '$1')   // tidy up if a sentence ended right before
+    .replace(/, , /g, ', ')           // collapse accidental doubles
+    .trim()
+
   const mp = Array.isArray(b?.market_pulse)
     ? b.market_pulse
-        .filter((m: any) => m && typeof m.stat === 'string' && m.stat.trim())
+        .filter((m: any) => m
+          && typeof m.headline === 'string' && m.headline.trim()
+          && typeof m.summary === 'string' && m.summary.trim().length >= 20)
         .map((m: any) => ({
-          stat: String(m.stat).trim(),
-          kind: ['tailwind', 'headwind', 'neutral'].includes(m.kind) ? m.kind : 'neutral',
+          headline:       trimTo(stripEmDashes(String(m.headline).trim()), 200),
+          summary:        trimTo(stripEmDashes(String(m.summary).trim()),  500),
+          kind:           ['tailwind', 'headwind', 'neutral'].includes(m.kind) ? m.kind : 'neutral',
+          source_name:    typeof m.source_name === 'string' ? m.source_name.trim() : null,
+          source_url:     isValidArticleUrl(m.source_url) ? String(m.source_url).trim() : null,
+          published_date: normaliseDate(m.published_date),
         }))
+        // Hard rule: NO article without a usable source_url + source_name.
+        // Allow-list mismatch silently drops the item rather than letting
+        // an unsourced or off-domain link through.
+        .filter((m: any) => m.source_url && m.source_name)
         .slice(0, 4)
     : []
   // pipeline_lines deprecated — kept on the table as [] so the column stays
@@ -337,7 +485,7 @@ function validateBrief(b: any): { market_pulse: any[]; pipeline_lines: string[];
   if (b?.send_this && typeof b.send_this === 'object'
       && typeof b.send_this.paragraph === 'string'
       && b.send_this.paragraph.trim().length >= 30) {
-    st = { paragraph: b.send_this.paragraph.trim() }
+    st = { paragraph: stripEmDashes(b.send_this.paragraph.trim()) }
   }
   return { market_pulse: mp, pipeline_lines: pl, send_this: st }
 }
@@ -378,7 +526,7 @@ async function generateForPartner(partnerId: string, force: boolean): Promise<{ 
       market_pulse:   brief.market_pulse,
       pipeline_lines: brief.pipeline_lines,
       send_this:      brief.send_this,
-      source_version: 'v1',
+      source_version: 'v2-news',
       generated_at:   new Date().toISOString(),
     }, { onConflict: 'partner_id,brief_date' })
   if (error) throw new Error(`Insert failed: ${error.message}`)
