@@ -4,10 +4,14 @@
 //
 // Generates the daily Morning Brief shown on the partner dashboard.
 // Two sections per brief:
-//   1. market_pulse — 4 real Australian property news articles, fetched
-//                     via Claude's server-side web_search tool from a
-//                     curated allow-list of reputable AU outlets. Each
-//                     item carries headline, summary, source_name,
+//   1. market_pulse — 4 real Australian property news articles. Source
+//                     pipeline (in priority order):
+//                       (a) RSS pre-fetch across ~13 AU property +
+//                           business feeds (see _shared/rss-fetch.ts)
+//                       (b) Claude's server-side web_search tool as
+//                           a silent fallback when the RSS pack is
+//                           empty or thin
+//                     Each item carries headline, summary, source_name,
 //                     source_url, and published_date.
 //   2. send_this    — one general market-read paragraph the partner can
 //                     broadcast to their client list (NOT project-specific)
@@ -26,6 +30,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { TPCH_TONE_RULES } from '../_shared/tpch-tone.ts'
+import { fetchFeedPack, DEFAULT_AU_PROPERTY_FEEDS, FEED_DOMAIN_ALLOW_LIST, type FeedPack } from '../_shared/rss-fetch.ts'
 
 const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY')!
 const sb = createClient(
@@ -39,14 +44,15 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-// ── Curated AU real-estate news allow-list ────────────────────
-// Web search is restricted to these domains. The big mainstream mastheads
-// (AFR, The Australian, SMH, The Age, ABC, news.com.au, Domain,
-// realestate.com.au) all block Anthropic's web-search crawler in robots.txt
-// as of 2026-05, so they're omitted here — including them would 400 the
-// whole call. We're left with specialist property/investment publications,
-// commercial / new-build portals, and the official data houses.
-const AU_NEWS_ALLOW_LIST = [
+// ── web_search fallback allow-list ────────────────────────────
+// Used ONLY for the web_search tool's allowed_domains parameter, which
+// fires as a fallback if the RSS pack is empty. The big mainstream
+// mastheads (AFR, The Australian, SMH, The Age, ABC, news.com.au,
+// Domain, realestate.com.au) all block Anthropic's web-search crawler
+// in robots.txt — including them here would 400 the call. We reach
+// those publishers via RSS pre-fetch instead (FEED_DOMAIN_ALLOW_LIST
+// in _shared/rss-fetch.ts is the broader set used by the URL validator).
+const WEB_SEARCH_ALLOW_LIST = [
   // Property portals with editorial (commercial + new-build)
   'commercialrealestate.com.au',
   'view.com.au',
@@ -65,41 +71,59 @@ const AU_NEWS_ALLOW_LIST = [
   'abs.gov.au',
 ]
 
+// Module-level cache so the cron run (which iterates partners) only fetches
+// the feed pack once. Edge worker recycling makes this best-effort, but
+// when it lands it saves ~5s and N RSS roundtrips per extra partner.
+let cachedFeedPack: { pack: FeedPack; fetchedAt: number } | null = null
+const FEED_PACK_TTL_MS = 10 * 60_000
+
+async function getFeedPackCached(): Promise<FeedPack> {
+  if (cachedFeedPack && Date.now() - cachedFeedPack.fetchedAt < FEED_PACK_TTL_MS) {
+    return cachedFeedPack.pack
+  }
+  const pack = await fetchFeedPack({ feeds: DEFAULT_AU_PROPERTY_FEEDS })
+  cachedFeedPack = { pack, fetchedAt: Date.now() }
+  // Per-feed health line — visible in Supabase Function Logs.
+  const healthLine = pack.stats
+    .map(s => `${s.feed}=${s.status}${s.itemsKept ? '/' + s.itemsKept : ''}`)
+    .join(', ')
+  console.log(`[morning-brief] feed pack: ${pack.items.length} items | ${healthLine}`)
+  return pack
+}
+
 // ── Brand-faithful brief author prompt ────────────────────────
-const BRIEF_SYSTEM_PROMPT = `You are the TPCH Morning Brief author. Each morning you research and write a brief for one channel partner. Your audience is a busy buyer's agent or financial adviser who logs in once a day and wants two things in 30 seconds:
+const BRIEF_SYSTEM_PROMPT = `You are the TPCH Morning Brief author. Each morning you write a brief for one channel partner. Your audience is a busy buyer's agent or financial adviser who logs in once a day and wants two things in 30 seconds:
 
 1. Four current Australian property news articles they could send to a client or quote in a meeting today.
-2. One short paragraph they can copy-paste straight to their entire client base right now — a general market read, NOT about any specific project.
+2. One short paragraph they can copy-paste straight to their entire client base right now, a general market read, NOT about any specific project.
 
 ${TPCH_TONE_RULES}
 
-YOUR RESEARCH PROCESS:
-- Use the web_search tool 3–5 times to find the most relevant Australian residential property market news.
-- Strongly prefer articles published in the last 24–48 hours. Only extend to the last 7 days if recent coverage is genuinely thin on the chosen angle.
-- Always include "Australia" or a state/city name in your queries to bias to AU sources. Bias to current dates ("today", "this week", current month/year).
-- Vary your queries across themes: macro (RBA, lending, prices, inflation), regional (Brisbane, Perth, Melbourne, Sydney, regional QLD/WA), and supply/demand (auctions, listings, rents, approvals, completions).
-- If the partner's tracked book is concentrated in one state or suburb, lean queries toward that geography — but do NOT name a specific project, lot, or property in any output.
+YOUR SOURCE MATERIAL:
+The user message contains a "TODAY'S HEADLINES" pack: a curated set of recent articles (last 48 hours) pre-fetched from Australian property and business RSS feeds. This is your primary source. Pick your 4 articles from this pack. You may NOT invent articles or URLs.
+
+If, and only if, the pack is empty or has fewer than 4 articles you would call useful, you may use the web_search tool (max 3 searches) to find additional Australian property news. Bias web_search queries to current dates and Australian sources.
 
 ARTICLE SELECTION:
-- Pick exactly 4 articles. Each from a different angle — don't pick 4 articles all about the same single story.
-- Prefer substantive analysis from urban.com.au (new-build / development), CoreLogic, propertyupdate.com.au, macrobusiness.com.au, the RBA, ABS, and SQM Research over thin agent-industry write-ups.
-- Skip listicles, sponsored content, agent self-promotion, or "10 hottest suburbs" filler. We want substance.
+- Pick exactly 4 articles. Each from a different angle, don't pick 4 articles all about the same single story.
+- Personalise to the partner's tracked geography where possible: if their book is QLD-heavy, lean toward Queensland-relevant stories from the pack.
+- Skip thin listicles, sponsored content, agent self-promotion, "10 hottest suburbs" filler. Pick the substantive ones.
 
 FORMAT RULES (per article):
-- headline: the article's actual headline (or a tight ≤120-char paraphrase if the original is sensational/clickbait).
-- summary: 1–2 sentences in TPCH voice. Lead with the substantive fact (number, decision, trend), not the journalist's framing. Plain English.
+- headline: copy the title from the pack verbatim (or paraphrase to ≤120 chars only if the original is genuinely too long or sensational).
+- summary: 1-2 sentences in TPCH voice. Lead with the substantive fact (number, decision, trend), not the journalist's framing. Plain English. Use the pack's summary as a starting point, but rewrite in TPCH voice.
 - kind: "tailwind" if the article suggests support for property values/demand; "headwind" if it suggests pressure; "neutral" otherwise.
-- source_name: the publication (e.g. "Urban Developer", "CoreLogic", "Property Update", "Macro Business", "Your Investment Property", "RBA", "ABS").
-- source_url: the actual article URL you cited (must be a real URL returned by the search tool — do not invent).
-- published_date: ISO-8601 (YYYY-MM-DD). Use the article's publication date.
+- source_name: the publication (use the "source" field from the pack, e.g. "Urban Developer", "ABC News", "RBA Media Releases").
+- source_url: the URL from the pack, exact, do not modify or shorten.
+- published_date: ISO-8601 (YYYY-MM-DD). Use the article's published date from the pack.
 
 SEND_THIS paragraph:
-- 50–90 words. Addressed to "[Client first name]" as a placeholder.
-- Synthesise what the day's coverage collectively says about the market. Don't restate every article — give the partner the one useful read they'd text every client this morning.
-- Plain English. No marketing fluff. NEVER mention a specific project, suburb-of-the-week, lot, or property — this is general market commentary.
+- 60-90 words. Addressed to "[Client first name]" as a placeholder.
+- Synthesise what the day's coverage collectively says about the market. Don't restate every article, give the partner the one useful read they'd text every client this morning.
+- Plain English. No marketing fluff. NEVER mention a specific project, suburb-of-the-week, lot, or property, this is general market commentary.
 - If the day's coverage is genuinely thin and you cannot synthesise a defensible market read, return null for send_this. Do not fabricate.
 
-OUTPUT — strict JSON only, no preamble, no markdown fences. Return EXACTLY this schema:
+OUTPUT, strict JSON only, no preamble, no markdown fences. Return EXACTLY this schema:
 {
   "market_pulse": [{
     "headline": string,
@@ -230,7 +254,7 @@ function dedupeBy<T>(items: T[], key: (i: T) => string | null | undefined): T[] 
 }
 
 // ── Compose user prompt from gathered context ─────────────────
-function buildUserPrompt(c: Ctx): string {
+function buildUserPrompt(c: Ctx, pack: FeedPack): string {
   const today = new Date().toLocaleDateString('en-AU', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
@@ -241,6 +265,21 @@ function buildUserPrompt(c: Ctx): string {
   if (c.partner.role_type) lines.push(`Role: ${c.partner.role_type}`)
   lines.push(`Today: ${today}`)
   lines.push('')
+
+  // Inject the RSS feed pack — primary source for the brief.
+  if (pack.items.length) {
+    lines.push(`TODAY'S HEADLINES (${pack.items.length} articles, last 48h, from curated AU property + business RSS feeds):`)
+    pack.items.forEach((it, i) => {
+      const date = it.publishedAt.toISOString().slice(0, 10)
+      lines.push(`[${i + 1}] ${it.source} (${date}): "${it.title}"`)
+      lines.push(`    URL: ${it.url}`)
+      if (it.summary) lines.push(`    Summary: ${it.summary.slice(0, 300)}`)
+    })
+    lines.push('')
+  } else {
+    lines.push("TODAY'S HEADLINES: (RSS pack returned empty, fall back to web_search)")
+    lines.push('')
+  }
 
   // Partner pipeline context (deals, reservations, settlements) intentionally
   // omitted from this prompt — the brief is now market commentary only and
@@ -351,14 +390,15 @@ async function callClaudeForBrief(systemPrompt: string, userPrompt: string, trig
         max_tokens: 4000,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
-        // Server-side web search restricted to the curated AU news allow-list.
-        // max_uses caps cost (~$0.01/search) and bounds latency. 5 is enough
-        // to find 4 well-varied articles in practice.
+        // Web_search is now a *fallback* — RSS pre-fetch is the primary source.
+        // The model is told in the system prompt to prefer the headline pack
+        // and only reach for search if the pack is thin. max_uses caps the
+        // worst case (~$0.01/search) and bounds latency.
         tools: [{
           type: 'web_search_20250305',
           name: 'web_search',
-          allowed_domains: AU_NEWS_ALLOW_LIST,
-          max_uses: 5,
+          allowed_domains: WEB_SEARCH_ALLOW_LIST,
+          max_uses: 3,
         }],
       }),
     })
@@ -426,9 +466,11 @@ function extractJsonObject(s: string): string | null {
 // ── Validate model output before insert ───────────────────────
 function validateBrief(b: any): { market_pulse: any[]; pipeline_lines: string[]; send_this: any } {
   // Source URL must be http(s) on a real-looking domain on our allow-list.
-  // (The model is told to use the search tool; this is a belt-and-braces
-  // backstop in case it ever invents a URL.)
-  const allowSet = new Set(AU_NEWS_ALLOW_LIST)
+  // FEED_DOMAIN_ALLOW_LIST is the superset of all RSS feed domains plus
+  // the web_search fallback domains, so any URL the model picks from
+  // either path is accepted. Off-list URLs (model invention or syndication
+  // to an unfamiliar host) are silently dropped.
+  const allowSet = new Set(FEED_DOMAIN_ALLOW_LIST)
   const isValidArticleUrl = (u: any): boolean => {
     if (typeof u !== 'string') return false
     try {
@@ -514,7 +556,8 @@ async function generateForPartner(partnerId: string, force: boolean): Promise<{ 
   const ctx = await gatherContext(partnerId)
   if (!ctx) return { status: 'skipped', reason: 'partner not found or inactive' }
 
-  const userPrompt = buildUserPrompt(ctx)
+  const pack = await getFeedPackCached()
+  const userPrompt = buildUserPrompt(ctx, pack)
   const raw = await callClaudeForBrief(BRIEF_SYSTEM_PROMPT, userPrompt, `partner:${partnerId}`)
   const brief = validateBrief(raw)
 
@@ -526,7 +569,7 @@ async function generateForPartner(partnerId: string, force: boolean): Promise<{ 
       market_pulse:   brief.market_pulse,
       pipeline_lines: brief.pipeline_lines,
       send_this:      brief.send_this,
-      source_version: 'v2-news',
+      source_version: 'v3-rss',
       generated_at:   new Date().toISOString(),
     }, { onConflict: 'partner_id,brief_date' })
   if (error) throw new Error(`Insert failed: ${error.message}`)
