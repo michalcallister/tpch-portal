@@ -222,15 +222,21 @@ function decodeXmlEntities(s: string): string {
 // Hardcoded for v1 — feeds rarely move. Per-feed health is logged on
 // every cron run; if a publisher changes their RSS URL, the next run's
 // log will show empty/http_error and we update here.
+//
+// Excluded after probing on 2026-05-07:
+//   - API Magazine (apimagazine.com.au): RSS 403, article pages also 403
+//     for non-residential IPs — links land partners on a Cloudflare wall.
+//   - Elite Agent (eliteagent.com): same — Cloudflare blocks RSS and the
+//     articles for our user agent.
+//   - Macro Business: RSS 530 (Cloudflare). Article URLs themselves do
+//     load, so the domain stays in WEB_SEARCH_ALLOW_LIST for the model's
+//     fallback path, but we don't waste a feed-fetch slot on it.
+//   - Real Estate Business: no public RSS path we could find.
 export const DEFAULT_AU_PROPERTY_FEEDS: FeedSource[] = [
   // Property-specific (no keyword filter — every item is on-topic)
   { name: 'Urban Developer',          url: 'https://www.urban.com.au/feed',                                                  needsKeywordFilter: false },
   { name: 'Property Update',          url: 'https://propertyupdate.com.au/feed/',                                            needsKeywordFilter: false },
-  { name: 'Macro Business AU Property', url: 'https://www.macrobusiness.com.au/category/australian-property/feed/',          needsKeywordFilter: false },
-  { name: 'API Magazine',             url: 'https://www.apimagazine.com.au/news/feed',                                       needsKeywordFilter: false },
-  { name: 'Real Estate Business',     url: 'https://www.realestatebusiness.com.au/rss/news',                                 needsKeywordFilter: false },
   { name: 'Your Investment Property', url: 'https://www.yourinvestmentpropertymag.com.au/feed/',                             needsKeywordFilter: false },
-  { name: 'Elite Agent',              url: 'https://eliteagent.com/feed/',                                                   needsKeywordFilter: false },
 
   // Mainstream business / news (keyword filter to property-relevant items only)
   { name: 'ABC News - Business',      url: 'https://www.abc.net.au/news/feed/51120/rss.xml',                                 needsKeywordFilter: true },
@@ -240,31 +246,29 @@ export const DEFAULT_AU_PROPERTY_FEEDS: FeedSource[] = [
   { name: 'news.com.au - Real Estate', url: 'https://www.news.com.au/content-feeds/latest-news-real-estate/',                needsKeywordFilter: false },
 
   // Data houses
-  { name: 'RBA Media Releases',       url: 'https://www.rba.gov.au/media-releases/index.xml',                                needsKeywordFilter: false },
+  { name: 'RBA Media Releases',       url: 'https://www.rba.gov.au/rss/rss-cb-media-releases.xml',                           needsKeywordFilter: false },
 ]
 
-// Domains the validator will accept as article URLs. Superset of the
-// feed source domains — used by the brief agent's URL allow-list check.
+// Domains the validator will accept as article URLs. Union of:
+//   - RSS feed domains (where the model picks from the pre-fetched pack)
+//   - WEB_SEARCH_ALLOW_LIST (where the model can find supplementary URLs)
+// Domains where partners can't actually open the article (Elite Agent,
+// API Magazine, Real Estate Business) are excluded.
 export const FEED_DOMAIN_ALLOW_LIST = [
-  // Property-specific
+  // RSS feed domains
   'urban.com.au',
   'propertyupdate.com.au',
-  'macrobusiness.com.au',
-  'apimagazine.com.au',
-  'realestatebusiness.com.au',
   'yourinvestmentpropertymag.com.au',
-  'eliteagent.com',
-  // Mainstream
   'abc.net.au',
   'smh.com.au',
   'theage.com.au',
   'news.com.au',
-  // Data houses
   'rba.gov.au',
-  'abs.gov.au',
-  'corelogic.com.au',
-  'sqmresearch.com.au',
-  // Kept for web_search fallback (existing v10 list)
+  // web_search fallback domains (article URLs reachable from a partner browser)
+  'macrobusiness.com.au',
   'commercialrealestate.com.au',
   'view.com.au',
+  'corelogic.com.au',
+  'sqmresearch.com.au',
+  'abs.gov.au',
 ]

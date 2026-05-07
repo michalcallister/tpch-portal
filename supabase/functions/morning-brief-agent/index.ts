@@ -30,7 +30,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { TPCH_TONE_RULES } from '../_shared/tpch-tone.ts'
-import { fetchFeedPack, DEFAULT_AU_PROPERTY_FEEDS, FEED_DOMAIN_ALLOW_LIST, type FeedPack } from '../_shared/rss-fetch.ts'
+import { fetchFeedPack, DEFAULT_AU_PROPERTY_FEEDS, type FeedPack } from '../_shared/rss-fetch.ts'
 
 const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY')!
 const sb = createClient(
@@ -50,19 +50,19 @@ const corsHeaders = {
 // mastheads (AFR, The Australian, SMH, The Age, ABC, news.com.au,
 // Domain, realestate.com.au) all block Anthropic's web-search crawler
 // in robots.txt — including them here would 400 the call. We reach
-// those publishers via RSS pre-fetch instead (FEED_DOMAIN_ALLOW_LIST
-// in _shared/rss-fetch.ts is the broader set used by the URL validator).
+// those publishers via RSS pre-fetch instead.
+//
+// Excluded after probing on 2026-05-07: apimagazine.com.au and
+// eliteagent.com — Cloudflare-walled at the article level for many
+// non-Australian-residential IPs, so links land partners on a 403.
 const WEB_SEARCH_ALLOW_LIST = [
   // Property portals with editorial (commercial + new-build)
   'commercialrealestate.com.au',
   'view.com.au',
   // Specialist property / investment press
   'propertyupdate.com.au',
-  'realestatebusiness.com.au',
   'yourinvestmentpropertymag.com.au',
-  'apimagazine.com.au',
   'urban.com.au',
-  'eliteagent.com',
   'macrobusiness.com.au',
   // Data houses (often publish their own news / commentary)
   'corelogic.com.au',
@@ -106,6 +106,8 @@ If, and only if, the pack is empty or has fewer than 4 articles you would call u
 
 ARTICLE SELECTION:
 - Pick exactly 4 articles. Each from a different angle, don't pick 4 articles all about the same single story.
+- NEVER cite the same URL twice in a single brief.
+- If the pack contains articles from multiple publications, spread your 4 picks across different publications. Avoid citing the same publication more than twice in one brief unless the pack genuinely offers nothing else.
 - Personalise to the partner's tracked geography where possible: if their book is QLD-heavy, lean toward Queensland-relevant stories from the pack.
 - Skip thin listicles, sponsored content, agent self-promotion, "10 hottest suburbs" filler. Pick the substantive ones.
 
@@ -464,21 +466,28 @@ function extractJsonObject(s: string): string | null {
 }
 
 // ── Validate model output before insert ───────────────────────
-function validateBrief(b: any): { market_pulse: any[]; pipeline_lines: string[]; send_this: any } {
-  // Source URL must be http(s) on a real-looking domain on our allow-list.
-  // FEED_DOMAIN_ALLOW_LIST is the superset of all RSS feed domains plus
-  // the web_search fallback domains, so any URL the model picks from
-  // either path is accepted. Off-list URLs (model invention or syndication
-  // to an unfamiliar host) are silently dropped.
-  const allowSet = new Set(FEED_DOMAIN_ALLOW_LIST)
-  const isValidArticleUrl = (u: any): boolean => {
+function validateBrief(b: any, pack: FeedPack): { market_pulse: any[]; pipeline_lines: string[]; send_this: any } {
+  // Two-tier URL acceptance:
+  //   (a) URL is exactly in the RSS pack we sent the model — guaranteed real.
+  //   (b) URL is on a WEB_SEARCH_ALLOW_LIST domain — could legitimately have
+  //       come from the web_search fallback path (article body unavailable
+  //       to us, but the domain is one we trust the model not to fabricate
+  //       wholesale, since web_search returns real result URLs).
+  // Anything else (e.g. an abc.net.au URL not in today's pack) is treated
+  // as model invention and dropped. This stops the previous failure mode
+  // where the model produced plausible-looking URLs for publishers it knew
+  // by name but couldn't actually reach.
+  const packUrls = new Set(pack.items.map(it => it.url))
+  const searchAllowSet = new Set(WEB_SEARCH_ALLOW_LIST)
+  const isAcceptableUrl = (u: any): boolean => {
     if (typeof u !== 'string') return false
+    const trimmed = u.trim()
+    if (packUrls.has(trimmed)) return true
     try {
-      const url = new URL(u.trim())
+      const url = new URL(trimmed)
       if (url.protocol !== 'http:' && url.protocol !== 'https:') return false
       const host = url.hostname.toLowerCase().replace(/^www\./, '')
-      // Match either the bare domain or any subdomain of an allow-listed root.
-      for (const root of allowSet) {
+      for (const root of searchAllowSet) {
         if (host === root || host.endsWith('.' + root)) return true
       }
       return false
@@ -502,23 +511,28 @@ function validateBrief(b: any): { market_pulse: any[]; pipeline_lines: string[];
     .trim()
 
   const mp = Array.isArray(b?.market_pulse)
-    ? b.market_pulse
-        .filter((m: any) => m
-          && typeof m.headline === 'string' && m.headline.trim()
-          && typeof m.summary === 'string' && m.summary.trim().length >= 20)
-        .map((m: any) => ({
-          headline:       trimTo(stripEmDashes(String(m.headline).trim()), 200),
-          summary:        trimTo(stripEmDashes(String(m.summary).trim()),  500),
-          kind:           ['tailwind', 'headwind', 'neutral'].includes(m.kind) ? m.kind : 'neutral',
-          source_name:    typeof m.source_name === 'string' ? m.source_name.trim() : null,
-          source_url:     isValidArticleUrl(m.source_url) ? String(m.source_url).trim() : null,
-          published_date: normaliseDate(m.published_date),
-        }))
-        // Hard rule: NO article without a usable source_url + source_name.
-        // Allow-list mismatch silently drops the item rather than letting
-        // an unsourced or off-domain link through.
-        .filter((m: any) => m.source_url && m.source_name)
-        .slice(0, 4)
+    ? dedupeBy(
+        b.market_pulse
+          .filter((m: any) => m
+            && typeof m.headline === 'string' && m.headline.trim()
+            && typeof m.summary === 'string' && m.summary.trim().length >= 20)
+          .map((m: any) => ({
+            headline:       trimTo(stripEmDashes(String(m.headline).trim()), 200),
+            summary:        trimTo(stripEmDashes(String(m.summary).trim()),  500),
+            kind:           ['tailwind', 'headwind', 'neutral'].includes(m.kind) ? m.kind : 'neutral',
+            source_name:    typeof m.source_name === 'string' ? m.source_name.trim() : null,
+            source_url:     isAcceptableUrl(m.source_url) ? String(m.source_url).trim() : null,
+            published_date: normaliseDate(m.published_date),
+          }))
+          // Hard rule: NO article without a usable source_url + source_name.
+          // Allow-list mismatch silently drops the item rather than letting
+          // an unsourced or off-domain link through.
+          .filter((m: any) => m.source_url && m.source_name),
+        // Belt-and-braces: model occasionally cites the same article twice.
+        // Drop dupes by URL before slicing to 4 — partners shouldn't see the
+        // same headline twice in one brief.
+        (m: any) => m.source_url
+      ).slice(0, 4)
     : []
   // pipeline_lines deprecated — kept on the table as [] so the column stays
   // happy until we run a migration to drop it. The frontend no longer renders it.
@@ -559,7 +573,7 @@ async function generateForPartner(partnerId: string, force: boolean): Promise<{ 
   const pack = await getFeedPackCached()
   const userPrompt = buildUserPrompt(ctx, pack)
   const raw = await callClaudeForBrief(BRIEF_SYSTEM_PROMPT, userPrompt, `partner:${partnerId}`)
-  const brief = validateBrief(raw)
+  const brief = validateBrief(raw, pack)
 
   const { error } = await sb
     .from('partner_briefs')
