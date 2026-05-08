@@ -5912,6 +5912,20 @@
         loadPartnerDashboard();
         loadDeals();
         loadMyReservations();
+        // Fire-and-forget: flip the firm's Channel Partners card to "Portal" the
+        // first time a partner owner logs in. Idempotent — no-ops on every login
+        // after the first. Skipped for staff (only the firm has a Monday card).
+        if (session.role === 'partner') {
+          fetch(SUPABASE_URL + '/functions/v1/mark-partner-portal-active', {
+            method:  'POST',
+            headers: {
+              'Authorization': 'Bearer ' + access_token,
+              'apikey':        SUPABASE_ANON_KEY,
+              'Content-Type':  'application/json',
+            },
+            body: '{}',
+          }).catch(e => console.warn('mark-partner-portal-active failed:', e));
+        }
         return;
       }
 
