@@ -386,6 +386,7 @@ async function fetchAllItems(boardId: string): Promise<any[]> {
           items {
             id
             name
+            updated_at
             assets { id name url public_url }
             column_values(ids: ${JSON.stringify(uniqueColIds)}) {
               id text value
@@ -941,9 +942,18 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
   // Each file column on the Property board (Floor Plan, HL Facade) is
   // synced into its own bucket. Per-column lookup means we don't rely on
   // item.assets[0] — that's brittle when an item has multiple file columns.
+  //
+  // Change-detection uses Monday's asset_id: we store the last-uploaded
+  // asset_id on the stock row and only re-upload when it differs. The
+  // storage path is versioned with the asset_id so the public URL changes
+  // on swap and no CDN / browser cache ever serves the old file.
+  // Per-cycle cap so each sync stays under the edge-function timeout.
+  // Items not processed this cycle are picked up by the next cron run
+  // (already-uploaded ones are skipped via asset_id match).
+  const MAX_FILE_UPLOADS_PER_SPEC = 30
   const STOCK_FILE_SPECS = [
-    { colId: STOCK_COLS.floorPlan, bucket: 'floor-plans', fileName: 'floor-plan', dbColumn: 'floor_plan_url' },
-    { colId: STOCK_COLS.hlFacade,  bucket: 'hl-facades',  fileName: 'hl-facade',  dbColumn: 'hl_facade_url'  },
+    { colId: STOCK_COLS.floorPlan, bucket: 'floor-plans', fileName: 'floor-plan', dbColumn: 'floor_plan_url', dbAssetCol: 'floor_plan_asset_id' },
+    { colId: STOCK_COLS.hlFacade,  bucket: 'hl-facades',  fileName: 'hl-facade',  dbColumn: 'hl_facade_url',  dbAssetCol: 'hl_facade_asset_id'  },
   ] as const
   for (const spec of STOCK_FILE_SPECS) {
     const candidates = stockItems.filter(item => {
@@ -952,18 +962,33 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
     })
     if (!candidates.length) continue
 
-    const ids = candidates.map(i => String(i.id))
-    const { data: alreadyStored } = await supabase
-      .from('stock').select(`id, ${spec.dbColumn}`).in('id', ids).not(spec.dbColumn, 'is', null)
-    const storedSet = new Set((alreadyStored || []).map((r: any) => r.id))
+    // Prioritise the most-recently-edited items so a user who just swapped a
+    // floor plan in Monday sees it propagate on the very next sync cycle.
+    candidates.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')))
 
+    const ids = candidates.map(i => String(i.id))
+    const { data: assetRows } = await supabase
+      .from('stock')
+      .select(`id, ${spec.dbColumn}, ${spec.dbAssetCol}`)
+      .in('id', ids)
+    const assetMap = new Map(
+      (assetRows || []).map((r: any) => [r.id, { url: r[spec.dbColumn], assetId: r[spec.dbAssetCol] }])
+    )
+
+    let uploadedThisSpec = 0
     for (const item of candidates) {
       const stockId = String(item.id)
-      if (storedSet.has(stockId)) continue
       try {
         const col   = item.column_values.find((c: any) => c.id === spec.colId)
         const file  = col.files[0]
         const asset = file.asset || {}
+        const mondayAssetId = file.asset_id ? String(file.asset_id) : (asset.id ? String(asset.id) : null)
+        if (!mondayAssetId) { errors.push(`${spec.fileName} skipped (no asset_id): ${item.name}`); continue }
+
+        const stored = assetMap.get(stockId)
+        if (stored?.assetId === mondayAssetId && stored?.url) continue
+        if (uploadedThisSpec >= MAX_FILE_UPLOADS_PER_SPEC) break
+
         const fileName = file.name || asset.name || `${spec.fileName}-asset`
 
         // public_url is a CDN link — no auth header (auth header causes 400).
@@ -981,19 +1006,26 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
         const bytes = await res.arrayBuffer()
         const ext   = (fileName.split('.').pop() || 'jpg').toLowerCase()
         const mime  = ext === 'pdf' ? 'application/pdf' : `image/${ext}`
-        const path  = `stock/${stockId}/${spec.fileName}.${ext}`
+        // Version the path with the Monday asset_id so swapping the file
+        // produces a brand-new URL and bypasses any caching.
+        const path  = `stock/${stockId}/${spec.fileName}-${mondayAssetId}.${ext}`
 
         const { error: upErr } = await supabase.storage
           .from(spec.bucket).upload(path, bytes, { upsert: true, contentType: mime })
         if (upErr) { errors.push(`${spec.fileName} upload failed: ${item.name}: ${upErr.message}`); continue }
 
         const { data: urlData } = supabase.storage.from(spec.bucket).getPublicUrl(path)
-        await supabase.from('stock').update({ [spec.dbColumn]: urlData.publicUrl }).eq('id', stockId)
+        await supabase.from('stock').update({
+          [spec.dbColumn]:   urlData.publicUrl,
+          [spec.dbAssetCol]: mondayAssetId,
+        }).eq('id', stockId)
+        uploadedThisSpec++
         console.log(`${spec.fileName} stored for ${item.name}: ${urlData.publicUrl}`)
       } catch (e: any) {
         errors.push(`${spec.fileName} error for ${item.name}: ${e.message}`)
       }
     }
+    if (uploadedThisSpec > 0) console.log(`${spec.fileName}: uploaded ${uploadedThisSpec} this cycle`)
   }
 
   // 3. Delete stale records no longer in Monday.com
