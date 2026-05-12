@@ -587,6 +587,490 @@
     color: var(--grey-pale); text-transform: uppercase;
   }
 
+  /* ── ADMIN ENGAGEMENT DASHBOARD ──────────────────────────── */
+  #dash-engagement { animation: fadeUp 0.35s ease both; margin-bottom: 32px; }
+  .eng-header-row {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 22px; gap: 24px; flex-wrap: wrap;
+  }
+  .eng-section-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 24px; font-weight: 600; color: var(--white);
+    margin-bottom: 4px;
+  }
+  .eng-section-sub {
+    font-size: 11px; color: var(--text-muted); letter-spacing: 1.6px;
+    text-transform: uppercase;
+    font-family: 'DM Mono', 'Courier New', monospace;
+  }
+
+  /* Time-window picker — applies to every dashboard data call. */
+  .eng-window-picker {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 4px; border: 1px solid var(--gold-border);
+    background: rgba(0,0,0,0.18);
+  }
+  .eng-window-label {
+    font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase;
+    color: var(--text-muted); font-weight: 600;
+    padding: 0 10px 0 8px;
+  }
+  .eng-window-pill {
+    background: transparent; border: 1px solid transparent;
+    color: var(--text-muted); cursor: pointer;
+    padding: 6px 14px; font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.6px;
+    transition: all 0.15s;
+  }
+  .eng-window-pill:hover { color: var(--white); background: rgba(201,168,76,0.06); }
+  .eng-window-pill.is-active {
+    background: rgba(201,168,76,0.14); border-color: rgba(201,168,76,0.45);
+    color: var(--gold);
+  }
+  .eng-window-pill.is-loading { opacity: 0.55; cursor: wait; }
+  .eng-kpi-row {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 1300px) { .eng-kpi-row { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 720px)  { .eng-kpi-row { grid-template-columns: repeat(2, 1fr); } }
+  .eng-kpi-row .stat-card { padding: 16px 18px; }
+  .eng-kpi-row .stat-label { margin-bottom: 8px; font-size: 11px; }
+  .eng-kpi-row .stat-value { font-size: 30px; }
+  .eng-kpi-row .stat-value.eng-stack {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 22px; letter-spacing: 0.5px;
+  }
+  .eng-kpi-row .stat-sub { font-size: 11px; }
+
+  .eng-leaderboard-wrap { overflow-x: auto; }
+  .eng-leaderboard { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .eng-leaderboard th {
+    text-align: left; padding: 10px 12px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--grey-pale); font-weight: 600;
+    border-bottom: 1px solid var(--gold-border);
+    cursor: pointer; user-select: none; white-space: nowrap;
+  }
+  .eng-leaderboard th:hover { color: var(--gold); }
+  .eng-leaderboard th.eng-sort-asc::after  { content: ' ▲'; color: var(--gold); font-size: 10px; }
+  .eng-leaderboard th.eng-sort-desc::after { content: ' ▼'; color: var(--gold); font-size: 10px; }
+  .eng-leaderboard td {
+    padding: 12px 12px; color: var(--white);
+    border-bottom: 1px solid rgba(201,168,76,0.08);
+    vertical-align: middle;
+  }
+  .eng-leaderboard tbody tr:hover td { background: rgba(201,168,76,0.03); }
+  .eng-leaderboard td.eng-num {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    color: var(--text-muted); text-align: right; font-size: 12px;
+  }
+  .eng-leaderboard td.eng-num-active { color: var(--white); }
+  .eng-partner-cell { display: flex; flex-direction: column; gap: 2px; min-width: 180px; }
+  .eng-company { color: var(--white); font-weight: 500; }
+  .eng-email   { color: var(--text-muted); font-size: 11px;
+    font-family: 'DM Mono', 'Courier New', monospace; }
+  .eng-empty   {
+    padding: 24px 12px; color: var(--text-muted); font-style: italic; text-align: center;
+  }
+  .eng-score {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 18px; font-weight: 600; color: var(--gold);
+    text-align: right;
+  }
+  .eng-last-login { white-space: nowrap; font-size: 12px; color: var(--text-muted); }
+  .eng-last-login.is-recent { color: var(--white); }
+  .eng-last-login.is-cold   { color: #E8C060; }
+  .eng-last-login.is-stale  { color: #E06060; }
+
+  .tier-badge {
+    display: inline-block; padding: 3px 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    border: 1px solid; border-radius: 2px; white-space: nowrap;
+  }
+  .tier-power   { color: #79D996;          border-color: rgba(121,217,150,0.45); background: rgba(121,217,150,0.08); }
+  .tier-active  { color: var(--gold);      border-color: rgba(201,168,76,0.5);   background: rgba(201,168,76,0.08); }
+  .tier-warming { color: #E8C060;          border-color: rgba(232,192,96,0.4);   background: rgba(232,192,96,0.06); }
+  .tier-cold    { color: #8FA4B8;          border-color: rgba(143,164,184,0.4);  background: rgba(143,164,184,0.06); }
+  .tier-dormant { color: #E06060;          border-color: rgba(224,96,96,0.45);   background: rgba(224,96,96,0.06); }
+  .tier-new     { color: var(--text-muted); border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.03); }
+
+  /* Charts (SVG, no library) */
+  .eng-card-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px;
+  }
+  .eng-trend-card { margin-bottom: 22px; }
+  .eng-chart-host { width: 100%; min-height: 0; }
+  .eng-chart-host svg { display: block; width: 100%; height: auto; }
+  .eng-legend { display: flex; gap: 18px; }
+  .eng-legend-item {
+    display: inline-flex; gap: 8px; align-items: center;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-muted); font-weight: 600;
+  }
+  .eng-legend-swatch { width: 12px; height: 2px; display: inline-block; }
+  .eng-sw-active { background: var(--gold); }
+  .eng-sw-events { background: rgba(201,168,76,0.35); }
+
+  .eng-two-col {
+    display: grid; grid-template-columns: 360px 1fr; gap: 22px;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 1100px) { .eng-two-col { grid-template-columns: 1fr; } }
+
+  .eng-donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .eng-donut-host { display: flex; justify-content: center; }
+  .eng-donut-host svg { max-width: 240px; max-height: 240px; }
+  .eng-donut-legend {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; width: 100%;
+    font-size: 12px;
+  }
+  .eng-donut-legend-row {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
+  .eng-donut-legend-left { display: flex; align-items: center; gap: 8px; color: var(--white); }
+  .eng-donut-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .eng-donut-legend-count {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    color: var(--text-muted); font-size: 11px;
+  }
+  .eng-donut-center {
+    text-anchor: middle; dominant-baseline: middle;
+  }
+  .eng-donut-center-num {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 600; fill: var(--gold);
+  }
+  .eng-donut-center-lbl {
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    fill: var(--text-muted); font-weight: 600;
+  }
+
+  /* Top-events bar chart */
+  .eng-bar-list { display: flex; flex-direction: column; gap: 12px; }
+  .eng-bar-row {
+    display: grid; grid-template-columns: 140px 1fr 110px;
+    align-items: center; gap: 14px; font-size: 12px;
+  }
+  .eng-bar-label {
+    color: var(--grey-pale); font-weight: 500;
+    text-transform: uppercase; font-size: 11px; letter-spacing: 0.6px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .eng-bar-track {
+    height: 14px; background: rgba(201,168,76,0.06);
+    border: 1px solid rgba(201,168,76,0.15);
+  }
+  .eng-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, rgba(201,168,76,0.7), rgba(201,168,76,0.95));
+    transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .eng-bar-meta { display: flex; gap: 8px; align-items: baseline; justify-content: flex-end; }
+  .eng-bar-count {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 13px; color: var(--white); font-weight: 600;
+  }
+  .eng-bar-sub {
+    font-size: 10px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  @media (max-width: 700px) {
+    .eng-bar-row { grid-template-columns: 100px 1fr 90px; gap: 10px; }
+  }
+
+  /* Inline info tooltip — hover the (i) icon to read what a metric means.
+     Pure CSS; uses data-info attribute for the body text. */
+  .eng-info {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 1px solid rgba(201,168,76,0.4); color: var(--gold);
+    font-size: 10px; font-weight: 700; font-style: italic;
+    font-family: 'Playfair Display', Georgia, serif; line-height: 1;
+    cursor: help; position: relative; margin-left: 8px;
+    vertical-align: middle; transition: all 0.15s ease;
+    flex-shrink: 0;
+  }
+  .eng-info:hover { background: rgba(201,168,76,0.18); border-color: var(--gold); color: var(--gold); }
+  .eng-info::before {
+    content: attr(data-info);
+    position: absolute; bottom: calc(100% + 10px); left: 50%;
+    transform: translateX(-50%);
+    background: var(--black-card); color: var(--white);
+    border: 1px solid var(--gold-border);
+    padding: 12px 14px; width: 260px;
+    font-size: 12px; line-height: 1.5; font-weight: 400; font-style: normal;
+    text-align: left; letter-spacing: 0; text-transform: none;
+    font-family: 'Outfit', system-ui, sans-serif;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
+    z-index: 100; white-space: normal;
+  }
+  .eng-info::after {
+    content: ''; position: absolute; bottom: calc(100% + 5px); left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border: 5px solid transparent; border-top-color: var(--gold-border);
+    opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
+  }
+  .eng-info:hover::before, .eng-info:hover::after { opacity: 1; }
+  /* Right-edge variant: anchor tooltip to the right so it doesn't clip on
+     the rightmost KPI card. */
+  .eng-info-end::before { left: auto; right: -8px; transform: none; }
+  .eng-info-end::after  { left: auto; right: 0;    transform: none; }
+  /* Below variant: tooltip drops down (use on cards too tall to host above). */
+  .eng-info-below::before { bottom: auto; top: calc(100% + 10px); }
+  .eng-info-below::after  { bottom: auto; top:  calc(100% + 5px); border-top-color: transparent; border-bottom-color: var(--gold-border); }
+
+  /* Activation funnel — reuses .cp-funnel from cockpit; just spacing */
+  .eng-funnel-card { margin-bottom: 22px; }
+  #eng-funnel .cp-funnel-row { grid-template-columns: 160px 1fr 150px; }
+  @media (max-width: 700px) {
+    #eng-funnel .cp-funnel-row { grid-template-columns: 110px 1fr 100px; gap: 12px; }
+  }
+
+  /* Needs Your Attention — at-risk partner rows */
+  .eng-attention-card { margin-bottom: 22px; }
+  .eng-attention-list { display: flex; flex-direction: column; gap: 10px; }
+  .eng-attention-row {
+    display: grid; grid-template-columns: 14px 1fr auto;
+    align-items: center; gap: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--gold-border);
+    background: rgba(201,168,76,0.02);
+    transition: background 0.15s;
+  }
+  .eng-attention-row:hover { background: rgba(201,168,76,0.05); }
+  .eng-attention-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .eng-attention-row.is-high .eng-attention-dot {
+    background: #E06060;
+    box-shadow: 0 0 8px rgba(224,96,96,0.55);
+  }
+  .eng-attention-row.is-med  .eng-attention-dot { background: #E8C060; }
+  .eng-attention-row.is-low  .eng-attention-dot { background: var(--grey-mid); }
+  .eng-attention-main  { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .eng-attention-name  { color: var(--white); font-weight: 500; font-size: 14px; }
+  .eng-attention-meta  {
+    color: var(--text-muted); font-size: 12px;
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .eng-attention-reasons { display: flex; gap: 6px; flex-wrap: wrap; }
+  .eng-attention-chip {
+    display: inline-block; padding: 2px 8px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.7px;
+    text-transform: uppercase; border-radius: 2px;
+    border: 1px solid; background: rgba(0,0,0,0.18);
+  }
+  .eng-attention-chip.chip-never_activated  { color: #E06060; border-color: rgba(224,96,96,0.4); }
+  .eng-attention-chip.chip-one_and_done     { color: #E8C060; border-color: rgba(232,192,96,0.4); }
+  .eng-attention-chip.chip-going_cold       { color: #E8C060; border-color: rgba(232,192,96,0.4); }
+  .eng-attention-chip.chip-pipeline_at_risk { color: #E06060; border-color: rgba(224,96,96,0.45); }
+  .eng-attention-action a {
+    display: inline-block; padding: 7px 14px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--gold); text-decoration: none;
+    border: 1px solid rgba(201,168,76,0.4);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .eng-attention-action a:hover {
+    background: rgba(201,168,76,0.12);
+    border-color: var(--gold); color: var(--gold);
+  }
+  .eng-attention-empty {
+    padding: 28px 12px; color: var(--text-muted); font-style: italic;
+    text-align: center; font-size: 13px;
+  }
+  .eng-attention-empty.is-good { color: #79D996; font-style: normal; }
+
+  /* Top Content — 3-column grid */
+  .eng-content-card { margin-bottom: 22px; }
+  .eng-content-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
+  }
+  @media (max-width: 1100px) { .eng-content-grid { grid-template-columns: 1fr; } }
+  .eng-content-col-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px;
+    color: var(--gold); font-weight: 600; margin-bottom: 12px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--gold-border);
+  }
+  .eng-content-list { display: flex; flex-direction: column; gap: 8px; }
+  .eng-content-row {
+    display: grid; grid-template-columns: 24px 1fr auto;
+    align-items: baseline; gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid rgba(201,168,76,0.08);
+    background: rgba(201,168,76,0.015);
+    transition: background 0.15s;
+  }
+  .eng-content-row:hover { background: rgba(201,168,76,0.05); }
+  .eng-content-rank {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 18px; font-weight: 600; color: var(--gold);
+    line-height: 1;
+  }
+  .eng-content-name {
+    color: var(--white); font-size: 13px; font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .eng-content-sub {
+    color: var(--text-muted); font-size: 11px;
+    font-family: 'DM Mono', 'Courier New', monospace;
+    margin-top: 2px;
+  }
+  .eng-content-count {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 12px; color: var(--white); font-weight: 600;
+    text-align: right; line-height: 1.2;
+  }
+  .eng-content-count-sub {
+    font-size: 10px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+  .eng-content-empty {
+    padding: 18px 12px; color: var(--text-muted); font-style: italic;
+    text-align: center; font-size: 12px;
+  }
+
+  /* Per-partner drill-down modal */
+  .pdetail-overlay {
+    position: fixed; inset: 0;
+    background: rgba(8,15,26,0.78); backdrop-filter: blur(4px);
+    display: none; align-items: flex-start; justify-content: center;
+    z-index: 1000; padding: 5vh 24px;
+    overflow-y: auto;
+  }
+  .pdetail-overlay.is-open { display: flex; }
+  .pdetail-modal {
+    width: 100%; max-width: 920px;
+    background: var(--black-card);
+    border: 1px solid var(--gold-border);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    animation: fadeUp 0.25s ease both;
+    position: relative;
+  }
+  .pdetail-modal::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--gold) 50%, transparent 100%);
+  }
+  .pdetail-head {
+    display: grid; grid-template-columns: 1fr auto 32px;
+    align-items: center; gap: 24px;
+    padding: 22px 28px; border-bottom: 1px solid var(--gold-border);
+  }
+  .pdetail-head-main { min-width: 0; }
+  .pdetail-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 22px; font-weight: 600; color: var(--white);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pdetail-sub {
+    font-size: 12px; color: var(--text-muted); margin-top: 4px;
+    font-family: 'DM Mono', 'Courier New', monospace; letter-spacing: 0.5px;
+  }
+  .pdetail-head-side { display: flex; align-items: center; gap: 16px; }
+  .pdetail-score { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .pdetail-score-num {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px; font-weight: 600; color: var(--gold); line-height: 1;
+  }
+  .pdetail-score-lbl {
+    font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--text-muted); font-weight: 600;
+  }
+  .pdetail-close {
+    background: transparent; border: 1px solid var(--gold-border);
+    color: var(--text-muted); cursor: pointer;
+    width: 32px; height: 32px; font-size: 14px;
+    transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .pdetail-close:hover { color: var(--gold); border-color: var(--gold); background: rgba(201,168,76,0.08); }
+
+  .pdetail-stats {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;
+    background: var(--gold-border); border-bottom: 1px solid var(--gold-border);
+  }
+  @media (max-width: 700px) { .pdetail-stats { grid-template-columns: repeat(3, 1fr); } }
+  .pdetail-stat {
+    background: var(--black-card);
+    padding: 14px 12px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  }
+  .pdetail-stat-label {
+    font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--text-muted); font-weight: 600;
+  }
+  .pdetail-stat-value {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 22px; font-weight: 600; color: var(--white); line-height: 1;
+  }
+  .pdetail-stat-value.is-zero { color: var(--text-muted); }
+
+  .pdetail-body { padding: 22px 28px 28px; max-height: 60vh; overflow-y: auto; }
+  .pdetail-section-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1.6px;
+    color: var(--grey-pale); font-weight: 600; margin-bottom: 16px;
+  }
+
+  .pdetail-day {
+    display: grid; grid-template-columns: 90px 1fr; gap: 18px;
+    margin-bottom: 18px;
+  }
+  .pdetail-day-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--gold); font-weight: 600;
+    padding-top: 10px; border-top: 1px solid var(--gold-border);
+  }
+  .pdetail-day-events { display: flex; flex-direction: column; gap: 6px;
+    padding-top: 8px; border-top: 1px solid rgba(201,168,76,0.08); }
+  .pdetail-event {
+    display: grid; grid-template-columns: 60px 1fr; gap: 14px;
+    align-items: baseline; font-size: 13px;
+    padding: 4px 0;
+  }
+  .pdetail-event-time {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 11px; color: var(--text-muted);
+  }
+  .pdetail-event-text { color: var(--white); line-height: 1.4; }
+  .pdetail-event-entity { color: var(--gold); }
+  .pdetail-event-staff {
+    color: var(--text-muted); font-size: 11px;
+    margin-left: 6px; font-style: italic;
+  }
+  .pdetail-empty {
+    padding: 36px 12px; color: var(--text-muted); font-style: italic;
+    text-align: center; font-size: 13px;
+  }
+
+  /* Make leaderboard rows feel clickable. */
+  .eng-leaderboard tbody tr { cursor: pointer; }
+
+  /* Insights panel */
+  .eng-insights-card { margin-bottom: 22px; }
+  .eng-insights { display: flex; flex-direction: column; gap: 10px; }
+  .eng-insight-row {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 12px 14px; border: 1px solid var(--gold-border);
+    background: rgba(201,168,76,0.02);
+  }
+  .eng-insight-icon {
+    width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .eng-insight-text { flex: 1; color: var(--white); font-size: 13px; line-height: 1.5; }
+  .eng-insight-meta { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+  .eng-ins-good     .eng-insight-icon { background: rgba(121,217,150,0.18); color: #79D996; }
+  .eng-ins-warn     .eng-insight-icon { background: rgba(232,192,96,0.18);   color: #E8C060; }
+  .eng-ins-risk     .eng-insight-icon { background: rgba(224,96,96,0.18);    color: #E06060; }
+  .eng-ins-info     .eng-insight-icon { background: rgba(201,168,76,0.18);   color: var(--gold); }
+
   .dash-grid {
     display: grid; grid-template-columns: 1fr 320px;
     gap: 24px;
@@ -3074,27 +3558,170 @@
     <!-- ── PAGE: DASHBOARD ───────────────────────────── -->
     <div id="page-dashboard" class="page-view active" style="padding:32px">
 
-      <!-- Admin stats (default) -->
-      <div class="stats-row" id="dash-stats-admin">
-        <div class="stat-card">
-          <div class="stat-label">Markets Covered</div>
-          <div class="stat-value">14</div>
-          <div class="stat-sub">Across 5 states</div>
+      <!-- Admin engagement dashboard (admins only — gated by applyNavForRole) -->
+      <div id="dash-engagement" style="display:none">
+        <div class="eng-header-row">
+          <div>
+            <div class="eng-section-title">Channel Partner Engagement</div>
+            <div class="eng-section-sub" id="eng-overview-meta">Last 30 days</div>
+          </div>
+          <div class="eng-window-picker" id="eng-window-picker">
+            <span class="eng-window-label">Window</span>
+            <button class="eng-window-pill" data-window="7">7d</button>
+            <button class="eng-window-pill is-active" data-window="30">30d</button>
+            <button class="eng-window-pill" data-window="90">90d</button>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Reports Available</div>
-          <div class="stat-value">38</div>
-          <div class="stat-sub">Updated weekly</div>
+
+        <!-- Section A: Hero KPI strip -->
+        <div class="eng-kpi-row">
+          <div class="stat-card partner-tile">
+            <div class="stat-label">Active Partners<span class="eng-info" data-info="Distinct channel partners who logged in or did anything in the portal in the last 30 days.">i</span></div>
+            <div class="stat-value" id="eng-kpi-active">—</div>
+            <div class="stat-sub">Last 30 days</div>
+          </div>
+          <div class="stat-card partner-tile">
+            <div class="stat-label">DAU · WAU · MAU<span class="eng-info" data-info="Daily / Weekly / Monthly Active Partners. Distinct count of partners with any activity in the last 24 hours / 7 days / 30 days.">i</span></div>
+            <div class="stat-value eng-stack" id="eng-kpi-dwm">—</div>
+            <div class="stat-sub">Daily · Weekly · Monthly</div>
+          </div>
+          <div class="stat-card partner-tile">
+            <div class="stat-label">Stickiness<span class="eng-info" data-info="DAU ÷ MAU as a percentage. The standard product-engagement benchmark. Above 25% means partners are coming back regularly. Below 15% means the portal is being checked occasionally rather than daily.">i</span></div>
+            <div class="stat-value gold" id="eng-kpi-sticky">—</div>
+            <div class="stat-sub">DAU ÷ MAU · target &gt; 25%</div>
+          </div>
+          <div class="stat-card partner-tile">
+            <div class="stat-label">New Partners<span class="eng-info eng-info-end" data-info="Channel partners onboarded in the last 30 days. Watch their activation rate — new signups who don't log in within 14 days slip into Dormant.">i</span></div>
+            <div class="stat-value" id="eng-kpi-new">—</div>
+            <div class="stat-sub">Joined in last 30 days</div>
+          </div>
+          <div class="stat-card partner-tile">
+            <div class="stat-label">At-Risk<span class="eng-info eng-info-end" data-info="Partners flagged for re-engagement: never activated, gone cold for 14+ days, or have open deals but stopped using the portal. Wired in Phase 2.">i</span></div>
+            <div class="stat-value" id="eng-kpi-risk">—</div>
+            <div class="stat-sub">Phase 2</div>
+          </div>
+          <div class="stat-card partner-tile">
+            <div class="stat-label">Total Logins<span class="eng-info eng-info-end" data-info="Every login event in the last 30 days. Includes repeat logins by the same partner — a high number with low Active Partners means a few partners log in repeatedly while most don't.">i</span></div>
+            <div class="stat-value" id="eng-kpi-logins">—</div>
+            <div class="stat-sub">Last 30 days</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Stock Listed</div>
-          <div class="stat-value">12</div>
-          <div class="stat-sub">Ready to present</div>
+
+        <!-- Section: Active partners trend (full width) -->
+        <div class="cp-card eng-trend-card">
+          <div class="eng-card-head">
+            <div class="cp-card-title" style="margin:0;">Active partners · <span class="eng-window-label-inline" data-window-label>last 30 days</span><span class="eng-info eng-info-below" data-info="Daily count of distinct partners who did anything in the portal. The solid gold line is unique active partners per day — the headline trend. The dashed line is total events (logins, page views, clicks) and shows engagement depth, scaled down by 5× so both lines fit on the same axis.">i</span></div>
+            <div class="eng-legend">
+              <span class="eng-legend-item"><span class="eng-legend-swatch eng-sw-active"></span>Active partners</span>
+              <span class="eng-legend-item"><span class="eng-legend-swatch eng-sw-events"></span>Total events</span>
+            </div>
+          </div>
+          <div id="eng-trend-chart" class="eng-chart-host"></div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Avg. Yield Tracked</div>
-          <div class="stat-value">5.8%</div>
-          <div class="stat-sub">Gross rental</div>
+
+        <!-- Section: Tier distribution donut + Top events bars (2 columns) -->
+        <div class="eng-two-col">
+          <div class="cp-card">
+            <div class="cp-card-title">Engagement tier distribution<span class="eng-info eng-info-below" data-info="Where every active partner sits on the engagement scale, based on a composite 0–100 score. Power 80+, Active 55–79, Warming 30–54, Cold 10–29, Dormant under 10. New = joined in the last 14 days and not yet logged in (still in their grace window).">i</span></div>
+            <div class="eng-donut-wrap">
+              <div id="eng-donut" class="eng-chart-host eng-donut-host"></div>
+              <div id="eng-donut-legend" class="eng-donut-legend"></div>
+            </div>
+          </div>
+          <div class="cp-card">
+            <div class="cp-card-title">Most-used features · <span class="eng-window-label-inline" data-window-label>last 30 days</span><span class="eng-info eng-info-below" data-info="Top 8 event types by total count over the selected window. The bar shows raw event count, the meta line shows how many distinct partners triggered it. A high count from few partners = power-user behaviour. A high count from many partners = a feature that's truly landing.">i</span></div>
+            <div id="eng-events-chart" class="eng-chart-host"></div>
+          </div>
+        </div>
+
+        <!-- Section: Activation funnel (full width) -->
+        <div class="cp-card eng-funnel-card">
+          <div class="cp-card-title">Activation funnel · <span class="eng-window-label-inline" data-window-label>last 30 days</span><span class="eng-info eng-info-below" data-info="Counts distinct partners reaching each stage of the engagement journey. Bars are scaled relative to the largest stage (so the top step is always 100%). The biggest gap between two adjacent rows is where the portal is losing partners — fix that step first.">i</span></div>
+          <div id="eng-funnel" class="cp-funnel"></div>
+        </div>
+
+        <!-- Section: Needs Your Attention (at-risk partners list) -->
+        <div class="cp-card eng-attention-card">
+          <div class="cp-card-title">Needs your attention<span class="eng-info eng-info-below" data-info="Partners flagged by 4 risk patterns: never activated (signed up &gt; 14 days ago, no login); one-and-done (logged in once, silent for 21+ days); going cold (was active, no login in 14+ days); pipeline at risk (open deal but no portal activity in 14+ days). Severity dot: red = high (act this week), amber = medium, grey = low.">i</span></div>
+          <div id="eng-attention" class="eng-attention-list"></div>
+        </div>
+
+        <!-- Section: Top content this week (3 columns) -->
+        <div class="cp-card eng-content-card">
+          <div class="cp-card-title">Top content · <span class="eng-window-label-inline" data-window-label>last 30 days</span><span class="eng-info eng-info-below" data-info="What's resonating with partners over the selected window. Top stock = most-opened property/project detail pages. Top research = most-opened suburb research reports. Top flyers = most-shared property flyers. Each row shows view/share count and how many distinct partners triggered it.">i</span></div>
+          <div class="eng-content-grid">
+            <div class="eng-content-col">
+              <div class="eng-content-col-title">Top stock</div>
+              <div id="eng-top-stock" class="eng-content-list"></div>
+            </div>
+            <div class="eng-content-col">
+              <div class="eng-content-col-title">Top research</div>
+              <div id="eng-top-research" class="eng-content-list"></div>
+            </div>
+            <div class="eng-content-col">
+              <div class="eng-content-col-title">Top flyers</div>
+              <div id="eng-top-flyers" class="eng-content-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Auto-generated insights -->
+        <div class="cp-card eng-insights-card">
+          <div class="cp-card-title">What's working · what needs attention<span class="eng-info eng-info-below" data-info="Auto-generated observations from the data above. Read top-to-bottom each morning. ✓ green = healthy, ! amber = watch, × red = act this week, i = informational context.">i</span></div>
+          <div id="eng-insights" class="eng-insights"></div>
+        </div>
+
+        <!-- Section: Per-partner leaderboard -->
+        <div class="cp-card" style="margin-bottom:32px;">
+          <div class="cp-card-title">Partner engagement · ranked<span class="eng-info eng-info-below" data-info="Every active channel partner ranked by composite engagement score (0–100). The score blends recency of last login (20%), login frequency (15%), stock and research views (10% each), flyer shares (10%), reservations (10%), active deals (15%) and breadth of features used (10%). Click any column header to sort.">i</span></div>
+          <div class="eng-leaderboard-wrap">
+            <table class="eng-leaderboard" id="eng-leaderboard-table">
+              <thead>
+                <tr>
+                  <th data-sort="company_name">Partner</th>
+                  <th data-sort="last_login_at" class="eng-sort-desc">Last login</th>
+                  <th data-sort="logins_n">Logins</th>
+                  <th data-sort="stock_views_n">Stock</th>
+                  <th data-sort="research_views_n">Research</th>
+                  <th data-sort="flyers_n">Flyers</th>
+                  <th data-sort="reservations_n">Reserved</th>
+                  <th data-sort="active_deals_n">Deals</th>
+                  <th data-sort="engagement_score">Score</th>
+                  <th data-sort="tier">Tier</th>
+                </tr>
+              </thead>
+              <tbody id="eng-leaderboard-tbody">
+                <tr><td colspan="10" class="eng-empty">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Per-partner drill-down modal — opened when admin clicks a leaderboard row -->
+        <div id="pdetail-overlay" class="pdetail-overlay" onclick="if(event.target===this) closePartnerDetail();">
+          <div class="pdetail-modal" role="dialog" aria-modal="true" aria-labelledby="pdetail-title">
+            <div class="pdetail-head">
+              <div class="pdetail-head-main">
+                <div id="pdetail-title" class="pdetail-title">—</div>
+                <div id="pdetail-sub"   class="pdetail-sub"></div>
+              </div>
+              <div class="pdetail-head-side">
+                <span id="pdetail-tier-badge" class="tier-badge"></span>
+                <span class="pdetail-score">
+                  <span id="pdetail-score-num" class="pdetail-score-num">—</span>
+                  <span class="pdetail-score-lbl">Score</span>
+                </span>
+              </div>
+              <button class="pdetail-close" onclick="closePartnerDetail()" aria-label="Close">✕</button>
+            </div>
+            <div class="pdetail-stats" id="pdetail-stats"></div>
+            <div class="pdetail-body">
+              <div class="pdetail-section-title">Activity timeline · last <span id="pdetail-window">30</span> days</div>
+              <div id="pdetail-timeline" class="pdetail-timeline">
+                <div class="eng-empty">Loading…</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -3169,96 +3796,6 @@
         </div>
       </div>
 
-      <!-- Admin-only: market map + activity feed -->
-      <div id="dash-admin-map-row">
-
-        <!-- MAP + ACTIVITY ROW -->
-        <div class="map-controls" style="margin-top:32px">
-          <div class="map-search">
-            <span class="map-search-icon">⌕</span>
-            <input type="text" placeholder="Search suburb or region...">
-          </div>
-          <div class="filter-pills">
-            <button class="pill active" onclick="togglePill(this)">All Markets</button>
-            <button class="pill" onclick="togglePill(this)">Strong Buy</button>
-            <button class="pill" onclick="togglePill(this)">With Stock</button>
-          </div>
-        </div>
-
-        <div class="map-layout">
-          <div class="map-container" id="mapContainer" style="padding:0;overflow:hidden;min-height:520px;position:relative;border:1px solid rgba(201,168,76,0.3);">
-            <div id="leaflet-map" style="width:100%;height:520px;"></div>
-          </div>
-          <!-- Activity feed beside map -->
-          <div style="display:flex;flex-direction:column;">
-            <div class="section-heading" style="margin-top:0;margin-bottom:16px">Activity</div>
-            <div class="activity-feed">
-              <div class="activity-item">
-                <div class="activity-dot green"></div>
-                <div>
-                  <div class="activity-text"><strong>Melbourne Square</strong> report refreshed with Q1 data and new floor plan uploads.</div>
-                  <div class="activity-time">Today · 9:14 AM</div>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-dot"></div>
-                <div>
-                  <div class="activity-text"><strong>Port Hedland</strong> research added — exclusive to TPCH channel partners.</div>
-                  <div class="activity-time">Mon 10 Feb · 4:02 PM</div>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-dot green"></div>
-                <div>
-                  <div class="activity-text"><strong>Brisbane SE Corridor</strong> vacancy rate data updated from REIQ source.</div>
-                  <div class="activity-time">Fri 14 Feb · 11:30 AM</div>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-dot grey"></div>
-                <div>
-                  <div class="activity-text">Canberra Inner North report archived — replaced by new combined report.</div>
-                  <div class="activity-time">Thu 13 Feb · 2:15 PM</div>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-dot"></div>
-                <div>
-                  <div class="activity-text"><strong>Perth Northern Suburbs</strong> research added with new land release data.</div>
-                  <div class="activity-time">Mon 10 Feb · 10:00 AM</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Hidden region panel elements retained for JS (selectRegion/resetMapPanel) -->
-      <div style="display:none">
-        <div id="rp-empty"></div>
-        <div class="region-panel-content" id="rp-content">
-          <div class="rpc-header">
-            <div class="rpc-state-pill" id="rpc-state"></div>
-            <div class="rpc-name" id="rpc-name"></div>
-            <div class="rpc-meta" id="rpc-meta"></div>
-          </div>
-          <div class="rpc-metrics">
-            <div class="rpc-metric"><div class="rpc-metric-label">Avg Yield</div><div class="rpc-metric-value" id="rpc-yield"></div></div>
-            <div class="rpc-metric"><div class="rpc-metric-label">Growth p.a.</div><div class="rpc-metric-value" id="rpc-growth"></div></div>
-            <div class="rpc-metric"><div class="rpc-metric-label">Vacancy</div><div class="rpc-metric-value" id="rpc-vacancy"></div></div>
-            <div class="rpc-metric"><div class="rpc-metric-label">Stock Avail.</div><div class="rpc-metric-value" id="rpc-stock"></div></div>
-          </div>
-          <div class="rpc-reports"><div class="rpc-reports-label">Available Reports</div><div id="rpc-report-links"></div></div>
-          <button class="btn-view-research" id="rpc-cta" onclick="">View Full Research →</button>
-        </div>
-      </div>
-
-      <!-- LATEST RESEARCH below map -->
-      <div style="margin-top:32px">
-        <div class="section-heading">Latest Research</div>
-        <div class="research-list"></div>
-      </div>
     </div>
 
 
@@ -5457,6 +5994,727 @@
     } catch (_) {}
   }
 
+  // ─── ADMIN ENGAGEMENT DASHBOARD ───────────────────────
+  // Loads the KPI strip + per-partner leaderboard. Admin-only.
+  // Fetches both RPCs in parallel so the dashboard fills in one round-trip.
+  let _engagementSort   = { key: 'engagement_score', dir: 'desc' };
+  let _engagementRows   = [];
+  let _engagementWindow = 30;
+
+  function bindEngagementWindowPicker() {
+    const picker = document.getElementById('eng-window-picker');
+    if (!picker || picker._bound) return;
+    picker._bound = true;
+    picker.querySelectorAll('.eng-window-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const w = parseInt(btn.getAttribute('data-window'), 10);
+        if (!w || w === _engagementWindow) return;
+        _engagementWindow = w;
+        picker.querySelectorAll('.eng-window-pill').forEach(b => {
+          b.classList.toggle('is-active', b === btn);
+          b.classList.add('is-loading');
+        });
+        loadAdminEngagementDashboard().finally(() => {
+          picker.querySelectorAll('.eng-window-pill').forEach(b => b.classList.remove('is-loading'));
+        });
+      });
+    });
+  }
+
+  async function loadAdminEngagementDashboard() {
+    if (!currentUserIsAdmin) return;
+    bindEngagementWindowPicker();
+    const headers = {
+      'apikey':        SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
+      'Content-Type':  'application/json',
+    };
+    const win   = _engagementWindow;
+    const body  = JSON.stringify({ p_window_days: win });
+    const bodyT = JSON.stringify({ p_window_days: win, p_limit: 5 });
+    try {
+      const [ovRes, lbRes, trRes, evRes, fnRes, arRes, tcRes] = await Promise.all([
+        fetch(SUPABASE_URL + '/rest/v1/rpc/get_engagement_overview',     { method: 'POST', headers, body }),
+        fetch(SUPABASE_URL + '/rest/v1/rpc/get_engagement_leaderboard',  { method: 'POST', headers, body }),
+        fetch(SUPABASE_URL + '/rest/v1/rpc/get_engagement_trend',        { method: 'POST', headers, body }),
+        fetch(SUPABASE_URL + '/rest/v1/rpc/get_event_breakdown',         { method: 'POST', headers, body }),
+        fetch(SUPABASE_URL + '/rest/v1/rpc/get_engagement_funnel',       { method: 'POST', headers, body }),
+        fetch(SUPABASE_URL + '/rest/v1/rpc/get_at_risk_partners',        { method: 'POST', headers, body: '{}' }),
+        fetch(SUPABASE_URL + '/rest/v1/rpc/get_top_content',             { method: 'POST', headers, body: bodyT }),
+      ]);
+      const ov     = ovRes.ok ? await ovRes.json() : null;
+      const rows   = lbRes.ok ? await lbRes.json() : [];
+      const trend  = trRes.ok ? await trRes.json() : [];
+      const events = evRes.ok ? await evRes.json() : [];
+      const funnel = fnRes.ok ? await fnRes.json() : [];
+      const atRisk = arRes.ok ? await arRes.json() : [];
+      const top    = tcRes.ok ? await tcRes.json() : null;
+
+      _engagementRows = Array.isArray(rows) ? rows : [];
+
+      renderEngagementOverview(ov, Array.isArray(atRisk) ? atRisk.length : 0);
+      renderEngagementLeaderboard();
+      bindEngagementSortHandlers();
+      renderTrendChart(Array.isArray(trend) ? trend : []);
+      renderTierDonut(_engagementRows);
+      renderEventBars(Array.isArray(events) ? events : []);
+      renderEngagementFunnel(Array.isArray(funnel) ? funnel : []);
+      renderAtRiskPanel(Array.isArray(atRisk) ? atRisk : []);
+      renderTopContent(top || {});
+      renderEngagementInsights({
+        ov,
+        rows:    _engagementRows,
+        events:  Array.isArray(events) ? events : [],
+        trend:   Array.isArray(trend)  ? trend  : [],
+        funnel:  Array.isArray(funnel) ? funnel : [],
+        atRisk:  Array.isArray(atRisk) ? atRisk : [],
+      });
+    } catch (e) {
+      console.warn('engagement dashboard load failed:', e);
+    }
+  }
+
+  // ── Activation funnel (reuses .cp-funnel styling) ──
+  function renderEngagementFunnel(stages) {
+    const host = document.getElementById('eng-funnel');
+    if (!host) return;
+    if (!stages.length) { host.innerHTML = '<div class="eng-empty">Funnel will populate as events accumulate.</div>'; return; }
+    host.innerHTML = stages.map((s, i) => {
+      const prev = i > 0 ? stages[i - 1].partner_count : null;
+      const dropPct = (prev && prev > 0) ? Math.round(((prev - s.partner_count) / prev) * 100) : null;
+      const dropTxt = dropPct != null && dropPct > 0 ? ` <span style="color:#E8C060;">−${dropPct}%</span>` : '';
+      return `
+        <div class="cp-funnel-row">
+          <div class="cp-funnel-label">${engEsc(s.label)}</div>
+          <div class="cp-funnel-track"><div class="cp-funnel-fill" style="width:${(s.pct_of_top||0).toFixed(1)}%"></div></div>
+          <div class="cp-funnel-meta">${s.partner_count} · ${(s.pct_of_top||0).toFixed(0)}%${dropTxt}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Needs your attention (at-risk partners list) ──
+  function renderAtRiskPanel(partners) {
+    const host = document.getElementById('eng-attention');
+    if (!host) return;
+    if (!partners.length) {
+      host.innerHTML = '<div class="eng-attention-empty is-good">✓ Nothing to action. No partners are flagged at risk right now.</div>';
+      return;
+    }
+    const reasonLabels = {
+      never_activated:  'Never activated',
+      one_and_done:     'One and done',
+      going_cold:       'Going cold',
+      pipeline_at_risk: 'Pipeline at risk',
+    };
+    host.innerHTML = partners.map(p => {
+      const reasons = (p.risk_reasons || []).map(r =>
+        `<span class="eng-attention-chip chip-${r}">${engEsc(reasonLabels[r] || r)}</span>`
+      ).join('');
+      const lastSeen = p.last_login_at
+        ? `Last seen ${p.days_since_login}d ago`
+        : 'Never logged in';
+      const dealLine = p.open_deal_count > 0
+        ? `· ${p.open_deal_count} open deal${p.open_deal_count === 1 ? '' : 's'}`
+        : '';
+      const subject = encodeURIComponent('Quick check-in from TPCH');
+      const body    = encodeURIComponent(`Hi ${(p.full_name || '').split(' ')[0] || 'there'},\n\nNoticed you haven't been into the portal in a while. Is there anything I can help you with — new stock, a research request, or just a quick walkthrough of what's new?\n\nCheers`);
+      const mailto  = `mailto:${encodeURIComponent(p.email || '')}?subject=${subject}&body=${body}`;
+      return `
+        <div class="eng-attention-row is-${p.severity || 'low'}">
+          <div class="eng-attention-dot"></div>
+          <div class="eng-attention-main">
+            <span class="eng-attention-name">${engEsc(p.company_name || p.full_name || '—')}</span>
+            <span class="eng-attention-meta">
+              <span>${engEsc(lastSeen)}</span>
+              ${dealLine ? `<span>${engEsc(dealLine)}</span>` : ''}
+              <span class="eng-attention-reasons">${reasons}</span>
+            </span>
+          </div>
+          <div class="eng-attention-action"><a href="${mailto}">Email partner</a></div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Top content (3-column lists) ──
+  function renderTopContent(content) {
+    const renderList = (hostId, items, kind) => {
+      const host = document.getElementById(hostId);
+      if (!host) return;
+      if (!items || !items.length) {
+        host.innerHTML = `<div class="eng-content-empty">No ${kind} activity in the last 7 days.</div>`;
+        return;
+      }
+      host.innerHTML = items.map((item, i) => {
+        const count = item.view_count != null ? item.view_count : item.share_count;
+        const countLabel = item.view_count != null ? 'views' : 'shares';
+        const sub = item.project_name && item.project_name !== item.name
+          ? `<div class="eng-content-sub">${engEsc(item.project_name)}</div>`
+          : '';
+        return `
+          <div class="eng-content-row">
+            <div class="eng-content-rank">${i + 1}</div>
+            <div>
+              <div class="eng-content-name" title="${engEsc(item.name)}">${engEsc(item.name)}</div>
+              ${sub}
+            </div>
+            <div>
+              <div class="eng-content-count">${count}</div>
+              <div class="eng-content-count-sub">${countLabel} · ${item.distinct_partners}p</div>
+            </div>
+          </div>`;
+      }).join('');
+    };
+    renderList('eng-top-stock',    content.stock,    'stock');
+    renderList('eng-top-research', content.research, 'research');
+    renderList('eng-top-flyers',   content.flyers,   'flyer');
+  }
+
+  // ── Trend line chart (active partners + total events per day) ──
+  function renderTrendChart(days) {
+    const host = document.getElementById('eng-trend-chart');
+    if (!host) return;
+    if (!days.length) { host.innerHTML = '<div class="eng-empty">No activity in the window yet.</div>'; return; }
+    const W = 1000, H = 220;
+    const PAD = { top: 16, right: 24, bottom: 28, left: 44 };
+    const innerW = W - PAD.left - PAD.right;
+    const innerH = H - PAD.top  - PAD.bottom;
+    const maxActive = Math.max(1, ...days.map(d => d.active_partners || 0));
+    const maxEvents = Math.max(1, ...days.map(d => d.total_events    || 0));
+    const yMax = Math.max(maxActive, Math.ceil(maxEvents / 5)); // share Y; events scaled /5 for legibility
+    // Build paths
+    const x = i => PAD.left + (innerW * (days.length === 1 ? 0.5 : i / (days.length - 1)));
+    const yAct = v => PAD.top + innerH - (innerH * (v / yMax));
+    const yEvt = v => PAD.top + innerH - (innerH * ((v / 5) / yMax));
+    const linePath = (vals, mapper) => vals.map((v,i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + mapper(v).toFixed(1)).join(' ');
+    const areaPath = (vals, mapper) =>
+      'M' + x(0).toFixed(1) + ',' + (PAD.top+innerH).toFixed(1) + ' ' +
+      vals.map((v,i) => 'L' + x(i).toFixed(1) + ',' + mapper(v).toFixed(1)).join(' ') +
+      ' L' + x(vals.length-1).toFixed(1) + ',' + (PAD.top+innerH).toFixed(1) + ' Z';
+    const activeVals = days.map(d => d.active_partners || 0);
+    const eventVals  = days.map(d => d.total_events    || 0);
+    // Y grid lines (5 ticks)
+    const ticks = 4;
+    const grid = Array.from({length: ticks+1}, (_,i) => {
+      const v = Math.round((yMax / ticks) * i);
+      const py = yAct(v).toFixed(1);
+      return `<line x1="${PAD.left}" x2="${W-PAD.right}" y1="${py}" y2="${py}" stroke="rgba(201,168,76,0.08)" stroke-width="1"/>
+              <text x="${PAD.left-8}" y="${py}" fill="rgba(255,255,255,0.4)" font-size="10" font-family="DM Mono,Courier,monospace" text-anchor="end" dominant-baseline="middle">${v}</text>`;
+    }).join('');
+    // X axis date labels (first, ~middle, last)
+    const xIdxs = days.length <= 7 ? days.map((_,i)=>i) : [0, Math.floor(days.length/3), Math.floor(2*days.length/3), days.length-1];
+    const xLabels = xIdxs.map(i => {
+      const d = new Date(days[i].day);
+      const lbl = d.toLocaleDateString('en-AU', { day:'numeric', month:'short' });
+      return `<text x="${x(i).toFixed(1)}" y="${(H-PAD.bottom+18).toFixed(1)}" fill="rgba(255,255,255,0.5)" font-size="10" font-family="DM Mono,Courier,monospace" text-anchor="middle">${lbl}</text>`;
+    }).join('');
+    // Dots on active line
+    const dots = activeVals.map((v,i) => v > 0 ?
+      `<circle cx="${x(i).toFixed(1)}" cy="${yAct(v).toFixed(1)}" r="3" fill="#C9A84C" stroke="#080F1A" stroke-width="1.5"/>` : ''
+    ).join('');
+
+    host.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="engTrendFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(201,168,76,0.30)"/>
+            <stop offset="100%" stop-color="rgba(201,168,76,0)"/>
+          </linearGradient>
+        </defs>
+        ${grid}
+        <path d="${areaPath(activeVals, yAct)}" fill="url(#engTrendFill)" stroke="none"/>
+        <path d="${linePath(eventVals,  yEvt)}" fill="none" stroke="rgba(201,168,76,0.35)" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <path d="${linePath(activeVals, yAct)}" fill="none" stroke="#C9A84C" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${dots}
+        ${xLabels}
+      </svg>`;
+  }
+
+  // ── Tier distribution donut (computed client-side from leaderboard) ──
+  function renderTierDonut(rows) {
+    const host   = document.getElementById('eng-donut');
+    const legend = document.getElementById('eng-donut-legend');
+    if (!host || !legend) return;
+    const tiers = ['Power','Active','Warming','Cold','Dormant','New'];
+    const colors = {
+      Power:'#79D996', Active:'#C9A84C', Warming:'#E8C060',
+      Cold:'#8FA4B8', Dormant:'#E06060', New:'rgba(255,255,255,0.35)'
+    };
+    const counts = Object.fromEntries(tiers.map(t => [t, 0]));
+    rows.forEach(r => { if (counts[r.tier] != null) counts[r.tier]++; });
+    const total = rows.length;
+    if (total === 0) {
+      host.innerHTML = '<div class="eng-empty">No partners yet.</div>';
+      legend.innerHTML = '';
+      return;
+    }
+    const R = 60, CX = 75, CY = 75;
+    const C = 2 * Math.PI * R;
+    let offset = 0;
+    const segments = tiers.filter(t => counts[t] > 0).map(t => {
+      const frac = counts[t] / total;
+      const seg = `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none"
+                     stroke="${colors[t]}" stroke-width="22"
+                     stroke-dasharray="${(C*frac).toFixed(2)} ${C.toFixed(2)}"
+                     stroke-dashoffset="${(-offset).toFixed(2)}"
+                     transform="rotate(-90 ${CX} ${CY})"/>`;
+      offset += C * frac;
+      return seg;
+    }).join('');
+    host.innerHTML = `
+      <svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="rgba(201,168,76,0.06)" stroke-width="22"/>
+        ${segments}
+        <text x="${CX}" y="${CY-6}" class="eng-donut-center eng-donut-center-num" font-size="32">${total}</text>
+        <text x="${CX}" y="${CY+16}" class="eng-donut-center eng-donut-center-lbl">Partners</text>
+      </svg>`;
+    legend.innerHTML = tiers.map(t => `
+      <div class="eng-donut-legend-row">
+        <span class="eng-donut-legend-left">
+          <span class="eng-donut-legend-dot" style="background:${colors[t]}"></span>${t}
+        </span>
+        <span class="eng-donut-legend-count">${counts[t]}</span>
+      </div>`).join('');
+  }
+
+  // ── Top events horizontal bar chart ──
+  function renderEventBars(events) {
+    const host = document.getElementById('eng-events-chart');
+    if (!host) return;
+    if (!events.length) {
+      host.innerHTML = '<div class="eng-empty">No events captured yet.</div>';
+      return;
+    }
+    const labels = {
+      login:'Logins', page_view:'Page views', stock_view:'Stock detail opens',
+      project_view:'Project opens', research_view:'Research opens',
+      flyer_open:'Flyer opens', flyer_share:'Flyer shares', flyer_download:'Flyer downloads',
+      floor_plan_pdf_open:'Floor plan PDFs', filter_applied:'Filters applied',
+      search:'Searches', ask_tpch:'Ask TPCH queries',
+      reservation_created:'Reservations', agreement_accepted:'Agreements signed', logout:'Logouts'
+    };
+    const top = events.slice(0, 8);
+    const max = Math.max(1, ...top.map(e => e.event_count));
+    host.innerHTML = `<div class="eng-bar-list">${top.map(e => {
+      const pct = (e.event_count / max) * 100;
+      return `
+        <div class="eng-bar-row">
+          <div class="eng-bar-label">${engEsc(labels[e.event_type] || e.event_type)}</div>
+          <div class="eng-bar-track"><div class="eng-bar-fill" style="width:${pct.toFixed(1)}%"></div></div>
+          <div class="eng-bar-meta">
+            <span class="eng-bar-count">${e.event_count}</span>
+            <span class="eng-bar-sub">${e.distinct_partners} partner${e.distinct_partners === 1 ? '' : 's'}</span>
+          </div>
+        </div>`;
+    }).join('')}</div>`;
+  }
+
+  // ── Auto insights ──
+  // Reads every dataset on the dashboard and emits a small set of plain-English
+  // observations Mick can act on. Each insight has a level: good | warn | risk | info.
+  function renderEngagementInsights({ ov, rows, events, trend, funnel, atRisk }) {
+    const host = document.getElementById('eng-insights');
+    if (!host) return;
+    const out = [];
+    funnel = funnel || [];
+    atRisk = atRisk || [];
+
+    // Tier distribution.
+    const counts = { Power:0, Active:0, Warming:0, Cold:0, Dormant:0, New:0 };
+    rows.forEach(r => { if (counts[r.tier] != null) counts[r.tier]++; });
+    const total = rows.length;
+    const dormantPct = total ? Math.round((counts.Dormant / total) * 100) : 0;
+
+    // 1. Stickiness benchmark (DAU/MAU).
+    if (ov && ov.mau > 0) {
+      if (ov.stickiness >= 25) {
+        out.push({ level:'good', text:`Stickiness is healthy at ${ov.stickiness}% (target > 25%). Partners are coming back regularly.` });
+      } else if (ov.stickiness >= 15) {
+        out.push({ level:'warn', text:`Stickiness is ${ov.stickiness}% — below the 25% target. Partners check in occasionally rather than daily.`,
+                   meta:`Push the daily-use levers: Morning Brief quality, Stock Radar relevance, deal-pipeline nudges.` });
+      } else {
+        out.push({ level:'risk', text:`Stickiness is ${ov.stickiness}% — well below the 25% benchmark. The portal is being treated as a "checked occasionally" tool.`,
+                   meta:`Critical: invest in habit triggers (daily email, push notifications, weekly digest).` });
+      }
+    } else if (ov) {
+      out.push({ level:'info', text:`No measurable activity yet — the engagement log fills as partners log in and click around after the migration ships.` });
+    }
+
+    // 2. Biggest funnel drop-off.
+    if (funnel.length >= 2) {
+      let worst = { idx: -1, dropPct: 0, fromLabel: '', toLabel: '', fromN: 0, toN: 0 };
+      for (let i = 1; i < funnel.length; i++) {
+        const prev = funnel[i - 1].partner_count || 0;
+        const cur  = funnel[i].partner_count || 0;
+        if (prev > 0) {
+          const dropPct = Math.round(((prev - cur) / prev) * 100);
+          if (dropPct > worst.dropPct) {
+            worst = { idx: i, dropPct, fromLabel: funnel[i - 1].label, toLabel: funnel[i].label, fromN: prev, toN: cur };
+          }
+        }
+      }
+      if (worst.dropPct >= 40) {
+        out.push({ level:'risk', text:`Biggest activation drop-off: "${worst.fromLabel}" → "${worst.toLabel}" loses ${worst.dropPct}% of partners (${worst.fromN} → ${worst.toN}).`,
+                   meta:`This is the highest-leverage step to fix. What stops a partner who reaches "${worst.fromLabel}" from progressing to "${worst.toLabel}"?` });
+      } else if (worst.dropPct >= 20) {
+        out.push({ level:'warn', text:`Watch the funnel: "${worst.fromLabel}" → "${worst.toLabel}" drops ${worst.dropPct}% of partners.`,
+                   meta:`Not critical yet, but the biggest gap in the activation journey.` });
+      }
+    }
+
+    // 3. At-risk action queue (replaces tier-derived warnings).
+    if (atRisk.length > 0) {
+      const high = atRisk.filter(p => p.severity === 'high').length;
+      const med  = atRisk.filter(p => p.severity === 'med').length;
+      const reasonsCount = {};
+      atRisk.forEach(p => (p.risk_reasons || []).forEach(r => reasonsCount[r] = (reasonsCount[r] || 0) + 1));
+      const breakdown = Object.entries(reasonsCount)
+        .sort((a,b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([r,n]) => `${n} ${r.replace(/_/g, ' ')}`).join(', ');
+      const sev = high > 0 ? 'risk' : 'warn';
+      out.push({ level:sev, text:`${atRisk.length} partner${atRisk.length===1?'':'s'} flagged at risk${high?` (${high} high-severity)`:''}.`,
+                 meta:`Breakdown: ${breakdown}. See "Needs your attention" panel for the list — each row has a one-click email button.` });
+    }
+
+    // 4. Power users = call them.
+    if (counts.Power > 0) {
+      out.push({ level:'good', text:`${counts.Power} partner${counts.Power===1?' is':'s are'} in Power tier — call them this week. Ask what's working and capture testimonials.`,
+                 meta:`Power users are your strongest signal of product-market fit. Amplify what they love.` });
+    }
+
+    // 5. Research vs stock balance.
+    const activeRows = rows.filter(r => r.last_login_at);
+    if (activeRows.length >= 5) {
+      const noResearchN = activeRows.filter(r => (r.research_views_n || 0) === 0).length;
+      const pct = Math.round((noResearchN / activeRows.length) * 100);
+      if (pct >= 50) {
+        out.push({ level:'warn', text:`${pct}% of active partners (${noResearchN} of ${activeRows.length}) have never opened a research report. They're treating us as a stock list.`,
+                   meta:`Research is the differentiator. Surface a "this week's must-read" prompt on the partner dashboard.` });
+      }
+    }
+
+    // 6. Flyer share signal.
+    if (activeRows.length >= 5) {
+      const noFlyer = activeRows.filter(r => (r.flyers_n || 0) === 0).length;
+      const pct = Math.round((noFlyer / activeRows.length) * 100);
+      if (pct >= 70) {
+        out.push({ level:'warn', text:`${pct}% of active partners have never shared a flyer. The marketing-to-client side of the portal is undervalued.`,
+                   meta:`Promote the flyer flow with a one-click share; consider adding flyer share counts to partner-side reporting.` });
+      }
+    }
+
+    // 7. Top feature observation.
+    if (events.length) {
+      const top = events[0];
+      const labels = { login:'logging in', page_view:'navigating pages', stock_view:'opening stock detail',
+        project_view:'opening projects', research_view:'reading research', flyer_share:'sharing flyers',
+        flyer_download:'downloading flyers', ask_tpch:'asking TPCH', reservation_created:'reserving stock' };
+      out.push({ level:'info', text:`Most-used feature: ${labels[top.event_type] || top.event_type} (${top.event_count} events from ${top.distinct_partners} partner${top.distinct_partners===1?'':'s'}).`,
+                 meta:`Watch this metric weekly — drops here are leading indicators of disengagement.` });
+    }
+
+    // 8. New partners not yet activated (still in grace window).
+    if (ov && ov.new_partners > 0) {
+      const recentlyJoinedNotActivated = rows.filter(r => !r.last_login_at && r.tier === 'New').length;
+      if (recentlyJoinedNotActivated > 0) {
+        out.push({ level:'info', text:`${recentlyJoinedNotActivated} of ${ov.new_partners} newly-joined partner${ov.new_partners===1?'':'s'} hasn't logged in yet (still within their 14-day grace window).`,
+                   meta:`Watch this for the next week — if they don't activate by day 14 they'll show as Dormant.` });
+      }
+    }
+
+    // Render.
+    if (!out.length) {
+      host.innerHTML = '<div class="eng-empty">Insights will appear once partners start using the portal.</div>';
+      return;
+    }
+    const icons = { good:'✓', warn:'!', risk:'×', info:'i' };
+    host.innerHTML = out.map(i => `
+      <div class="eng-insight-row eng-ins-${i.level}">
+        <div class="eng-insight-icon">${icons[i.level] || 'i'}</div>
+        <div class="eng-insight-text">
+          ${engEsc(i.text)}
+          ${i.meta ? `<div class="eng-insight-meta">${engEsc(i.meta)}</div>` : ''}
+        </div>
+      </div>`).join('');
+  }
+
+  function renderEngagementOverview(ov, atRiskCount) {
+    if (!ov) return;
+    const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setText('eng-kpi-active', ov.active_partners ?? 0);
+    setText('eng-kpi-dwm',    `${ov.dau ?? 0} · ${ov.wau ?? 0} · ${ov.mau ?? 0}`);
+    setText('eng-kpi-sticky', (ov.stickiness != null ? ov.stickiness + '%' : '—'));
+    setText('eng-kpi-new',    ov.new_partners ?? 0);
+    setText('eng-kpi-risk',   atRiskCount != null ? atRiskCount : 0);
+    setText('eng-kpi-logins', ov.total_logins_window ?? 0);
+    setText('eng-overview-meta',
+      `Last ${ov.window_days || 30} days · refreshed ${new Date(ov.generated_at || Date.now()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`);
+    // Update every "last N days" inline label across the dashboard.
+    document.querySelectorAll('[data-window-label]').forEach(el => {
+      el.textContent = `last ${ov.window_days || 30} days`;
+    });
+    // Tint the at-risk card red when there's anything to action.
+    const riskCard = document.getElementById('eng-kpi-risk');
+    if (riskCard) {
+      riskCard.style.color = (atRiskCount && atRiskCount > 0) ? '#E06060' : '';
+    }
+    const riskSub = riskCard ? riskCard.parentElement.querySelector('.stat-sub') : null;
+    if (riskSub) {
+      riskSub.textContent = (atRiskCount && atRiskCount > 0) ? 'Click "Needs your attention"' : 'No partners flagged';
+    }
+  }
+
+  function renderEngagementLeaderboard() {
+    const tbody = document.getElementById('eng-leaderboard-tbody');
+    if (!tbody) return;
+    if (!_engagementRows.length) {
+      tbody.innerHTML = '<tr><td colspan="10" class="eng-empty">No active partners yet.</td></tr>';
+      return;
+    }
+    const rows = sortEngagementRows([..._engagementRows], _engagementSort);
+    const now = Date.now();
+    tbody.innerHTML = rows.map(r => {
+      const lastLoginCls = engLastLoginClass(r.last_login_at, now);
+      const lastLoginTxt = engFormatLastLogin(r.last_login_at, now);
+      const tierCls = 'tier-' + (r.tier || 'new').toLowerCase();
+      return `
+        <tr data-partner-id="${engEsc(r.partner_id)}" onclick="openPartnerDetail('${engEsc(r.partner_id)}')">
+          <td>
+            <div class="eng-partner-cell">
+              <span class="eng-company">${engEsc(r.company_name || r.full_name || '—')}</span>
+              <span class="eng-email">${engEsc(r.email || '')}</span>
+            </div>
+          </td>
+          <td class="eng-last-login ${lastLoginCls}">${lastLoginTxt}</td>
+          <td class="eng-num ${r.logins_n          > 0 ? 'eng-num-active' : ''}">${r.logins_n          ?? 0}</td>
+          <td class="eng-num ${r.stock_views_n     > 0 ? 'eng-num-active' : ''}">${r.stock_views_n     ?? 0}</td>
+          <td class="eng-num ${r.research_views_n  > 0 ? 'eng-num-active' : ''}">${r.research_views_n  ?? 0}</td>
+          <td class="eng-num ${r.flyers_n          > 0 ? 'eng-num-active' : ''}">${r.flyers_n          ?? 0}</td>
+          <td class="eng-num ${r.reservations_n    > 0 ? 'eng-num-active' : ''}">${r.reservations_n    ?? 0}</td>
+          <td class="eng-num ${r.active_deals_n    > 0 ? 'eng-num-active' : ''}">${r.active_deals_n    ?? 0}</td>
+          <td class="eng-score">${r.engagement_score ?? 0}</td>
+          <td><span class="tier-badge ${tierCls}">${engEsc(r.tier || 'New')}</span></td>
+        </tr>`;
+    }).join('');
+    // Re-bind sort-header clicks (innerHTML replacement removed listeners).
+    bindEngagementSortHandlers();
+  }
+
+  // ── Per-partner drill-down modal ──
+  async function openPartnerDetail(partnerId) {
+    const row = _engagementRows.find(r => r.partner_id === partnerId);
+    if (!row) return;
+    const overlay = document.getElementById('pdetail-overlay');
+    if (!overlay) return;
+
+    // Header
+    const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setText('pdetail-title', row.company_name || row.full_name || '—');
+    setText('pdetail-sub',
+      [
+        row.email || '',
+        row.joined_at ? `joined ${new Date(row.joined_at).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' })}` : '',
+        row.last_login_at ? `last seen ${engFormatLastLogin(row.last_login_at, Date.now())}` : 'never logged in',
+      ].filter(Boolean).join(' · '));
+    setText('pdetail-score-num', row.engagement_score ?? 0);
+    setText('pdetail-window', String(_engagementWindow));
+    const tierEl = document.getElementById('pdetail-tier-badge');
+    if (tierEl) {
+      tierEl.className = 'tier-badge tier-' + (row.tier || 'new').toLowerCase();
+      tierEl.textContent = row.tier || 'New';
+    }
+
+    // Stats grid (mini stat cards)
+    const statsHost = document.getElementById('pdetail-stats');
+    if (statsHost) {
+      const stats = [
+        { label:'Logins',        value: row.logins_n         ?? 0 },
+        { label:'Stock views',   value: row.stock_views_n    ?? 0 },
+        { label:'Research',      value: row.research_views_n ?? 0 },
+        { label:'Flyers',        value: row.flyers_n         ?? 0 },
+        { label:'Reservations',  value: row.reservations_n   ?? 0 },
+        { label:'Open deals',    value: row.active_deals_n   ?? 0 },
+        { label:'Features used', value: row.breadth_n        ?? 0 },
+      ];
+      statsHost.innerHTML = stats.map(s => `
+        <div class="pdetail-stat">
+          <div class="pdetail-stat-label">${engEsc(s.label)}</div>
+          <div class="pdetail-stat-value ${s.value === 0 ? 'is-zero' : ''}">${s.value}</div>
+        </div>`).join('');
+    }
+
+    // Open modal + show loading state for timeline
+    overlay.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    const tlHost = document.getElementById('pdetail-timeline');
+    if (tlHost) tlHost.innerHTML = '<div class="pdetail-empty">Loading timeline…</div>';
+
+    // Fetch timeline
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_partner_activity', {
+        method: 'POST',
+        headers: {
+          'apikey':        SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify({ p_partner_id: partnerId, p_window_days: _engagementWindow }),
+      });
+      const data = res.ok ? await res.json() : [];
+      renderPartnerTimeline(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.warn('partner activity load failed:', e);
+      if (tlHost) tlHost.innerHTML = '<div class="pdetail-empty">Failed to load timeline.</div>';
+    }
+  }
+
+  function closePartnerDetail() {
+    const overlay = document.getElementById('pdetail-overlay');
+    if (overlay) overlay.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+
+  // Close on Escape too.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const overlay = document.getElementById('pdetail-overlay');
+      if (overlay && overlay.classList.contains('is-open')) closePartnerDetail();
+    }
+  });
+
+  function renderPartnerTimeline(events) {
+    const host = document.getElementById('pdetail-timeline');
+    if (!host) return;
+    if (!events.length) {
+      host.innerHTML = '<div class="pdetail-empty">No activity in this window.</div>';
+      return;
+    }
+    // Group by day
+    const byDay = new Map();
+    events.forEach(ev => {
+      const d = new Date(ev.created_at);
+      const key = d.toISOString().slice(0, 10);
+      if (!byDay.has(key)) byDay.set(key, []);
+      byDay.get(key).push(ev);
+    });
+
+    const eventLabels = {
+      login: 'Logged in',
+      logout: 'Logged out',
+      page_view: 'Visited',
+      stock_view: 'Opened stock',
+      project_view: 'Opened project',
+      research_view: 'Opened research',
+      flyer_open: 'Previewed flyer',
+      flyer_share: 'Shared flyer',
+      flyer_download: 'Downloaded flyer',
+      floor_plan_pdf_open: 'Opened floor plan PDF',
+      filter_applied: 'Applied filter',
+      search: 'Searched',
+      ask_tpch: 'Asked TPCH',
+      reservation_created: 'Reserved stock',
+      agreement_accepted: 'Accepted agreement',
+    };
+
+    const today    = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    host.innerHTML = Array.from(byDay.entries()).map(([day, list]) => {
+      const dateObj = new Date(day);
+      const label = day === today      ? 'Today'
+                  : day === yesterday  ? 'Yesterday'
+                  : dateObj.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' });
+      const eventsHtml = list.map(ev => {
+        const t = new Date(ev.created_at);
+        const time = t.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        const verb = engEsc(eventLabels[ev.event_type] || ev.event_type);
+        let entity = '';
+        if (ev.entity_name && ev.event_type !== 'page_view') {
+          entity = ` <span class="pdetail-event-entity">"${engEsc(ev.entity_name)}"</span>`;
+        } else if (ev.entity_name && ev.event_type === 'page_view') {
+          entity = ` <span class="pdetail-event-entity">${engEsc(ev.entity_name)}</span>`;
+        }
+        const staff = ev.staff_name ? `<span class="pdetail-event-staff">by ${engEsc(ev.staff_name)}</span>` : '';
+        return `
+          <div class="pdetail-event">
+            <div class="pdetail-event-time">${time}</div>
+            <div class="pdetail-event-text">${verb}${entity}${staff}</div>
+          </div>`;
+      }).join('');
+      return `
+        <div class="pdetail-day">
+          <div class="pdetail-day-label">${label}</div>
+          <div class="pdetail-day-events">${eventsHtml}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function bindEngagementSortHandlers() {
+    const ths = document.querySelectorAll('#eng-leaderboard-table th[data-sort]');
+    ths.forEach(th => {
+      th.onclick = () => {
+        const key = th.getAttribute('data-sort');
+        if (_engagementSort.key === key) {
+          _engagementSort.dir = _engagementSort.dir === 'desc' ? 'asc' : 'desc';
+        } else {
+          _engagementSort.key = key;
+          // numeric / date columns default to desc; text columns default to asc.
+          _engagementSort.dir = ['company_name','tier'].includes(key) ? 'asc' : 'desc';
+        }
+        ths.forEach(o => o.classList.remove('eng-sort-asc','eng-sort-desc'));
+        th.classList.add(_engagementSort.dir === 'asc' ? 'eng-sort-asc' : 'eng-sort-desc');
+        renderEngagementLeaderboard();
+      };
+    });
+  }
+
+  function sortEngagementRows(rows, { key, dir }) {
+    const mult = dir === 'asc' ? 1 : -1;
+    const tierOrder = { Power: 5, Active: 4, Warming: 3, Cold: 2, New: 1, Dormant: 0 };
+    return rows.sort((a, b) => {
+      let av = a[key], bv = b[key];
+      if (key === 'tier') { av = tierOrder[av] ?? -1; bv = tierOrder[bv] ?? -1; }
+      else if (key === 'last_login_at') {
+        av = av ? new Date(av).getTime() : 0;
+        bv = bv ? new Date(bv).getTime() : 0;
+      } else if (typeof av === 'string' || typeof bv === 'string') {
+        av = (av || '').toString().toLowerCase();
+        bv = (bv || '').toString().toLowerCase();
+        return av < bv ? -1 * mult : av > bv ? 1 * mult : 0;
+      }
+      return ((av ?? 0) - (bv ?? 0)) * mult;
+    });
+  }
+
+  function engLastLoginClass(iso, now) {
+    if (!iso) return 'is-stale';
+    const days = (now - new Date(iso).getTime()) / 86400000;
+    if (days < 7)  return 'is-recent';
+    if (days < 21) return '';
+    if (days < 60) return 'is-cold';
+    return 'is-stale';
+  }
+
+  function engFormatLastLogin(iso, now) {
+    if (!iso) return 'Never';
+    const t = new Date(iso).getTime();
+    const mins = Math.round((now - t) / 60000);
+    if (mins < 60)   return mins + 'm ago';
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24)    return hrs + 'h ago';
+    const days = Math.round(hrs / 24);
+    if (days < 30)   return days + 'd ago';
+    const months = Math.round(days / 30);
+    if (months < 12) return months + 'mo ago';
+    return Math.round(months / 12) + 'y ago';
+  }
+
+  function engEsc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
   // Build region map from live data so state-clicks work
   function buildRegionMap() {
     // Group research by state
@@ -5493,10 +6751,10 @@
 
   // ─── DASHBOARD + LIST REFRESH ────────────────────────────
   function refreshDashboard() {
-    // Update stats row with live counts
-    const statCards = document.querySelectorAll('.stat-value');
+    // Legacy admin stats row was retired in favour of the engagement dashboard.
+    // No-op when the old container isn't in the DOM.
+    const statCards = document.querySelectorAll('#dash-stats-admin .stat-value');
     if (!statCards.length) return;
-    const states = [...new Set(liveResearch.map(r => r.state))];
     statCards[0].textContent = liveResearch.length;
     statCards[2].textContent = liveStock.filter(s => s.status === 'available').length;
   }
@@ -5776,20 +7034,18 @@
     // Topbar company name (partner only)
     const topbarCompany = document.getElementById('topbar-company');
     if (topbarCompany) topbarCompany.style.display = isPartner ? 'block' : 'none';
-    // Dashboard: partners see brief + ask + cockpit + radar; admins see admin stats + map row.
-    const adminStats = document.getElementById('dash-stats-admin');
+    // Dashboard: partners see brief + ask + cockpit + radar; admins see only the engagement view.
+    const engagement = document.getElementById('dash-engagement');
     const brief      = document.getElementById('dash-brief');
     const ask        = document.getElementById('dash-ask');
     const cockpit    = document.getElementById('dash-cockpit');
     const radar      = document.getElementById('dash-radar');
-    const adminMap   = document.getElementById('dash-admin-map-row');
     const welcome    = document.getElementById('dash-partner-welcome');
-    if (adminStats) adminStats.style.display = isPartner ? 'none'  : 'grid';
+    if (engagement) engagement.style.display = (isAdmin && !isPartner) ? 'block' : 'none';
     if (brief)      brief.style.display      = isPartner ? 'block' : 'none';
     if (ask)        ask.style.display        = isPartner ? 'block' : 'none';
     if (cockpit)    cockpit.style.display    = isPartner ? 'flex'  : 'none';
     if (radar)      radar.style.display      = isPartner ? 'block' : 'none';
-    if (adminMap)   adminMap.style.display   = isPartner ? 'none'  : 'block';
     if (welcome)    welcome.style.display    = isPartner ? 'block' : 'none';
     // Sync button (admin only)
     const stkSyncBtn = document.getElementById('stk-sync-btn');
@@ -5813,8 +7069,10 @@
     document.getElementById('screen-login').classList.remove('active');
     document.getElementById('screen-portal').classList.add('active');
     loadSupabaseData();
-    setTimeout(initLeafletMap, 150);
-    if (currentUserIsAdmin) refreshEnqBadge();
+    if (currentUserIsAdmin) {
+      refreshEnqBadge();
+      loadAdminEngagementDashboard();
+    }
     initWhatsNew();
     // Partner owners without a recorded agreement acceptance must accept before use
     if (!currentUserIsAdmin) maybeShowAgreementBlocker();
@@ -5912,6 +7170,7 @@
         loadPartnerDashboard();
         loadDeals();
         loadMyReservations();
+        logEvent('login', { payload: { role: session.role } });
         // Fire-and-forget: flip the firm's Channel Partners card to "Portal" the
         // first time a partner owner logs in. Idempotent — no-ops on every login
         // after the first. Skipped for staff (only the firm has a Monday card).
@@ -8035,7 +9294,8 @@
     document.getElementById('page-' + page).classList.add('active');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (navEl) navEl.classList.add('active');
-    if (page === 'dashboard')         { setTimeout(initLeafletMap, 80); }
+    logEvent('page_view', { entityType: 'page', entityId: page });
+    if (page === 'dashboard' && currentUserIsAdmin) { loadAdminEngagementDashboard(); }
     if (page === 'reports')           { updateRscFdropSummaries(); renderResearchBrowse(); }
     if (page === 'stock')             { loadStockProjects(); }
     if (page === 'agent')             { agentInit(); }
@@ -10017,6 +11277,13 @@
         return;
       }
       renderAskResults(data);
+      logEvent('ask_tpch', {
+        payload: {
+          query_len: query.length,
+          stock_results: Array.isArray(data?.stock) ? data.stock.length : 0,
+          research_results: Array.isArray(data?.research) ? data.research.length : 0,
+        },
+      });
     } catch (e) {
       resultsEl.innerHTML = '<div class="ask-summary">Search failed: ' + escHtml((e && e.message) ? e.message : String(e)) + '</div>';
     } finally {
@@ -10341,6 +11608,8 @@
   async function showResearchV2(slug) {
     const activePage = document.querySelector('.page-view.active');
     rv2LastPage = activePage ? activePage.id.replace('page-','') : 'dashboard';
+
+    logEvent('research_view', { entityType: 'research', entityId: slug });
 
     // Show v2 page
     document.querySelectorAll('.page-view').forEach(p => { p.classList.remove('active'); p.style.display = ''; });
@@ -12592,6 +13861,46 @@ async function saveAnalysisEdits() {
   }
 }
 
+// ── Engagement event tracking ─────────────────────────────
+// Tab-scoped session id so we can group page_view rows into sessions later.
+function getSessionId() {
+  if (window._tpchSessionId) return window._tpchSessionId;
+  let sid = sessionStorage.getItem('tpch_session_id');
+  if (!sid) {
+    sid = (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : (Date.now() + '-' + Math.random().toString(36).slice(2, 10));
+    sessionStorage.setItem('tpch_session_id', sid);
+  }
+  window._tpchSessionId = sid;
+  return sid;
+}
+
+// Fire-and-forget event log. Silently no-ops for admins / logged-out (server-side
+// log_partner_event also skips when current_partner_id() is NULL, but we
+// short-circuit client-side too to save a network round-trip).
+function logEvent(eventType, opts) {
+  if (!eventType) return;
+  if (!currentPartnerRecord) return; // admins / logged-out: skip
+  try {
+    fetch(SUPABASE_URL + '/rest/v1/rpc/log_partner_event', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        p_event_type:  eventType,
+        p_entity_type: (opts && opts.entityType) || null,
+        p_entity_id:   (opts && opts.entityId) ? String(opts.entityId) : null,
+        p_session_id:  getSessionId(),
+        p_payload:     (opts && opts.payload) || {},
+      }),
+    }).catch(() => {});
+  } catch(_) { /* never block UI on tracking */ }
+}
+
 // ── Lot detail ────────────────────────────────────────────
 // Records a partner view of a stock or project for the dashboard's
 // personalisation (Stock Radar feed + Morning Brief context). Fire-and-
@@ -12695,7 +14004,17 @@ function showStockListing(id) {
     if (isPdf) {
       fpThumb.style.display = 'none';
       document.getElementById('slg-floor-plan-iframe').src = s.floor_plan_url;
-      document.getElementById('slg-floor-plan-pdf-link').href = s.floor_plan_url;
+      const pdfLink = document.getElementById('slg-floor-plan-pdf-link');
+      pdfLink.href = s.floor_plan_url;
+      if (!pdfLink._engBound) {
+        pdfLink._engBound = true;
+        pdfLink.addEventListener('click', () => {
+          logEvent('floor_plan_pdf_open', {
+            entityType: 'stock',
+            entityId: (typeof currentStockId !== 'undefined' ? currentStockId : null),
+          });
+        });
+      }
       fpPdf.style.display = '';
     } else {
       fpPdf.style.display = 'none';
@@ -17764,7 +19083,19 @@ function buildKitHtml(s, research, brand) {
     const input = document.getElementById('share-flyer-url');
     const preview = document.getElementById('share-flyer-preview-btn');
     if (input) input.value = url;
-    if (preview) preview.href = url;
+    if (preview) {
+      preview.href = url;
+      // Attach once: log when partner previews the flyer in a new tab.
+      if (!preview._engBound) {
+        preview._engBound = true;
+        preview.addEventListener('click', () => {
+          logEvent('flyer_open', {
+            entityType: 'stock',
+            entityId: (typeof currentStockId !== 'undefined' ? currentStockId : null),
+          });
+        });
+      }
+    }
   }
 
   function shareFlyerLink() {
@@ -17800,6 +19131,11 @@ function buildKitHtml(s, research, brand) {
       if (copyBtn) copyBtn.textContent = '✓ Copied';
       if (status)  status.textContent = 'Link copied to clipboard. Paste it into an email or text to your client.';
       setTimeout(() => { if (copyBtn) copyBtn.textContent = 'Copy link'; }, 2400);
+      logEvent('flyer_share', {
+        entityType: 'stock',
+        entityId: (typeof currentStockId !== 'undefined' ? currentStockId : null),
+        payload: { recipient: (document.getElementById('share-flyer-recipient')?.value || '').trim() || null },
+      });
     };
     const onFail = () => {
       // Fallback for older browsers / non-secure contexts
