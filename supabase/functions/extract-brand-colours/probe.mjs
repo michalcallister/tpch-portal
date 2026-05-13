@@ -66,8 +66,18 @@ function normaliseUrl(input) {
 }
 
 // Resolve a stylesheet href relative to the page URL, skipping
-// font CDNs and obvious analytics — we want CSS that defines the
-// brand, not Google Fonts.
+// font CDNs and framework/CMS default bundles. We want partner-
+// authored CSS, not WordPress block-editor presets or Bootstrap
+// defaults. Keep in lockstep with isFrameworkStylesheet in index.ts.
+function isFrameworkStylesheet(href) {
+  if (/fonts\.googleapis\.com|fonts\.gstatic\.com|use\.typekit\.net/i.test(href)) return true;
+  if (/(^|\/\/)([a-z0-9-]+\.)?wp\.com\//i.test(href)) return true;
+  if (/(^|\/\/)s\.w\.org\//i.test(href)) return true;
+  if (/\/wp-includes\/|\/wp-admin\//i.test(href)) return true;
+  if (/cdn\.jsdelivr\.net|unpkg\.com|cdnjs\.cloudflare\.com|bootstrapcdn\.com|stackpath\.bootstrapcdn\.com/i.test(href)) return true;
+  return false;
+}
+
 function resolveStylesheets(html, pageUrl) {
   const re = /<link[^>]+rel\s*=\s*["']?stylesheet["']?[^>]*>/gi;
   const out = [];
@@ -80,11 +90,21 @@ function resolveStylesheets(html, pageUrl) {
     try {
       href = new URL(href, pageUrl).toString();
     } catch { continue; }
-    if (/fonts\.googleapis\.com|fonts\.gstatic\.com|use\.typekit\.net/i.test(href)) continue;
+    if (isFrameworkStylesheet(href)) continue;
     out.push(href);
     if (out.length >= MAX_CSS_FILES) break;
   }
   return out;
+}
+
+function isParkedPage(html) {
+  const head = html.slice(0, 8_000).toLowerCase();
+  return (
+    /<title[^>]*>[^<]*coming soon[^<]*<\/title>/i.test(head) ||
+    /this domain (is )?(coming soon|for sale|is parked)/i.test(head) ||
+    /domain (is )?(coming soon|for sale|parked)/i.test(head) ||
+    /buy this domain/i.test(head)
+  );
 }
 
 // ── Colour extraction (mirror of edge function) ────────────
@@ -184,12 +204,12 @@ function extractColours(text) {
   }
   if (all.length > 0) {
     const ranked = mostFrequent(all);
-    return {
-      primary: ranked[0]?.[0] || null,
-      accent:  ranked[1]?.[0] || (ranked[0] ? deriveAccent(ranked[0][0]) : null),
-      source:  'frequency',
-      all:     ranked,
-    };
+    if (ranked[0] && ranked[0][1] >= 2) {
+      const primary = ranked[0][0];
+      const accent  = ranked[1]?.[0] || deriveAccent(primary);
+      return { primary, accent, source: 'frequency', all: ranked };
+    }
+    return { primary: null, accent: null, source: 'low-confidence', all: ranked };
   }
   return { primary: null, accent: null, source: 'none', all: [] };
 }
@@ -212,6 +232,11 @@ async function probe(rawUrl) {
   let html = page.body;
   if (html.length > MAX_HTML_BYTES) html = html.slice(0, MAX_HTML_BYTES);
   console.log(`  HTML: ${html.length.toLocaleString()} bytes`);
+
+  if (isParkedPage(html)) {
+    console.log('  ✗ parked / coming-soon page detected — refusing extraction');
+    return;
+  }
 
   const sheets = fetchExternalCss ? resolveStylesheets(html, page.finalUrl || url) : [];
   let cssBytes = 0;

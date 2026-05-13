@@ -88,6 +88,16 @@ Deno.serve(async (req) => {
 
     if (html.length > 2_000_000) html = html.slice(0, 2_000_000)
 
+    // ── Reject parked / coming-soon templates before extraction.
+    // Their only colours come from a generic gradient (e.g. #667eea /
+    // #764ba2), which would otherwise win frequency by default.
+    if (isParkedPage(html)) {
+      return json({
+        error:   'parked_page',
+        message: 'This site looks like a parked or "coming soon" page. Set your brand colours manually until the live site is published.',
+      }, 422)
+    }
+
     // ── Pull referenced stylesheets so we can see compiled brand vars
     //    (Tailwind / Vite / Next bundles). Cap at 3 sheets / 1.5 MB.
     const sheetUrls = resolveStylesheets(html, targetUrl)
@@ -156,8 +166,26 @@ function json(body: unknown, status = 200) {
 }
 
 // Find <link rel="stylesheet"> hrefs in the page, resolve them against the
-// page URL, and skip font CDNs (Google Fonts, Adobe Typekit) — they don't
-// carry brand colours. Cap at 3 sheets to keep latency in check.
+// page URL, and skip stylesheets that carry framework/CMS defaults rather
+// than partner brand. Cap at 3 sheets to keep latency in check.
+//
+// What we skip and why:
+//   - Font CDNs (Google Fonts, Adobe Typekit) — no colours.
+//   - WordPress.com global CSS (c0/c1/c2/s0/s1.wp.com, s.w.org) and any
+//     wp-includes/ or wp-admin/ path — these ship the WP block-editor
+//     preset palette (#3858e9 blue, #cc1818 red, #4ab866 green…) which is
+//     identical across every WP site and dominates frequency counts.
+//   - Framework CDNs (jsdelivr, unpkg, cdnjs, bootstrapcdn) — Bootstrap /
+//     Bulma / Tailwind defaults, not partner-authored.
+function isFrameworkStylesheet(href: string): boolean {
+  if (/fonts\.googleapis\.com|fonts\.gstatic\.com|use\.typekit\.net/i.test(href)) return true
+  if (/(^|\/\/)([a-z0-9-]+\.)?wp\.com\//i.test(href)) return true
+  if (/(^|\/\/)s\.w\.org\//i.test(href)) return true
+  if (/\/wp-includes\/|\/wp-admin\//i.test(href)) return true
+  if (/cdn\.jsdelivr\.net|unpkg\.com|cdnjs\.cloudflare\.com|bootstrapcdn\.com|stackpath\.bootstrapcdn\.com/i.test(href)) return true
+  return false
+}
+
 function resolveStylesheets(html: string, pageUrl: string): string[] {
   const re = /<link[^>]+rel\s*=\s*["']?stylesheet["']?[^>]*>/gi
   const out: string[] = []
@@ -170,12 +198,26 @@ function resolveStylesheets(html: string, pageUrl: string): string[] {
     try {
       href = new URL(hrefMatch[1], pageUrl).toString()
     } catch { continue }
-    if (/fonts\.googleapis\.com|fonts\.gstatic\.com|use\.typekit\.net/i.test(href)) continue
+    if (isFrameworkStylesheet(href)) continue
     if (out.includes(href)) continue
     out.push(href)
     if (out.length >= 3) break
   }
   return out
+}
+
+// Detect "domain parked / coming soon / for sale" templates so we don't
+// cache template-gradient colours as the partner's brand. Cheap string
+// checks against the raw HTML — these markers are remarkably consistent
+// across the common parking providers.
+function isParkedPage(html: string): boolean {
+  const head = html.slice(0, 8_000).toLowerCase()
+  return (
+    /<title[^>]*>[^<]*coming soon[^<]*<\/title>/i.test(head) ||
+    /this domain (is )?(coming soon|for sale|is parked)/i.test(head) ||
+    /domain (is )?(coming soon|for sale|parked)/i.test(head) ||
+    /buy this domain/i.test(head)
+  )
 }
 
 function normaliseUrl(input: string): string | null {
@@ -242,11 +284,18 @@ function extractColours(html: string): ExtractResult {
     if (hex && !isGrey(hex) && !isExtreme(hex)) all.push(hex)
   }
   if (all.length > 0) {
-    const ranked = mostFrequent(all)
-    return {
-      primary: ranked[0] || null,
-      accent:  ranked[1] || (ranked[0] ? deriveAccent(ranked[0]) : null),
-      source:  'frequency',
+    // Require the winning colour to occur at least twice. A single-
+    // occurrence "winner" is almost always a one-off illustration accent
+    // or a template gradient hex — not a brand colour. Without this, a
+    // page with one Stripe-style gradient pair (each appearing once)
+    // happily promotes those to primary/accent.
+    const counts = new Map<string, number>()
+    for (const it of all) counts.set(it, (counts.get(it) || 0) + 1)
+    const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1])
+    if (ranked[0] && ranked[0][1] >= 2) {
+      const primary = ranked[0][0]
+      const accent  = ranked[1]?.[0] || deriveAccent(primary)
+      return { primary, accent, source: 'frequency' }
     }
   }
 
