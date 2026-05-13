@@ -2,8 +2,8 @@
 // TPCH Portal — Morning Brief Agent
 // Supabase Edge Function: morning-brief-agent
 //
-// Generates the daily Morning Brief shown on the partner dashboard.
-// Two sections per brief:
+// Generates ONE shared "house brief" per day. Every active channel
+// partner reads the same row from `daily_briefs`. Two sections:
 //   1. market_pulse — 4 real Australian property news articles. Source
 //                     pipeline (in priority order):
 //                       (a) RSS pre-fetch across ~13 AU property +
@@ -14,13 +14,23 @@
 //                     Each item carries headline, summary, source_name,
 //                     source_url, and published_date.
 //   2. send_this    — one general market-read paragraph the partner can
-//                     broadcast to their client list (NOT project-specific)
+//                     broadcast to their client list. NOT project-specific.
+//
+// Why one shared row, not one per partner:
+//   The previous design called Claude once per partner (~30k input
+//   tokens each) but the prompt explicitly forbade project- or
+//   suburb-specific content, so every partner got the same article
+//   pool and a general paragraph. It was redundant work that tripped
+//   Anthropic's 30k input tokens/min rate limit at 5 partners and
+//   structurally couldn't scale past Supabase's 150s per-invocation
+//   cap. The shared brief is one call/day, ~$0.05, regardless of
+//   partner count.
 //
 // Triggers:
 //   - Cron (set via Supabase Dashboard → Edge Functions → cron):
-//     `0 20 * * *` UTC ≈ 04:00 AWST. Body empty → process all active
-//     partners. Existing briefs for today are skipped unless force=true.
-//   - HTTP POST { partner_id, force? } from admin/dev preview.
+//     `0 20 * * *` UTC ≈ 04:00 AWST. Body empty → generate today's
+//     brief. Skipped if today's row already exists unless force=true.
+//   - HTTP POST { force? } from admin/dev preview.
 //
 // Secrets required:
 //   CLAUDE_API_KEY            (Anthropic API key)
@@ -108,7 +118,7 @@ ARTICLE SELECTION:
 - Pick exactly 4 articles. Each from a different angle, don't pick 4 articles all about the same single story.
 - NEVER cite the same URL twice in a single brief.
 - If the pack contains articles from multiple publications, spread your 4 picks across different publications. Avoid citing the same publication more than twice in one brief unless the pack genuinely offers nothing else.
-- Personalise to the partner's tracked geography where possible: if their book is QLD-heavy, lean toward Queensland-relevant stories from the pack.
+- Cover the Australian market as a whole. Don't over-weight one state — partners read this across every state and territory.
 - Skip thin listicles, sponsored content, agent self-promotion, "10 hottest suburbs" filler. Pick the substantive ones.
 
 FORMAT RULES (per article):
@@ -140,109 +150,6 @@ OUTPUT, strict JSON only, no preamble, no markdown fences. Return EXACTLY this s
 
 Return exactly 4 market_pulse items.`
 
-// ── Per-partner context gather ────────────────────────────────
-type Ctx = {
-  partner: any
-  activeDeals: any[]
-  expiringReservations: any[]
-  stalledDeals: any[]
-  shortlistProjects: any[]
-  recentlyViewedProjects: any[]
-  recentEvents: any[]
-  suburbSnapshots: any[]
-}
-
-async function gatherContext(partnerId: string): Promise<Ctx | null> {
-  const { data: partner } = await sb
-    .from('channel_partners')
-    .select('id, full_name, company_name, state, role_type')
-    .eq('id', partnerId)
-    .single()
-  if (!partner) return null
-
-  const { data: deals } = await sb
-    .from('partner_deals')
-    .select('id, name, stage, property_id, property_name, client_name, expected_settlement_date, channel_partner_name, fully_paid_date, stage_changed_at')
-    .ilike('channel_partner_name', partner.company_name || '___no_match___')
-  const allDeals = deals || []
-  const activeDeals = allDeals.filter(d => !d.fully_paid_date)
-
-  const stalledDeals = activeDeals.filter(d => {
-    if (!d.stage_changed_at) return false
-    const days = (Date.now() - new Date(d.stage_changed_at).getTime()) / 86400000
-    return days >= 14
-  })
-
-  const { data: reservations } = await sb
-    .from('reservations')
-    .select('id, status, expires_at, stock_name, project_name, client_name')
-    .eq('partner_id', partnerId)
-    .eq('status', 'reserved')
-  const expiringReservations = (reservations || []).filter(r => {
-    if (!r.expires_at) return false
-    const hrs = (new Date(r.expires_at).getTime() - Date.now()) / 3600000
-    return hrs > 0 && hrs <= 48
-  })
-
-  const { data: shortlistItems } = await sb
-    .from('shortlist_items')
-    .select('project_id, project_name, stock_id, stock_name')
-    .eq('partner_id', partnerId)
-    .order('added_at', { ascending: false })
-    .limit(20)
-  const shortlistProjectIds = dedupeBy(
-    (shortlistItems || []).filter(s => s.project_id),
-    s => s.project_id
-  ).map((s: any) => s.project_id)
-
-  const { data: views } = await sb
-    .from('partner_recent_views')
-    .select('entity_type, entity_id, viewed_at')
-    .eq('partner_id', partnerId)
-    .gte('viewed_at', new Date(Date.now() - 30 * 86400000).toISOString())
-    .order('viewed_at', { ascending: false })
-    .limit(20)
-  const viewedProjectIds = (views || []).filter(v => v.entity_type === 'project').map(v => v.entity_id)
-
-  // Hydrate both shortlisted and viewed projects in one round-trip so we have
-  // suburb/state for prompt context (shortlist_items only stores project_name).
-  const allTrackedIds = [...new Set([...shortlistProjectIds, ...viewedProjectIds])]
-  const trackedProjects = allTrackedIds.length
-    ? (await sb.from('projects').select('id, name, suburb, state').in('id', allTrackedIds)).data || []
-    : []
-  const shortlistSet = new Set(shortlistProjectIds)
-  const shortlistProjects = trackedProjects.filter((p: any) => shortlistSet.has(p.id))
-  const recentlyViewedProjects = trackedProjects.filter((p: any) => viewedProjectIds.includes(p.id) && !shortlistSet.has(p.id))
-
-  // Stock events relevant to partner — small enough to inline.
-  const { data: eventsRaw } = await sb.rpc('get_partner_stock_events', { p_limit: 15 })
-  const recentEvents = Array.isArray(eventsRaw) ? eventsRaw : []
-
-  // Suburb research snapshots for the suburbs of partner's tracked projects.
-  // Use real project.suburb values, not project names.
-  const suburbList = [...new Set(trackedProjects.map((p: any) => p.suburb).filter(Boolean))].slice(0, 6) as string[]
-  let suburbSnapshots: any[] = []
-  if (suburbList.length) {
-    const { data: sr } = await sb
-      .from('suburb_research')
-      .select('suburb, state_code, thesis_short, vacancy_rate, median_price, capital_growth_10yr, avg_yield')
-      .in('suburb', suburbList)
-      .eq('status', 'published')
-    suburbSnapshots = sr || []
-  }
-
-  return {
-    partner,
-    activeDeals,
-    expiringReservations,
-    stalledDeals,
-    shortlistProjects,
-    recentlyViewedProjects,
-    recentEvents,
-    suburbSnapshots,
-  }
-}
-
 function dedupeBy<T>(items: T[], key: (i: T) => string | null | undefined): T[] {
   const seen = new Set<string>()
   const out: T[] = []
@@ -255,20 +162,18 @@ function dedupeBy<T>(items: T[], key: (i: T) => string | null | undefined): T[] 
   return out
 }
 
-// ── Compose user prompt from gathered context ─────────────────
-function buildUserPrompt(c: Ctx, pack: FeedPack): string {
+// Compose the user prompt — just today's date and the RSS headline
+// pack. No partner-specific context: the brief is market commentary
+// shared across every partner.
+function buildUserPrompt(pack: FeedPack): string {
   const today = new Date().toLocaleDateString('en-AU', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 
   const lines: string[] = []
-  lines.push(`PARTNER: ${c.partner.full_name} at ${c.partner.company_name || 'unnamed firm'}`)
-  if (c.partner.state) lines.push(`Primary state: ${c.partner.state}`)
-  if (c.partner.role_type) lines.push(`Role: ${c.partner.role_type}`)
   lines.push(`Today: ${today}`)
   lines.push('')
 
-  // Inject the RSS feed pack — primary source for the brief.
   if (pack.items.length) {
     lines.push(`TODAY'S HEADLINES (${pack.items.length} articles, last 48h, from curated AU property + business RSS feeds):`)
     pack.items.forEach((it, i) => {
@@ -280,49 +185,6 @@ function buildUserPrompt(c: Ctx, pack: FeedPack): string {
     lines.push('')
   } else {
     lines.push("TODAY'S HEADLINES: (RSS pack returned empty, fall back to web_search)")
-    lines.push('')
-  }
-
-  // Partner pipeline context (deals, reservations, settlements) intentionally
-  // omitted from this prompt — the brief is now market commentary only and
-  // including book-specific data risks the model leaking it into send_this.
-
-  const tracked = dedupeBy(
-    [
-      ...c.shortlistProjects.map((p: any) => ({ id: p.id, name: p.name, suburb: p.suburb, state: p.state, source: 'shortlist' })),
-      ...c.recentlyViewedProjects.map((p: any) => ({ id: p.id, name: p.name, suburb: p.suburb, state: p.state, source: 'viewed' })),
-    ],
-    (i: any) => i.id
-  ).slice(0, 8)
-  if (tracked.length) {
-    lines.push('PARTNER\'S TRACKED PROJECTS (shortlisted + viewed in last 30 days):')
-    for (const p of tracked as any[]) {
-      const loc = p.suburb ? ` (${p.suburb}${p.state ? ', ' + p.state : ''})` : ''
-      lines.push(`- ${p.name}${loc} [project_id=${p.id}, source=${p.source}]`)
-    }
-    lines.push('')
-  }
-
-  if (c.recentEvents.length) {
-    lines.push('STOCK MARKET CHANGES IN PARTNER\'S BOOK (last 14 days):')
-    for (const e of c.recentEvents.slice(0, 8)) {
-      lines.push(`- ${e.event_type} on ${e.stock_name || e.project_name || '?'}: ${JSON.stringify(e.payload || {})}`)
-    }
-    lines.push('')
-  }
-
-  if (c.suburbSnapshots.length) {
-    lines.push('PUBLISHED TPCH SUBURB RESEARCH for partner\'s relevant suburbs:')
-    for (const s of c.suburbSnapshots.slice(0, 6)) {
-      const bits = [
-        s.vacancy_rate != null         ? `vacancy ${s.vacancy_rate}%` : null,
-        s.median_price != null         ? `median $${Math.round(s.median_price).toLocaleString('en-AU')}` : null,
-        s.avg_yield != null            ? `yield ${s.avg_yield}%` : null,
-        s.capital_growth_10yr != null  ? `10-yr growth ${s.capital_growth_10yr}% p.a.` : null,
-      ].filter(Boolean).join(' · ')
-      lines.push(`- ${s.suburb}, ${s.state_code || ''}: ${bits || 'no headline stats'}`)
-      if (s.thesis_short) lines.push(`  Thesis: ${s.thesis_short}`)
-    }
     lines.push('')
   }
 
@@ -350,12 +212,18 @@ async function logAgentRun(opts: {
   triggeredBy?: string
   errorMessage?: string | null
 }) {
+  // Always persist a row — including failure paths where usage is absent.
+  // Previously this early-returned on `!opts.usage`, which meant every
+  // Claude API failure was silently swallowed and never surfaced in
+  // agent_runs, leaving us blind on broken cron mornings.
+  const inTok  = opts.usage?.input_tokens  || 0
+  const outTok = opts.usage?.output_tokens || 0
+  const price  = MODEL_PRICING[opts.model] || { in: 3, out: 15 }
+  const cost   = Math.round(inTok * price.in + outTok * price.out)
+  if (opts.status === 'failed' || opts.errorMessage) {
+    console.error(`[morning-brief] run failed (${opts.triggeredBy || AGENT_SLUG}): ${opts.errorMessage || 'unknown'}`)
+  }
   try {
-    if (!opts.usage) return
-    const inTok  = opts.usage.input_tokens  || 0
-    const outTok = opts.usage.output_tokens || 0
-    const price  = MODEL_PRICING[opts.model] || { in: 3, out: 15 }
-    const cost   = Math.round(inTok * price.in + outTok * price.out)
     const { data: agent } = await sb.from('agents').select('id').eq('slug', AGENT_SLUG).single()
     if (!agent) return
     await sb.from('agent_runs').insert({
@@ -546,7 +414,7 @@ function validateBrief(b: any, pack: FeedPack): { market_pulse: any[]; pipeline_
   return { market_pulse: mp, pipeline_lines: pl, send_this: st }
 }
 
-// ── Today's date in AWST (matches partner_briefs.brief_date default) ─
+// Today's date in AWST (matches daily_briefs.brief_date default).
 function todayPerth(): string {
   const fmt = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Australia/Perth', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -554,64 +422,34 @@ function todayPerth(): string {
   return fmt.format(new Date())
 }
 
-// ── Generate one brief ────────────────────────────────────────
-async function generateForPartner(partnerId: string, force: boolean): Promise<{ status: string; reason?: string }> {
+// ── Generate today's shared brief ─────────────────────────────
+async function generateDailyBrief(force: boolean, triggeredBy: string): Promise<{ status: string; reason?: string }> {
   const today = todayPerth()
   if (!force) {
     const { data: existing } = await sb
-      .from('partner_briefs')
-      .select('id')
-      .eq('partner_id', partnerId)
+      .from('daily_briefs')
+      .select('brief_date')
       .eq('brief_date', today)
       .maybeSingle()
     if (existing) return { status: 'skipped', reason: 'brief already exists for today' }
   }
 
-  const ctx = await gatherContext(partnerId)
-  if (!ctx) return { status: 'skipped', reason: 'partner not found or inactive' }
-
   const pack = await getFeedPackCached()
-  const userPrompt = buildUserPrompt(ctx, pack)
-  const raw = await callClaudeForBrief(BRIEF_SYSTEM_PROMPT, userPrompt, `partner:${partnerId}`)
+  const userPrompt = buildUserPrompt(pack)
+  const raw = await callClaudeForBrief(BRIEF_SYSTEM_PROMPT, userPrompt, triggeredBy)
   const brief = validateBrief(raw, pack)
 
   const { error } = await sb
-    .from('partner_briefs')
+    .from('daily_briefs')
     .upsert({
-      partner_id:     partnerId,
       brief_date:     today,
       market_pulse:   brief.market_pulse,
-      pipeline_lines: brief.pipeline_lines,
       send_this:      brief.send_this,
-      source_version: 'v3-rss',
+      source_version: 'v4-shared',
       generated_at:   new Date().toISOString(),
-    }, { onConflict: 'partner_id,brief_date' })
+    }, { onConflict: 'brief_date' })
   if (error) throw new Error(`Insert failed: ${error.message}`)
   return { status: 'generated' }
-}
-
-// ── Cron entry — generate for all active partners ─────────────
-async function generateForAll(force: boolean): Promise<any> {
-  const { data: partners } = await sb
-    .from('channel_partners')
-    .select('id, full_name, company_name')
-    .eq('status', 'active')
-  const results: any[] = []
-  for (const p of partners || []) {
-    try {
-      const r = await generateForPartner(p.id, force)
-      results.push({ partner_id: p.id, name: p.full_name, ...r })
-    } catch (e) {
-      results.push({ partner_id: p.id, name: p.full_name, status: 'error', reason: (e as Error).message })
-    }
-  }
-  return {
-    total: (partners || []).length,
-    generated: results.filter(r => r.status === 'generated').length,
-    skipped:   results.filter(r => r.status === 'skipped').length,
-    errors:    results.filter(r => r.status === 'error').length,
-    results,
-  }
 }
 
 // ── HTTP entry ────────────────────────────────────────────────
@@ -626,21 +464,18 @@ Deno.serve(async (req) => {
     }
 
     let body: any = {}
+    let rawBody = ''
     if (req.method === 'POST') {
-      const text = await req.text()
-      if (text) try { body = JSON.parse(text) } catch { body = {} }
+      rawBody = await req.text()
+      if (rawBody) try { body = JSON.parse(rawBody) } catch { body = {} }
     }
     const force = !!body.force
+    // `triggered_by` distinguishes cron vs manual replays in agent_runs.
+    // Cron sends an empty body; manual POSTs always carry one (even `{}`).
+    const triggeredBy = rawBody.trim().length > 0 ? 'manual' : 'cron'
 
-    if (body.partner_id) {
-      const result = await generateForPartner(String(body.partner_id), force)
-      return new Response(JSON.stringify(result), {
-        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const summary = await generateForAll(force)
-    return new Response(JSON.stringify(summary), {
+    const result = await generateDailyBrief(force, triggeredBy)
+    return new Response(JSON.stringify(result), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {
