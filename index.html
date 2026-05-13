@@ -33,6 +33,29 @@
     --green: #4CAF7A;
     --teal: #14A3A8;
     --teal-dim: rgba(20,163,168,0.12);
+
+    /* ── Adaptive layout primitives ─────────────────────────
+       Type scale uses clamp(min, fluid, max) so headings/labels
+       breathe at browser zoom without going microscopic on small
+       laptops. Consumed gradually by card rows and modals — older
+       selectors keep their hardcoded sizes until they're touched. */
+    --type-xs:  clamp(10px, 0.72vw + 0.55rem, 12px);
+    --type-sm:  clamp(12px, 0.85vw + 0.6rem, 14px);
+    --type-md:  clamp(14px, 0.9vw + 0.7rem, 16px);
+    --type-lg:  clamp(16px, 1.1vw + 0.75rem, 19px);
+    --type-xl:  clamp(18px, 1.4vw + 0.85rem, 22px);
+    --type-2xl: clamp(22px, 1.8vw + 1rem, 28px);
+
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 14px;
+    --space-lg: 22px;
+    --space-xl: 32px;
+
+    --sidebar-w: 240px;
+    --sidebar-w-rail: 64px;
+    --thumb-w-min: 140px;
+    --thumb-w-max: 240px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -367,13 +390,14 @@
 
   /* SIDEBAR */
   .sidebar {
-    width: 240px; min-height: 100vh;
+    width: var(--sidebar-w); min-height: 100vh;
     background: var(--black-card);
     border-right: 1px solid var(--gold-border);
     display: flex; flex-direction: column;
     flex-shrink: 0;
     position: fixed; top: 0; left: 0; bottom: 0;
     z-index: 100;
+    transition: width 0.18s ease;
   }
 
   .sidebar-logo {
@@ -492,15 +516,94 @@
 
   /* MAIN CONTENT */
   .main-content {
-    margin-left: 240px;
+    margin-left: var(--sidebar-w);
     flex: 1; display: flex; flex-direction: column;
     min-height: 100vh;
+    min-width: 0;
+    overflow-x: hidden;
+    transition: margin-left 0.18s ease;
   }
+
+  /* ── Collapsed sidebar (icon rail) ──────────────────────
+     Toggled by the hamburger in the topbar and auto-engaged at
+     ≤1280px by the JS init. Keeps the icons clickable but
+     returns ~176px of horizontal room to every page — critical
+     at high browser zoom and on tablets. */
+  #screen-portal.sidebar-collapsed .sidebar { width: var(--sidebar-w-rail); }
+  #screen-portal.sidebar-collapsed .main-content { margin-left: var(--sidebar-w-rail); }
+  #screen-portal.sidebar-collapsed .sidebar-logo {
+    padding: 18px 0;
+    justify-content: center;
+  }
+  #screen-portal.sidebar-collapsed .logo-text,
+  #screen-portal.sidebar-collapsed .sidebar-section,
+  #screen-portal.sidebar-collapsed .nav-divider-partner,
+  #screen-portal.sidebar-collapsed .nav-divider-admin,
+  #screen-portal.sidebar-collapsed .nav-item > span:not(.nav-icon):not(.admin-badge):not(.nav-deals-badge),
+  #screen-portal.sidebar-collapsed .nav-item,
+  #screen-portal.sidebar-collapsed .btn-feature-request,
+  #screen-portal.sidebar-collapsed .user-info,
+  #screen-portal.sidebar-collapsed .version-tag { font-size: 0; letter-spacing: 0; }
+  #screen-portal.sidebar-collapsed .nav-item {
+    justify-content: center;
+    padding: 12px 8px;
+    border-left-width: 0;
+    border-left-color: transparent;
+    gap: 0;
+  }
+  #screen-portal.sidebar-collapsed .nav-item.active {
+    border-left-width: 2px; border-left-color: var(--gold);
+  }
+  #screen-portal.sidebar-collapsed .nav-icon { font-size: 18px; }
+  #screen-portal.sidebar-collapsed .nav-deals-badge,
+  #screen-portal.sidebar-collapsed .admin-badge {
+    position: absolute; top: 6px; right: 6px; font-size: 9px; padding: 1px 4px;
+  }
+  #screen-portal.sidebar-collapsed .sidebar-section,
+  #screen-portal.sidebar-collapsed .nav-divider-partner,
+  #screen-portal.sidebar-collapsed .nav-divider-admin {
+    padding: 12px 0 4px; border: none;
+  }
+  #screen-portal.sidebar-collapsed .sidebar-section::after,
+  #screen-portal.sidebar-collapsed .nav-divider-partner::after,
+  #screen-portal.sidebar-collapsed .nav-divider-admin::after {
+    content: ''; display: block; height: 1px;
+    margin: 0 14px;
+    background: var(--gold-border);
+  }
+  #screen-portal.sidebar-collapsed .sidebar-bottom {
+    padding: 12px 8px;
+  }
+  #screen-portal.sidebar-collapsed .btn-feature-request {
+    padding: 8px 0; text-align: center; border: 1px solid var(--gold-border);
+  }
+  #screen-portal.sidebar-collapsed .btn-feature-request::before {
+    content: '✦'; font-size: 14px; color: var(--gold);
+  }
+  #screen-portal.sidebar-collapsed .user-card {
+    padding: 8px; justify-content: center;
+  }
+  #screen-portal.sidebar-collapsed .user-avatar { margin: 0; }
+
+  /* Sidebar toggle button in the topbar */
+  .sidebar-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px;
+    margin-right: 12px;
+    background: transparent;
+    border: 1px solid var(--gold-border);
+    color: var(--gold);
+    cursor: pointer;
+    font-size: 18px; line-height: 1;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .sidebar-toggle:hover { background: var(--gold-dim); border-color: var(--gold); }
 
   /* TOP BAR */
   .topbar {
     padding: 20px 32px;
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; gap: 12px;
     background: var(--black);
     position: sticky; top: 0; z-index: 50;
   }
@@ -517,8 +620,20 @@
   }
 
   .topbar-meta {
+    margin-left: auto;
     font-size: 14px; color: var(--grey-pale);
     display: flex; align-items: center; gap: 20px;
+  }
+
+  /* Tablet shell — tighten topbar padding/title so heading + meta still fit. */
+  @media (max-width: 1024px) {
+    .topbar { padding: 16px 20px; }
+    .topbar-title { font-size: 20px; }
+  }
+  @media (max-width: 768px) {
+    .topbar { padding: 12px 14px; }
+    .topbar-title { font-size: 18px; }
+    .topbar-meta { gap: 12px; }
   }
 
   .update-badge {
@@ -2124,7 +2239,18 @@
     background: var(--black-card);
     border: 1px solid var(--gold);
     padding: 40px; max-width: 440px; width: 90%;
+    max-height: calc(100vh - 32px);
+    display: flex; flex-direction: column;
+    overflow: hidden;
     animation: fadeUp 0.3s ease;
+  }
+  .modal .modal-body {
+    overflow-y: auto;
+    min-height: 0;
+    flex: 1;
+  }
+  @media (max-width: 768px) {
+    .modal { padding: 24px; width: calc(100vw - 24px); max-width: none; max-height: calc(100vh - 16px); }
   }
 
   .modal-title {
@@ -2169,7 +2295,12 @@
   #page-enquiries { padding: 0 !important; display: none; height: calc(100vh - 61px); overflow: hidden; }
   #page-enquiries.active { display: flex; }
 
-  .enq-layout { display: grid; grid-template-columns: 340px 1fr; width: 100%; overflow: hidden; }
+  .enq-layout { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); width: 100%; overflow: hidden; }
+  @media (max-width: 900px) {
+    #page-enquiries { height: auto; overflow: auto; }
+    .enq-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .enq-sidebar { border-right: none; border-bottom: 1px solid var(--gold-border); max-height: 320px; }
+  }
 
   .enq-sidebar {
     background: var(--black-card); border-right: 1px solid var(--gold-border);
@@ -2278,7 +2409,15 @@
   #page-partners { padding: 0 !important; display: none; height: calc(100vh - 61px); overflow: hidden; }
   #page-partners.active { display: flex; }
 
-  .prt-layout { display: grid; grid-template-columns: 620px 1fr; width: 100%; overflow: hidden; }
+  .prt-layout { display: grid; grid-template-columns: minmax(min(360px, 100%), 620px) minmax(0, 1fr); width: 100%; overflow: hidden; }
+  @media (max-width: 1100px) {
+    .prt-layout { grid-template-columns: minmax(min(320px, 100%), 480px) minmax(0, 1fr); }
+  }
+  @media (max-width: 900px) {
+    #page-partners { height: auto; overflow: auto; }
+    .prt-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .prt-sidebar { border-right: none; border-bottom: 1px solid var(--gold-border); max-height: 360px; }
+  }
 
   .prt-sidebar {
     border-right: 1px solid var(--gold-border); display: flex; flex-direction: column; overflow: hidden;
@@ -2468,7 +2607,12 @@
   #page-team { padding: 0 !important; display: none; height: calc(100vh - 61px); overflow: hidden; }
   #page-team.active { display: flex; }
 
-  .tm-layout { display: grid; grid-template-columns: 340px 1fr; width: 100%; overflow: hidden; }
+  .tm-layout { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); width: 100%; overflow: hidden; }
+  @media (max-width: 900px) {
+    #page-team { height: auto; overflow: auto; }
+    .tm-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .tm-sidebar { border-right: none; border-bottom: 1px solid var(--gold-border); max-height: 320px; }
+  }
   .tm-sidebar { border-right: 1px solid var(--gold-border); display: flex; flex-direction: column; overflow: hidden; }
   .tm-sidebar-head { padding: 20px 16px 12px; border-bottom: 1px solid var(--gold-border); flex-shrink: 0; }
   .tm-sidebar-head h2 { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; margin: 0 0 4px; }
@@ -3443,6 +3587,7 @@
 
     <!-- TOP BAR -->
     <div class="topbar">
+      <button type="button" class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar" title="Toggle sidebar">☰</button>
       <div class="topbar-left">
         <div class="topbar-title" id="topbar-greeting"></div>
         <div class="topbar-company" id="topbar-company"></div>
@@ -8503,6 +8648,16 @@
 
   const CHANGELOG = [
     {
+      version: '3.3',
+      date: '13 May 2026',
+      title: 'Portal now adapts to browser zoom and tablet screens',
+      items: [
+        'Stock and Suburb Research lists now reflow cleanly when you zoom your browser in — project names, suburb labels and pricing stay readable instead of clipping.',
+        'Project cards stack gracefully on narrower screens, so the right-hand list is just as usable on an iPad as on a desktop monitor.',
+        'A new toggle in the top bar collapses the left navigation to an icon rail, returning ~170px of horizontal room for the page you\'re reading. The portal remembers your choice next time you sign in.',
+      ]
+    },
+    {
       version: '3.2',
       date: '7 May 2026',
       title: 'Morning Brief: ABC, SMH, Age and Domain coverage added',
@@ -8714,9 +8869,34 @@
     document.getElementById('setpass-confirm').addEventListener('keydown', e => { if (e.key==='Enter') doSetPassword(); });
     document.getElementById('forgot-email').addEventListener('keydown', e => { if (e.key==='Enter') sendPasswordReset(); });
     initTeamAuth(); // load admin emails from tpch_team before first login attempt
+    initSidebarCollapse();                     // sets up the icon-rail toggle and auto-collapses on narrow viewports
     const wasRedirected = checkAuthRedirect(); // handle invite/recovery links — must run before restoreSession
     if (!wasRedirected) restoreSession();      // only restore session if not handling an auth redirect
   });
+
+  // ─── SIDEBAR ICON-RAIL TOGGLE ─────────────────────────
+  // Auto-collapses below 1280px so zoomed laptops / tablets gain
+  // ~176px of horizontal room. User can re-expand manually via the
+  // hamburger in the topbar; choice persists in localStorage.
+  const SIDEBAR_KEY = 'tpch_sidebar_collapsed';
+  function setSidebarCollapsed(collapsed) {
+    const shell = document.getElementById('screen-portal');
+    if (!shell) return;
+    shell.classList.toggle('sidebar-collapsed', !!collapsed);
+    try { localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0'); } catch (_) {}
+  }
+  function toggleSidebar() {
+    const shell = document.getElementById('screen-portal');
+    if (!shell) return;
+    setSidebarCollapsed(!shell.classList.contains('sidebar-collapsed'));
+  }
+  function initSidebarCollapse() {
+    let stored = null;
+    try { stored = localStorage.getItem(SIDEBAR_KEY); } catch (_) {}
+    if (stored === '1') setSidebarCollapsed(true);
+    else if (stored === '0') setSidebarCollapsed(false);
+    else if (window.innerWidth <= 1280) setSidebarCollapsed(true);
+  }
 
   // ─── PARTNER SETTINGS ─────────────────────────────────
 
@@ -12410,6 +12590,8 @@ let stkFilter = {
 let stkLeafletMap = null;
 let stkMarkerCluster = null;
 let stkProjectMarkers = {}; // id → marker
+let stkProjectPinCoords = {}; // id → [[lat,lng], ...] (each project may have one project pin OR many H&L lot pins)
+let stkLastFilteredProjects = []; // sorted + data-filtered list (pre-viewport)
 let stkClusteringEnabled = true;
 let stkPinsVisible = true;
 // Parse title_forecast text — handles "Titled", ISO dates, and "Month'YY" / "Month 'YY" formats
@@ -12636,7 +12818,10 @@ async function loadStockProjects() {
     stockSummary.forEach(s => {
       if (!s.project_id) return;
       if (!pmap[s.project_id]) pmap[s.project_id] = { prices: [], commFlats: [], commPcts: [], avail: 0, availAvail: 0, availReserved: 0 };
-      if (s.total_contract && s.availability === 'Available') pmap[s.project_id].prices.push(s.total_contract);
+      // Use Available + Reserved prices so the project's price band covers all live inventory visible in the project view.
+      if (s.total_contract && (s.availability === 'Available' || s.availability === 'Reserved')) {
+        pmap[s.project_id].prices.push(s.total_contract);
+      }
       if (s.channel_comm_flat) pmap[s.project_id].commFlats.push(s.channel_comm_flat);
       if (s.channel_comm_pct)  pmap[s.project_id].commPcts.push(s.channel_comm_pct);
       if (s.availability === 'Available') { pmap[s.project_id].avail++; pmap[s.project_id].availAvail++; }
@@ -12645,6 +12830,7 @@ async function loadStockProjects() {
     allProjects.forEach(p => {
       const s = pmap[p.id] || { prices: [], commFlats: [], commPcts: [], avail: 0, availAvail: 0, availReserved: 0 };
       p._minPrice      = s.prices.length    ? Math.min(...s.prices)    : null;
+      p._maxPrice      = s.prices.length    ? Math.max(...s.prices)    : null;
       p._maxCommFlat   = s.commFlats.length ? Math.max(...s.commFlats) : null;
       p._maxCommPct    = s.commPcts.length  ? Math.max(...s.commPcts)  : null;
       p._availCount    = s.avail;
@@ -12744,8 +12930,10 @@ function filteredStockProjects() {
     if (f.states.length && !f.states.includes(p.state)) return false;
     if (f.types.length  && !f.types.includes(p.development_type)) return false;
     if (f.projStatus !== 'all' && p.project_status !== f.projStatus) return false;
-    if (p._minPrice != null) {
-      if (p._minPrice < f.priceMin || p._minPrice > f.priceMax) return false;
+    if (p._minPrice != null && p._maxPrice != null) {
+      // Overlap test: include the project if any of its live lots fall inside the slider window.
+      // (Previously compared only _minPrice, which dropped projects whose cheapest lot sat below the lower bound.)
+      if (p._maxPrice < f.priceMin || p._minPrice > f.priceMax) return false;
     }
     if (q) {
       const hay = [p.name, p.suburb, p.state, p.development_type].filter(Boolean).join(' ').toLowerCase();
@@ -12768,22 +12956,55 @@ function sortStockProjects(arr) {
 }
 
 function renderProjectsMapMode() {
-  const all = sortStockProjects(filteredStockProjects());
-  const total = all.length;
-  document.getElementById('stk-count').innerHTML = '<strong>' + total + '</strong> project' + (total !== 1 ? 's' : '') + ' with available stock';
-  document.getElementById('stk-rightpane-count').textContent = total + (total === 1 ? ' project' : ' projects');
+  // Cache the data-filtered + sorted list so the moveend handler can re-narrow
+  // it against the current viewport without re-running filters or refitting the map.
+  stkLastFilteredProjects = sortStockProjects(filteredStockProjects());
+  // Map: shows ALL filtered projects (not paginated). fitBounds inside renderStockMap
+  // will fire moveend, which calls renderProjectsRightPane().
+  renderStockMap(stkLastFilteredProjects);
+  // Render once explicitly so the panel is correct even before moveend fires
+  // (e.g. when the map already happens to be at the same bounds).
+  renderProjectsRightPane();
+}
 
-  // Map: shows ALL filtered projects (not paginated)
-  renderStockMap(all);
+// Right-pane list, narrowed to projects whose pin (or any H&L lot pin) currently
+// sits inside the map viewport. Counts and pager reflect the visible subset.
+function renderProjectsRightPane() {
+  const all = stkLastFilteredProjects || [];
+  const visible = _stkProjectsInMapView(all);
+  const total = visible.length;
+  const totalAll = all.length;
 
-  // Right list: paginated
+  // Header count — note when the viewport is hiding some of the matching projects.
+  const hiddenByMap = totalAll - total;
+  const countEl = document.getElementById('stk-count');
+  if (countEl) {
+    countEl.innerHTML = '<strong>' + total + '</strong> project' + (total !== 1 ? 's' : '') + ' in map view'
+      + (hiddenByMap > 0 ? ' <span style="opacity:.65;font-weight:400">(' + hiddenByMap + ' outside view)</span>' : '');
+  }
+  const rcEl = document.getElementById('stk-rightpane-count');
+  if (rcEl) rcEl.textContent = total + (total === 1 ? ' project' : ' projects');
+
+  // Pagination over the visible subset.
   const pageSize = stkFilter.pageSize;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   if (stkFilter.page > totalPages) stkFilter.page = totalPages;
   const start = (stkFilter.page - 1) * pageSize;
-  const slice = all.slice(start, start + pageSize);
+  const slice = visible.slice(start, start + pageSize);
   document.getElementById('stk-rightpane-list').innerHTML = renderProjectRows(slice);
   renderStkPager('stk-projects-pager', total);
+}
+
+// True if any of the project's pin coordinates fall inside the current map bounds.
+// Projects without any geocoded pin are excluded from the map-view list.
+function _stkProjectsInMapView(all) {
+  if (!stkLeafletMap) return all.slice();
+  const b = stkLeafletMap.getBounds();
+  return all.filter(p => {
+    const coords = stkProjectPinCoords[p.id];
+    if (!coords || !coords.length) return false;
+    return coords.some(c => b.contains(c));
+  });
 }
 
 function renderProjectsListMode() {
@@ -13223,11 +13444,17 @@ function renderStockMap(projects) {
       }
     });
     stkLeafletMap.addLayer(stkMarkerCluster);
+    // When the user pans or zooms, narrow the right-pane list to projects
+    // whose pin (or any of their H&L lot pins) sits inside the new viewport.
+    stkLeafletMap.on('moveend', function() {
+      if (typeof renderProjectsRightPane === 'function') renderProjectsRightPane();
+    });
   }
 
   // Rebuild markers
   stkMarkerCluster.clearLayers();
   stkProjectMarkers = {};
+  stkProjectPinCoords = {};
   const bounds = [];
 
   // For H&L projects, prefer per-lot pins (using the stock item's own
@@ -13255,10 +13482,12 @@ function renderStockMap(projects) {
     });
     const m = L.marker([lat, lng], { icon, title: p.name || '' });
     m.bindTooltip(`<strong>${p.name || ''}</strong><br><span style="color:#C8A951">${[p.suburb, p.state].filter(Boolean).join(' · ')}</span>`, { direction: 'top' });
-    m.on('click', function() { highlightStkRow(p.id, true); });
+    // Pin click navigates straight to the project (H&L lot pins below keep their own showStockListing handler).
+    m.on('click', function() { showStockProject(p.id); });
     stkMarkerCluster.addLayer(m);
     stkProjectMarkers[p.id] = m;
     bounds.push([lat, lng]);
+    (stkProjectPinCoords[p.id] = stkProjectPinCoords[p.id] || []).push([lat, lng]);
   });
 
   hlLotPins.forEach(s => {
@@ -13276,6 +13505,9 @@ function renderStockMap(projects) {
     m.on('click', function() { showStockListing(s.id); });
     stkMarkerCluster.addLayer(m);
     bounds.push([lat, lng]);
+    if (s.project_id) {
+      (stkProjectPinCoords[s.project_id] = stkProjectPinCoords[s.project_id] || []).push([lat, lng]);
+    }
   });
 
   // Invalidate size first (the pane may have been hidden when init() ran),
@@ -15229,11 +15461,14 @@ function buildKitHtml(s, research, brand) {
   background: var(--black);
   border: 1px solid var(--gold-border);
   padding: 14px 16px;
-  min-width: 240px;
+  min-width: min(240px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
   box-shadow: 0 8px 24px rgba(0,0,0,0.55);
   display: none;
 }
-.stk-fdrop-pop-wide { min-width: 340px; }
+.stk-fdrop-pop-wide { min-width: min(340px, calc(100vw - 24px)); }
 /* When the dropdown trigger sits near the right edge (e.g. More filters),
    anchor the popover to the right edge of the trigger so it can't overflow. */
 .stk-fdrop-pop-right { left: auto; right: 0; }
@@ -15255,8 +15490,16 @@ function buildKitHtml(s, research, brand) {
 .stk-body { flex: 1; overflow: hidden; display: flex; min-height: 0; }
 .stk-body > * { flex: 1; min-width: 0; min-height: 0; }
 
-/* Projects MAP mode (map + right list) */
-.stk-projects-map { display: grid; grid-template-columns: minmax(0, 1fr) minmax(720px, 58%); height: 100%; }
+/* Projects MAP mode (map + right list).
+   The right pane's lower bound is min(420px, 100%) so it shrinks
+   gracefully at zoom/tablet widths instead of forcing a horizontal
+   overflow. container-type lets descendants (the row layout) react
+   to the actual pane width, not the viewport. */
+.stk-projects-map {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(min(420px, 100%), 58%);
+  height: 100%;
+}
 .stk-mapwrap { position: relative; background: var(--black-card); border-right: 1px solid var(--gold-border); }
 .stk-map { position: absolute; inset: 0; }
 .leaflet-container { background: var(--black-card); outline: none; font-family: 'Outfit', system-ui, sans-serif; }
@@ -15383,12 +15626,15 @@ function buildKitHtml(s, research, brand) {
 .stk-pin.active { box-shadow: 0 0 0 2px var(--gold), 0 0 20px rgba(200, 169, 81, 0.8); }
 .leaflet-marker-icon.stk-pin-wrap { background: transparent !important; border: none !important; }
 
-/* Right pane (list of projects beside map) */
+/* Right pane (list of projects beside map). Acts as a query
+   container so each row can reflow to the pane's own width. */
 .stk-rightpane {
   display: flex; flex-direction: column;
   background: var(--black-card);
   overflow: hidden;
   min-width: 0;
+  container-type: inline-size;
+  container-name: stk-pane;
 }
 .stk-rightpane-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -15457,16 +15703,17 @@ function buildKitHtml(s, research, brand) {
 .stk-pager-btn:disabled { opacity: 0.35; cursor: default; }
 .stk-pager-btn.active:disabled { opacity: 1; cursor: default; }
 
-/* Right-pane row card — every row exactly the same height (Archer is the
-   reference). Image is a fixed 240×96 rectangle, centred vertically inside
-   the row so badge length never pushes the row taller. */
+/* Right-pane row card. Thumb width and stat columns are fluid so
+   the row reflows to the right-pane's own width (see container
+   query below). min-height (not height) so a wrapped badge row
+   can grow the cell instead of clipping. */
 .stk-row {
   display: grid;
-  grid-template-columns: 240px 1fr auto auto;
+  grid-template-columns: clamp(140px, 22cqi, 240px) minmax(0, 1fr) auto auto;
   gap: 0;
   align-items: center;
-  height: 116px;
-  padding: 0 22px 0 0;
+  min-height: 116px;
+  padding: 0 var(--space-lg) 0 0;
   border-bottom: 1px solid rgba(201,168,76,0.10);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -15475,8 +15722,9 @@ function buildKitHtml(s, research, brand) {
 .stk-row:hover { background: var(--black-hover); }
 .stk-row.flash { background: var(--gold-dim); border-color: var(--gold); }
 .stk-row-thumb {
-  width: 240px;
-  height: 96px;
+  width: clamp(140px, 22cqi, 240px);
+  aspect-ratio: 240 / 96;
+  height: auto;
   background: linear-gradient(135deg, var(--black-hover) 0%, #1E1E18 100%);
   position: relative; overflow: hidden;
 }
@@ -15495,28 +15743,30 @@ function buildKitHtml(s, research, brand) {
 }
 .stk-row-body {
   display: flex; flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 4px;
   min-width: 0;
   padding: 14px 14px 14px 22px;
-  height: 96px;
 }
 .stk-row-body-top { min-width: 0; }
 .stk-row-name {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 21px; font-weight: 600;
+  font-size: var(--type-lg); font-weight: 600;
   color: var(--white); line-height: 1.2;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   margin-bottom: 4px;
 }
-.stk-row-loc { font-size: 14px; color: var(--grey-pale); }
-.stk-row-badges { display: flex; gap: 6px; flex-wrap: nowrap; min-width: 0; overflow: hidden; }
+.stk-row-loc { font-size: var(--type-sm); color: var(--grey-pale); }
+/* Badges allowed to wrap; row's min-height absorbs the extra line. */
+.stk-row-badges { display: flex; gap: 6px; flex-wrap: wrap; min-width: 0; }
 .stk-row-badges .stk-badge { font-size: 12px !important; padding: 3px 9px !important; letter-spacing: 0.5px; flex-shrink: 0; }
-/* Fixed column widths so FROM / COMM / LOTS line up across every row,
-   regardless of value length (e.g. "$10k (5.5%)" vs "17%"). */
+/* Stats columns hold their alignment at full width but shrink to
+   value width when the pane is cramped. */
 .stk-row-stats {
   display: grid;
-  grid-template-columns: 80px 124px 80px;
+  grid-template-columns: minmax(70px, max-content) minmax(96px, max-content) minmax(70px, max-content);
   align-items: center;
+  gap: var(--space-sm);
   padding: 12px 8px 12px 0;
 }
 .stk-row-stat { display: flex; flex-direction: column; gap: 5px; }
@@ -15525,14 +15775,14 @@ function buildKitHtml(s, research, brand) {
   color: var(--text-muted);
   font-family: 'DM Mono', monospace;
 }
-.stk-row-stat-val { font-size: 17px; color: var(--white); font-family: 'DM Mono', monospace; font-weight: 500; white-space: nowrap; }
+.stk-row-stat-val { font-size: var(--type-md); color: var(--white); font-family: 'DM Mono', monospace; font-weight: 500; white-space: nowrap; }
 .stk-row-stat-comm .stk-row-stat-val { color: var(--gold); }
 .stk-row-side {
   display: flex; flex-direction: column;
-  align-items: flex-end; justify-content: space-between;
+  align-items: flex-end; justify-content: center;
+  gap: 8px;
   padding: 12px 0 12px 22px;
   min-width: 80px;
-  height: 96px;
 }
 .stk-row-side .stk-avail-chip,
 .stk-row-side .stk-badge { font-size: 12px !important; padding: 4px 11px !important; letter-spacing: 0.6px; }
@@ -15699,6 +15949,46 @@ function buildKitHtml(s, research, brand) {
   .stk-filter-row { padding: 10px 14px; gap: 8px; }
   .stk-fdrop.stk-fdrop-more { margin-left: 0; }
   .stk-cards { grid-template-columns: 1fr; }
+}
+/* Tablet card grid — two columns between 1100px and 760px so cards
+   don't shoot to full width too early. */
+@media (max-width: 1100px) and (min-width: 761px) {
+  .stk-cards { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Container-query reflow on the right pane. When the pane itself
+   shrinks (zoom, narrow viewport, or just a narrow split), the row
+   stacks instead of clipping — stats and side CTA drop below the
+   image+body, then below ~440px the thumb becomes a top banner. */
+@container stk-pane (max-width: 640px) {
+  .stk-row {
+    grid-template-columns: clamp(120px, 28cqi, 200px) minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    padding: var(--space-md) var(--space-lg) var(--space-md) 0;
+    min-height: auto;
+    row-gap: var(--space-sm);
+  }
+  .stk-row-body { padding: 0 var(--space-md) 0 var(--space-lg); }
+  .stk-row-stats {
+    grid-column: 1 / -1;
+    padding: 0 var(--space-lg);
+    grid-template-columns: repeat(3, minmax(0, max-content));
+    gap: var(--space-md);
+  }
+  .stk-row-side {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-lg);
+    min-width: 0;
+  }
+}
+@container stk-pane (max-width: 440px) {
+  .stk-row { grid-template-columns: minmax(0, 1fr); }
+  .stk-row-thumb { width: 100%; aspect-ratio: 16 / 9; }
+  .stk-row-body { padding: 0 var(--space-lg); }
+  .stk-row-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* Empty / loading states */
@@ -16385,9 +16675,16 @@ function buildKitHtml(s, research, brand) {
 .dlp-count { font-family: 'Playfair Display', Georgia, serif; font-size: 32px; font-weight: 500; color: var(--gold); }
 .dlp-count-label { font-size: 14px; color: var(--grey-pale); letter-spacing: 0.5px; }
 
+/* Wrapper around the deal table — horizontal scroll preserves the
+   full-fidelity columns at tablet/zoom widths instead of letting
+   them collide with the page edge. */
+#dlp-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.stk-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .dlp-table {
   width: 100%; border-collapse: collapse; font-size: 14px;
+  min-width: 760px;
 }
+.stk-all-stock-table { min-width: 980px; }
 .dlp-table thead tr {
   border-bottom: 1px solid var(--gold-border);
 }
@@ -16858,11 +17155,14 @@ function buildKitHtml(s, research, brand) {
   background: var(--black);
   border: 1px solid var(--gold-border);
   padding: 14px 16px;
-  min-width: 240px;
+  min-width: min(240px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
   box-shadow: 0 8px 24px rgba(0,0,0,0.55);
   display: none;
 }
-.rsc-fdrop-pop-wide { min-width: 340px; }
+.rsc-fdrop-pop-wide { min-width: min(340px, calc(100vw - 24px)); }
 .rsc-fdrop-pop-right { left: auto; right: 0; }
 .rsc-fdrop.open .rsc-fdrop-pop { display: block; }
 
@@ -16906,7 +17206,11 @@ function buildKitHtml(s, research, brand) {
 .rsc-body > * { flex: 1; min-width: 0; min-height: 0; }
 
 /* Map mode (map + right list) */
-.rsc-projects-map { display: grid; grid-template-columns: minmax(0, 1fr) minmax(620px, 52%); height: 100%; }
+.rsc-projects-map {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(min(400px, 100%), 52%);
+  height: 100%;
+}
 .rsc-mapwrap { position: relative; background: var(--black-card); border-right: 1px solid var(--gold-border); }
 .rsc-map { position: absolute; inset: 0; }
 .rsc-mapwrap .leaflet-container { background: var(--black-card); outline: none; font-family: 'Outfit', system-ui, sans-serif; }
@@ -17016,12 +17320,15 @@ function buildKitHtml(s, research, brand) {
 }
 .leaflet-marker-icon.rsc-pin-wrap { background: transparent !important; border: none !important; }
 
-/* Right pane (list of reports beside map) */
+/* Right pane (list of reports beside map). Acts as a query
+   container so the rows can reflow to the pane width. */
 .rsc-rightpane {
   display: flex; flex-direction: column;
   background: var(--black-card);
   overflow: hidden;
   min-width: 0;
+  container-type: inline-size;
+  container-name: rsc-pane;
 }
 .rsc-rightpane-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -17089,13 +17396,13 @@ function buildKitHtml(s, research, brand) {
 .rsc-pager-btn:disabled { opacity: 0.35; cursor: default; }
 .rsc-pager-btn.active:disabled { opacity: 1; cursor: default; }
 
-/* Row — fixed height shell wrapping the existing .research-item visuals.
-   We don't redefine the inner .ri-* classes (state chip, name, score badge);
-   they keep their look from the original `.research-item` definitions. */
+/* Row shell wrapping the existing .research-item visuals.
+   min-height (not height) so a wrapped meta line can grow the row
+   rather than clip. Inner .ri-* classes keep their original look. */
 .rsc-row {
-  display: flex; align-items: center; gap: 18px;
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
   padding: 14px 22px;
-  height: 96px;
+  min-height: 96px;
   border-bottom: 1px solid rgba(201,168,76,0.10);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -17235,6 +17542,18 @@ function buildKitHtml(s, research, brand) {
   .rsc-filter-row { padding: 10px 14px; gap: 8px; }
   .rsc-fdrop.rsc-fdrop-more { margin-left: 0; }
   .rsc-cards { grid-template-columns: 1fr; }
+}
+@media (max-width: 1100px) and (min-width: 761px) {
+  .rsc-cards { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Container-query reflow on the report list — score badge drops
+   below the name/meta when the pane is narrow. */
+@container rsc-pane (max-width: 560px) {
+  .rsc-row { align-items: flex-start; gap: 12px; }
+  .rsc-row .ri-info { flex: 1 1 100%; }
+  .rsc-row .ri-score { flex-direction: row; align-items: center; gap: 10px; }
+  .rsc-row-cta { width: 100%; text-align: right; }
 }
 </style>
 
@@ -19484,6 +19803,8 @@ let rscFilter = {
 let rscLeafletMap = null;
 let rscMarkerCluster = null;
 let rscMarkers = {};        // slug → marker
+let rscReportPinCoords = {}; // slug → [lat, lng]
+let rscLastFilteredReports = []; // sorted + data-filtered list (pre-viewport)
 let rscClusteringEnabled = true;
 let rscPinsVisible = true;
 let rscMapInited = false;
@@ -19576,23 +19897,48 @@ function renderResearchBrowse() {
 }
 
 function renderResearchMapMode() {
-  const all = sortResearch(filteredResearch());
-  const total = all.length;
-  const countTxt = '<strong>' + total + '</strong> report' + (total !== 1 ? 's' : '');
-  const cEl = document.getElementById('rsc-count'); if (cEl) cEl.innerHTML = countTxt;
-  const rcEl = document.getElementById('rsc-rightpane-count'); if (rcEl) rcEl.textContent = total + (total === 1 ? ' report' : ' reports');
+  // Cache the data-filtered + sorted list so the moveend handler can re-narrow
+  // it against the current viewport without re-running filters or refitting the map.
+  rscLastFilteredReports = sortResearch(filteredResearch());
+  // Map: shows ALL filtered reports (not paginated). fitBounds inside renderResearchMap
+  // will fire moveend, which calls renderResearchRightPane().
+  renderResearchMap(rscLastFilteredReports);
+  // Render once explicitly so the panel is correct even before moveend fires.
+  renderResearchRightPane();
+}
 
-  // Map: shows ALL filtered reports (not paginated)
-  renderResearchMap(all);
+// Right-pane list, narrowed to reports whose pin currently sits inside the map viewport.
+function renderResearchRightPane() {
+  const all = rscLastFilteredReports || [];
+  const visible = _rscReportsInMapView(all);
+  const total = visible.length;
+  const totalAll = all.length;
+  const hiddenByMap = totalAll - total;
+  const cEl = document.getElementById('rsc-count');
+  if (cEl) {
+    cEl.innerHTML = '<strong>' + total + '</strong> report' + (total !== 1 ? 's' : '') + ' in map view'
+      + (hiddenByMap > 0 ? ' <span style="opacity:.65;font-weight:400">(' + hiddenByMap + ' outside view)</span>' : '');
+  }
+  const rcEl = document.getElementById('rsc-rightpane-count');
+  if (rcEl) rcEl.textContent = total + (total === 1 ? ' report' : ' reports');
 
-  // Right list: paginated
   const pageSize = rscFilter.pageSize;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   if (rscFilter.page > totalPages) rscFilter.page = totalPages;
   const start = (rscFilter.page - 1) * pageSize;
-  const slice = all.slice(start, start + pageSize);
+  const slice = visible.slice(start, start + pageSize);
   document.getElementById('rsc-rightpane-list').innerHTML = renderResearchRows(slice);
   renderRscPager('rsc-pager', total);
+}
+
+function _rscReportsInMapView(all) {
+  if (!rscLeafletMap) return all.slice();
+  const b = rscLeafletMap.getBounds();
+  return all.filter(r => {
+    const c = rscReportPinCoords[r.slug];
+    if (!c) return false;
+    return b.contains(c);
+  });
 }
 
 function renderResearchListMode() {
@@ -19867,10 +20213,16 @@ function renderResearchMap(reports) {
     });
     rscLeafletMap.addLayer(rscMarkerCluster);
     rscMapInited = true;
+    // When the user pans or zooms, narrow the right-pane list to reports
+    // whose pin is inside the new viewport.
+    rscLeafletMap.on('moveend', function() {
+      if (typeof renderResearchRightPane === 'function') renderResearchRightPane();
+    });
   }
 
   rscMarkerCluster.clearLayers();
   rscMarkers = {};
+  rscReportPinCoords = {};
   const bounds = [];
   reports.forEach(r => {
     const lat = r.map_lat != null ? Number(r.map_lat) : null;
@@ -19884,9 +20236,11 @@ function renderResearchMap(reports) {
     });
     const m = L.marker([lat, lng], { icon, title: r.suburb || '' });
     m.bindTooltip(`<strong>${r.suburb || ''}</strong><br><span style="color:#C8A951">${[r.state_code, r.rating].filter(Boolean).join(' · ')}</span>`, { direction: 'top' });
-    m.on('click', function() { highlightRscRow(r.slug, true); });
+    // Pin click navigates straight to the research report.
+    m.on('click', function() { showResearch(r.slug); });
     rscMarkerCluster.addLayer(m);
     rscMarkers[r.slug] = m;
+    rscReportPinCoords[r.slug] = [lat, lng];
     bounds.push([lat, lng]);
   });
 

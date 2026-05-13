@@ -158,6 +158,34 @@ classification, he'll say so and you can amend.
   captured in [STOCK_PORTAL_DESIGN.md](docs/STOCK_PORTAL_DESIGN.md) — apply
   the same patterns to other browse pages.
 
+## Adaptive layout primitives (added 2026-05-13)
+
+The portal is designed for desktop (100–200% browser zoom) and tablet
+(down to ~768px). Phones (<480px) are explicitly out of scope. When
+building new surfaces, reach for these primitives instead of fixed px:
+
+- **Type scale tokens** at `:root`: `--type-xs / sm / md / lg / xl / 2xl`
+  are `clamp()`-based fluid sizes. Use them on new headings, body, and
+  stat values so type breathes at zoom.
+- **Spacing tokens**: `--space-xs / sm / md / lg / xl` (4/8/14/22/32px).
+- **Shell tokens**: `--sidebar-w` (240px expanded), `--sidebar-w-rail`
+  (64px collapsed). The shell respects whichever via `var()`; toggling
+  `#screen-portal.sidebar-collapsed` flips both sidebar width and
+  `.main-content` `margin-left`.
+- **Container queries** on map-split right panes: `.stk-rightpane` and
+  `.rsc-rightpane` declare `container-type: inline-size`. Card rows
+  reflow based on **pane width**, not viewport — use
+  `@container stk-pane (max-width: ...)` for new card surfaces inside
+  that pane.
+- **Fluid map split**: prefer `minmax(min(420px, 100%), 58%)` over a
+  hard pixel minimum so the pane can shrink at zoom.
+- **Modal max-height**: any new modal should set
+  `max-height: calc(100vh - 32px)` and put `overflow-y: auto` on the
+  scrollable body so it can't run off-screen at zoom.
+- **Tables**: wrap wide tables in a container with `overflow-x: auto`;
+  give the `<table>` a `min-width` so columns don't collapse, and rely
+  on the scroll for narrow widths.
+
 ## Folder layout
 
 Tidy as of 2026-05-05. Anything not in this list at the repo root is
