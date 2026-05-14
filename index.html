@@ -2229,7 +2229,11 @@
   /* ─── RESPONSIVE MODAL ──────────────────────────────── */
   .modal-overlay {
     display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.8); z-index: 200;
+    background: rgba(0,0,0,0.8);
+    /* Leaflet's control containers stack at z-index 1000, so any modal
+       opened while a map is on screen (Training, Tools, branded-report,
+       Request a feature) must clear that or it lands behind the map. */
+    z-index: 1100;
     align-items: center; justify-content: center;
   }
 
