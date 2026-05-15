@@ -3077,6 +3077,34 @@
   .rv2-stat-tile-label { font-size: 11px; color: var(--text-muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px; }
   .rv2-stat-tile-value { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: var(--white); font-weight: 500; line-height: 1.1; }
 
+  /* Suburb-outline map (top of Overview, mirrors flyer hero) */
+  .rv2-map-wrap {
+    position: relative;
+    width: 100%;
+    height: 340px;
+    margin-bottom: 28px;
+    background: var(--black-card);
+    border: 1px solid var(--gold-border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  #rv2-map { position: absolute; inset: 0; }
+  #rv2-map .leaflet-control-attribution { font-size: 9px; color: rgba(255,255,255,0.4); background: transparent; }
+  .rv2-map-overlay {
+    position: absolute;
+    left: 22px; bottom: 22px;
+    background: rgba(8,15,26,0.78);
+    border-left: 3px solid var(--gold);
+    padding: 14px 20px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    max-width: min(440px, calc(100% - 44px));
+    pointer-events: none;
+  }
+  .rv2-map-eyebrow { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 4px; font-weight: 600; }
+  .rv2-map-suburb  { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; font-weight: 600; color: var(--white); line-height: 1.2; }
+  .rv2-map-meta    { font-size: 12px; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.02em; }
+
   /* Cover strip (Overview hero) */
   .rv2-cover { padding: 6px 0 24px; border-bottom: 1px solid var(--gold-border); margin-bottom: 32px; }
   .rv2-cover-eyebrow { font-size: 11px; color: var(--gold-light); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; font-weight: 600; }
@@ -4570,6 +4598,9 @@
 
       <!-- Tab: Overview -->
       <div class="stk-tab-content active" id="spj-tab-overview" data-hl-hide>
+        <div class="spj-ov-hero" id="spj-ov-hero" style="display:none;">
+          <img id="spj-ov-hero-img" alt="" />
+        </div>
         <div class="stk-overview-grid">
           <div>
             <div class="stk-detail-section">
@@ -8652,6 +8683,16 @@
 
   const CHANGELOG = [
     {
+      version: '3.4',
+      date: '15 May 2026',
+      title: 'Unbranded flyers, suburb outline maps and project hero images',
+      items: [
+        'New "Produce unbranded flyer" tickbox on the Share Property Flyer dialog. Tick it before copying the link and your client gets a clean, property-only page — your logo, website, contact card and footer are all stripped, and your brand colours revert to neutral tones.',
+        'Suburb Research now opens with a dark-themed map at the top of the Overview tab, showing the outline of the suburb in gold against a CARTO dark basemap. Same visual treatment as the public flyer hero, so the in-portal page reads as the master of what your client sees.',
+        'Project detail pages on the Stock portal now lead with a hero image — the same cover photo that anchors the project tile in the grid view.',
+      ]
+    },
+    {
       version: '3.3',
       date: '13 May 2026',
       title: 'Layout, filters and clickable map pins',
@@ -11789,6 +11830,9 @@
       rv2Render(d);
       document.getElementById('rv2-loading').style.display = 'none';
       document.getElementById('rv2-report').style.display = '';
+      // Init the suburb-outline map at the top of Overview (mirrors the
+      // public flyer hero). Mount node lives inside rv2GroupOverview's HTML.
+      rv2InitMap(d);
       // Reset scroll & nav, attach scrollspy
       pg.scrollTop = 0;
       rv2SetActiveTab('overview');
@@ -11955,6 +11999,47 @@
     document.getElementById('rv2-sidebar').innerHTML = rv2RenderSidebar(d);
   }
 
+  // ── Map: suburb outline at top of Overview ──────────────────
+  // Mirrors the public flyer's hero map (researchInitMap) so the in-portal
+  // research page leads with the same visual anchor.
+  let _rv2Map = null;
+  function rv2InitMap(d) {
+    const mount = document.getElementById('rv2-map');
+    if (!mount) return;
+    if (typeof L === 'undefined') return;
+    if (_rv2Map) { try { _rv2Map.remove(); } catch(_){} _rv2Map = null; }
+
+    const lat = d.centroid_lat != null ? Number(d.centroid_lat) : null;
+    const lng = d.centroid_lng != null ? Number(d.centroid_lng) : null;
+    const hasPoly = d.boundary_geojson &&
+      (d.boundary_geojson.type === 'Polygon' || d.boundary_geojson.type === 'MultiPolygon');
+    if ((lat == null || lng == null || isNaN(lat) || isNaN(lng)) && !hasPoly) {
+      mount.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--grey-mid);font-size:13px;">Map unavailable for this suburb.</div>';
+      return;
+    }
+
+    _rv2Map = L.map('rv2-map', {
+      center: [lat || 0, lng || 0], zoom: 13,
+      zoomControl: true, scrollWheelZoom: false, attributionControl: true,
+    });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO', maxZoom: 19, subdomains: 'abcd',
+    }).addTo(_rv2Map);
+
+    if (hasPoly) {
+      const brand = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#C8A951';
+      const layer = L.geoJSON(d.boundary_geojson, {
+        style: () => ({ color: brand, weight: 2.5, opacity: 0.95, fillColor: brand, fillOpacity: 0.14 }),
+      });
+      layer.addTo(_rv2Map);
+      try { _rv2Map.fitBounds(layer.getBounds(), { padding: [24, 24], maxZoom: 13 }); } catch (_) {}
+    } else {
+      L.marker([lat, lng]).addTo(_rv2Map);
+      _rv2Map.setView([lat, lng], 12);
+    }
+    setTimeout(() => { try { _rv2Map.invalidateSize(); } catch(_){} }, 80);
+  }
+
   // ── GROUP: Overview ────────────────────────────────────────
   function rv2GroupOverview(d) {
     const ratingCol = rv2RatingColour(d.rating);
@@ -11978,8 +12063,28 @@
         </div>`;
     }).join('');
 
+    // Public flyer renders rv2GroupOverview into the same DOM, but already
+    // has its own dedicated hero map (#rsr-map). Skip emitting a second map
+    // mount in flyer context — otherwise we'd render an empty grey band.
+    const inFlyer = document.body.classList.contains('flyer-active');
+    const hasMap = !inFlyer && (
+      (d.centroid_lat != null && d.centroid_lng != null) ||
+      (d.boundary_geojson && (d.boundary_geojson.type === 'Polygon' || d.boundary_geojson.type === 'MultiPolygon'))
+    );
+    const mapHtml = hasMap
+      ? `<div class="rv2-map-wrap" id="rv2-map-wrap">
+           <div id="rv2-map"></div>
+           <div class="rv2-map-overlay">
+             <div class="rv2-map-eyebrow">Suburb Outline</div>
+             <div class="rv2-map-suburb">${rv2Esc(d.suburb)}${d.state_code ? ', ' + rv2Esc(d.state_code) : ''}</div>
+             ${d.lga || d.postcode ? `<div class="rv2-map-meta">${[d.lga, d.postcode].filter(Boolean).map(rv2Esc).join(' · ')}</div>` : ''}
+           </div>
+         </div>`
+      : '';
+
     return `
       <section class="rv2-group" id="rv2-sec-overview">
+        ${mapHtml}
         <div class="rv2-cover">
           <div class="rv2-cover-eyebrow">◈ ${rv2Esc(d.state_code)}${d.region ? ' · ' + rv2Esc(d.region) : ''} · Suburb Research</div>
           <h1 class="rv2-cover-title">${rv2Esc(d.suburb)}</h1>
@@ -13639,6 +13744,22 @@ async function showStockProject(id) {
   descEl.innerHTML = p.description || '<p style="color:var(--grey-mid);">No description available.</p>';
   const editBtn = document.getElementById('spj-edit-desc-btn');
   if (editBtn) editBtn.style.display = currentUserIsAdmin ? '' : 'none';
+
+  // Overview hero — same image source as the project card on the stock grid
+  const heroWrap = document.getElementById('spj-ov-hero');
+  const heroImg  = document.getElementById('spj-ov-hero-img');
+  if (heroWrap && heroImg) {
+    const ovHeroSrc = p.hero_image_url || (p.photo_urls && p.photo_urls.length ? p.photo_urls[0] : null);
+    if (ovHeroSrc) {
+      heroImg.src = ovHeroSrc;
+      heroImg.alt = p.name || '';
+      heroWrap.style.display = '';
+      heroImg.onerror = () => { heroWrap.style.display = 'none'; };
+    } else {
+      heroImg.removeAttribute('src');
+      heroWrap.style.display = 'none';
+    }
+  }
 
   // Gallery
   renderGallery(p.photo_urls);
@@ -16653,6 +16774,24 @@ function buildKitHtml(s, research, brand) {
 #spj-ov-desc strong { color: var(--white); }
 
 /* Overview tab content */
+.spj-ov-hero {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 6;
+  max-height: 360px;
+  margin-bottom: 28px;
+  overflow: hidden;
+  border: 1px solid var(--gold-border);
+  border-radius: 3px;
+  background: var(--black-card);
+}
+.spj-ov-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.spj-ov-hero::after {
+  content: '';
+  position: absolute; inset: auto 0 0 0; height: 35%;
+  background: linear-gradient(180deg, rgba(8,15,26,0) 0%, rgba(8,15,26,0.55) 100%);
+  pointer-events: none;
+}
 .stk-overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
 .stk-overview-docs { margin-top: 24px; }
 .stk-doc-link {
@@ -17700,6 +17839,10 @@ function buildKitHtml(s, research, brand) {
       </p>
       <label class="form-label" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Prepared for (optional)</label>
       <input class="form-input" type="text" id="share-flyer-recipient" placeholder="Client's full name" maxlength="80" oninput="flyShareSync()" style="margin-top:6px;margin-bottom:14px;">
+      <label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;color:var(--grey-pale);cursor:pointer;margin-bottom:16px;line-height:1.45;">
+        <input type="checkbox" id="share-flyer-unbranded" onchange="flyShareSync()" style="width:14px;height:14px;margin-top:3px;cursor:pointer;accent-color:var(--gold);flex:0 0 auto;">
+        <span>Produce unbranded flyer<span style="display:block;color:var(--grey-mid);font-size:12px;margin-top:2px;">Hides your logo, website, contact card and footer — the page shows the property only.</span></span>
+      </label>
       <label class="form-label" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Flyer link</label>
       <div style="display:flex;gap:8px;align-items:stretch;margin-top:6px;">
         <input class="form-input" type="text" id="share-flyer-url" readonly onfocus="this.select()" onclick="this.select()" style="flex:1;font-family:'DM Mono',monospace;font-size:12px;">
@@ -18618,6 +18761,7 @@ function buildKitHtml(s, research, brand) {
     if (parts[0] !== 'flyer' || parts.length !== 3) return null;
     if (!FLY_STOCK_RE.test(parts[1]) || !FLY_UUID_RE.test(parts[2])) return null;
     let preparedFor = null;
+    let unbranded = false;
     if (query) {
       try {
         const params = new URLSearchParams(query);
@@ -18626,9 +18770,10 @@ function buildKitHtml(s, research, brand) {
           // Strip control chars and HTML brackets, cap length.
           preparedFor = f.replace(/[\x00-\x1F\x7F<>]/g, '').trim().slice(0, 80) || null;
         }
+        unbranded = params.get('unbranded') === '1';
       } catch (_) { /* malformed query — ignore */ }
     }
-    return { stockId: parts[1], partnerId: parts[2], preparedFor };
+    return { stockId: parts[1], partnerId: parts[2], preparedFor, unbranded };
   }
 
   // Show only the flyer screen — hide login/portal/etc., kill the topbar.
@@ -18825,30 +18970,49 @@ function buildKitHtml(s, research, brand) {
     const project = p.project;
     const partner = p.partner;
 
-    // ── Brand colours (white-label override of the neutral palette) ──
-    flyerApplyBrandColours(partner.brand_primary, partner.brand_accent);
-
-    // ── Header (white-label) ──
-    const logoEl = document.getElementById('fly-logo');
-    const logoFb = document.getElementById('fly-logo-fallback');
-    if (partner.logo_url) {
-      logoEl.src = partner.logo_url;
-      logoEl.alt = partner.company_name || '';
-      logoEl.style.display = '';
-      logoFb.style.display = 'none';
-      // Sample the logo's pixel brightness; flip header to dark when needed.
-      flyerAdaptHeaderToLogo(partner.logo_url);
-    } else {
-      logoEl.style.display = 'none';
-      logoFb.textContent = partner.company_name || '';
-      logoFb.style.display = '';
+    // ── Unbranded mode (set via &unbranded=1 on the share URL) ──
+    // Strips everything that identifies the producer of the flyer:
+    // header (logo + website + "prepared for"), contact card, footer,
+    // and any partner brand-colour CSS vars. Default neutral tokens
+    // stay, so the page reads as a clean property-only document.
+    const unbranded = !!flyerParseHash()?.unbranded;
+    const flyerRoot = document.getElementById('screen-flyer');
+    if (unbranded && flyerRoot) {
+      flyerRoot.style.removeProperty('--f-accent');
+      flyerRoot.style.removeProperty('--f-primary');
+      flyerRoot.style.removeProperty('--f-on-accent');
     }
-    if (partner.website) {
-      const w = document.getElementById('fly-header-website');
-      let display = partner.website.replace(/^https?:\/\//i, '').replace(/\/$/, '');
-      w.textContent = display;
-      w.href = /^https?:\/\//i.test(partner.website) ? partner.website : 'https://' + partner.website;
-      w.style.display = '';
+
+    if (!unbranded) {
+      // ── Brand colours (white-label override of the neutral palette) ──
+      flyerApplyBrandColours(partner.brand_primary, partner.brand_accent);
+
+      // ── Header (white-label) ──
+      const logoEl = document.getElementById('fly-logo');
+      const logoFb = document.getElementById('fly-logo-fallback');
+      if (partner.logo_url) {
+        logoEl.src = partner.logo_url;
+        logoEl.alt = partner.company_name || '';
+        logoEl.style.display = '';
+        logoFb.style.display = 'none';
+        // Sample the logo's pixel brightness; flip header to dark when needed.
+        flyerAdaptHeaderToLogo(partner.logo_url);
+      } else {
+        logoEl.style.display = 'none';
+        logoFb.textContent = partner.company_name || '';
+        logoFb.style.display = '';
+      }
+      if (partner.website) {
+        const w = document.getElementById('fly-header-website');
+        let display = partner.website.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+        w.textContent = display;
+        w.href = /^https?:\/\//i.test(partner.website) ? partner.website : 'https://' + partner.website;
+        w.style.display = '';
+      }
+    } else {
+      // Hide the whole header so logo + recipient + website all disappear.
+      const header = flyerRoot?.querySelector('.fly-header');
+      if (header) header.style.display = 'none';
     }
 
     // ── Hero (curated cover image, falling back to first gallery photo) ──
@@ -19025,30 +19189,38 @@ function buildKitHtml(s, research, brand) {
       document.getElementById('fly-floorplan-section').style.display = '';
     }
 
-    // ── Contact card ──
-    document.getElementById('fly-contact-name').textContent    = partner.full_name || 'Your advisor';
-    document.getElementById('fly-contact-company').textContent = partner.company_name || '';
-    if (partner.phone) {
-      const a = document.getElementById('fly-contact-phone');
-      a.href = 'tel:' + partner.phone.replace(/\s+/g, '');
-      a.textContent = '📞 ' + partner.phone;
-      a.style.display = '';
-    }
-    if (partner.email) {
-      const a = document.getElementById('fly-contact-email');
-      a.href = 'mailto:' + partner.email + '?subject=' + encodeURIComponent('Enquiry: ' + (stock.name || project.name || 'Property'));
-      a.textContent = '✉ ' + partner.email;
-      a.style.display = '';
-    }
+    if (!unbranded) {
+      // ── Contact card ──
+      document.getElementById('fly-contact-name').textContent    = partner.full_name || 'Your advisor';
+      document.getElementById('fly-contact-company').textContent = partner.company_name || '';
+      if (partner.phone) {
+        const a = document.getElementById('fly-contact-phone');
+        a.href = 'tel:' + partner.phone.replace(/\s+/g, '');
+        a.textContent = '📞 ' + partner.phone;
+        a.style.display = '';
+      }
+      if (partner.email) {
+        const a = document.getElementById('fly-contact-email');
+        a.href = 'mailto:' + partner.email + '?subject=' + encodeURIComponent('Enquiry: ' + (stock.name || project.name || 'Property'));
+        a.textContent = '✉ ' + partner.email;
+        a.style.display = '';
+      }
 
-    // ── Footer ──
-    document.getElementById('fly-footer-name').textContent = partner.company_name || '';
-    if (partner.website) {
-      const f = document.getElementById('fly-footer-website');
-      f.textContent = partner.website.replace(/^https?:\/\//i, '').replace(/\/$/, '');
-      f.href = /^https?:\/\//i.test(partner.website) ? partner.website : 'https://' + partner.website;
+      // ── Footer ──
+      document.getElementById('fly-footer-name').textContent = partner.company_name || '';
+      if (partner.website) {
+        const f = document.getElementById('fly-footer-website');
+        f.textContent = partner.website.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+        f.href = /^https?:\/\//i.test(partner.website) ? partner.website : 'https://' + partner.website;
+      } else {
+        document.getElementById('fly-footer-sep').style.display = 'none';
+      }
     } else {
-      document.getElementById('fly-footer-sep').style.display = 'none';
+      // Hide the contact card's whole section and the footer in unbranded mode.
+      const contactSection = flyerRoot?.querySelector('.fly-contact')?.closest('section');
+      if (contactSection) contactSection.style.display = 'none';
+      const footer = flyerRoot?.querySelector('.fly-footer');
+      if (footer) footer.style.display = 'none';
     }
 
     // Reveal content, hide loading
@@ -19363,9 +19535,13 @@ function buildKitHtml(s, research, brand) {
     const stock = (typeof currentStockId !== 'undefined') ? currentStockId : '';
     const partnerId = currentPartnerRecord?.partner_id || '';
     let url = location.origin + location.pathname + '#flyer/' + stock + '/' + partnerId;
+    const params = [];
     const recipientEl = document.getElementById('share-flyer-recipient');
     const recipient = (recipientEl?.value || '').trim();
-    if (recipient) url += '?for=' + encodeURIComponent(recipient);
+    if (recipient) params.push('for=' + encodeURIComponent(recipient));
+    const unbrandedEl = document.getElementById('share-flyer-unbranded');
+    if (unbrandedEl?.checked) params.push('unbranded=1');
+    if (params.length) url += '?' + params.join('&');
     return url;
   }
 
@@ -19397,9 +19573,11 @@ function buildKitHtml(s, research, brand) {
       alert('You need to be signed in as a channel partner to share a flyer.'); return;
     }
     const recipientEl = document.getElementById('share-flyer-recipient');
+    const unbrandedEl = document.getElementById('share-flyer-unbranded');
     const status = document.getElementById('share-flyer-status');
     const copyBtn = document.getElementById('share-flyer-copy-btn');
     if (recipientEl) recipientEl.value = '';   // start fresh each open
+    if (unbrandedEl) unbrandedEl.checked = false;
     flyShareSync();
     if (status)  status.textContent = '';
     if (copyBtn) copyBtn.textContent = 'Copy link';

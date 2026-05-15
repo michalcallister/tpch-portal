@@ -217,3 +217,57 @@ either site-critical (`index.html`, `landing.html`, `hero-bg.jpg`,
   (version 1, created 2026-05-01) but was authored in the dashboard.
   Pull it down with `supabase functions download fetch-suburb-boundary`
   before editing.
+
+## Migrations — explicit GRANTs from 30 Oct 2026
+
+Supabase is removing the historical default that exposes new `public.*`
+tables to the Data API automatically. For our project
+(`oreklvbzwgbufbkvvzny`) the cutover is **30 Oct 2026**. From that date,
+**any new table in `public` is invisible to PostgREST / supabase-js /
+GraphQL until you GRANT explicitly** — RLS policies alone are not
+enough, because PostgREST checks role-level grants *before* policies.
+
+Existing tables are grandfathered — their current grants are preserved,
+so nothing in the running portal breaks on the cutover date.
+
+### When you write a new table migration
+
+Decide which roles the partner code actually needs, then grant them:
+
+```sql
+-- Authenticated partners read/write directly (RLS still filters rows)
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO authenticated;
+
+-- Only if anon truly needs access (rare — most things are behind login)
+-- GRANT SELECT ON public.<table> TO anon;
+```
+
+If the table is accessed **only** via SECURITY DEFINER RPCs (e.g.
+`daily_briefs` via `get_my_brief()`, `partner_activity_log` writes via
+`log_partner_event()`) you don't need a table grant for that path — the
+RPC runs as its owner. You still need a table grant if any client query
+hits the table directly (including a `select` policy used by
+supabase-js).
+
+Skip table grants for tables that are service-role-only (edge functions
+hit them with the service key, which bypasses RLS and the grants
+question).
+
+### Pattern to follow in [db/migrations/](db/migrations/)
+
+```sql
+CREATE TABLE IF NOT EXISTS public.<table> ( … );
+
+ALTER TABLE public.<table> ENABLE ROW LEVEL SECURITY;
+
+-- Grants BEFORE policies — order doesn't matter to Postgres, but it
+-- reads better top-down: "who can touch the table, then which rows".
+GRANT SELECT, INSERT ON public.<table> TO authenticated;
+
+CREATE POLICY … ;
+```
+
+If you forget the grant, the symptom after 30 Oct will be PostgREST
+returning a 404/permission error for the table even though it clearly
+exists and the policy looks right. The fix is the missing GRANT, not
+the policy.
