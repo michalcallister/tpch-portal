@@ -17892,6 +17892,16 @@ function buildKitHtml(s, research, brand) {
     -webkit-font-smoothing: antialiased;
   }
   #screen-flyer.active { display: block; }
+  /* Unbranded mode — toggled in flyerRender when the URL carries
+     &unbranded=1. Backstops the inline display:none JS sets, and
+     guarantees the producer-identifying bits (header, contact
+     card section, footer) stay hidden regardless of any later
+     style mutations. */
+  #screen-flyer.unbranded .fly-header,
+  #screen-flyer.unbranded section:has(> .fly-contact),
+  #screen-flyer.unbranded .fly-footer {
+    display: none !important;
+  }
   #screen-flyer * { box-sizing: border-box; }
   #screen-flyer h1, #screen-flyer h2, #screen-flyer h3 {
     font-family: 'Playfair Display', Georgia, serif;
@@ -18977,6 +18987,9 @@ function buildKitHtml(s, research, brand) {
     // stay, so the page reads as a clean property-only document.
     const unbranded = !!flyerParseHash()?.unbranded;
     const flyerRoot = document.getElementById('screen-flyer');
+    if (flyerRoot) {
+      flyerRoot.classList.toggle('unbranded', unbranded);
+    }
     if (unbranded && flyerRoot) {
       flyerRoot.style.removeProperty('--f-accent');
       flyerRoot.style.removeProperty('--f-primary');
