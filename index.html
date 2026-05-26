@@ -3632,6 +3632,15 @@
       </div>
     </div>
 
+    <!-- Preview-as-staff banner (owner-only, hidden by default) -->
+    <div id="preview-banner" style="display:none;align-items:center;justify-content:space-between;gap:16px;padding:10px 20px;background:var(--gold);color:#0A0A08;font-size:13px;font-weight:500;border-bottom:1px solid rgba(0,0,0,0.15);">
+      <div>
+        <span style="margin-right:8px;">👁</span>
+        Previewing the portal as <strong id="preview-banner-name">…</strong> — what they see is what you see. Don't take real actions while previewing.
+      </div>
+      <button onclick="exitPreview()" style="padding:6px 14px;background:#0A0A08;color:var(--gold);border:none;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;">Exit Preview</button>
+    </div>
+
     <!-- ── PAGE: ENQUIRIES (ADMIN ONLY) ─────────────── -->
     <div id="page-enquiries" class="page-view">
       <div class="enq-layout">
@@ -7030,6 +7039,10 @@
   let currentAdminEmail   = null;
   let currentPartnerRecord = null;  // { role, partner_id, full_name, company_name, logo_url, ... }
   let staffCommissionOverrides = {};  // { project_id: { d: deduction, v: visible } } — populated on login for staff under a flagged partner
+  // Preview-as-staff state: owner can temporarily browse the portal as one of
+  // their staff members to verify what that staff sees. Both fields restored on exit.
+  let _previewOriginalRecord    = null;
+  let _previewOriginalOverrides = null;
   let currentAuthToken    = null;
   let currentRefreshToken = null;
   let _tokenRefreshTimer  = null;
@@ -9472,6 +9485,78 @@
     }
   }
 
+  // ── Preview as staff ──────────────────────────────────────────────────
+  // Owner-only client-side preview: temporarily swap currentPartnerRecord +
+  // staffCommissionOverrides so the owner sees the portal exactly as one of
+  // their staff members would. No server-side impact — JWTs still resolve to
+  // the owner, so don't take real actions while previewing.
+  async function enterPreviewAsStaff(staffId, staffName, staffEmail, staffCommType, staffCommVal) {
+    if (!currentPartnerRecord || currentPartnerRecord.role !== 'partner') return;
+    if (_previewOriginalRecord) return;  // already previewing
+    // Pull the staff's per-project config via the owner-only RPC.
+    let overrides = {};
+    try {
+      const res = await fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/rpc/get_staff_commission_overrides_for_owner', () => ({
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_staff_id: staffId }),
+      }));
+      if (res && res.ok) {
+        const raw = await res.json();
+        if (raw && typeof raw === 'object') {
+          for (const k in raw) {
+            const row = raw[k] || {};
+            const d   = parseFloat(row.d);
+            overrides[k] = { d: isFinite(d) && d > 0 ? d : 0, v: row.v === true };
+          }
+        }
+      }
+    } catch (e) { /* fall through with empty map */ }
+
+    // Save the real state so we can restore on exit.
+    _previewOriginalRecord    = currentPartnerRecord;
+    _previewOriginalOverrides = staffCommissionOverrides;
+
+    // Swap in a synthetic staff-shaped record. partner_id stays the same so
+    // RPCs that filter by current_partner_id() still work (caller is still
+    // the owner on the server side).
+    currentPartnerRecord = Object.assign({}, _previewOriginalRecord, {
+      role: 'staff',
+      staff_id: staffId,
+      full_name: staffName,
+      email: staffEmail,
+      job_role: 'Preview',
+      comm_display_type: staffCommType || 'portal',
+      comm_custom_value: staffCommVal || null,
+      team_commission_override_enabled: true,
+    });
+    staffCommissionOverrides = overrides;
+
+    // Show the banner and reload surfaces that read currentPartnerRecord/role.
+    const banner = document.getElementById('preview-banner');
+    if (banner) {
+      banner.style.display = 'flex';
+      const nameEl = document.getElementById('preview-banner-name');
+      if (nameEl) nameEl.textContent = staffName || 'team member';
+    }
+    applyNavForRole(false, true);
+    showPage('stock', document.querySelector('.nav-item[onclick*="\'stock\'"]'));
+    loadStockProjects();
+  }
+
+  function exitPreview() {
+    if (!_previewOriginalRecord) return;
+    currentPartnerRecord    = _previewOriginalRecord;
+    staffCommissionOverrides = _previewOriginalOverrides || {};
+    _previewOriginalRecord    = null;
+    _previewOriginalOverrides = null;
+    const banner = document.getElementById('preview-banner');
+    if (banner) banner.style.display = 'none';
+    applyNavForRole(false, true);
+    // Reload stock so the visibility filter clears.
+    loadStockProjects();
+  }
+
   // Copy this staff member's full per-project config (visibilities + deductions)
   // to every other active team member in the firm. Replaces their existing rows.
   async function copyStaffConfigToOthers() {
@@ -9709,7 +9794,14 @@
                   return `<span style="font-size:11px;padding:2px 8px;border-radius:3px;background:${bg};color:${color};">${label}</span>`;
                 })()}
               </td>
-              <td style="padding:10px 12px;text-align:right;">
+              <td style="padding:10px 12px;text-align:right;white-space:nowrap;">
+                ${currentPartnerRecord?.team_commission_override_enabled && s.status === 'active'
+                  ? `<button class="btn-outline" style="font-size:11px;padding:4px 10px;margin-right:6px;"
+                      data-sid="${s.id}" data-sname="${(s.full_name||'').replace(/"/g,'&quot;')}" data-semail="${(s.email||'').replace(/"/g,'&quot;')}"
+                      data-ctype="${s.comm_display_type||'portal'}" data-cval="${(s.comm_custom_value||'').replace(/"/g,'&quot;')}"
+                      onclick="enterPreviewAsStaff(this.dataset.sid,this.dataset.sname,this.dataset.semail,this.dataset.ctype,this.dataset.cval)"
+                      title="Browse the portal as this team member">👁 Preview</button>`
+                  : ''}
                 <button class="btn-outline" style="font-size:11px;padding:4px 10px;" data-sid="${s.id}" data-ctype="${s.comm_display_type}" data-cval="${(s.comm_custom_value||'').replace(/"/g,'&quot;')}" onclick="editStaffComm(this.dataset.sid,this.dataset.ctype,this.dataset.cval)">Edit</button>
               </td>
             </tr>`).join('')}
