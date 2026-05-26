@@ -5902,26 +5902,52 @@
     </div>
 
     <!-- Edit staff commission modal -->
-    <div id="modal-edit-staff-comm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
-      <div style="background:var(--dark-card);border:1px solid var(--gold-border);padding:32px;width:100%;max-width:400px;border-radius:4px;">
-        <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:20px;">Edit Commission Display</div>
-        <input type="hidden" id="edit-comm-staff-id">
-        <div style="margin-bottom:14px;">
-          <div style="font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Commission Display</div>
-          <select class="form-input" id="edit-comm-type">
-            <option value="portal">Portal rate (show standard commission)</option>
-            <option value="custom">Custom amount</option>
-            <option value="hidden">Hidden</option>
-          </select>
+    <div class="modal-overlay" id="modal-edit-staff-comm">
+      <div class="modal" style="max-width:680px;width:90%;">
+        <div class="modal-title">Edit Commission Display</div>
+        <div class="modal-body" style="padding-right:4px;">
+          <input type="hidden" id="edit-comm-staff-id">
+          <div style="margin-bottom:14px;">
+            <div style="font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Commission Display</div>
+            <select class="form-input" id="edit-comm-type">
+              <option value="portal">Portal rate (show standard commission)</option>
+              <option value="custom">Custom amount</option>
+              <option value="hidden">Hidden</option>
+            </select>
+          </div>
+          <div id="edit-comm-custom-wrap" style="display:none;margin-bottom:14px;">
+            <div style="font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Custom Amount</div>
+            <input class="form-input" type="text" id="edit-comm-custom-value" placeholder="e.g. $10,000">
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:-6px;margin-bottom:8px;">
+            <button class="btn-primary" style="padding:6px 14px;font-size:11px;" onclick="saveStaffComm()">Save Display Setting</button>
+          </div>
+          <div id="edit-comm-msg" style="display:none;font-size:12px;margin-bottom:12px;"></div>
+
+          <!-- Per-project deductions (only when partner has team-commission flag on) -->
+          <div id="edit-comm-projects-wrap" style="display:none;margin-top:18px;padding-top:18px;border-top:1px solid var(--gold-border);">
+            <div style="font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Per-Project Commission Adjustment</div>
+            <div style="font-size:11px;color:var(--grey-mid);margin-bottom:10px;line-height:1.5;">
+              Only applies when <strong style="color:var(--grey-light);">Commission Display</strong> above is set to <strong style="color:var(--grey-light);">Portal rate</strong>. Reduces what this team member sees by a flat dollar amount per project. Custom/Hidden options above override these deductions entirely. Saves automatically on tab away — leave blank or 0 for no adjustment.
+            </div>
+            <div id="edit-comm-projects-status" style="font-size:11px;color:var(--grey-mid);margin-bottom:8px;">Loading projects…</div>
+            <div style="max-height:340px;overflow-y:auto;border:1px solid var(--gold-border);border-radius:3px;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead>
+                  <tr style="background:rgba(200,169,81,0.05);position:sticky;top:0;">
+                    <th style="text-align:left;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);">Project</th>
+                    <th style="text-align:right;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);">Raw $ Range</th>
+                    <th style="text-align:right;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);">Deduct $</th>
+                    <th style="text-align:left;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;width:80px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="edit-comm-projects-tbody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
-        <div id="edit-comm-custom-wrap" style="display:none;margin-bottom:14px;">
-          <div style="font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Custom Amount</div>
-          <input class="form-input" type="text" id="edit-comm-custom-value" placeholder="e.g. $10,000">
-        </div>
-        <div id="edit-comm-msg" style="display:none;font-size:12px;margin-bottom:12px;"></div>
-        <div style="display:flex;gap:10px;justify-content:flex-end;">
-          <button class="btn-outline" onclick="document.getElementById('modal-edit-staff-comm').style.display='none'">Cancel</button>
-          <button class="btn-primary" onclick="saveStaffComm()">Save</button>
+        <div class="modal-actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;padding-top:16px;border-top:1px solid var(--gold-border);">
+          <button class="btn-outline" onclick="document.getElementById('modal-edit-staff-comm').classList.remove('active')">Close</button>
         </div>
       </div>
     </div>
@@ -6992,6 +7018,7 @@
   let currentUserRole     = 'admin'; // 'admin' | 'super_admin'
   let currentAdminEmail   = null;
   let currentPartnerRecord = null;  // { role, partner_id, full_name, company_name, logo_url, ... }
+  let staffCommissionOverrides = {};  // { project_id: deduction_amount } — populated on login for staff under a flagged partner
   let currentAuthToken    = null;
   let currentRefreshToken = null;
   let _tokenRefreshTimer  = null;
@@ -7182,6 +7209,8 @@
       enterPortal();
       initWhatsNew();
       loadNotifications();
+      // Block on overrides so the first render of stock/deals applies them.
+      await loadStaffCommissionOverrides();
       loadPartnerDashboard();
       loadDeals();
       loadMyReservations();
@@ -7347,6 +7376,8 @@
         enterPortal();
         initWhatsNew();
         loadNotifications();
+        // Block on overrides so the first render of stock/deals applies them.
+        await loadStaffCommissionOverrides();
         loadPartnerDashboard();
         loadDeals();
         loadMyReservations();
@@ -7849,6 +7880,28 @@
           <button class="prt-notes-save" onclick="savePrtNotes('${p.id}')">Save Notes</button>
         </div>
 
+        ${currentUserRole === 'super_admin' ? `
+        <div class="prt-section-title">Feature Flags <span style="font-size:11px;color:var(--grey-mid);font-weight:400;text-transform:none;letter-spacing:0;">· super admin only</span></div>
+        <div class="prt-fields-grid">
+          <div style="grid-column:1/-1;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 16px;background:rgba(200,169,81,0.04);border:1px solid var(--gold-border);border-radius:3px;">
+            <div style="flex:1;">
+              <div style="font-size:13px;color:var(--white);font-weight:500;margin-bottom:4px;">Team Commission Override</div>
+              <div style="font-size:11px;color:var(--grey-mid);line-height:1.5;max-width:520px;">
+                When on, this firm's owner can set per-project dollar deductions that apply only to what their staff see. Owner always sees raw commission. Off for everyone by default.
+              </div>
+            </div>
+            <button class="prt-tco-toggle" id="prt-tco-${p.id}"
+                    onclick="toggleTeamCommissionFlag('${p.id}')"
+                    style="min-width:64px;padding:8px 14px;font-size:12px;letter-spacing:0.5px;border-radius:3px;cursor:pointer;border:1px solid var(--gold-border);
+                           background:${p.team_commission_override_enabled ? 'var(--gold)' : 'transparent'};
+                           color:${p.team_commission_override_enabled ? '#0A0A08' : 'var(--gold)'};
+                           font-weight:${p.team_commission_override_enabled ? '700' : '500'};">
+              ${p.team_commission_override_enabled ? 'ON' : 'OFF'}
+            </button>
+          </div>
+        </div>
+        ` : ''}
+
         <div class="prt-section-title">Reservation Activity (90d)</div>
         ${renderReservationActivityCard(p)}
 
@@ -8095,6 +8148,40 @@
       updatePrtStats();
       renderPrtList();
       showPrtDetail(id);
+    }
+  }
+
+  // Super-admin-only toggle for the per-partner Team Commission Override feature
+  // flag. Calls admin_set_team_commission_override_enabled (SECURITY DEFINER,
+  // is_admin() gated) rather than direct PATCH because column-level UPDATE on
+  // team_commission_override_enabled is REVOKEd from authenticated to prevent
+  // partner owners flipping their own flag via raw REST.
+  async function toggleTeamCommissionFlag(id) {
+    if (currentUserRole !== 'super_admin') return;
+    const p = allPartners.find(x => x.id === id);
+    if (!p) return;
+    const next = !p.team_commission_override_enabled;
+    const btn  = document.getElementById('prt-tco-' + id);
+    if (btn) { btn.disabled = true; btn.textContent = next ? 'Turning on…' : 'Turning off…'; }
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/admin_set_team_commission_override_enabled', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ p_partner_id: id, p_enabled: next })
+      });
+      if (!res.ok) {
+        let msg = 'Toggle failed (' + res.status + ')';
+        try { const j = await res.json(); if (j && j.message) msg = j.message; } catch (_) {}
+        throw new Error(msg);
+      }
+      p.team_commission_override_enabled = next;
+      showPrtDetail(id);  // re-render with new button state
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = p.team_commission_override_enabled ? 'ON' : 'OFF'; }
+      alert('Could not toggle flag: ' + e.message);
     }
   }
 
@@ -8872,6 +8959,7 @@
     currentRefreshToken  = null;
     if (_tokenRefreshTimer) { clearTimeout(_tokenRefreshTimer); _tokenRefreshTimer = null; }
     currentPartnerRecord = null;
+    staffCommissionOverrides = {};
     currentUserIsAdmin   = false;
     clearSession();
     partnerNotifications = [];
@@ -9186,6 +9274,125 @@
     document.getElementById('pset-notif-weekly').checked   = prefs.weekly_digest === true;
   }
 
+  // ── Per-staff per-project commission overrides ───────────────────────
+  // Owner opens the staff edit modal → if the partner's feature flag is on,
+  // renderStaffProjectOverrides() loads the project list + current overrides
+  // for that staff member and renders a row per project. Saves fire on blur.
+  async function renderStaffProjectOverrides(staffId) {
+    const wrap   = document.getElementById('edit-comm-projects-wrap');
+    const tbody  = document.getElementById('edit-comm-projects-tbody');
+    const status = document.getElementById('edit-comm-projects-status');
+    if (!wrap || !tbody) return;
+    // Section only relevant when the firm has the feature flag on
+    if (!currentPartnerRecord || currentPartnerRecord.role !== 'partner'
+        || !currentPartnerRecord.team_commission_override_enabled) {
+      wrap.style.display = 'none';
+      return;
+    }
+    wrap.style.display = '';
+    tbody.innerHTML = '';
+    status.textContent = 'Loading projects…';
+    status.style.color = 'var(--grey-mid)';
+
+    let projects = [];
+    let overrides = {};
+    let liveStock = [];
+    try {
+      // Fetch projects, live stock (Available/Reserved → defines "visible in the
+      // portal"), and this staff member's existing overrides in parallel.
+      const [projRes, stockRes, ovRes] = await Promise.all([
+        fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/projects?order=name&select=id,name', () => ({
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken }
+        })),
+        fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/stock?availability=in.(Available,Reserved)&select=project_id,total_contract,channel_commission,channel_comm_flat,channel_comm_pct', () => ({
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken }
+        })),
+        fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/rpc/get_staff_commission_overrides_for_owner', () => ({
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_staff_id: staffId }),
+        })),
+      ]);
+      if (projRes && projRes.ok)  projects  = await projRes.json();
+      if (stockRes && stockRes.ok) liveStock = await stockRes.json();
+      if (ovRes && ovRes.ok)      overrides = (await ovRes.json()) || {};
+    } catch (e) {
+      status.textContent = 'Could not load projects.';
+      status.style.color = 'var(--red)';
+      return;
+    }
+
+    // Build a project_id → raw $ range from the live stock fetch. Only projects
+    // appearing in this set are "visible in the portal" — we filter to those.
+    const rangeByProj = {};
+    liveStock.forEach(s => {
+      const raw = resolveRawCommDollars(s);
+      if (raw == null || !s.project_id) return;
+      if (!rangeByProj[s.project_id]) rangeByProj[s.project_id] = { min: raw, max: raw };
+      else {
+        rangeByProj[s.project_id].min = Math.min(rangeByProj[s.project_id].min, raw);
+        rangeByProj[s.project_id].max = Math.max(rangeByProj[s.project_id].max, raw);
+      }
+    });
+    const visibleProjectIds = new Set(Object.keys(rangeByProj));
+    projects = projects.filter(p => visibleProjectIds.has(p.id));
+
+    if (!projects.length) {
+      status.textContent = 'No projects with live stock yet.';
+      return;
+    }
+
+    tbody.innerHTML = projects.map(p => {
+      const ded = parseFloat(overrides[p.id]);
+      const dedAttr = (isFinite(ded) && ded > 0) ? ded : '';
+      const r = rangeByProj[p.id];
+      const rangeText = r
+        ? (r.min === r.max ? fmtCurrency(r.min) : fmtCurrency(r.min) + '–' + fmtCurrency(r.max))
+        : '<span style="color:var(--grey-mid);">—</span>';
+      return `<tr>
+        <td style="padding:6px 8px;">${escapeHtml(p.name || '(unnamed)')}</td>
+        <td style="padding:6px 8px;text-align:right;color:var(--grey-light);font-family:'DM Mono',monospace;font-size:12px;">${rangeText}</td>
+        <td style="padding:6px 8px;text-align:right;">
+          <input type="number" min="0" step="100"
+            value="${dedAttr}"
+            data-staff-id="${staffId}" data-project-id="${p.id}"
+            onblur="saveStaffProjectOverride(this)"
+            style="width:110px;text-align:right;padding:5px 8px;background:rgba(255,255,255,0.04);border:1px solid var(--gold-border);color:var(--white);border-radius:3px;font-family:'DM Mono',monospace;font-size:12px;"
+            placeholder="0">
+        </td>
+        <td style="padding:6px 8px;width:80px;"><span id="spco-status-${p.id}" style="font-size:11px;color:var(--grey-mid);"></span></td>
+      </tr>`;
+    }).join('');
+    status.textContent = projects.length + ' projects · blank or 0 = no deduction';
+    status.style.color = 'var(--grey-mid)';
+  }
+
+  async function saveStaffProjectOverride(inputEl) {
+    const staffId   = inputEl.getAttribute('data-staff-id');
+    const projectId = inputEl.getAttribute('data-project-id');
+    const statusEl  = document.getElementById('spco-status-' + projectId);
+    if (!staffId || !projectId) return;
+    let val = parseFloat(inputEl.value);
+    if (!isFinite(val) || val <= 0) val = 0;
+    if (statusEl) { statusEl.textContent = 'Saving…'; statusEl.style.color = 'var(--grey-mid)'; }
+    try {
+      const res = await fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/rpc/set_staff_commission_override', () => ({
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_staff_id: staffId, p_project_id: projectId, p_deduction: val }),
+      }));
+      if (!res || !res.ok) {
+        let msg = 'Save failed';
+        try { const j = await res.json(); if (j && j.message) msg = j.message; } catch (_) {}
+        if (statusEl) { statusEl.textContent = msg; statusEl.style.color = 'var(--red)'; }
+        return;
+      }
+      if (statusEl) { statusEl.textContent = val > 0 ? 'Saved ✓' : 'Cleared'; statusEl.style.color = 'var(--gold)'; }
+    } catch (e) {
+      if (statusEl) { statusEl.textContent = 'Error'; statusEl.style.color = 'var(--red)'; }
+    }
+  }
+
   async function savePartnerProfile() {
     if (!currentPartnerRecord) return;
     const partnerId = currentPartnerRecord.partner_id;
@@ -9444,10 +9651,12 @@
     document.getElementById('edit-comm-custom-value').value = currentValue || '';
     document.getElementById('edit-comm-custom-wrap').style.display = currentType === 'custom' ? '' : 'none';
     document.getElementById('edit-comm-msg').style.display = 'none';
-    document.getElementById('modal-edit-staff-comm').style.display = 'flex';
+    document.getElementById('modal-edit-staff-comm').classList.add('active');
     document.getElementById('edit-comm-type').onchange = function() {
       document.getElementById('edit-comm-custom-wrap').style.display = this.value === 'custom' ? '' : 'none';
     };
+    // Per-project deductions section — shown only when partner flag is on.
+    renderStaffProjectOverrides(staffId);
   }
 
   async function saveStaffComm() {
@@ -9463,7 +9672,7 @@
         body: JSON.stringify({ comm_display_type: type, comm_custom_value: value }),
       });
       if (!res.ok) throw new Error(await res.text());
-      document.getElementById('modal-edit-staff-comm').style.display = 'none';
+      document.getElementById('modal-edit-staff-comm').classList.remove('active');
       loadPartnerStaff();
     } catch(e) {
       showPsetMsg('edit-comm-msg', e.message, false);
@@ -10849,7 +11058,10 @@
       } else {
         paidDisplay = d.paid_to_date != null ? fmtCurrency(d.paid_to_date) : '—';
         const outstanding = d.channel_commission != null
-          ? Math.max(0, (d.channel_commission || 0) - (d.paid_to_date || 0))
+          ? applyTeamOverride(
+              Math.max(0, (d.channel_commission || 0) - (d.paid_to_date || 0)),
+              d.project_id
+            ).dollars
           : null;
         commDisplay = outstanding != null ? fmtCurrency(outstanding) : '—';
       }
@@ -10884,7 +11096,10 @@
     if (col === 'client_name')        return (d.client_name || '').toLowerCase();
     if (col === 'stage')              return (d.stage || '').toLowerCase();
     if (col === 'paid_to_date')       return d.paid_to_date ?? -1;
-    if (col === 'channel_commission') return Math.max(0, (d.channel_commission || 0) - (d.paid_to_date || 0));
+    if (col === 'channel_commission') return applyTeamOverride(
+      Math.max(0, (d.channel_commission || 0) - (d.paid_to_date || 0)),
+      d.project_id
+    ).dollars;
     return d[col] || '9999-99-99'; // dates: nulls sort last
   }
 
@@ -10971,10 +11186,15 @@
     // Commission helper — central rule for cockpit values.
     // Uses outstanding (channel_commission - paid_to_date) so the cockpit
     // reflects future cash, not gross-of-paid totals.
+    // Per-staff hidden/custom wins over partner-level team deduction. For the
+    // 'portal' branch, applyTeamOverride deducts per-(partner, stock) when the
+    // partner has the feature flag on and an override exists for the deal's
+    // stock — owner and non-flagged partners are no-ops.
     function commOf(d) {
       if (_commType === 'hidden') return 0;
       if (_commType === 'custom' && _commCustomNum > 0) return _commCustomNum;
-      return Math.max(0, (d.channel_commission || 0) - (d.paid_to_date || 0));
+      const raw = Math.max(0, (d.channel_commission || 0) - (d.paid_to_date || 0));
+      return applyTeamOverride(raw, d.project_id).dollars;
     }
 
     // ── Hero: total pipeline + 90-day forecast ─────────────────
@@ -11609,6 +11829,38 @@
     if (h < 12) return 'Good morning';
     if (h < 17) return 'Good afternoon';
     return 'Good evening';
+  }
+
+  // Loads the per-(staff, project) deduction map FOR THE LOGGED-IN STAFF MEMBER.
+  // Returns {} for owners (they configure per-staff in the edit modal, not via
+  // a cached map), for staff whose partner's flag is off, and on any error.
+  // Must finish before the first render of any commission-bearing surface.
+  async function loadStaffCommissionOverrides() {
+    staffCommissionOverrides = {};
+    if (!currentPartnerRecord) return;
+    if (currentPartnerRecord.role !== 'staff') return;
+    if (!currentPartnerRecord.team_commission_override_enabled) return;
+    try {
+      const res = await fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/rpc/get_my_staff_commission_overrides', () => ({
+        method: 'POST',
+        headers: {
+          'apikey':        SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
+          'Content-Type':  'application/json',
+        },
+        body: '{}',
+      }));
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data && typeof data === 'object') {
+          // RPC returns object map { project_id: deduction_amount as numeric/string }
+          for (const k in data) {
+            const n = parseFloat(data[k]);
+            if (isFinite(n) && n > 0) staffCommissionOverrides[k] = n;
+          }
+        }
+      }
+    } catch (e) { /* soft-fail to empty map — staff sees raw values */ }
   }
 
   async function loadPartnerDashboard() {
@@ -12768,12 +13020,60 @@ function fmtCurrencyShort(n) {
 }
 function fmtSqm(n)  { return n ? (Math.round(n * 10) / 10) + ' m²' : '—'; }
 function fmtNum(n)  { return (n != null && n !== '') ? n : '—'; }
+
+// Resolve a stock row to its raw commission dollar value, or null when only a
+// pct exists without a total (can't resolve to dollars). Mirrors fmtComm's
+// resolution order — kept separate so override math can run on the numeric.
+function resolveRawCommDollars(s) {
+  const flat = s.channel_comm_flat;
+  const pct  = s.channel_comm_pct;
+  const total = s.total_contract;
+  if (pct && total) return Math.round(total * pct / 100) + (flat || 0);
+  if (flat) return flat;
+  if (s.channel_commission) return s.channel_commission;
+  return null;
+}
+
+// Apply per-(staff, project) commission deduction. Returns the team-visible
+// dollar amount and a flag the caller can use to suppress % display. Only fires
+// when (a) caller is staff, (b) partner has the feature flag on, (c) an override
+// row exists for this project. Owner always sees raw values.
+function applyTeamOverride(rawDollars, projectId) {
+  if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff')
+    return { dollars: rawDollars, percentSuppressed: false };
+  if (!currentPartnerRecord.team_commission_override_enabled)
+    return { dollars: rawDollars, percentSuppressed: false };
+  if (rawDollars == null || !projectId) return { dollars: rawDollars, percentSuppressed: false };
+  const ded = staffCommissionOverrides[projectId];
+  if (ded == null) return { dollars: rawDollars, percentSuppressed: false };
+  return { dollars: Math.max(0, rawDollars - ded), percentSuppressed: true };
+}
+
+// Single source of truth for "what commission string does THIS user see for THIS
+// stock row". Precedence: per-staff hidden/custom (most specific) → partner-level
+// deduction → raw portal value.
 function fmtCommForUser(s) {
-  if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff') return fmtComm(s);
-  const ct = currentPartnerRecord.comm_display_type || 'portal';
-  if (ct === 'hidden') return '—';
-  if (ct === 'custom' && currentPartnerRecord.comm_custom_value) return currentPartnerRecord.comm_custom_value;
-  return fmtComm(s);
+  return fmtCommForUserWithMeta(s).text;
+}
+function fmtCommForUserWithMeta(s) {
+  // Per-staff overrides (set by partner owner on the staff member) take precedence.
+  if (currentPartnerRecord && currentPartnerRecord.role === 'staff') {
+    const ct = currentPartnerRecord.comm_display_type || 'portal';
+    if (ct === 'hidden') return { text: '—', percentSuppressed: true };
+    if (ct === 'custom' && currentPartnerRecord.comm_custom_value) {
+      return { text: currentPartnerRecord.comm_custom_value, percentSuppressed: true };
+    }
+  }
+  // Resolve the raw dollar value, then (for flagged staff) apply per-project deduction.
+  const raw = resolveRawCommDollars(s);
+  if (raw != null) {
+    const { dollars, percentSuppressed } = applyTeamOverride(raw, s.project_id);
+    return { text: fmtCurrency(dollars), percentSuppressed };
+  }
+  // No total_contract but a pct exists — fall back to "X%". Can't apply an override
+  // here (no dollar base), so just pass it through.
+  if (s.channel_comm_pct) return { text: s.channel_comm_pct + '%', percentSuppressed: false };
+  return { text: '—', percentSuppressed: false };
 }
 
 function fmtComm(s) {
@@ -12790,10 +13090,16 @@ function fmtComm(s) {
   return '—';
 }
 function commSortVal(s) {
-  if (s.channel_comm_flat && s.channel_comm_pct) return s.channel_comm_flat;
-  if (s.channel_comm_flat) return s.channel_comm_flat;
-  if (s.channel_comm_pct && s.total_contract) return Math.round(s.total_contract * s.channel_comm_pct / 100);
-  return s.channel_commission ?? -1;
+  // Compute the raw numeric the same way fmtComm does, then apply the
+  // team override (no-op for owner/non-flagged partners) so staff see
+  // their sort match their displayed values.
+  let raw;
+  if (s.channel_comm_flat && s.channel_comm_pct) raw = s.channel_comm_flat;
+  else if (s.channel_comm_flat) raw = s.channel_comm_flat;
+  else if (s.channel_comm_pct && s.total_contract) raw = Math.round(s.total_contract * s.channel_comm_pct / 100);
+  else raw = s.channel_commission ?? -1;
+  if (raw === -1) return -1;
+  return applyTeamOverride(raw, s.project_id).dollars;
 }
 
 function stkAllSortBy(col) {
@@ -12860,6 +13166,14 @@ function fmtProjCommForUser(p) {
   const ct = currentPartnerRecord.comm_display_type || 'portal';
   if (ct === 'hidden') return '—';
   if (ct === 'custom' && currentPartnerRecord.comm_custom_value) return currentPartnerRecord.comm_custom_value;
+  // Partner-level team deduction: if any stock in this project is overridden,
+  // drop the % and show a $-only range computed from per-stock team-effective
+  // values. Projects with NO override fall back to the normal display so the
+  // % stays visible for them.
+  if (p._teamAnyOverride && p._teamMinComm != null) {
+    if (p._teamMinComm === p._teamMaxComm) return fmtCurrencyShort(p._teamMinComm);
+    return fmtCurrencyShort(p._teamMinComm) + '–' + fmtCurrencyShort(p._teamMaxComm);
+  }
   return fmtProjComm(p);
 }
 
@@ -12918,7 +13232,7 @@ async function loadStockProjects() {
     });
     const [projRes, stockRes, availRes] = await Promise.all([
       fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/projects?order=name', buildOpts),
-      fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/stock?select=project_id,total_contract,channel_commission,channel_comm_flat,channel_comm_pct,availability&availability=in.(Available,Reserved)', buildOpts),
+      fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/stock?select=id,project_id,total_contract,channel_commission,channel_comm_flat,channel_comm_pct,availability&availability=in.(Available,Reserved)', buildOpts),
       fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/stock?availability=in.(Available,Reserved)&order=project_name,total_contract', buildOpts),
     ]);
     if (!projRes || !projRes.ok) throw new Error('Failed to load projects');
@@ -12929,25 +13243,42 @@ async function loadStockProjects() {
     const pmap = {};
     stockSummary.forEach(s => {
       if (!s.project_id) return;
-      if (!pmap[s.project_id]) pmap[s.project_id] = { prices: [], commFlats: [], commPcts: [], avail: 0, availAvail: 0, availReserved: 0 };
+      if (!pmap[s.project_id]) pmap[s.project_id] = { prices: [], commFlats: [], commPcts: [], rawDollars: [], avail: 0, availAvail: 0, availReserved: 0 };
       // Use Available + Reserved prices so the project's price band covers all live inventory visible in the project view.
       if (s.total_contract && (s.availability === 'Available' || s.availability === 'Reserved')) {
         pmap[s.project_id].prices.push(s.total_contract);
       }
       if (s.channel_comm_flat) pmap[s.project_id].commFlats.push(s.channel_comm_flat);
       if (s.channel_comm_pct)  pmap[s.project_id].commPcts.push(s.channel_comm_pct);
+      const raw = resolveRawCommDollars(s);
+      if (raw != null) pmap[s.project_id].rawDollars.push(raw);
       if (s.availability === 'Available') { pmap[s.project_id].avail++; pmap[s.project_id].availAvail++; }
       if (s.availability === 'Reserved')  { pmap[s.project_id].avail++; pmap[s.project_id].availReserved++; }
     });
     allProjects.forEach(p => {
-      const s = pmap[p.id] || { prices: [], commFlats: [], commPcts: [], avail: 0, availAvail: 0, availReserved: 0 };
-      p._minPrice      = s.prices.length    ? Math.min(...s.prices)    : null;
-      p._maxPrice      = s.prices.length    ? Math.max(...s.prices)    : null;
-      p._maxCommFlat   = s.commFlats.length ? Math.max(...s.commFlats) : null;
-      p._maxCommPct    = s.commPcts.length  ? Math.max(...s.commPcts)  : null;
-      p._availCount    = s.avail;
-      p._availAvail    = s.availAvail;
-      p._availReserved = s.availReserved;
+      const s = pmap[p.id] || { prices: [], commFlats: [], commPcts: [], rawDollars: [], avail: 0, availAvail: 0, availReserved: 0 };
+      p._minPrice        = s.prices.length    ? Math.min(...s.prices)    : null;
+      p._maxPrice        = s.prices.length    ? Math.max(...s.prices)    : null;
+      p._maxCommFlat     = s.commFlats.length ? Math.max(...s.commFlats) : null;
+      p._maxCommPct      = s.commPcts.length  ? Math.max(...s.commPcts)  : null;
+      // For flagged staff with a per-project deduction set: precompute the
+      // team-visible $ range so fmtProjCommForUser can show $X–$Y with no %.
+      const ded = (currentPartnerRecord?.role === 'staff'
+                && currentPartnerRecord?.team_commission_override_enabled
+                && staffCommissionOverrides[p.id]) || null;
+      if (ded != null && s.rawDollars.length) {
+        const adj = s.rawDollars.map(d => Math.max(0, d - ded));
+        p._teamMinComm     = Math.min(...adj);
+        p._teamMaxComm     = Math.max(...adj);
+        p._teamAnyOverride = true;
+      } else {
+        p._teamMinComm     = null;
+        p._teamMaxComm     = null;
+        p._teamAnyOverride = false;
+      }
+      p._availCount      = s.avail;
+      p._availAvail      = s.availAvail;
+      p._availReserved   = s.availReserved;
     });
 
     // All available stock for the flat stock view
@@ -14412,8 +14743,9 @@ function showStockListing(id) {
       document.getElementById('slg-your-comm').textContent = _commCustom;
       document.getElementById('slg-comm-pct').textContent  = 'Your commission';
     } else {
-      // Portal rate (default)
-      document.getElementById('slg-your-comm').textContent = fmtComm(s);
+      // Portal rate (default) — fmtCommForUser applies any partner-level
+      // team-commission deduction set by the firm owner.
+      document.getElementById('slg-your-comm').textContent = fmtCommForUser(s);
       document.getElementById('slg-comm-pct').textContent  = s.comm_payment_terms ? 'Paid at ' + s.comm_payment_terms : '';
     }
     document.getElementById('slg-comm-terms').textContent = s.comm_payment_terms || '—';

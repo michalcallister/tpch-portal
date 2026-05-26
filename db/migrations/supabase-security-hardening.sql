@@ -466,7 +466,8 @@ BEGIN
       'notification_prefs',         v_partner.notification_prefs,
       'status',                     v_partner.status,
       'agreement_version',          v_partner.agreement_version,
-      'agreement_accepted_at',      v_partner.agreement_accepted_at
+      'agreement_accepted_at',      v_partner.agreement_accepted_at,
+      'team_commission_override_enabled', v_partner.team_commission_override_enabled
     );
   END IF;
 
@@ -501,7 +502,8 @@ BEGIN
       'notification_prefs',         v_owner.notification_prefs,
       'status',                     v_staff.status,
       'agreement_version',          v_owner.agreement_version,
-      'agreement_accepted_at',      v_owner.agreement_accepted_at
+      'agreement_accepted_at',      v_owner.agreement_accepted_at,
+      'team_commission_override_enabled', v_owner.team_commission_override_enabled
     );
   END IF;
 

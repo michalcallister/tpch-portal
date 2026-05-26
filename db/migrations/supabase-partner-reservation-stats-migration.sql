@@ -120,7 +120,8 @@ BEGIN
         'converted_90d',            COALESCE(s.converted_90d, 0),
         'lapse_rate_pct_90d',       s.lapse_rate_pct_90d,
         'is_flagged',               COALESCE(s.is_flagged, false),
-        'last_reserved_at',         s.last_reserved_at
+        'last_reserved_at',         s.last_reserved_at,
+        'team_commission_override_enabled', COALESCE(p.team_commission_override_enabled, false)
       ) AS row
       FROM public.channel_partners p
       LEFT JOIN auth.users u                       ON lower(u.email) = lower(p.email)
