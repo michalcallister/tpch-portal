@@ -339,6 +339,67 @@ END $$;
 REVOKE EXECUTE ON FUNCTION public.set_staff_all_projects_visible(uuid, boolean) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION public.set_staff_all_projects_visible(uuid, boolean) TO authenticated;
 
+-- 5c. Copy one staff member's full per-project config to every other active
+--     staff member in the firm. Replaces existing target rows (true copy).
+CREATE OR REPLACE FUNCTION public.copy_staff_commission_config(
+  p_source_staff_id uuid
+) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_pid            uuid := public.current_partner_id();
+  v_owner_uid      uuid;
+  v_flag           boolean;
+  v_source_partner uuid;
+  v_target_count   integer;
+BEGIN
+  IF v_pid IS NULL THEN RAISE EXCEPTION 'no partner context' USING ERRCODE = '42501'; END IF;
+  SELECT user_id, team_commission_override_enabled INTO v_owner_uid, v_flag
+    FROM public.channel_partners WHERE id = v_pid;
+  IF v_owner_uid IS DISTINCT FROM auth.uid() THEN
+    RAISE EXCEPTION 'forbidden — owner only' USING ERRCODE = '42501';
+  END IF;
+  IF NOT COALESCE(v_flag, false) THEN
+    RAISE EXCEPTION 'team commission overrides not enabled for this partner' USING ERRCODE = '42501';
+  END IF;
+  IF p_source_staff_id IS NULL THEN
+    RAISE EXCEPTION 'p_source_staff_id required' USING ERRCODE = '22023';
+  END IF;
+  SELECT partner_id INTO v_source_partner FROM public.partner_staff WHERE id = p_source_staff_id;
+  IF v_source_partner IS DISTINCT FROM v_pid THEN
+    RAISE EXCEPTION 'source staff member not in your firm' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT COUNT(*) INTO v_target_count
+    FROM public.partner_staff
+   WHERE partner_id = v_pid AND status = 'active' AND id <> p_source_staff_id;
+
+  IF v_target_count = 0 THEN
+    RETURN jsonb_build_object('copied_to', 0);
+  END IF;
+
+  DELETE FROM public.staff_project_commission_overrides
+   WHERE staff_id IN (
+     SELECT id FROM public.partner_staff
+      WHERE partner_id = v_pid AND status = 'active' AND id <> p_source_staff_id
+   );
+
+  INSERT INTO public.staff_project_commission_overrides
+        (staff_id, project_id, deduction_amount, visible, updated_at, updated_by)
+  SELECT t.id, s.project_id, s.deduction_amount, s.visible, now(), auth.uid()
+    FROM public.partner_staff t
+   CROSS JOIN public.staff_project_commission_overrides s
+   WHERE t.partner_id = v_pid
+     AND t.status = 'active'
+     AND t.id <> p_source_staff_id
+     AND s.staff_id = p_source_staff_id;
+
+  RETURN jsonb_build_object('copied_to', v_target_count);
+END $$;
+
+REVOKE EXECUTE ON FUNCTION public.copy_staff_commission_config(uuid) FROM PUBLIC;
+GRANT  EXECUTE ON FUNCTION public.copy_staff_commission_config(uuid) TO authenticated;
+
 -- 6. Admin-only RPC — flip the per-partner feature flag (used by the
 --    super-admin toggle in the Partners admin page).
 CREATE OR REPLACE FUNCTION public.admin_set_team_commission_override_enabled(

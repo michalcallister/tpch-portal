@@ -5936,6 +5936,10 @@
             <div style="font-size:11px;color:var(--grey-mid);margin-bottom:10px;line-height:1.5;">
               <strong style="color:var(--grey-light);">Visible</strong> controls whether this team member sees the project at all in the stock browse. <strong style="color:var(--grey-light);">Deduct $</strong> reduces the commission they see (Portal rate only). New projects default hidden — tick to grant access. Saves automatically.
             </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;padding:8px 10px;background:rgba(200,169,81,0.05);border:1px solid var(--gold-border);border-radius:3px;">
+              <div style="font-size:11px;color:var(--grey-light);">Need the same setup for everyone? Configure this team member, then copy it to the rest.</div>
+              <button class="btn-outline" style="font-size:11px;padding:4px 10px;white-space:nowrap;" onclick="copyStaffConfigToOthers()">Copy to other team members →</button>
+            </div>
             <div id="edit-comm-projects-status" style="font-size:11px;color:var(--grey-mid);margin-bottom:8px;">Loading projects…</div>
             <div style="max-height:340px;overflow-y:auto;border:1px solid var(--gold-border);border-radius:3px;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -9463,6 +9467,41 @@
       }
       // Re-render the table so checkboxes + deductions reflect the new state.
       await renderStaffProjectOverrides(staffId);
+    } catch (e) {
+      if (status) { status.textContent = 'Error'; status.style.color = 'var(--red)'; }
+    }
+  }
+
+  // Copy this staff member's full per-project config (visibilities + deductions)
+  // to every other active team member in the firm. Replaces their existing rows.
+  async function copyStaffConfigToOthers() {
+    const sourceStaffId = document.getElementById('edit-comm-staff-id').value;
+    if (!sourceStaffId) return;
+    const confirmMsg = 'Copy this team member\'s project visibility AND commission deductions to all other team members?\n\n' +
+                       'This will OVERWRITE their existing settings. Cannot be undone.';
+    if (!confirm(confirmMsg)) return;
+    const status = document.getElementById('edit-comm-projects-status');
+    if (status) { status.textContent = 'Copying to other team members…'; status.style.color = 'var(--grey-mid)'; }
+    try {
+      const res = await fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/rpc/copy_staff_commission_config', () => ({
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_source_staff_id: sourceStaffId }),
+      }));
+      if (!res || !res.ok) {
+        let msg = 'Copy failed';
+        try { const j = await res.json(); if (j && j.message) msg = j.message; } catch (_) {}
+        if (status) { status.textContent = msg; status.style.color = 'var(--red)'; }
+        return;
+      }
+      const data = await res.json();
+      const n = (data && data.copied_to) || 0;
+      if (status) {
+        status.textContent = n === 0
+          ? 'No other team members to copy to.'
+          : 'Copied to ' + n + ' other team member' + (n === 1 ? '' : 's') + ' ✓';
+        status.style.color = n === 0 ? 'var(--grey-mid)' : 'var(--gold)';
+      }
     } catch (e) {
       if (status) { status.textContent = 'Error'; status.style.color = 'var(--red)'; }
     }
