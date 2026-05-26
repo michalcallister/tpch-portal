@@ -5924,21 +5924,28 @@
           </div>
           <div id="edit-comm-msg" style="display:none;font-size:12px;margin-bottom:12px;"></div>
 
-          <!-- Per-project deductions (only when partner has team-commission flag on) -->
+          <!-- Per-project visibility + deductions (only when partner has team-commission flag on) -->
           <div id="edit-comm-projects-wrap" style="display:none;margin-top:18px;padding-top:18px;border-top:1px solid var(--gold-border);">
-            <div style="font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Per-Project Commission Adjustment</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px;gap:12px;">
+              <div style="font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Per-Project Visibility & Adjustments</div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn-outline" style="font-size:11px;padding:4px 10px;" onclick="bulkSetStaffVisibility(true)">Show All</button>
+                <button class="btn-outline" style="font-size:11px;padding:4px 10px;" onclick="bulkSetStaffVisibility(false)">Hide All</button>
+              </div>
+            </div>
             <div style="font-size:11px;color:var(--grey-mid);margin-bottom:10px;line-height:1.5;">
-              Only applies when <strong style="color:var(--grey-light);">Commission Display</strong> above is set to <strong style="color:var(--grey-light);">Portal rate</strong>. Reduces what this team member sees by a flat dollar amount per project. Custom/Hidden options above override these deductions entirely. Saves automatically on tab away — leave blank or 0 for no adjustment.
+              <strong style="color:var(--grey-light);">Visible</strong> controls whether this team member sees the project at all in the stock browse. <strong style="color:var(--grey-light);">Deduct $</strong> reduces the commission they see (Portal rate only). New projects default hidden — tick to grant access. Saves automatically.
             </div>
             <div id="edit-comm-projects-status" style="font-size:11px;color:var(--grey-mid);margin-bottom:8px;">Loading projects…</div>
             <div style="max-height:340px;overflow-y:auto;border:1px solid var(--gold-border);border-radius:3px;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
                 <thead>
-                  <tr style="background:rgba(200,169,81,0.05);position:sticky;top:0;">
-                    <th style="text-align:left;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);">Project</th>
-                    <th style="text-align:right;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);">Raw $ Range</th>
-                    <th style="text-align:right;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);">Deduct $</th>
-                    <th style="text-align:left;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;width:80px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);">Status</th>
+                  <tr>
+                    <th style="text-align:center;padding:8px 6px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;width:60px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Visible</th>
+                    <th style="text-align:left;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Project</th>
+                    <th style="text-align:right;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Raw $ Range</th>
+                    <th style="text-align:right;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Deduct $</th>
+                    <th style="text-align:left;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;width:80px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Status</th>
                   </tr>
                 </thead>
                 <tbody id="edit-comm-projects-tbody"></tbody>
@@ -7018,7 +7025,7 @@
   let currentUserRole     = 'admin'; // 'admin' | 'super_admin'
   let currentAdminEmail   = null;
   let currentPartnerRecord = null;  // { role, partner_id, full_name, company_name, logo_url, ... }
-  let staffCommissionOverrides = {};  // { project_id: deduction_amount } — populated on login for staff under a flagged partner
+  let staffCommissionOverrides = {};  // { project_id: { d: deduction, v: visible } } — populated on login for staff under a flagged partner
   let currentAuthToken    = null;
   let currentRefreshToken = null;
   let _tokenRefreshTimer  = null;
@@ -9342,15 +9349,26 @@
       return;
     }
 
+    let visibleCount = 0;
     tbody.innerHTML = projects.map(p => {
-      const ded = parseFloat(overrides[p.id]);
+      const row     = overrides[p.id] || null;
+      const ded     = row ? parseFloat(row.d) : 0;
+      const isVis   = !!(row && row.v === true);
+      if (isVis) visibleCount++;
       const dedAttr = (isFinite(ded) && ded > 0) ? ded : '';
       const r = rangeByProj[p.id];
       const rangeText = r
         ? (r.min === r.max ? fmtCurrency(r.min) : fmtCurrency(r.min) + '–' + fmtCurrency(r.max))
         : '<span style="color:var(--grey-mid);">—</span>';
       return `<tr>
-        <td style="padding:6px 8px;">${escapeHtml(p.name || '(unnamed)')}</td>
+        <td style="padding:6px 8px;text-align:center;">
+          <input type="checkbox" ${isVis ? 'checked' : ''}
+            id="spco-vis-${p.id}"
+            data-staff-id="${staffId}" data-project-id="${p.id}"
+            onchange="saveStaffProjectVisibility(this)"
+            style="width:16px;height:16px;cursor:pointer;accent-color:var(--gold);">
+        </td>
+        <td style="padding:6px 8px;color:var(--white);">${escapeHtml(p.name || '(unnamed)')}</td>
         <td style="padding:6px 8px;text-align:right;color:var(--grey-light);font-family:'DM Mono',monospace;font-size:12px;">${rangeText}</td>
         <td style="padding:6px 8px;text-align:right;">
           <input type="number" min="0" step="100"
@@ -9363,7 +9381,7 @@
         <td style="padding:6px 8px;width:80px;"><span id="spco-status-${p.id}" style="font-size:11px;color:var(--grey-mid);"></span></td>
       </tr>`;
     }).join('');
-    status.textContent = projects.length + ' projects · blank or 0 = no deduction';
+    status.textContent = visibleCount + ' of ' + projects.length + ' projects visible to this team member';
     status.style.color = 'var(--grey-mid)';
   }
 
@@ -9387,9 +9405,66 @@
         if (statusEl) { statusEl.textContent = msg; statusEl.style.color = 'var(--red)'; }
         return;
       }
+      // Setting a deduction implicitly makes the row visible (server-side) —
+      // mirror that on the visible checkbox in this row so the UI stays in sync.
+      if (val > 0) {
+        const cb = document.getElementById('spco-vis-' + projectId);
+        if (cb) cb.checked = true;
+      }
       if (statusEl) { statusEl.textContent = val > 0 ? 'Saved ✓' : 'Cleared'; statusEl.style.color = 'var(--gold)'; }
     } catch (e) {
       if (statusEl) { statusEl.textContent = 'Error'; statusEl.style.color = 'var(--red)'; }
+    }
+  }
+
+  async function saveStaffProjectVisibility(checkboxEl) {
+    const staffId   = checkboxEl.getAttribute('data-staff-id');
+    const projectId = checkboxEl.getAttribute('data-project-id');
+    const statusEl  = document.getElementById('spco-status-' + projectId);
+    if (!staffId || !projectId) return;
+    const visible = !!checkboxEl.checked;
+    if (statusEl) { statusEl.textContent = visible ? 'Showing…' : 'Hiding…'; statusEl.style.color = 'var(--grey-mid)'; }
+    try {
+      const res = await fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/rpc/set_staff_project_visibility', () => ({
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_staff_id: staffId, p_project_id: projectId, p_visible: visible }),
+      }));
+      if (!res || !res.ok) {
+        let msg = 'Save failed';
+        try { const j = await res.json(); if (j && j.message) msg = j.message; } catch (_) {}
+        if (statusEl) { statusEl.textContent = msg; statusEl.style.color = 'var(--red)'; }
+        checkboxEl.checked = !visible;  // revert UI on failure
+        return;
+      }
+      if (statusEl) { statusEl.textContent = visible ? 'Visible ✓' : 'Hidden ✓'; statusEl.style.color = 'var(--gold)'; }
+    } catch (e) {
+      if (statusEl) { statusEl.textContent = 'Error'; statusEl.style.color = 'var(--red)'; }
+      checkboxEl.checked = !visible;
+    }
+  }
+
+  async function bulkSetStaffVisibility(visible) {
+    const staffId = document.getElementById('edit-comm-staff-id').value;
+    if (!staffId) return;
+    const verb = visible ? 'show' : 'hide';
+    if (!confirm(`Set every live project to ${verb} for this team member?`)) return;
+    const status = document.getElementById('edit-comm-projects-status');
+    if (status) { status.textContent = visible ? 'Showing all…' : 'Hiding all…'; status.style.color = 'var(--grey-mid)'; }
+    try {
+      const res = await fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/rpc/set_staff_all_projects_visible', () => ({
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_staff_id: staffId, p_visible: visible }),
+      }));
+      if (!res || !res.ok) {
+        if (status) { status.textContent = 'Bulk save failed'; status.style.color = 'var(--red)'; }
+        return;
+      }
+      // Re-render the table so checkboxes + deductions reflect the new state.
+      await renderStaffProjectOverrides(staffId);
+    } catch (e) {
+      if (status) { status.textContent = 'Error'; status.style.color = 'var(--red)'; }
     }
   }
 
@@ -11853,10 +11928,14 @@
       if (res && res.ok) {
         const data = await res.json();
         if (data && typeof data === 'object') {
-          // RPC returns object map { project_id: deduction_amount as numeric/string }
+          // RPC returns { project_id: { d: deduction, v: visible } }
           for (const k in data) {
-            const n = parseFloat(data[k]);
-            if (isFinite(n) && n > 0) staffCommissionOverrides[k] = n;
+            const row = data[k] || {};
+            const d   = parseFloat(row.d);
+            staffCommissionOverrides[k] = {
+              d: isFinite(d) && d > 0 ? d : 0,
+              v: row.v === true,
+            };
           }
         }
       }
@@ -13037,16 +13116,53 @@ function resolveRawCommDollars(s) {
 // Apply per-(staff, project) commission deduction. Returns the team-visible
 // dollar amount and a flag the caller can use to suppress % display. Only fires
 // when (a) caller is staff, (b) partner has the feature flag on, (c) an override
-// row exists for this project. Owner always sees raw values.
+// row exists for this project with a non-zero deduction. Owner always sees raw.
 function applyTeamOverride(rawDollars, projectId) {
   if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff')
     return { dollars: rawDollars, percentSuppressed: false };
   if (!currentPartnerRecord.team_commission_override_enabled)
     return { dollars: rawDollars, percentSuppressed: false };
   if (rawDollars == null || !projectId) return { dollars: rawDollars, percentSuppressed: false };
-  const ded = staffCommissionOverrides[projectId];
+  const row = staffCommissionOverrides[projectId];
+  const ded = row && row.d > 0 ? row.d : null;
   if (ded == null) return { dollars: rawDollars, percentSuppressed: false };
   return { dollars: Math.max(0, rawDollars - ded), percentSuppressed: true };
+}
+
+// Is THIS project visible to the logged-in staff member? Only meaningful when
+// caller is staff under a flagged partner. Owners and non-flagged staff always
+// return true (no filter applies for them).
+function isProjectVisibleToStaff(projectId) {
+  if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff') return true;
+  if (!currentPartnerRecord.team_commission_override_enabled) return true;
+  if (!projectId) return false;
+  const row = staffCommissionOverrides[projectId];
+  return !!(row && row.v === true);
+}
+
+// True when the logged-in user is a flagged-partner staff member with ZERO
+// visible projects configured by their owner. Used to distinguish "empty
+// because filters too tight" from "empty because firm hasn't assigned any".
+function staffHasNoVisibleProjects() {
+  if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff') return false;
+  if (!currentPartnerRecord.team_commission_override_enabled) return false;
+  for (const k in staffCommissionOverrides) {
+    if (staffCommissionOverrides[k] && staffCommissionOverrides[k].v === true) return false;
+  }
+  return true;
+}
+
+// Empty-state HTML for staff who have no visible projects yet. Falls back to
+// the supplied default if the user isn't in that specific state.
+function stockEmptyStateHtml(defaultHtml) {
+  if (staffHasNoVisibleProjects()) {
+    return '<div class="stk-empty" style="padding:40px 20px;text-align:center;color:var(--grey-pale);">'
+      + '<div class="stk-empty-icon">◈</div>'
+      + 'No projects have been assigned to you yet.<br>'
+      + '<span style="font-size:12px;color:var(--grey-mid);">Contact your firm admin to be granted access.</span>'
+      + '</div>';
+  }
+  return defaultHtml;
 }
 
 // Single source of truth for "what commission string does THIS user see for THIS
@@ -13366,6 +13482,8 @@ function filteredStockProjects() {
   const f = stkFilter;
   const q = (f.search || '').trim().toLowerCase();
   return allProjects.filter(p => {
+    // Staff-with-flag-on only see projects their firm owner has ticked visible.
+    if (!isProjectVisibleToStaff(p.id)) return false;
     if (f.avail === 'Available' && (p._availAvail || 0) === 0) return false;
     if (f.avail === 'Reserved'  && (p._availReserved || 0) === 0) return false;
     if ((p._availCount || 0) === 0) return false;
@@ -13462,7 +13580,7 @@ function renderProjectsListMode() {
   const slice = all.slice(start, start + pageSize);
   const container = document.getElementById('stk-cards');
   if (!slice.length) {
-    container.innerHTML = '<div class="stk-empty"><div class="stk-empty-icon">◎</div>No projects match your filters.<br><button class="stk-clearall" onclick="resetStkFilters()" style="margin-top:12px;">↺ Clear all</button></div>';
+    container.innerHTML = stockEmptyStateHtml('<div class="stk-empty"><div class="stk-empty-icon">◎</div>No projects match your filters.<br><button class="stk-clearall" onclick="resetStkFilters()" style="margin-top:12px;">↺ Clear all</button></div>');
   } else {
     container.innerHTML = slice.map(renderProjectCardHtml).join('');
   }
@@ -13523,7 +13641,7 @@ function renderProjectCardHtml(p) {
 
 function renderProjectRows(projects) {
   if (!projects.length) {
-    return '<div class="stk-empty" style="padding:40px 20px;text-align:center;color:var(--grey-mid);"><div class="stk-empty-icon">◎</div>No projects match your filters.</div>';
+    return stockEmptyStateHtml('<div class="stk-empty" style="padding:40px 20px;text-align:center;color:var(--grey-mid);"><div class="stk-empty-icon">◎</div>No projects match your filters.</div>');
   }
   return projects.map(p => {
     const heroSrc = p.hero_image_url || (p.photo_urls && p.photo_urls.length ? p.photo_urls[0] : null);
@@ -13710,6 +13828,7 @@ function updateStkFdropSummaries() {
 function renderAllStockTable() {
   const f = stkFilter;
   const filtered = allAvailableStock.filter(s => {
+    if (!isProjectVisibleToStaff(s.project_id)) return false;
     if (f.avail !== 'all' && s.availability !== f.avail) return false;
     if (f.states.length && !f.states.includes(s._state)) return false;
     if (f.types.length  && !f.types.includes(s.development_type) && !f.types.includes(s.property_type)) return false;
@@ -13733,8 +13852,9 @@ function renderAllStockTable() {
   document.getElementById('stk-count').innerHTML = '<strong>' + filtered.length + '</strong> lots';
 
   if (!filtered.length) {
-    document.getElementById('stk-all-stock-tbody').innerHTML =
-      '<tr><td colspan="13" style="text-align:center;color:var(--grey-mid);padding:24px;">No stock matches your filters.</td></tr>';
+    document.getElementById('stk-all-stock-tbody').innerHTML = staffHasNoVisibleProjects()
+      ? '<tr><td colspan="13" style="text-align:center;color:var(--grey-pale);padding:32px;">No projects have been assigned to you yet. Contact your firm admin to be granted access.</td></tr>'
+      : '<tr><td colspan="13" style="text-align:center;color:var(--grey-mid);padding:24px;">No stock matches your filters.</td></tr>';
     return;
   }
 
@@ -13905,6 +14025,7 @@ function renderStockMap(projects) {
   // an estate. Fall back to the project pin when no lot has coords yet
   // (e.g. before sync-monday's geocoding pass has caught up).
   const hlLotPins = (allAvailableStock || []).filter(s => {
+    if (!isProjectVisibleToStaff(s.project_id)) return false;
     if (!isHouseAndLandProject(s)) return false;
     const lat = s.latitude  != null ? Number(s.latitude)  : null;
     const lng = s.longitude != null ? Number(s.longitude) : null;
