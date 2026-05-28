@@ -514,6 +514,59 @@
   }
   .btn-logout:hover { color: var(--red); }
 
+  /* Admins can click the user-card to open the CP preview picker.
+     The cursor + hover hint are gated so partners (who can't preview)
+     don't get a misleading affordance. The is-admin class is toggled
+     on #screen-portal at login by applyNavForRole. */
+  #screen-portal.is-admin .user-card { cursor: pointer; }
+  #screen-portal.is-admin .user-card:hover { background: var(--black-card); }
+
+  /* While previewing, recolour the user-card so it's obvious you're
+     not in your own admin account anymore. Gold ring + gold initials
+     match the banner above the topbar. */
+  .user-card.is-admin-preview {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.08);
+  }
+  .user-card.is-admin-preview .user-avatar {
+    background: var(--gold);
+    color: #0A0A08;
+  }
+  .user-card.is-admin-preview .user-name { color: var(--gold); }
+  .user-card.is-admin-preview .user-role { color: rgba(201,168,76,0.85); }
+
+  /* Partner picker rows */
+  .admin-preview-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--gold-border);
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .admin-preview-row:last-child { border-bottom: none; }
+  .admin-preview-row:hover { background: rgba(201,168,76,0.06); }
+  .admin-preview-row-logo {
+    width: 36px; height: 36px; flex-shrink: 0;
+    background: var(--black);
+    border: 1px solid var(--gold-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold); font-size: 12px; font-weight: 700;
+    overflow: hidden;
+  }
+  .admin-preview-row-logo img { width: 100%; height: 100%; object-fit: contain; }
+  .admin-preview-row-name {
+    font-size: 14px; color: var(--white); font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .admin-preview-row-meta {
+    font-size: 12px; color: var(--grey-light); margin-top: 2px;
+  }
+
+  /* Write-action lockdown: hide partner mutation surfaces while the
+     admin is previewing. Anything with the .partner-write-action
+     class disappears; we tag write surfaces individually below. */
+  .is-admin-preview .partner-write-action { display: none !important; }
+
   /* MAIN CONTENT */
   .main-content {
     margin-left: var(--sidebar-w);
@@ -3583,14 +3636,14 @@
       <button type="button" class="btn-feature-request" onclick="openFeatureRequestModal()">
         ✦ Request a feature
       </button>
-      <div class="user-card">
+      <div class="user-card" id="user-card" onclick="onUserCardClick(event)" title="">
         <div class="user-avatar">AP</div>
         <div class="user-info">
           <div class="user-name">Andrew P.</div>
           <div class="user-role">Channel Partner</div>
         </div>
-        <button class="admin-only btn-logout" id="btn-change-pw" onclick="showAdminChangePwModal()" title="Change password" style="display:none;font-size:15px;">🔑</button>
-        <button class="btn-logout" onclick="doLogout()" title="Sign out">⏻</button>
+        <button class="admin-only btn-logout" id="btn-change-pw" onclick="event.stopPropagation();showAdminChangePwModal()" title="Change password" style="display:none;font-size:15px;">🔑</button>
+        <button class="btn-logout" onclick="event.stopPropagation();doLogout()" title="Sign out">⏻</button>
       </div>
       <a href="#" id="whats-new-btn" class="version-tag" onclick="openWhatsNew();return false;" style="display:none;">
         <span id="whats-new-version">Version</span>
@@ -3639,6 +3692,18 @@
         Previewing the portal as <strong id="preview-banner-name">…</strong> — what they see is what you see. Don't take real actions while previewing.
       </div>
       <button onclick="exitPreview()" style="padding:6px 14px;background:#0A0A08;color:var(--gold);border:none;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;">Exit Preview</button>
+    </div>
+
+    <!-- Admin → CP preview banner (TPCH-team only, hidden by default) -->
+    <div id="admin-preview-banner" style="display:none;align-items:center;justify-content:space-between;gap:16px;padding:10px 20px;background:var(--gold);color:#0A0A08;font-size:13px;font-weight:500;border-bottom:1px solid rgba(0,0,0,0.15);">
+      <div>
+        <span style="margin-right:8px;">👁</span>
+        TPCH admin preview — viewing the portal as <strong id="admin-preview-banner-name">…</strong>. Read-only; partner write actions are hidden.
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="openAdminPartnerPicker()" style="padding:6px 14px;background:#0A0A08;color:var(--gold);border:none;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;">Switch partner</button>
+        <button onclick="exitAdminPreview()" style="padding:6px 14px;background:#0A0A08;color:var(--gold);border:none;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;">Exit preview</button>
+      </div>
     </div>
 
     <!-- ── PAGE: ENQUIRIES (ADMIN ONLY) ─────────────── -->
@@ -6052,6 +6117,25 @@
   </div>
 </div>
 
+<!-- Admin → CP Preview: Partner Picker Modal -->
+<div class="modal-overlay" id="admin-preview-overlay" onclick="if(event.target.id==='admin-preview-overlay') closeAdminPartnerPicker()">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-title">Preview as channel partner</div>
+    <div class="modal-body" style="margin-bottom:14px;">
+      Pick an active channel partner. The portal will render exactly what they see — sidebar, dashboard, deals, reservations. Write actions are hidden in preview mode.
+    </div>
+    <div style="margin-bottom:14px;">
+      <input class="form-input" id="admin-preview-search" type="text" placeholder="Search by company or name…" oninput="filterAdminPartnerPicker()" autocomplete="off">
+    </div>
+    <div id="admin-preview-list" style="max-height:50vh;overflow-y:auto;border:1px solid var(--gold-border);">
+      <div style="padding:20px;text-align:center;color:var(--grey-light);font-size:13px;">Loading partners…</div>
+    </div>
+    <div class="modal-actions" style="justify-content:flex-end;margin-top:14px;">
+      <button type="button" class="btn-outline" onclick="closeAdminPartnerPicker()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Admin Change Password Modal -->
 <div id="admin-pw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1200;align-items:center;justify-content:center;" onclick="closeAdminChangePwModal()">
   <div style="background:#1A1A16;border:1px solid rgba(201,168,76,0.25);padding:36px;width:380px;max-width:90vw;" onclick="event.stopPropagation()">
@@ -7043,6 +7127,16 @@
   // their staff members to verify what that staff sees. Both fields restored on exit.
   let _previewOriginalRecord    = null;
   let _previewOriginalOverrides = null;
+  // Admin → channel-partner preview state. Set while a TPCH admin is browsing
+  // the portal as one of their channel partners. Server-side: admin JWT still
+  // in flight, so `is_admin()` = true and the existing `(is_admin() OR
+  // current_partner_id() = p_partner_id)` gate on partner RPCs lets the
+  // admin pass any partner_id. Read-only intent: write surfaces are hidden
+  // via the `.is-admin-preview` class on #screen-portal.
+  let _adminPreviewPartnerId    = null;   // uuid of impersonated partner
+  let _adminPreviewPartnerName  = null;   // company_name for banner/user-card
+  let _adminPreviewLogId        = null;   // tpch_admin_preview_log row to close on exit
+  let _adminOriginalUserCard    = null;   // {name, role, initials} to restore
   let currentAuthToken    = null;
   let currentRefreshToken = null;
   let _tokenRefreshTimer  = null;
@@ -7289,6 +7383,11 @@
     document.querySelector('.user-avatar').textContent = initials;
     document.querySelector('.user-name').textContent   = name;
     document.querySelector('.user-role').textContent   = role;
+    // is-admin gates the user-card click (CP preview picker). Tied to
+    // currentUserIsAdmin rather than role text so preview state doesn't
+    // flicker the affordance off.
+    const screen = document.getElementById('screen-portal');
+    if (screen) screen.classList.toggle('is-admin', !!currentUserIsAdmin);
   }
 
   function applyTopbarGreeting(displayName) {
@@ -8985,6 +9084,18 @@
     currentPartnerRecord = null;
     staffCommissionOverrides = {};
     currentUserIsAdmin   = false;
+    // Clear any in-flight admin → CP preview so state doesn't leak into
+    // the next session (e.g. partner login on the same machine).
+    _adminPreviewPartnerId   = null;
+    _adminPreviewPartnerName = null;
+    _adminPreviewLogId       = null;
+    _adminOriginalUserCard   = null;
+    const screen = document.getElementById('screen-portal');
+    if (screen) { screen.classList.remove('is-admin'); screen.classList.remove('is-admin-preview'); }
+    const adminBanner = document.getElementById('admin-preview-banner');
+    if (adminBanner) adminBanner.style.display = 'none';
+    const userCardEl = document.getElementById('user-card');
+    if (userCardEl) userCardEl.classList.remove('is-admin-preview');
     clearSession();
     partnerNotifications = [];
     partnerDeals = [];
@@ -9231,6 +9342,7 @@
   }
 
   async function acceptAgreementBlocker() {
+    if (previewReadOnlyGuard('accepting the agreement')) return;
     const r = currentPartnerRecord;
     if (!r || !r.partner_id) return;
     const btn = document.getElementById('blocker-accept-btn');
@@ -9403,6 +9515,7 @@
   }
 
   async function saveStaffProjectOverride(inputEl) {
+    if (previewReadOnlyGuard('editing staff commission overrides')) return;
     const staffId   = inputEl.getAttribute('data-staff-id');
     const projectId = inputEl.getAttribute('data-project-id');
     const statusEl  = document.getElementById('spco-status-' + projectId);
@@ -9557,9 +9670,272 @@
     loadStockProjects();
   }
 
+  // ── Admin → channel-partner preview ───────────────────────────────────
+  // TPCH admins (rows in tpch_team) can browse the portal as any active
+  // channel_partner. The implementation mirrors enterPreviewAsStaff above:
+  // a client-side swap of currentPartnerRecord drives every partner RPC
+  // call site (they all read currentPartnerRecord.partner_id) and the
+  // sidebar/dashboard gates via applyNavForRole(false, true).
+  //
+  // Server side: the admin JWT stays in flight, so is_admin() is true
+  // and the existing `(is_admin() OR current_partner_id() = p_partner_id)`
+  // gate on partner RPCs accepts any partner_id. The only RPC that
+  // needed extending was get_my_brief, which has no p_partner_id arg
+  // (see supabase-admin-preview-impersonation.sql).
+  //
+  // Read-only intent: the .is-admin-preview class on #screen-portal
+  // hides anything tagged .partner-write-action so the admin can't
+  // accidentally reserve / list / message on the partner's behalf.
+
+  let _adminPreviewPartnersCache = null;  // cached channel_partners list for the picker
+
+  // Gate at the top of partner write handlers. Returns true if the caller
+  // should bail (admin is in preview). We block these because every
+  // partner write uses currentPartnerRecord.partner_id — in preview that
+  // resolves to the impersonated partner, so an unblocked write would
+  // create real DB rows under their name (e.g. a fake reservation).
+  function previewReadOnlyGuard(label) {
+    if (!_adminPreviewPartnerId) return false;
+    alert(
+      'Preview mode is read-only.\n\n' +
+      'You\'re viewing the portal as ' + (_adminPreviewPartnerName || 'a partner') + '.\n' +
+      'Exit preview before ' + (label || 'taking this action') + '.'
+    );
+    return true;
+  }
+
+  function onUserCardClick(ev) {
+    if (ev && ev.target && ev.target.closest('.btn-logout')) return; // ignore button clicks
+    if (!currentUserIsAdmin) return;
+    openAdminPartnerPicker();
+  }
+
+  async function openAdminPartnerPicker() {
+    if (!currentUserIsAdmin) return;
+    const overlay = document.getElementById('admin-preview-overlay');
+    const listEl  = document.getElementById('admin-preview-list');
+    const search  = document.getElementById('admin-preview-search');
+    if (search) search.value = '';
+    listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--grey-light);font-size:13px;">Loading partners…</div>';
+    overlay.classList.add('active');
+
+    // Fetch (or refresh) the active channel_partners list. Admin JWT has
+    // SELECT on channel_partners via the existing security-hardening RLS.
+    try {
+      const res = await fetchWithAuthRetry(
+        SUPABASE_URL + '/rest/v1/channel_partners?status=eq.active&select=id,company_name,full_name,email,logo_url&order=company_name.asc',
+        () => ({ headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken } })
+      );
+      _adminPreviewPartnersCache = res && res.ok ? (await res.json()) : [];
+    } catch (e) { _adminPreviewPartnersCache = []; }
+    renderAdminPartnerPickerList(_adminPreviewPartnersCache || []);
+  }
+
+  function closeAdminPartnerPicker() {
+    const overlay = document.getElementById('admin-preview-overlay');
+    if (overlay) overlay.classList.remove('active');
+  }
+
+  function filterAdminPartnerPicker() {
+    const q = (document.getElementById('admin-preview-search').value || '').trim().toLowerCase();
+    const all = _adminPreviewPartnersCache || [];
+    const filtered = q
+      ? all.filter(p =>
+          (p.company_name || '').toLowerCase().includes(q) ||
+          (p.full_name    || '').toLowerCase().includes(q) ||
+          (p.email        || '').toLowerCase().includes(q)
+        )
+      : all;
+    renderAdminPartnerPickerList(filtered);
+  }
+
+  function renderAdminPartnerPickerList(partners) {
+    const listEl = document.getElementById('admin-preview-list');
+    if (!listEl) return;
+    if (!partners.length) {
+      listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--grey-light);font-size:13px;">No active partners match.</div>';
+      return;
+    }
+    listEl.innerHTML = partners.map(p => {
+      const name    = (p.company_name || 'Unnamed partner').replace(/</g, '&lt;');
+      const sub     = ((p.full_name || '') + (p.email ? ' · ' + p.email : '')).replace(/</g, '&lt;');
+      const initials = (p.company_name || p.email || '?')
+        .split(/\s+/).map(w => w[0] || '').join('').slice(0,2).toUpperCase();
+      const logoHtml = p.logo_url
+        ? '<img src="' + p.logo_url.replace(/"/g, '&quot;') + '" alt="">'
+        : initials;
+      return '<div class="admin-preview-row" onclick="onAdminPartnerPicked(\'' + p.id + '\')">'
+        +   '<div class="admin-preview-row-logo">' + logoHtml + '</div>'
+        +   '<div style="min-width:0;flex:1;">'
+        +     '<div class="admin-preview-row-name">' + name + '</div>'
+        +     (sub ? '<div class="admin-preview-row-meta">' + sub + '</div>' : '')
+        +   '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  async function onAdminPartnerPicked(partnerId) {
+    closeAdminPartnerPicker();
+    const row = (_adminPreviewPartnersCache || []).find(p => p.id === partnerId);
+    if (!row) return;
+    // If already previewing someone, exit cleanly first (closes the prior
+    // audit-log row) so we can open a new one.
+    if (_adminPreviewPartnerId) await exitAdminPreview({ silent: true });
+    await enterAdminPreviewAsPartner(row);
+  }
+
+  async function enterAdminPreviewAsPartner(partnerLite) {
+    if (!currentUserIsAdmin) return;
+    if (_adminPreviewPartnerId) return;
+
+    // Fetch the full channel_partners row so currentPartnerRecord has
+    // every field the partner UI reads (brand_*, agreement_*, comm_*,
+    // notification_prefs, etc.). The lite row from the picker only has
+    // a handful — using it directly would leave fields undefined and
+    // break surfaces that branch on them.
+    let fullRow = null;
+    try {
+      const res = await fetchWithAuthRetry(
+        SUPABASE_URL + '/rest/v1/channel_partners?id=eq.' + partnerLite.id + '&select=*',
+        () => ({ headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken } })
+      );
+      if (res && res.ok) {
+        const arr = await res.json();
+        fullRow = Array.isArray(arr) && arr[0] ? arr[0] : null;
+      }
+    } catch (e) { /* fall through */ }
+    if (!fullRow) fullRow = partnerLite;
+
+    // Best-effort audit row. Failure here doesn't block preview.
+    try {
+      const r = await fetchWithAuthRetry(
+        SUPABASE_URL + '/rest/v1/tpch_admin_preview_log',
+        () => ({
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + currentAuthToken,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify({ admin_email: currentAdminEmail, partner_id: fullRow.id }),
+        })
+      );
+      if (r && r.ok) {
+        const arr = await r.json();
+        _adminPreviewLogId = (arr && arr[0] && arr[0].id) || null;
+      }
+    } catch (e) { /* ignore */ }
+
+    // Stash the admin user-card text so exit can restore it verbatim.
+    _adminOriginalUserCard = {
+      name:     document.querySelector('.user-name').textContent,
+      role:     document.querySelector('.user-role').textContent,
+      initials: document.querySelector('.user-avatar').textContent,
+    };
+    _adminPreviewPartnerId   = fullRow.id;
+    _adminPreviewPartnerName = fullRow.company_name || fullRow.full_name || 'partner';
+
+    // Synthesise a partner-shaped currentPartnerRecord. role:'partner'
+    // so the partner-admin nav surfaces (Lists, Deals, Settings) show.
+    // partner_id maps to the channel_partners.id (the primary key the
+    // RPCs key on). All other fields come straight from the row.
+    currentPartnerRecord = Object.assign({}, fullRow, {
+      role: 'partner',
+      partner_id: fullRow.id,
+    });
+
+    // Flip the UI: partner nav, preview-styled user-card, banner.
+    applyNavForRole(false, true);
+    applyUserCard(
+      'Preview: ' + _adminPreviewPartnerName,
+      'TPCH admin · viewing as partner',
+      'PV'
+    );
+    const userCardEl = document.getElementById('user-card');
+    if (userCardEl) userCardEl.classList.add('is-admin-preview');
+    const screen = document.getElementById('screen-portal');
+    if (screen) screen.classList.add('is-admin-preview');
+    const banner = document.getElementById('admin-preview-banner');
+    if (banner) {
+      banner.style.display = 'flex';
+      const nameEl = document.getElementById('admin-preview-banner-name');
+      if (nameEl) nameEl.textContent = _adminPreviewPartnerName;
+    }
+    // Hide the admin engagement dashboard so the partner brief/cockpit
+    // are what shows when we navigate to the dashboard page.
+    // applyNavForRole has already flipped those display rules; this is
+    // a fresh load to populate them.
+    try { await loadStaffCommissionOverrides(); } catch (e) {}
+    try { loadPartnerDashboard(); } catch (e) {}
+    try { loadDeals(); } catch (e) {}
+    try { loadMyReservations(); } catch (e) {}
+    try { loadNotifications(); } catch (e) {}
+    try { loadStockProjects(); } catch (e) {}
+    // Land on the dashboard so the admin sees the partner-facing home.
+    showPage('dashboard', document.querySelector('.nav-item[onclick*="\'dashboard\'"]'));
+  }
+
+  async function exitAdminPreview(opts) {
+    if (!_adminPreviewPartnerId) return;
+    const silent = !!(opts && opts.silent);
+
+    // Close audit row (best-effort).
+    if (_adminPreviewLogId) {
+      try {
+        await fetchWithAuthRetry(
+          SUPABASE_URL + '/rest/v1/tpch_admin_preview_log?id=eq.' + _adminPreviewLogId,
+          () => ({
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + currentAuthToken,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ exited_at: new Date().toISOString() }),
+          })
+        );
+      } catch (e) { /* ignore */ }
+    }
+
+    _adminPreviewPartnerId   = null;
+    _adminPreviewPartnerName = null;
+    _adminPreviewLogId       = null;
+    currentPartnerRecord     = null;          // admins have no partner record
+    staffCommissionOverrides = {};
+    partnerNotifications     = [];
+    partnerDeals             = [];
+    partnerReservations      = [];
+    partnerBrief             = null;
+
+    const userCardEl = document.getElementById('user-card');
+    if (userCardEl) userCardEl.classList.remove('is-admin-preview');
+    const screen = document.getElementById('screen-portal');
+    if (screen) screen.classList.remove('is-admin-preview');
+    const banner = document.getElementById('admin-preview-banner');
+    if (banner) banner.style.display = 'none';
+
+    if (_adminOriginalUserCard) {
+      applyUserCard(_adminOriginalUserCard.name, _adminOriginalUserCard.role, _adminOriginalUserCard.initials);
+      _adminOriginalUserCard = null;
+    }
+    applyNavForRole(true, false);
+
+    if (!silent) {
+      // Land on the admin dashboard. Engagement dashboard reload covers
+      // the case where partner-side surfaces left stale numbers.
+      showPage('dashboard', document.querySelector('.nav-item[onclick*="\'dashboard\'"]'));
+      if (typeof loadAdminEngagementDashboard === 'function') {
+        try { loadAdminEngagementDashboard(); } catch (e) {}
+      }
+      loadStockProjects();
+    }
+  }
+
   // Copy this staff member's full per-project config (visibilities + deductions)
   // to every other active team member in the firm. Replaces their existing rows.
   async function copyStaffConfigToOthers() {
+    if (previewReadOnlyGuard('copying staff config')) return;
     const sourceStaffId = document.getElementById('edit-comm-staff-id').value;
     if (!sourceStaffId) return;
     const confirmMsg = 'Copy this team member\'s project visibility AND commission deductions to all other team members?\n\n' +
@@ -9593,6 +9969,7 @@
   }
 
   async function savePartnerProfile() {
+    if (previewReadOnlyGuard('saving partner profile')) return;
     if (!currentPartnerRecord) return;
     const partnerId = currentPartnerRecord.partner_id;
     const previousWebsite = currentPartnerRecord.website || '';
@@ -9825,6 +10202,7 @@
   }
 
   async function inviteStaff() {
+    if (previewReadOnlyGuard('inviting a staff member')) return;
     if (!currentPartnerRecord) return;
     const name      = document.getElementById('staff-name').value.trim();
     const email     = document.getElementById('staff-email').value.trim().toLowerCase();
@@ -9969,6 +10347,7 @@
 
   async function submitFeatureRequest(ev) {
     ev.preventDefault();
+    if (previewReadOnlyGuard('submitting a feature request')) return;
     const btn    = document.getElementById('fr-submit-btn');
     const status = document.getElementById('fr-status');
     const payload = {
@@ -11351,6 +11730,7 @@
   }
 
   async function toggleDealAssignment(dealId, staffId, assign) {
+    if (previewReadOnlyGuard('reassigning a deal')) return;
     try {
       if (assign) {
         await fetch(SUPABASE_URL + '/rest/v1/deal_assignments', {
@@ -11606,6 +11986,10 @@
 
   async function loadPartnerBrief() {
     if (!currentPartnerRecord) return;
+    // Pass partner_id explicitly so the admin-preview path resolves the
+    // correct brief. For real partners current_partner_id() would suffice,
+    // but admins-in-preview have no current_partner_id() — the get_my_brief
+    // RPC accepts the override iff is_admin() is true.
     try {
       const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_my_brief', {
         method: 'POST',
@@ -11614,7 +11998,7 @@
           'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
           'Content-Type': 'application/json',
         },
-        body: '{}',
+        body: JSON.stringify({ p_partner_id: currentPartnerRecord.partner_id }),
       });
       partnerBrief = res.ok ? await res.json() : null;
     } catch (_) { partnerBrief = null; }
@@ -12200,16 +12584,20 @@
   }
 
   async function handleNotifClick(notifId, linkType, linkId) {
-    // Mark as read locally + remotely (fire-and-forget)
+    // Mark as read locally + remotely (fire-and-forget). In admin preview
+    // we still flip the local flag so the UI matches the partner's view,
+    // but skip the remote write so we don't actually mutate their state.
     const notif = partnerNotifications.find(n => n.id === notifId);
     if (notif && !notif.read) {
       notif.read = true;
       renderNotifBell();
-      fetch(SUPABASE_URL + '/rest/v1/rpc/mark_notification_read', {
-        method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ p_notification_id: notifId, p_partner_id: currentPartnerRecord.partner_id }),
-      }).catch(() => {});
+      if (!_adminPreviewPartnerId) {
+        fetch(SUPABASE_URL + '/rest/v1/rpc/mark_notification_read', {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_notification_id: notifId, p_partner_id: currentPartnerRecord.partner_id }),
+        }).catch(() => {});
+      }
     }
 
     toggleNotifPanel(); // close drawer
@@ -12240,6 +12628,7 @@
   }
 
   async function markAllNotifRead() {
+    if (previewReadOnlyGuard('marking notifications read')) return;
     if (!currentPartnerRecord || !partnerNotifications.some(n => !n.read)) return;
     partnerNotifications.forEach(n => n.read = true);
     renderNotifBell();
@@ -15337,6 +15726,7 @@ function closeReserveModal() {
 }
 
 async function submitReservation() {
+  if (previewReadOnlyGuard('reserving a stock unit')) return;
   const s = allStockItems.find(x => x.id === currentStockId) || allAvailableStock.find(x => x.id === currentStockId);
   if (!s || !currentPartnerRecord) return;
 
@@ -15755,6 +16145,7 @@ async function submitCreateList() {
 
 async function deleteList(listId, e) {
   e.stopPropagation();
+  if (previewReadOnlyGuard('deleting a list')) return;
   if (!confirm('Delete this list and all its saved properties?')) return;
   await fetch(`${SUPABASE_URL}/rest/v1/shortlists?id=eq.${listId}`, {
     method: 'DELETE',
@@ -15849,6 +16240,7 @@ async function addToExistingList(listId, listName) {
 }
 
 async function createListAndSave() {
+  if (previewReadOnlyGuard('creating a list')) return;
   const s = allStockItems.find(x => x.id === currentStockId) || allAvailableStock.find(x => x.id === currentStockId);
   if (!s) return;
   const name = (document.getElementById('lst-new-name').value || '').trim();
