@@ -13537,6 +13537,7 @@ async function loadStockProjects() {
       const proj = projById[s.project_id];
       s._state  = s.state  || proj?.state  || null;
       s._suburb = s.suburb || proj?.suburb || null;
+      s._projStatus = proj?.project_status || null;
     });
 
     // Init price slider from actual data
@@ -13963,6 +13964,7 @@ function renderAllStockTable() {
     if (f.avail !== 'all' && s.availability !== f.avail) return false;
     if (f.states.length && !f.states.includes(s._state)) return false;
     if (f.types.length  && !f.types.includes(s.development_type) && !f.types.includes(s.property_type)) return false;
+    if (f.projStatus !== 'all' && s._projStatus !== f.projStatus) return false;
     if (f.beds !== 'any') {
       if (f.beds === '4' && (s.bedrooms || 0) < 4) return false;
       if (f.beds !== '4' && String(s.bedrooms) !== f.beds) return false;
