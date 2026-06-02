@@ -7216,6 +7216,7 @@
 
   function clearSession() {
     sessionStorage.removeItem('tpch_session');
+    sessionStorage.removeItem(STK_FILTER_KEY);
   }
 
   function saveSortPrefs() {
@@ -7231,6 +7232,39 @@
       if (prefs.stkAllSort)  stkAllSort  = prefs.stkAllSort;
       if (prefs.stkProjSort) stkProjSort = prefs.stkProjSort;
     } catch(e) {}
+  }
+
+  // Stock filter state — persisted per session so navigating into a project
+  // and back, or refreshing the tab, keeps your filters set. sessionStorage
+  // (not localStorage) so a tab close acts as a session boundary; clearSession
+  // also wipes it explicitly on logout so a fresh login starts clean.
+  const STK_FILTER_KEY = 'tpch_stk_filter';
+  function saveStkFilter() {
+    try {
+      const { page, ...persistable } = stkFilter;
+      sessionStorage.setItem(STK_FILTER_KEY, JSON.stringify({
+        filter: persistable,
+        browseMode: stkBrowseMode,
+      }));
+    } catch (e) {}
+  }
+  function restoreStkFilter() {
+    try {
+      const raw = sessionStorage.getItem(STK_FILTER_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved && saved.filter && typeof saved.filter === 'object') {
+        // Only overwrite keys we already know about, so a schema change
+        // doesn't leave a stray field around.
+        Object.keys(stkFilter).forEach(k => {
+          if (k === 'page') return;
+          if (saved.filter[k] !== undefined) stkFilter[k] = saved.filter[k];
+        });
+      }
+      if (saved && (saved.browseMode === 'stock' || saved.browseMode === 'projects')) {
+        stkBrowseMode = saved.browseMode;
+      }
+    } catch (e) {}
   }
 
   function applySortIndicators() {
@@ -7306,6 +7340,7 @@
       applyUserCard(displayName, roleLabel, initials);
       applyTopbarGreeting(displayName);
       restoreSortPrefs();
+      restoreStkFilter();
       saveSession();
       enterPortal();
       return true;
@@ -7323,6 +7358,7 @@
       applyUserCard(displayName, roleLabel, initials);
       applyTopbarGreeting(displayName);
       restoreSortPrefs();
+      restoreStkFilter();
       saveSession();
       enterPortal();
       initWhatsNew();
@@ -7478,6 +7514,7 @@
         applyUserCard(displayName, roleLabel, initials);
         applyTopbarGreeting(displayName);
         restoreSortPrefs();
+        restoreStkFilter();
         saveSession();
         enterPortal();
         return;
@@ -7495,6 +7532,7 @@
         applyUserCard(displayName, roleLabel, initials);
         applyTopbarGreeting(displayName);
         restoreSortPrefs();
+        restoreStkFilter();
         saveSession();
         enterPortal();
         initWhatsNew();
@@ -8892,6 +8930,16 @@
   // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
 
   const CHANGELOG = [
+    {
+      version: '3.5',
+      date: '2 Jun 2026',
+      title: 'Stock filters: live counts, sharper map, and filters that stick',
+      items: [
+        'Stock filters now flow through to project cards: "Available" and "From $…" reflect only the lots inside your current filter window, so a project showing "5 lots" really has 5 lots in your price range.',
+        'The Stock map now hides projects with no matching lots, and on House & Land estates the per-lot pins respect your filters too — no more pins for lots outside the price band you set.',
+        'Your filters now stick. Open a property, click back, refresh the tab — your states, price range, project type and every other filter are still where you left them. Filters clear when you sign out.',
+      ]
+    },
     {
       version: '3.4',
       date: '15 May 2026',
@@ -13929,27 +13977,23 @@ async function loadStockProjects() {
       s._projStatus = proj?.project_status || null;
     });
 
-    // Init price slider from actual data
+    // Init price slider bounds from actual data, but preserve any
+    // user-selected sub-range across page re-entries. Clamp into bounds
+    // if the dataset has shifted so a stale saved value can't sit outside.
     const prices = allAvailableStock.map(s => s.total_contract).filter(Boolean);
     if (prices.length) {
       const dataMin = Math.floor(Math.min(...prices) / 50000) * 50000;
       const dataMax = Math.ceil(Math.max(...prices) / 50000) * 50000;
       stkPriceRange = { min: dataMin, max: dataMax };
-      stkFilter.priceMin = dataMin;
-      stkFilter.priceMax = dataMax;
       const minEl = document.getElementById('stk-range-min');
       const maxEl = document.getElementById('stk-range-max');
-      minEl.min = maxEl.min = dataMin;
-      minEl.max = maxEl.max = dataMax;
-      minEl.value = dataMin;
-      maxEl.value = dataMax;
-      document.getElementById('stk-price-min-lbl').textContent = fmtCurrencyShort(dataMin);
-      document.getElementById('stk-price-max-lbl').textContent = fmtCurrencyShort(dataMax);
-      const fill = document.getElementById('stk-range-fill');
-      if (fill) { fill.style.left = '0%'; fill.style.right = '0%'; }
+      if (minEl) { minEl.min = dataMin; minEl.max = dataMax; }
+      if (maxEl) { maxEl.min = dataMin; maxEl.max = dataMax; }
+      if (stkFilter.priceMin == null || stkFilter.priceMin < dataMin || stkFilter.priceMin > dataMax) stkFilter.priceMin = dataMin;
+      if (stkFilter.priceMax == null || stkFilter.priceMax > dataMax || stkFilter.priceMax < dataMin) stkFilter.priceMax = dataMax;
     }
 
-    updateStkFdropSummaries();
+    applyStkFilterToUI();
     renderStockBrowse();
   } catch(e) {
     const detail = (e && e.message) ? e.message : 'Network or session error';
@@ -13972,6 +14016,7 @@ function switchStkBrowse(mode, el) {
   document.getElementById('stk-view-btns').style.display = mode === 'projects' ? '' : 'none';
   // Reset to first page when switching tabs
   stkFilter.page = 1;
+  saveStkFilter();
   renderStockBrowse();
 }
 
@@ -13998,25 +14043,58 @@ function renderStockBrowse() {
   }
 }
 
+// ── Shared lot-level filter predicate ─────────────────────────────
+// Single source of truth used by the All-stock table, the Projects card/
+// map views (to count matching lots per project), and the H&L lot pins
+// on the map. Keeping one predicate means project counts and map pins
+// stay consistent with the lot table no matter which filter is touched.
+function stockLotMatchesFilters(s, f) {
+  if (f.avail !== 'all' && s.availability !== f.avail) return false;
+  if (f.states.length && !f.states.includes(s._state)) return false;
+  if (f.types.length  && !f.types.includes(s.development_type) && !f.types.includes(s.property_type)) return false;
+  if (f.projStatus !== 'all' && s._projStatus !== f.projStatus) return false;
+  if (f.beds !== 'any') {
+    if (f.beds === '4' && (s.bedrooms || 0) < 4) return false;
+    if (f.beds !== '4' && String(s.bedrooms) !== f.beds) return false;
+  }
+  if (s.total_contract) {
+    if (s.total_contract < f.priceMin || s.total_contract > f.priceMax) return false;
+  }
+  if (f.smsf && !s.smsf_eligible) return false;
+  if (f.yieldMin > 0) {
+    const _ar = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null);
+    const _y = (_ar && s.total_contract) ? (_ar / s.total_contract * 100) : 0;
+    if (_y < f.yieldMin) return false;
+  }
+  if (f.titleWindow !== 'any' && titleDateBucket(s) !== f.titleWindow) return false;
+  return true;
+}
+
 // ── Filter the projects array (shared by all Projects-mode views) ──
+// Project visibility is derived from lot-level matches: a project shows
+// iff at least one of its lots passes the active filters. The matching
+// count and price band are stamped on the project so card/row/map
+// surfaces show numbers that agree with the lot table.
 function filteredStockProjects() {
   const f = stkFilter;
   const q = (f.search || '').trim().toLowerCase();
+  const perProj = {};
+  for (const s of (allAvailableStock || [])) {
+    if (!stockLotMatchesFilters(s, f)) continue;
+    const pid = s.project_id;
+    if (!pid) continue;
+    let agg = perProj[pid];
+    if (!agg) agg = perProj[pid] = { count: 0, prices: [] };
+    agg.count++;
+    if (s.total_contract) agg.prices.push(s.total_contract);
+  }
   return allProjects.filter(p => {
-    // Staff-with-flag-on only see projects their firm owner has ticked visible.
     if (!isProjectVisibleToStaff(p.id)) return false;
-    if (f.avail === 'Available' && (p._availAvail || 0) === 0) return false;
-    if (f.avail === 'Reserved'  && (p._availReserved || 0) === 0) return false;
-    if ((p._availCount || 0) === 0) return false;
-    if (f.smsf && !p.smsf_eligible) return false;
-    if (f.states.length && !f.states.includes(p.state)) return false;
-    if (f.types.length  && !f.types.includes(p.development_type)) return false;
-    if (f.projStatus !== 'all' && p.project_status !== f.projStatus) return false;
-    if (p._minPrice != null && p._maxPrice != null) {
-      // Overlap test: include the project if any of its live lots fall inside the slider window.
-      // (Previously compared only _minPrice, which dropped projects whose cheapest lot sat below the lower bound.)
-      if (p._maxPrice < f.priceMin || p._minPrice > f.priceMax) return false;
-    }
+    const agg = perProj[p.id];
+    p._filteredAvailCount = agg ? agg.count : 0;
+    p._filteredMinPrice   = (agg && agg.prices.length) ? Math.min(...agg.prices) : null;
+    p._filteredMaxPrice   = (agg && agg.prices.length) ? Math.max(...agg.prices) : null;
+    if (p._filteredAvailCount === 0) return false;
     if (q) {
       const hay = [p.name, p.suburb, p.state, p.development_type].filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
@@ -14028,10 +14106,10 @@ function filteredStockProjects() {
 function sortStockProjects(arr) {
   const sorted = [...arr];
   switch (stkFilter.projSort) {
-    case 'avail-desc': sorted.sort((a,b)=>(b._availCount||0)-(a._availCount||0)); break;
-    case 'avail-asc':  sorted.sort((a,b)=>(a._availCount||0)-(b._availCount||0)); break;
-    case 'price-asc':  sorted.sort((a,b)=>(a._minPrice||Infinity)-(b._minPrice||Infinity)); break;
-    case 'price-desc': sorted.sort((a,b)=>(b._minPrice||0)-(a._minPrice||0)); break;
+    case 'avail-desc': sorted.sort((a,b)=>(b._filteredAvailCount||0)-(a._filteredAvailCount||0)); break;
+    case 'avail-asc':  sorted.sort((a,b)=>(a._filteredAvailCount||0)-(b._filteredAvailCount||0)); break;
+    case 'price-asc':  sorted.sort((a,b)=>(a._filteredMinPrice||Infinity)-(b._filteredMinPrice||Infinity)); break;
+    case 'price-desc': sorted.sort((a,b)=>(b._filteredMinPrice||0)-(a._filteredMinPrice||0)); break;
     case 'name-asc':   sorted.sort((a,b)=>(a.name||'').localeCompare(b.name||'')); break;
   }
   return sorted;
@@ -14144,7 +14222,7 @@ function renderProjectCardHtml(p) {
       <div class="stk-card-stats">
         <div class="stk-card-stat">
           <span class="stk-card-stat-label">From</span>
-          <span class="stk-card-stat-val">${p._minPrice ? fmtCurrencyShort(p._minPrice) : '—'}</span>
+          <span class="stk-card-stat-val">${p._filteredMinPrice ? fmtCurrencyShort(p._filteredMinPrice) : '—'}</span>
         </div>
         <div class="stk-card-stat stk-card-stat-comm">
           <span class="stk-card-stat-label">Comm</span>
@@ -14152,7 +14230,7 @@ function renderProjectCardHtml(p) {
         </div>
         <div class="stk-card-stat">
           <span class="stk-card-stat-label">Available</span>
-          <span class="stk-card-stat-val">${p._availCount > 0 ? p._availCount + ' lots' : '—'}</span>
+          <span class="stk-card-stat-val">${p._filteredAvailCount > 0 ? p._filteredAvailCount + ' lots' : '—'}</span>
         </div>
       </div>
       <div class="stk-card-cta">View →</div>
@@ -14197,7 +14275,7 @@ function renderProjectRows(projects) {
       <div class="stk-row-stats">
         <div class="stk-row-stat">
           <span class="stk-row-stat-label">From</span>
-          <span class="stk-row-stat-val">${p._minPrice ? fmtCurrencyShort(p._minPrice) : '—'}</span>
+          <span class="stk-row-stat-val">${p._filteredMinPrice ? fmtCurrencyShort(p._filteredMinPrice) : '—'}</span>
         </div>
         <div class="stk-row-stat stk-row-stat-comm">
           <span class="stk-row-stat-label">Comm</span>
@@ -14205,7 +14283,7 @@ function renderProjectRows(projects) {
         </div>
         <div class="stk-row-stat">
           <span class="stk-row-stat-label">Lots</span>
-          <span class="stk-row-stat-val">${p._availCount > 0 ? p._availCount + (p._availCount === 1 ? ' lot' : ' lots') : '—'}</span>
+          <span class="stk-row-stat-val">${p._filteredAvailCount > 0 ? p._filteredAvailCount + (p._filteredAvailCount === 1 ? ' lot' : ' lots') : '—'}</span>
         </div>
       </div>
       <div class="stk-row-side">
@@ -14254,12 +14332,14 @@ function onStkPageSize(v, fromGrid) {
   const b = document.getElementById('stk-pagesize-select-grid');
   if (a) a.value = String(stkFilter.pageSize);
   if (b) b.value = String(stkFilter.pageSize);
+  saveStkFilter();
   renderStockBrowse();
 }
 
 function onStkProjSort(v) {
   stkFilter.projSort = v;
   stkFilter.page = 1;
+  saveStkFilter();
   renderStockBrowse();
 }
 
@@ -14267,6 +14347,7 @@ function onStkSearchInput() {
   const v = document.getElementById('stk-search').value;
   stkFilter.search = v;
   stkFilter.page = 1;
+  saveStkFilter();
   renderStockBrowse();
 }
 
@@ -14281,6 +14362,7 @@ function switchStkView(view, el) {
   const lt = document.getElementById('stk-map-toggle-list');
   if (mt) mt.classList.toggle('active', view === 'map');
   if (lt) lt.classList.toggle('active', view === 'list');
+  saveStkFilter();
   renderStockBrowse();
 }
 
@@ -14346,29 +14428,83 @@ function updateStkFdropSummaries() {
   setHas('more', extras > 0);
 }
 
+// Re-sync every stock-filter control to the current stkFilter state.
+// Called after loadStockProjects() so when a partner navigates back from
+// a property the pill highlights, search box, smsf toggle, price slider,
+// and PROJECTS/STOCK tab all reflect the filter they had set, not the
+// hardcoded HTML defaults. Also called by resetStkFilters() to keep one
+// canonical place that knows how to mirror stkFilter into the DOM.
+function applyStkFilterToUI() {
+  const f = stkFilter;
+
+  // Pills: parse each .stk-pill's onclick to discover its group/value,
+  // then set the .active class to match stkFilter. Handles both single
+  // (toggleStkPill) and multi (toggleStkMulti) pill groups.
+  const reSingle = /toggleStkPill\('([^']+)',\s*([^,]+),/;
+  const reMulti  = /toggleStkMulti\('([^']+)',\s*'([^']*)'/;
+  document.querySelectorAll('#page-stock .stk-pill').forEach(b => {
+    const oc = b.getAttribute('onclick') || '';
+    let m = oc.match(reSingle);
+    if (m) {
+      const group = m[1];
+      let raw = m[2].trim();
+      if ((raw.startsWith("'") && raw.endsWith("'")) ||
+          (raw.startsWith('"') && raw.endsWith('"'))) raw = raw.slice(1, -1);
+      b.classList.toggle('active', String(f[group]) === raw);
+      return;
+    }
+    m = oc.match(reMulti);
+    if (m) {
+      const group = m[1];
+      const value = m[2];
+      const arr = Array.isArray(f[group]) ? f[group] : [];
+      b.classList.toggle('active', arr.includes(value));
+    }
+  });
+
+  // SMSF, search input
+  const smsf   = document.getElementById('stk-smsf-toggle');
+  if (smsf)   smsf.checked = !!f.smsf;
+  const search = document.getElementById('stk-search');
+  if (search) search.value = f.search || '';
+
+  // Price slider inputs, labels, and fill bar.
+  const minR = document.getElementById('stk-range-min');
+  const maxR = document.getElementById('stk-range-max');
+  if (minR) minR.value = f.priceMin;
+  if (maxR) maxR.value = f.priceMax;
+  const minL = document.getElementById('stk-price-min-lbl');
+  const maxL = document.getElementById('stk-price-max-lbl');
+  if (minL) minL.textContent = fmtCurrencyShort(f.priceMin);
+  if (maxL) maxL.textContent = fmtCurrencyShort(f.priceMax);
+  const range = stkPriceRange.max - stkPriceRange.min;
+  const pct1  = range > 0 ? (f.priceMin - stkPriceRange.min) / range * 100 : 0;
+  const pct2  = range > 0 ? (f.priceMax - stkPriceRange.min) / range * 100 : 100;
+  const fill  = document.getElementById('stk-range-fill');
+  if (fill) { fill.style.left = pct1 + '%'; fill.style.right = (100 - pct2) + '%'; }
+
+  // PROJECTS / STOCK browse tabs and map/list view toggle.
+  document.querySelectorAll('.stk-browse-tab').forEach(b => {
+    const oc = b.getAttribute('onclick') || '';
+    const isMine = oc.includes(`'${stkBrowseMode}'`);
+    b.classList.toggle('active', isMine);
+  });
+  const stkViewBtns = document.getElementById('stk-view-btns');
+  if (stkViewBtns) stkViewBtns.style.display = stkBrowseMode === 'projects' ? '' : 'none';
+  ['stk-view-map-btn', 'stk-view-list-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('active', id === `stk-view-${f.viewMode}-btn`);
+  });
+
+  updateStkFdropSummaries();
+}
+
 function renderAllStockTable() {
   const f = stkFilter;
   const filtered = allAvailableStock.filter(s => {
     if (!isProjectVisibleToStaff(s.project_id)) return false;
-    if (f.avail !== 'all' && s.availability !== f.avail) return false;
-    if (f.states.length && !f.states.includes(s._state)) return false;
-    if (f.types.length  && !f.types.includes(s.development_type) && !f.types.includes(s.property_type)) return false;
-    if (f.projStatus !== 'all' && s._projStatus !== f.projStatus) return false;
-    if (f.beds !== 'any') {
-      if (f.beds === '4' && (s.bedrooms || 0) < 4) return false;
-      if (f.beds !== '4' && String(s.bedrooms) !== f.beds) return false;
-    }
-    if (s.total_contract) {
-      if (s.total_contract < f.priceMin || s.total_contract > f.priceMax) return false;
-    }
-    if (f.smsf && !s.smsf_eligible) return false;
-    if (f.yieldMin > 0) {
-      const _ar = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null);
-      const _y = (_ar && s.total_contract) ? (_ar / s.total_contract * 100) : 0;
-      if (_y < f.yieldMin) return false;
-    }
-    if (f.titleWindow !== 'any' && titleDateBucket(s) !== f.titleWindow) return false;
-    return true;
+    return stockLotMatchesFilters(s, f);
   });
 
   document.getElementById('stk-count').innerHTML = '<strong>' + filtered.length + '</strong> lots';
@@ -14416,6 +14552,7 @@ function toggleStkPill(group, value, el) {
   el.classList.add('active');
   stkFilter.page = 1;
   updateStkFdropSummaries();
+  saveStkFilter();
   renderStockBrowse();
 }
 
@@ -14427,6 +14564,7 @@ function toggleStkMulti(group, value, el) {
   else           { arr.push(value);   el.classList.add('active'); }
   stkFilter.page = 1;
   updateStkFdropSummaries();
+  saveStkFilter();
   renderStockBrowse();
 }
 
@@ -14434,6 +14572,7 @@ function toggleStkSmsf() {
   stkFilter.smsf = document.getElementById('stk-smsf-toggle').checked;
   stkFilter.page = 1;
   updateStkFdropSummaries();
+  saveStkFilter();
   renderStockBrowse();
 }
 
@@ -14458,6 +14597,7 @@ function updatePriceFilter() {
   if (fill) { fill.style.left = pct1 + '%'; fill.style.right = (100 - pct2) + '%'; }
   stkFilter.page = 1;
   updateStkFdropSummaries();
+  saveStkFilter();
   renderStockBrowse();
 }
 
@@ -14490,6 +14630,7 @@ function resetStkFilters() {
   const fill = document.getElementById('stk-range-fill');
   if (fill) { fill.style.left = '0%'; fill.style.right = '0%'; }
   updateStkFdropSummaries();
+  saveStkFilter();
   renderStockBrowse();
 }
 
@@ -14549,6 +14690,7 @@ function renderStockMap(projects) {
   const hlLotPins = (allAvailableStock || []).filter(s => {
     if (!isProjectVisibleToStaff(s.project_id)) return false;
     if (!isHouseAndLandProject(s)) return false;
+    if (!stockLotMatchesFilters(s, stkFilter)) return false;
     const lat = s.latitude  != null ? Number(s.latitude)  : null;
     const lng = s.longitude != null ? Number(s.longitude) : null;
     return lat != null && lng != null && !isNaN(lat) && !isNaN(lng);
