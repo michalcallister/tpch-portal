@@ -126,6 +126,7 @@ const STOCK_COLS = {
   floorPlan:          'files',
   hlInclusions:       'long_text_mm2x3w9p',  // House & Land inclusions list
   hlFacade:           'file_mm2xrah9',       // House & Land facade image
+  walkthroughVideo:   'file_mm4ba51d',       // Walkthrough video (MP4 file upload)
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -799,6 +800,13 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
 
   const stockRows = stockItems.map(item => mapStock(item, projectNameMap, projectDataMap))
 
+  // Walkthrough-video keep policy — used by the cleanup pass (2d, below) and the
+  // upload pass (2e, which runs LAST so the heavy video streaming can't starve
+  // the rest of the sync of its 150s budget). A video is kept only while the
+  // property is shown in the portal (Available / Reserved).
+  const KEEP_VIDEO_STATUSES = new Set(['Available', 'Reserved'])
+  const availById = new Map(stockRows.map((r: any) => [String(r.id), r.availability]))
+
   // Pre-fetch existing stock so we can detect price/status/new-lot deltas
   // and emit stock_events. Threshold: ignore price changes <1% (rounding noise).
   const incomingStockIds = stockRows.map(s => String(s.id))
@@ -1028,6 +1036,162 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
     if (uploadedThisSpec > 0) console.log(`${spec.fileName}: uploaded ${uploadedThisSpec} this cycle`)
   }
 
+  // 2c. Walkthrough videos → property-videos bucket (STREAMED).
+  // Videos are too large to buffer (a big MP4 arrayBuffer OOMs the worker —
+  // WORKER_RESOURCE_LIMIT), so we pipe Monday's download straight into Storage's
+  // REST endpoint as a stream. Auth mirrors supabase-js exactly: the service key
+  // goes in BOTH the apikey and Authorization headers (a bare Authorization is
+  // rejected as "Invalid Compact JWS" under the new key format). duplex:'half'
+  // is required by Deno for a ReadableStream body. Same asset_id change-detection
+  // + asset-versioned path as the image specs.
+  const MAX_VIDEO_UPLOADS_PER_CYCLE = 3
+  const MAX_VIDEO_BYTES = 500 * 1024 * 1024 // 500 MB — matches the bucket limit
+  const VIDEO_MIME: Record<string, string> = {
+    mp4: 'video/mp4', mov: 'video/quicktime', m4v: 'video/x-m4v',
+    webm: 'video/webm', '3gp': 'video/3gpp',
+  }
+  // Defined here but EXECUTED LAST (via EdgeRuntime.waitUntil at the end of
+  // runSync) so the heavy video streaming runs in the background — after the
+  // sync response has returned and projects/stock/deals have committed. This
+  // keeps a 300 MB+ upload from blowing the 150s request budget.
+  const runWalkthroughUploads = async () => {
+    const SUPABASE_URL_ENV = Deno.env.get('SUPABASE_URL')!
+    const SERVICE_KEY      = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const VIDEO_BUCKET     = 'property-videos'
+
+    const candidates = stockItems.filter(item => {
+      const col = item.column_values?.find((c: any) => c.id === STOCK_COLS.walkthroughVideo)
+      if (!(col?.files?.length > 0)) return false
+      // Don't upload for properties that aren't shown — step 2d would only delete it.
+      return KEEP_VIDEO_STATUSES.has(availById.get(String(item.id)))
+    })
+    if (candidates.length) {
+      // Most-recently-edited first so a freshly-uploaded video propagates on the
+      // very next cycle even when more candidates exist than the per-cycle cap.
+      candidates.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')))
+
+      const ids = candidates.map(i => String(i.id))
+      const { data: assetRows } = await supabase
+        .from('stock')
+        .select('id, walkthrough_video_url, walkthrough_video_asset_id')
+        .in('id', ids)
+      const assetMap = new Map(
+        (assetRows || []).map((r: any) => [r.id, { url: r.walkthrough_video_url, assetId: r.walkthrough_video_asset_id }])
+      )
+
+      let uploaded = 0
+      for (const item of candidates) {
+        const stockId = String(item.id)
+        try {
+          const col   = item.column_values.find((c: any) => c.id === STOCK_COLS.walkthroughVideo)
+          const file  = col.files[0]
+          const asset = file.asset || {}
+          const mondayAssetId = file.asset_id ? String(file.asset_id) : (asset.id ? String(asset.id) : null)
+          if (!mondayAssetId) { errors.push(`walkthrough skipped (no asset_id): ${item.name}`); continue }
+
+          const stored = assetMap.get(stockId)
+          if (stored?.assetId === mondayAssetId && stored?.url) continue
+          if (uploaded >= MAX_VIDEO_UPLOADS_PER_CYCLE) break
+
+          const fileName = file.name || asset.name || 'walkthrough'
+          const ext  = (fileName.split('.').pop() || 'mp4').toLowerCase()
+          const mime = VIDEO_MIME[ext] || 'video/mp4'
+
+          // Download (stream) from Monday — public_url (CDN, no auth) first, auth URL fallback.
+          let res: Response | null = null
+          if (asset.public_url) { res = await fetch(asset.public_url); if (!res.ok) res = null }
+          if (!res && asset.url)  { res = await fetch(asset.url, { headers: { 'Authorization': MONDAY_TOKEN } }) }
+          if (!res || !res.ok || !res.body) { errors.push(`walkthrough download failed: ${item.name} (${res?.status ?? 'no URL'})`); continue }
+
+          const lenHeader = Number(res.headers.get('content-length') || 0)
+          if (lenHeader && lenHeader > MAX_VIDEO_BYTES) {
+            errors.push(`walkthrough too large (${Math.round(lenHeader / 1048576)}MB > 500MB), skipped: ${item.name}`)
+            continue
+          }
+
+          // Version path with asset_id so a swapped video yields a fresh URL.
+          const path = `stock/${stockId}/walkthrough-${mondayAssetId}.${ext}`
+          const putRes = await fetch(`${SUPABASE_URL_ENV}/storage/v1/object/${VIDEO_BUCKET}/${path}`, {
+            method: 'POST',
+            headers: {
+              'apikey':        SERVICE_KEY,
+              'Authorization': `Bearer ${SERVICE_KEY}`,
+              'Content-Type':  mime,
+              'x-upsert':      'true',
+              ...(lenHeader ? { 'Content-Length': String(lenHeader) } : {}),
+            },
+            body: res.body,
+            duplex: 'half',
+          } as RequestInit)
+          if (!putRes.ok) {
+            errors.push(`walkthrough upload failed: ${item.name}: ${putRes.status} ${await putRes.text().catch(() => '')}`)
+            continue
+          }
+
+          const { data: urlData } = supabase.storage.from(VIDEO_BUCKET).getPublicUrl(path)
+          await supabase.from('stock').update({
+            walkthrough_video_url:      urlData.publicUrl,
+            walkthrough_video_asset_id: mondayAssetId,
+          }).eq('id', stockId)
+          // Swap cleanup: delete the previous (now-superseded) video file so a
+          // re-uploaded walkthrough doesn't leave the old one orphaned in storage.
+          if (stored?.url) {
+            const om = String(stored.url).match(/\/property-videos\/(.+)$/)
+            const oldPath = om ? decodeURIComponent(om[1].split('?')[0]) : null
+            if (oldPath && oldPath !== path) await supabase.storage.from(VIDEO_BUCKET).remove([oldPath])
+          }
+          uploaded++
+          console.log(`walkthrough stored for ${item.name}: ${urlData.publicUrl}`)
+        } catch (e: any) {
+          errors.push(`walkthrough error for ${item.name}: ${e.message}`)
+        }
+      }
+      if (uploaded > 0) console.log(`walkthrough: uploaded ${uploaded} this cycle`)
+    }
+  };
+
+  // 2d. Video cleanup — remove stored walkthroughs that should no longer exist:
+  // property no longer shown (availability left Available/Reserved), the video was
+  // removed from the Monday column, or the stock item is gone. Videos are large,
+  // so this is the main lever for keeping storage usage (and cost) down.
+  try {
+    const VIDEO_BUCKET = 'property-videos'
+    const hasVideoFile = new Map(
+      stockItems.map((it: any) => {
+        const col = it.column_values?.find((c: any) => c.id === STOCK_COLS.walkthroughVideo)
+        return [String(it.id), !!(col?.files?.length)]
+      })
+    )
+    const { data: storedVids } = await supabase
+      .from('stock')
+      .select('id, walkthrough_video_url')
+      .not('walkthrough_video_url', 'is', null)
+
+    let removed = 0
+    for (const row of (storedVids || [])) {
+      const id = String(row.id)
+      const inMonday = availById.has(id)
+      const keep = inMonday && KEEP_VIDEO_STATUSES.has(availById.get(id)) && hasVideoFile.get(id) === true
+      if (keep) continue
+      const m = String(row.walkthrough_video_url).match(/\/property-videos\/(.+)$/)
+      const path = m ? decodeURIComponent(m[1].split('?')[0]) : null
+      if (path) {
+        const { error: rmErr } = await supabase.storage.from(VIDEO_BUCKET).remove([path])
+        if (rmErr) { errors.push(`video cleanup remove failed (${id}): ${rmErr.message}`); continue }
+      }
+      // Clear the DB pointer (skip when the row is about to be deleted as stale).
+      if (inMonday) {
+        await supabase.from('stock')
+          .update({ walkthrough_video_url: null, walkthrough_video_asset_id: null })
+          .eq('id', id)
+      }
+      removed++
+    }
+    if (removed > 0) console.log(`Video cleanup: removed ${removed} walkthrough video(s)`)
+  } catch (e: any) {
+    errors.push(`Video cleanup: ${(e as Error).message}`)
+  }
+
   // 3. Delete stale records no longer in Monday.com
   const syncedStockIds  = stockItems.map(i => String(i.id))
   const syncedProjectIds = projectItems.map(i => String(i.id))
@@ -1186,6 +1350,23 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
         else console.log(`Description saved for: ${p.name}`)
       }
     }
+  }
+
+  // 2e. Kick off walkthrough-video uploads in the BACKGROUND so this response
+  // returns promptly — streaming 300 MB+ files inline would blow the 150s
+  // request limit. EdgeRuntime.waitUntil keeps the worker alive to finish them;
+  // falls back to awaiting inline if the runtime lacks it.
+  try {
+    const videoTask = runWalkthroughUploads()
+    // @ts-ignore EdgeRuntime is provided by the Supabase edge runtime
+    if (typeof EdgeRuntime !== 'undefined' && (EdgeRuntime as any).waitUntil) {
+      // @ts-ignore
+      ;(EdgeRuntime as any).waitUntil(videoTask)
+    } else {
+      await videoTask
+    }
+  } catch (e: any) {
+    errors.push(`Walkthrough uploads: ${(e as Error).message}`)
   }
 
   return { projects: projectCount, stock: stockCount, deals: dealCount, errors }

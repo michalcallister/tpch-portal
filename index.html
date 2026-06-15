@@ -4669,6 +4669,7 @@
         <button class="stk-tab-btn active" onclick="switchProjTab('overview',this)" data-hl-hide>Overview</button>
         <button class="stk-tab-btn" onclick="switchProjTab('stock',this)">Stock</button>
         <button class="stk-tab-btn" onclick="switchProjTab('analysis',this)" data-hl-hide>Analysis</button>
+        <button class="stk-tab-btn" id="spj-video-tab-btn" onclick="switchProjTab('video',this)" style="display:none;" data-hl-hide>Video</button>
         <button class="stk-tab-btn" id="spj-gallery-tab-btn" onclick="switchProjTab('gallery',this)" style="display:none;" data-hl-hide>Gallery</button>
       </div>
 
@@ -5027,6 +5028,11 @@
         </div>
       </div>
 
+      <!-- Tab: Video (project overview — Vimeo/YouTube) -->
+      <div class="stk-tab-content" id="spj-tab-video" style="padding:24px 36px;">
+        <div id="spj-video-mount" style="max-width:900px;"></div>
+      </div>
+
       <!-- Tab: Gallery -->
       <div class="stk-tab-content" id="spj-tab-gallery" style="padding:24px 36px;">
         <div id="spj-gallery-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"></div>
@@ -5073,6 +5079,7 @@
         <div class="stk-lot-main">
           <div class="stk-tab-nav stk-lot-tabs">
             <button class="stk-tab-btn active" onclick="switchLotTab('details',this)">Details</button>
+            <button class="stk-tab-btn" id="slg-video-tab-btn" onclick="switchLotTab('video',this)" style="display:none;">Walkthrough</button>
             <button class="stk-tab-btn" id="slg-location-tab-btn" onclick="switchLotTab('location',this)" style="display:none;">Location Highlights</button>
             <button class="stk-tab-btn" id="slg-inclusions-tab-btn" onclick="switchLotTab('inclusions',this)" style="display:none;">Inclusions</button>
             <button class="stk-tab-btn" id="slg-investment-tab-btn" onclick="switchLotTab('investment',this)">Investment</button>
@@ -5117,6 +5124,14 @@
                 <iframe id="slg-floor-plan-iframe" src="" style="width:100%;height:500px;border:1px solid var(--gold-border);background:#111;"></iframe>
                 <a id="slg-floor-plan-pdf-link" href="#" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;color:var(--gold);text-decoration:none;letter-spacing:0.5px;">Open in new tab ↗</a>
               </div>
+            </div>
+          </div>
+
+          <!-- Tab: Walkthrough video (visible when a walkthrough video exists) -->
+          <div class="stk-tab-content" id="slg-tab-video" style="padding:28px 32px;">
+            <div class="stk-detail-section">
+              <div class="stk-detail-section-title">Property Walkthrough</div>
+              <div id="slg-video-mount" style="max-width:760px;"></div>
             </div>
           </div>
 
@@ -8948,6 +8963,16 @@
   // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
 
   const CHANGELOG = [
+    {
+      version: '3.7',
+      date: '15 Jun 2026',
+      title: 'Videos: project overviews and property walkthroughs',
+      items: [
+        'Projects now have a Video tab with an overview video of the development, right alongside the photo gallery — it appears whenever a video is available.',
+        'Individual properties now have a Walkthrough tab so you can watch a walk-through of the actual home, where one has been added.',
+        'When you share a property flyer, the walkthrough video is included too — your client can watch it straight from the flyer, no login needed.',
+      ]
+    },
     {
       version: '3.6',
       date: '15 Jun 2026',
@@ -14904,8 +14929,9 @@ async function showStockProject(id) {
     }
   }
 
-  // Gallery
+  // Gallery + project overview video
   renderGallery(p.photo_urls);
+  renderProjectVideo(p.video_urls);
 
   // Documents
   const docsEl = document.getElementById('spj-ov-docs');
@@ -15493,6 +15519,9 @@ function showStockListing(id) {
     fpSection.style.display = 'none';
   }
 
+  // Walkthrough video — self-hosted MP4, tab only shown when one exists.
+  renderLotWalkthrough(s.walkthrough_video_url);
+
   // HL Facade hero — first thing partners see for House & Land properties.
   const facadeHero = document.getElementById('slg-facade-hero');
   if (s.hl_facade_url) {
@@ -15780,6 +15809,53 @@ function renderGallery(photos) {
     </div>`
   ).join('');
 }
+// ── Video embeds ─────────────────────────────────────────────────
+// Build a responsive 16:9 player for a video URL. Handles YouTube and Vimeo
+// links (project overview videos) and direct/self-hosted video files
+// (property walkthrough MP4s in our storage). Returns an HTML string.
+function buildVideoEmbedHtml(url, opts) {
+  opts = opts || {};
+  const border = opts.border || 'var(--gold-border)';
+  const u = String(url || '').trim();
+  if (!u) return '';
+  const wrap = (inner) =>
+    `<div style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid ${border};overflow:hidden;">${inner}</div>`;
+  // YouTube (youtu.be/<id>, youtube.com/watch?v=<id>, /embed/<id>, /shorts/<id>)
+  let m = u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  if (m) {
+    return wrap(`<iframe src="https://www.youtube.com/embed/${m[1]}" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share" allowfullscreen loading="lazy"></iframe>`);
+  }
+  // Vimeo (vimeo.com/<id> or vimeo.com/video/<id>)
+  m = u.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (m) {
+    return wrap(`<iframe src="https://player.vimeo.com/video/${m[1]}" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="autoplay;fullscreen;picture-in-picture" allowfullscreen loading="lazy"></iframe>`);
+  }
+  // Direct video file (self-hosted walkthrough) → native player.
+  return wrap(`<video src="${u}" controls preload="metadata" playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;"></video>`);
+}
+
+// Project overview video tab — video_urls is a text[]; render each, hide the
+// tab when empty.
+function renderProjectVideo(videos) {
+  const btn = document.getElementById('spj-video-tab-btn');
+  const mount = document.getElementById('spj-video-mount');
+  const list = (videos || []).filter(Boolean);
+  if (!list.length) { if (btn) btn.style.display = 'none'; if (mount) mount.innerHTML = ''; return; }
+  if (btn) btn.style.display = '';
+  mount.innerHTML = list
+    .map(u => `<div style="margin-bottom:18px;">${buildVideoEmbedHtml(u)}</div>`)
+    .join('');
+}
+
+// Property walkthrough tab — single self-hosted video, hide the tab when empty.
+function renderLotWalkthrough(url) {
+  const btn = document.getElementById('slg-video-tab-btn');
+  const mount = document.getElementById('slg-video-mount');
+  if (!url) { if (btn) btn.style.display = 'none'; if (mount) mount.innerHTML = ''; return; }
+  if (btn) btn.style.display = '';
+  mount.innerHTML = buildVideoEmbedHtml(url);
+}
+
 function openGalleryLightbox(index) {
   galleryIndex = index;
   document.getElementById('gallery-lightbox').style.display = 'flex';
@@ -19763,6 +19839,11 @@ function buildKitHtml(s, research, brand) {
         <div id="fly-gallery" class="fly-gallery"></div>
       </section>
 
+      <section class="fly-section" id="fly-video-section" style="display:none;">
+        <div class="fly-section-title">Walkthrough</div>
+        <div id="fly-video-mount"></div>
+      </section>
+
       <section class="fly-section" id="fly-floorplan-section" style="display:none;">
         <div class="fly-section-title">Floor Plan</div>
         <div id="fly-floorplan-mount"></div>
@@ -20327,6 +20408,13 @@ function buildKitHtml(s, research, brand) {
         grid.appendChild(tile);
       }
       document.getElementById('fly-gallery-section').style.display = '';
+    }
+
+    // ── Walkthrough video ── (self-hosted MP4; plays inline, no login needed)
+    if (stock.walkthrough_video_url) {
+      document.getElementById('fly-video-mount').innerHTML =
+        buildVideoEmbedHtml(stock.walkthrough_video_url, { border: 'rgba(0,0,0,0.12)' });
+      document.getElementById('fly-video-section').style.display = '';
     }
 
     // ── Floor plan ──
