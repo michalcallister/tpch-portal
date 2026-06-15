@@ -3642,7 +3642,7 @@
           <div class="user-name">Andrew P.</div>
           <div class="user-role">Channel Partner</div>
         </div>
-        <button class="admin-only btn-logout" id="btn-change-pw" onclick="event.stopPropagation();showAdminChangePwModal()" title="Change password" style="display:none;font-size:15px;">🔑</button>
+        <button class="btn-logout partner-write-action" id="btn-change-pw" onclick="event.stopPropagation();showAdminChangePwModal()" title="Change password" style="display:none;font-size:15px;">🔑</button>
         <button class="btn-logout" onclick="event.stopPropagation();doLogout()" title="Sign out">⏻</button>
       </div>
       <a href="#" id="whats-new-btn" class="version-tag" onclick="openWhatsNew();return false;" style="display:none;">
@@ -6140,7 +6140,7 @@
 <div id="admin-pw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1200;align-items:center;justify-content:center;" onclick="closeAdminChangePwModal()">
   <div style="background:#1A1A16;border:1px solid rgba(201,168,76,0.25);padding:36px;width:380px;max-width:90vw;" onclick="event.stopPropagation()">
     <div style="font-size:16px;font-weight:700;color:#F8F6F0;margin-bottom:4px;">Change Password</div>
-    <div style="font-size:12px;color:#8A8A80;margin-bottom:24px;">Update your admin login password</div>
+    <div style="font-size:12px;color:#8A8A80;margin-bottom:24px;">Update your portal sign-in password</div>
     <div style="margin-bottom:14px;">
       <div style="font-size:11px;color:#9A8A6A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">New Password</div>
       <input id="admin-pw-new" type="password" placeholder="Enter new password" style="width:100%;background:#0F0F0C;border:1px solid rgba(201,168,76,0.2);color:#F8F6F0;padding:10px 12px;font-size:13px;box-sizing:border-box;">
@@ -7392,8 +7392,13 @@
     // Notification bell (partner only)
     const bellBtn = document.getElementById('notif-bell-btn');
     if (bellBtn) bellBtn.style.display = isPartner ? 'inline-block' : 'none';
+    // Self-service password change is available to every signed-in user —
+    // admins, partner owners and staff alike (staff are the ones who get
+    // locked out of the email-reset flow, so they need it most). The button
+    // carries .partner-write-action so it auto-hides during admin preview,
+    // where the live token is still the admin's, not the previewed partner's.
     const changePwBtn = document.getElementById('btn-change-pw');
-    if (changePwBtn) changePwBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    if (changePwBtn) changePwBtn.style.display = (isAdmin || isPartner) ? 'inline-flex' : 'none';
     // Topbar company name (partner only)
     const topbarCompany = document.getElementById('topbar-company');
     if (topbarCompany) topbarCompany.style.display = isPartner ? 'block' : 'none';
@@ -8636,7 +8641,7 @@
     const errEl   = document.getElementById('admin-pw-error');
     errEl.style.color = '#c94c4c';
     if (!newPw) { errEl.textContent = 'Please enter a new password.'; return; }
-    if (newPw.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+    if (newPw.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; return; }
     if (newPw !== confirm) { errEl.textContent = 'Passwords do not match.'; return; }
     if (!currentAuthToken) { errEl.textContent = 'Session expired. Please sign in again.'; return; }
     // Updates auth.users password via Supabase Auth.
@@ -8920,7 +8925,7 @@
   // ─── AUTO CACHE-BUST ON DEPLOY ───────────────────────────
   // Bump APP_VERSION with every deploy. On load, if the stored version
   // differs the page reloads once with ?v= to bypass the CDN cache.
-  const APP_VERSION = '5.0';
+  const APP_VERSION = '5.1';
   (function checkAppVersion() {
     const stored = localStorage.getItem('tpch_app_version');
     if (stored !== APP_VERSION) {
@@ -8938,6 +8943,15 @@
   // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
 
   const CHANGELOG = [
+    {
+      version: '3.6',
+      date: '15 Jun 2026',
+      title: 'Change your own password, any time',
+      items: [
+        'You can now change your portal password yourself — click the key icon next to the sign-out button in the bottom-left, enter a new password, and you\'re done. No email link required.',
+        'Available to everyone on your team, not just the account owner — so any staff member can update their own password directly.',
+      ]
+    },
     {
       version: '3.5',
       date: '2 Jun 2026',
