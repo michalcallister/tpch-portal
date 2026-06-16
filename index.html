@@ -10244,7 +10244,8 @@
     // Plain-English "what this person actually sees in the portal", not the setting name.
     const commText = (type, customVal) => {
       if (type === 'hidden') return 'Hidden — no commission shown';
-      if (type === 'custom')  return 'Fixed: ' + (customVal || '—') + ' on every listing';
+      if (type === 'custom' && customVal) return 'Fixed: ' + customVal + ' on every listing';
+      // 'custom' with no amount falls back to the portal rate in the portal, so show that.
       return overridesOn ? 'Portal commission, adjusted per project' : 'Full portal commission';
     };
     const accessLabel = { admin: 'Admin', standard: 'Standard' };
@@ -10326,6 +10327,7 @@
     const commType  = document.getElementById('staff-comm-type').value;
     const commValue = document.getElementById('staff-comm-value').value.trim();
     if (!name || !email) { showPsetMsg('staff-modal-msg', 'Name and email are required.', false); return; }
+    if (commType === 'custom' && !commValue) { showPsetMsg('staff-modal-msg', 'Enter the commission amount to show, or choose Portal commission or Hidden.', false); return; }
     const btn = document.querySelector('#modal-add-staff .btn-primary');
     btn.disabled = true; btn.textContent = 'Sending…';
     try {
@@ -10363,6 +10365,7 @@
     const staffId = document.getElementById('edit-comm-staff-id').value;
     const type    = document.getElementById('edit-comm-type').value;
     const value   = type === 'custom' ? document.getElementById('edit-comm-custom-value').value.trim() || null : null;
+    if (type === 'custom' && !value) { showPsetMsg('edit-comm-msg', 'Enter the commission amount to show, or choose Portal commission or Hidden.', false); return; }
     const btn     = document.querySelector('#modal-edit-staff-comm .btn-primary');
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
