@@ -5983,6 +5983,7 @@
             <option value="hidden">Hide commission</option>
           </select>
         </div>
+        <div id="staff-comm-note" style="font-size:11px;line-height:1.5;margin:-8px 0 14px;display:none;"></div>
         <div class="form-group" id="staff-comm-custom-row" style="display:none;">
           <label class="form-label">Custom Commission (shown to this team member)</label>
           <input class="form-input" type="text" id="staff-comm-value" placeholder="e.g. $10,000">
@@ -6009,6 +6010,7 @@
               <option value="hidden">Hidden</option>
             </select>
           </div>
+          <div id="edit-comm-note" style="font-size:11px;line-height:1.5;margin:-6px 0 14px;display:none;"></div>
           <div id="edit-comm-custom-wrap" style="display:none;margin-bottom:14px;">
             <div style="font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Custom Amount</div>
             <input class="form-input" type="text" id="edit-comm-custom-value" placeholder="e.g. $10,000">
@@ -8964,6 +8966,15 @@
 
   const CHANGELOG = [
     {
+      version: '3.9',
+      date: '16 Jun 2026',
+      title: 'A heads-up before a team member sees full commission',
+      items: [
+        'When you add or edit a team member, the commission setting now spells out what they will see, and flags that the default shows them the full commission on every listing.',
+        'If you save on that default, a quick confirmation makes sure it is deliberate, so nobody is shown full commission by accident.',
+      ]
+    },
+    {
       version: '3.8',
       date: '16 Jun 2026',
       title: 'Clearer team commissions, and "team member" throughout',
@@ -10310,12 +10321,32 @@
     document.getElementById('staff-comm-type').value = 'portal';
     document.getElementById('staff-comm-value').value = '';
     document.getElementById('staff-comm-custom-row').style.display = 'none';
+    setCommNote('staff-comm-note', 'portal');
     document.getElementById('staff-modal-msg').style.display = 'none';
     document.getElementById('modal-add-staff').style.display = 'flex';
   }
 
+  // Plain-English note under the commission dropdown, emphasising that the
+  // default (portal) means the team member sees the FULL commission.
+  function setCommNote(elId, type) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.style.display = 'block';
+    if (type === 'portal') {
+      el.innerHTML = '⚠ This team member will see the <strong>full commission</strong> on every listing. Choose Custom amount or Hidden to limit what they see.';
+      el.style.color = 'var(--gold)';
+    } else if (type === 'custom') {
+      el.textContent = "They'll only ever see the amount you enter.";
+      el.style.color = 'var(--grey-light)';
+    } else {
+      el.textContent = "They won't see any commission figures.";
+      el.style.color = 'var(--grey-light)';
+    }
+  }
+
   function toggleStaffCommInput(sel) {
     document.getElementById('staff-comm-custom-row').style.display = sel.value === 'custom' ? '' : 'none';
+    setCommNote('staff-comm-note', sel.value);
   }
 
   async function inviteStaff() {
@@ -10328,6 +10359,7 @@
     const commValue = document.getElementById('staff-comm-value').value.trim();
     if (!name || !email) { showPsetMsg('staff-modal-msg', 'Name and email are required.', false); return; }
     if (commType === 'custom' && !commValue) { showPsetMsg('staff-modal-msg', 'Enter the commission amount to show, or choose Portal commission or Hidden.', false); return; }
+    if (commType === 'portal' && !confirm(name + ' will see the full commission on all stock (the default). Choose Custom amount or Hidden first if you\'d prefer to limit it.\n\nAdd them with full commission visibility?')) return;
     const btn = document.querySelector('#modal-add-staff .btn-primary');
     btn.disabled = true; btn.textContent = 'Sending…';
     try {
@@ -10352,10 +10384,12 @@
     document.getElementById('edit-comm-type').value = currentType || 'portal';
     document.getElementById('edit-comm-custom-value').value = currentValue || '';
     document.getElementById('edit-comm-custom-wrap').style.display = currentType === 'custom' ? '' : 'none';
+    setCommNote('edit-comm-note', currentType || 'portal');
     document.getElementById('edit-comm-msg').style.display = 'none';
     document.getElementById('modal-edit-staff-comm').classList.add('active');
     document.getElementById('edit-comm-type').onchange = function() {
       document.getElementById('edit-comm-custom-wrap').style.display = this.value === 'custom' ? '' : 'none';
+      setCommNote('edit-comm-note', this.value);
     };
     // Per-project deductions section — shown only when partner flag is on.
     renderStaffProjectOverrides(staffId);
@@ -10366,6 +10400,7 @@
     const type    = document.getElementById('edit-comm-type').value;
     const value   = type === 'custom' ? document.getElementById('edit-comm-custom-value').value.trim() || null : null;
     if (type === 'custom' && !value) { showPsetMsg('edit-comm-msg', 'Enter the commission amount to show, or choose Portal commission or Hidden.', false); return; }
+    if (type === 'portal' && !confirm('This team member will see the full commission on all stock. Choose Custom amount or Hidden first if you\'d prefer to limit it.\n\nSave with full commission visibility?')) return;
     const btn     = document.querySelector('#modal-edit-staff-comm .btn-primary');
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
