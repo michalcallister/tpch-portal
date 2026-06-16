@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
     // ── Type-specific authorisation ──────────────────────────────────────
     if (type === 'partner' || type === 'resend') {
       if (!isAdmin) return json({ error: 'Admin only' }, 403)
-    } else if (type === 'staff') {
+    } else if (type === 'staff' || type === 'update_staff_email') {
       // Caller must be admin OR own the supplied partner_id
       if (!isAdmin) {
         if (!body.partner_id) return json({ error: 'partner_id is required' }, 400)
@@ -206,7 +206,7 @@ Deno.serve(async (req) => {
         if (!ownerRow) return json({ error: 'Not authorised for this partner firm' }, 403)
       }
     } else {
-      return json({ error: 'type must be "partner", "staff", or "resend"' }, 400)
+      return json({ error: 'type must be "partner", "staff", "update_staff_email", or "resend"' }, 400)
     }
 
     // ── Partner invite (admin → new channel partner) ──────────────
@@ -448,6 +448,44 @@ Deno.serve(async (req) => {
       }
 
       return json({ success: true, staff_id: staff.id })
+    }
+
+    // ── Update a team member's email (and their portal login) ─────
+    if (type === 'update_staff_email') {
+      const { staff_id, new_email } = body
+      if (!staff_id || !new_email) return json({ error: 'staff_id and new_email are required' }, 400)
+      const lc = String(new_email).trim().toLowerCase()
+
+      const { data: staff, error: sErr } = await supabase
+        .from('partner_staff')
+        .select('id, user_id, partner_id, email')
+        .eq('id', staff_id)
+        .maybeSingle()
+      if (sErr) return json({ error: sErr.message }, 500)
+      if (!staff) return json({ error: 'Team member not found' }, 404)
+      if (!isAdmin && staff.partner_id !== body.partner_id) {
+        return json({ error: 'Not authorised for this team member' }, 403)
+      }
+
+      // Resolve the auth user id (partner_staff.user_id is only backfilled on
+      // first login, so fall back to matching the current email).
+      let authUserId = staff.user_id
+      if (!authUserId) {
+        const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+        const match = (list?.users || []).find((u: any) => (u.email || '').toLowerCase() === String(staff.email || '').toLowerCase())
+        authUserId = match?.id || null
+      }
+      if (authUserId) {
+        const { error: uErr } = await supabase.auth.admin.updateUserById(authUserId, { email: lc, email_confirm: true })
+        if (uErr) return json({ error: 'Could not update login email: ' + uErr.message }, 500)
+      }
+      const { error: pErr } = await supabase
+        .from('partner_staff')
+        .update({ email: lc, user_id: authUserId })
+        .eq('id', staff_id)
+      if (pErr) return json({ error: pErr.message }, 500)
+
+      return json({ success: true })
     }
 
     // ── Resend invite (admin → existing approved partner) ─────────

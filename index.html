@@ -5974,23 +5974,10 @@
             <option value="admin">Admin — full access including Settings</option>
           </select>
         </div>
-        <div class="prt-section-title" style="margin-top:8px;">Commission Display</div>
-        <div class="form-group">
-          <label class="form-label">What they see in the portal</label>
-          <select class="form-input" id="staff-comm-type" onchange="toggleStaffCommInput(this)">
-            <option value="portal">Show portal commission (default)</option>
-            <option value="custom">Show custom amount</option>
-            <option value="hidden">Hide commission</option>
-          </select>
-        </div>
-        <div id="staff-comm-note" style="font-size:11px;line-height:1.5;margin:-8px 0 14px;display:none;"></div>
-        <div class="form-group" id="staff-comm-custom-row" style="display:none;">
-          <label class="form-label">Custom Commission (shown to this team member)</label>
-          <input class="form-input" type="text" id="staff-comm-value" placeholder="e.g. $10,000">
-        </div>
+        <p style="font-size:11px;color:var(--grey-mid);margin:4px 0 14px;line-height:1.5;">Next you'll choose what this team member sees for commission.</p>
         <div id="staff-modal-msg" style="display:none;font-size:13px;margin-bottom:12px;"></div>
         <div style="display:flex;gap:12px;margin-top:8px;">
-          <button class="btn-primary" onclick="inviteStaff()">Send Invite</button>
+          <button class="btn-primary" onclick="inviteStaff()">Next: set commission →</button>
           <button class="btn-outline" onclick="document.getElementById('modal-add-staff').style.display='none'">Cancel</button>
         </div>
       </div>
@@ -6055,6 +6042,145 @@
         </div>
         <div class="modal-actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;padding-top:16px;border-top:1px solid var(--gold-border);">
           <button class="btn-outline" onclick="document.getElementById('modal-edit-staff-comm').classList.remove('active')">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ Commission Wizard ═══════════ -->
+    <div id="modal-comm-wizard" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:1150;align-items:center;justify-content:center;">
+      <div style="background:var(--black-soft);border:1px solid var(--gold-border);border-radius:8px;padding:30px;width:580px;max-width:95vw;max-height:calc(100vh - 32px);overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+          <h3 style="font-size:18px;color:var(--white);">Commission setup</h3>
+          <span id="cw-stepind" style="font-size:11px;color:var(--grey-mid);letter-spacing:1px;text-transform:uppercase;"></span>
+        </div>
+        <p style="font-size:12px;color:var(--grey-light);margin-bottom:22px;">Set what <span class="cw-name">this team member</span> sees for commission.</p>
+
+        <!-- Step 1: full? -->
+        <div class="cw-step" id="cw-step-full">
+          <div style="font-size:15px;color:var(--white);margin-bottom:18px;line-height:1.5;">Should <span class="cw-name">this team member</span> see the <strong style="color:var(--gold);">full commission</strong> on every listing?</div>
+          <div style="display:flex;gap:12px;">
+            <button class="btn-outline" style="flex:1;padding:18px;text-align:left;" onclick="cwPick('full')">
+              <div style="font-size:14px;color:var(--white);font-weight:500;">Yes</div>
+              <div style="font-size:11px;color:var(--grey-light);margin-top:4px;line-height:1.4;">They see the real commission, exactly as it's listed.</div>
+            </button>
+            <button class="btn-outline" style="flex:1;padding:18px;text-align:left;" onclick="cwShow('type')">
+              <div style="font-size:14px;color:var(--white);font-weight:500;">No</div>
+              <div style="font-size:11px;color:var(--grey-light);margin-top:4px;line-height:1.4;">Limit or change what they see.</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: type -->
+        <div class="cw-step" id="cw-step-type" style="display:none;">
+          <div style="font-size:15px;color:var(--white);margin-bottom:16px;">How should their commission be limited?</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button class="btn-outline" style="text-align:left;padding:14px 16px;" onclick="cwPick('custom')">
+              <div style="font-size:14px;color:var(--white);font-weight:500;">Show a fixed amount</div>
+              <div style="font-size:11px;color:var(--grey-light);margin-top:3px;line-height:1.4;">They always see the same figure you set, on every listing.</div>
+            </button>
+            <button class="btn-outline" id="cw-opt-deduct" style="text-align:left;padding:14px 16px;display:none;" onclick="cwPick('deduct')">
+              <div style="font-size:14px;color:var(--white);font-weight:500;">Deduct from the real commission</div>
+              <div style="font-size:11px;color:var(--grey-light);margin-top:3px;line-height:1.4;">They see the real commission, less an amount you take off — set per project.</div>
+            </button>
+            <button class="btn-outline" style="text-align:left;padding:14px 16px;" onclick="cwPick('hidden')">
+              <div style="font-size:14px;color:var(--white);font-weight:500;">Show them nothing</div>
+              <div style="font-size:11px;color:var(--grey-light);margin-top:3px;line-height:1.4;">No commission figures are shown to them at all.</div>
+            </button>
+          </div>
+          <div style="margin-top:18px;"><button onclick="cwShow('full')" style="background:none;border:none;color:var(--grey-light);font-size:12px;cursor:pointer;padding:0;">← Back</button></div>
+        </div>
+
+        <!-- Step 3a: fixed amount -->
+        <div class="cw-step" id="cw-step-fixed" style="display:none;">
+          <div style="font-size:15px;color:var(--white);margin-bottom:10px;">What amount should <span class="cw-name">they</span> see on every listing?</div>
+          <input class="form-input" type="text" id="cw-fixed-value" placeholder="e.g. $10,000">
+          <div id="cw-fixed-msg" style="display:none;font-size:12px;color:var(--red);margin-top:8px;"></div>
+          <div style="display:flex;justify-content:space-between;margin-top:20px;">
+            <button class="btn-outline" onclick="cwShow('type')">← Back</button>
+            <button class="btn-primary" onclick="cwAfterFixed()">Continue</button>
+          </div>
+        </div>
+
+        <!-- Step 3b: deduct (per-project visibility + deductions) -->
+        <div class="cw-step" id="cw-step-deduct" style="display:none;">
+          <div style="font-size:14px;color:var(--white);margin-bottom:4px;">Choose which projects they see, and how much to take off each.</div>
+          <div style="font-size:11px;color:var(--grey-mid);margin-bottom:10px;line-height:1.5;">Tick a project to let them see it. Enter a <strong style="color:var(--grey-light);">Deduct $</strong> to reduce the commission they see on it. Saves automatically.</div>
+          <div id="cw-deduct-status" style="font-size:11px;color:var(--grey-mid);margin-bottom:8px;">Loading projects…</div>
+          <div style="max-height:300px;overflow-y:auto;border:1px solid var(--gold-border);border-radius:3px;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              <thead><tr>
+                <th style="text-align:center;padding:8px 6px;color:var(--grey-light);text-transform:uppercase;letter-spacing:0.6px;font-size:10px;width:54px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Show</th>
+                <th style="text-align:left;padding:8px 10px;color:var(--grey-light);text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Project</th>
+                <th style="text-align:right;padding:8px 10px;color:var(--grey-light);text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Real $</th>
+                <th style="text-align:right;padding:8px 10px;color:var(--grey-light);text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Deduct $</th>
+                <th style="width:74px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;"></th>
+              </tr></thead>
+              <tbody id="cw-deduct-tbody"></tbody>
+            </table>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:16px;">
+            <button class="btn-outline" onclick="cwShow('type')">← Back</button>
+            <button class="btn-primary" onclick="cwShow('summary')">Continue</button>
+          </div>
+        </div>
+
+        <!-- Step 4: summary -->
+        <div class="cw-step" id="cw-step-summary" style="display:none;">
+          <div style="font-size:15px;color:var(--white);margin-bottom:12px;">Here's what <span class="cw-name">this team member</span> will see:</div>
+          <div id="cw-summary-box" style="background:rgba(200,169,81,0.07);border:1px solid var(--gold-border);border-radius:4px;padding:18px 20px;font-size:13px;color:var(--white);line-height:1.6;"></div>
+          <div id="cw-summary-msg" style="display:none;font-size:12px;margin-top:10px;"></div>
+          <div style="display:flex;justify-content:space-between;margin-top:20px;">
+            <button class="btn-outline" onclick="cwShow('full')">← Start over</button>
+            <button class="btn-primary" onclick="cwFinish()">Done</button>
+          </div>
+        </div>
+
+        <div style="margin-top:22px;text-align:right;border-top:1px solid var(--gold-border);padding-top:14px;">
+          <button class="btn-outline" onclick="cwClose()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ Commission Status (read-only summary) ═══════════ -->
+    <div id="modal-comm-status" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:1150;align-items:center;justify-content:center;">
+      <div style="background:var(--black-soft);border:1px solid var(--gold-border);border-radius:8px;padding:30px;width:520px;max-width:95vw;max-height:calc(100vh - 32px);overflow-y:auto;">
+        <h3 style="font-size:18px;color:var(--white);margin-bottom:4px;">Commission</h3>
+        <p id="cs-sub" style="font-size:12px;color:var(--grey-light);margin-bottom:20px;"></p>
+        <div id="cs-box" style="background:rgba(200,169,81,0.07);border:1px solid var(--gold-border);border-radius:4px;padding:18px 20px;font-size:13px;color:var(--white);line-height:1.6;"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;border-top:1px solid var(--gold-border);padding-top:14px;">
+          <button class="btn-outline" onclick="document.getElementById('modal-comm-status').style.display='none'">Close</button>
+          <button class="btn-outline" id="cs-adjust-btn" style="display:none;" onclick="csAdjust()">Adjust amounts</button>
+          <button class="btn-primary" onclick="csChange()">Change</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ Edit Team Member Details ═══════════ -->
+    <div id="modal-edit-member" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:1150;align-items:center;justify-content:center;">
+      <div style="background:var(--black-soft);border:1px solid var(--gold-border);border-radius:8px;padding:30px;width:460px;max-width:95vw;">
+        <h3 style="font-size:18px;color:var(--white);margin-bottom:4px;">Edit team member</h3>
+        <p style="font-size:12px;color:var(--grey-light);margin-bottom:20px;">Update this team member's details. Commission is managed separately.</p>
+        <input type="hidden" id="em-staff-id">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input class="form-input" type="text" id="em-name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" type="email" id="em-email">
+          <p style="font-size:11px;color:var(--grey-mid);margin-top:5px;">This is also their sign-in. Changing it updates their login.</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Portal Access Level</label>
+          <select class="form-input" id="em-access">
+            <option value="standard">Standard — can browse stock and see their own deals</option>
+            <option value="admin">Admin — full access including Settings</option>
+          </select>
+        </div>
+        <div id="em-msg" style="display:none;font-size:13px;margin-bottom:12px;"></div>
+        <div style="display:flex;gap:12px;margin-top:8px;">
+          <button class="btn-primary" onclick="saveMemberDetails()">Save Changes</button>
+          <button class="btn-outline" onclick="document.getElementById('modal-edit-member').style.display='none'">Cancel</button>
         </div>
       </div>
     </div>
@@ -8966,6 +9092,16 @@
 
   const CHANGELOG = [
     {
+      version: '3.10',
+      date: '16 Jun 2026',
+      title: 'A simple, step-by-step way to set team commissions',
+      items: [
+        'Setting what a team member sees for commission is now a short guided wizard — choose full commission, a fixed amount, a per-project deduction, or nothing, with a plain summary before you confirm.',
+        'Each team member now has a clear "Commission" status on the Team list, with Change (and Adjust amounts where per-project deductions are used).',
+        '"Edit" now updates a team member\'s own details — their name, access level and email.',
+      ]
+    },
+    {
       version: '3.9',
       date: '16 Jun 2026',
       title: 'A heads-up before a team member sees full commission',
@@ -10307,7 +10443,12 @@
                       onclick="enterPreviewAsStaff(this.dataset.sid,this.dataset.sname,this.dataset.semail,this.dataset.ctype,this.dataset.cval)"
                       title="See the portal exactly as this team member sees it">👁 See their view</button>`
                   : ''}
-                <button class="btn-outline" style="font-size:11px;padding:4px 10px;" data-sid="${s.id}" data-ctype="${s.comm_display_type}" data-cval="${(s.comm_custom_value||'').replace(/"/g,'&quot;')}" onclick="editStaffComm(this.dataset.sid,this.dataset.ctype,this.dataset.cval)">Edit</button>
+                <button class="btn-outline" style="font-size:11px;padding:4px 10px;margin-right:6px;"
+                  data-sid="${s.id}" data-sname="${(s.full_name||'').replace(/"/g,'&quot;')}" data-ctype="${s.comm_display_type||'portal'}" data-cval="${(s.comm_custom_value||'').replace(/"/g,'&quot;')}"
+                  onclick="csOpen(this.dataset.sid,this.dataset.sname,this.dataset.ctype,this.dataset.cval)">Commission</button>
+                <button class="btn-outline" style="font-size:11px;padding:4px 10px;"
+                  data-sid="${s.id}" data-sname="${(s.full_name||'').replace(/"/g,'&quot;')}" data-semail="${(s.email||'').replace(/"/g,'&quot;')}" data-srole="${s.role||'standard'}"
+                  onclick="emOpen(this.dataset.sid,this.dataset.sname,this.dataset.semail,this.dataset.srole)">Edit</button>
               </td>
             </tr>`).join('')}
         </tbody>
@@ -10318,10 +10459,6 @@
     document.getElementById('staff-name').value      = '';
     document.getElementById('staff-email').value     = '';
     document.getElementById('staff-job-role').value  = '';
-    document.getElementById('staff-comm-type').value = 'portal';
-    document.getElementById('staff-comm-value').value = '';
-    document.getElementById('staff-comm-custom-row').style.display = 'none';
-    setCommNote('staff-comm-note', 'portal');
     document.getElementById('staff-modal-msg').style.display = 'none';
     document.getElementById('modal-add-staff').style.display = 'flex';
   }
@@ -10350,32 +10487,31 @@
   }
 
   async function inviteStaff() {
-    if (previewReadOnlyGuard('inviting a staff member')) return;
+    if (previewReadOnlyGuard('adding a team member')) return;
     if (!currentPartnerRecord) return;
     const name      = document.getElementById('staff-name').value.trim();
     const email     = document.getElementById('staff-email').value.trim().toLowerCase();
     const jobRole   = document.getElementById('staff-job-role').value.trim();
-    const commType  = document.getElementById('staff-comm-type').value;
-    const commValue = document.getElementById('staff-comm-value').value.trim();
     if (!name || !email) { showPsetMsg('staff-modal-msg', 'Name and email are required.', false); return; }
-    if (commType === 'custom' && !commValue) { showPsetMsg('staff-modal-msg', 'Enter the commission amount to show, or choose Portal commission or Hidden.', false); return; }
-    if (commType === 'portal' && !confirm(name + ' will see the full commission on all stock (the default). Choose Custom amount or Hidden first if you\'d prefer to limit it.\n\nAdd them with full commission visibility?')) return;
     const btn = document.querySelector('#modal-add-staff .btn-primary');
-    btn.disabled = true; btn.textContent = 'Sending…';
+    btn.disabled = true; btn.textContent = 'Adding…';
     try {
+      // Create the member with the safe default (full portal commission) and
+      // send their invite; the commission wizard then refines what they see.
       const res = await fetch(SUPABASE_URL + '/functions/v1/invite-partner', {
         method: 'POST',
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'staff', full_name: name, email, role: jobRole, partner_id: currentPartnerRecord.partner_id, comm_display_type: commType, comm_custom_value: commValue || null }),
+        body: JSON.stringify({ type: 'staff', full_name: name, email, role: jobRole || 'standard', partner_id: currentPartnerRecord.partner_id, comm_display_type: 'portal', comm_custom_value: null }),
       });
       const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || 'Invite failed');
+      if (!res.ok || data.error) throw new Error(data.error || 'Could not add team member');
       document.getElementById('modal-add-staff').style.display = 'none';
-      loadPartnerStaff();
+      await loadPartnerStaff();
+      cwOpen(data.staff_id, name, 'portal', null, 'full');   // launch commission wizard
     } catch(e) {
       showPsetMsg('staff-modal-msg', e.message, false);
     } finally {
-      btn.disabled = false; btn.textContent = 'Send Invite';
+      btn.disabled = false; btn.textContent = 'Next: set commission →';
     }
   }
 
@@ -10416,6 +10552,220 @@
       showPsetMsg('edit-comm-msg', e.message, false);
     } finally {
       btn.disabled = false; btn.textContent = 'Save';
+    }
+  }
+
+  // ═══════════ Commission wizard / status / member-details ═══════════
+  let _cw = { staffId: null, name: '', choice: null, customValue: null };
+  let _emOrigEmail = '';
+  let _csType = null, _csVal = null;
+
+  function cwSetName(name) {
+    const first = (name || '').split(' ')[0] || 'this team member';
+    document.querySelectorAll('#modal-comm-wizard .cw-name, #modal-comm-status .cw-name').forEach(el => { el.textContent = first; });
+  }
+
+  // Open the wizard for an existing staff member. startStep: 'full' (begin) or
+  // 'deduct' (jump straight to adjusting per-project amounts).
+  function cwOpen(staffId, name, type, customVal, startStep) {
+    _cw = { staffId, name: name || '', choice: null, customValue: (type === 'custom' ? customVal : null) };
+    cwSetName(name);
+    const dedOpt = document.getElementById('cw-opt-deduct');
+    if (dedOpt) dedOpt.style.display = (currentPartnerRecord && currentPartnerRecord.team_commission_override_enabled) ? '' : 'none';
+    document.getElementById('cw-fixed-value').value = (type === 'custom' && customVal) ? customVal : '';
+    document.getElementById('cw-fixed-msg').style.display = 'none';
+    document.getElementById('cw-summary-msg').style.display = 'none';
+    document.getElementById('modal-comm-wizard').style.display = 'flex';
+    if (startStep === 'deduct') { _cw.choice = 'deduct'; cwShow('deduct'); cwRenderDeduct(); }
+    else cwShow('full');
+  }
+
+  function cwShow(step) {
+    document.querySelectorAll('#modal-comm-wizard .cw-step').forEach(el => { el.style.display = 'none'; });
+    const el = document.getElementById('cw-step-' + step);
+    if (el) el.style.display = '';
+    const labels = { full: 'Step 1', type: 'Step 2', fixed: 'Step 3', deduct: 'Step 3', summary: 'Summary' };
+    const ind = document.getElementById('cw-stepind');
+    if (ind) ind.textContent = labels[step] || '';
+    if (step === 'summary') cwRenderSummary();
+  }
+
+  function cwPick(choice) {
+    _cw.choice = choice;
+    if (choice === 'full' || choice === 'hidden') cwShow('summary');
+    else if (choice === 'custom') cwShow('fixed');
+    else if (choice === 'deduct') { cwShow('deduct'); cwRenderDeduct(); }
+  }
+
+  function cwAfterFixed() {
+    const v = document.getElementById('cw-fixed-value').value.trim();
+    if (!v) { const m = document.getElementById('cw-fixed-msg'); m.textContent = 'Enter an amount, or go back and choose another option.'; m.style.display = 'block'; return; }
+    _cw.customValue = v;
+    cwShow('summary');
+  }
+
+  function cwSummaryHtml() {
+    if (_cw.choice === 'full')   return 'They will see the <strong style="color:var(--gold);">full commission</strong> on every listing, exactly as it is listed.';
+    if (_cw.choice === 'custom') return 'They will always see a fixed amount: <strong style="color:var(--gold);">' + (_cw.customValue || '—') + '</strong> on every listing.';
+    if (_cw.choice === 'hidden') return 'They will see <strong style="color:var(--gold);">no commission</strong> figures anywhere in the portal.';
+    if (_cw.choice === 'deduct') return 'They will see the <strong style="color:var(--gold);">real commission, less your per-project deductions</strong>, and only on the projects you have made visible. You can fine-tune these any time from Commission → Adjust amounts.';
+    return '';
+  }
+  function cwRenderSummary() { document.getElementById('cw-summary-box').innerHTML = cwSummaryHtml(); }
+
+  async function cwFinish() {
+    if (previewReadOnlyGuard('changing commission')) return;
+    if (!_cw.staffId || !_cw.choice) { cwClose(); return; }
+    let body;
+    if (_cw.choice === 'full' || _cw.choice === 'deduct') body = { comm_display_type: 'portal', comm_custom_value: null };
+    else if (_cw.choice === 'custom') body = { comm_display_type: 'custom', comm_custom_value: _cw.customValue };
+    else body = { comm_display_type: 'hidden', comm_custom_value: null };
+    const msg = document.getElementById('cw-summary-msg');
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/partner_staff?id=eq.' + _cw.staffId, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      cwClose();
+      loadPartnerStaff();
+    } catch (e) {
+      msg.textContent = 'Could not save: ' + e.message; msg.style.color = 'var(--red)'; msg.style.display = 'block';
+    }
+  }
+  function cwClose() { document.getElementById('modal-comm-wizard').style.display = 'none'; }
+
+  // Per-project visibility + deductions inside the wizard. Reuses the existing
+  // saveStaffProjectVisibility / saveStaffProjectOverride handlers (same ids).
+  async function cwRenderDeduct() {
+    const tbody  = document.getElementById('cw-deduct-tbody');
+    const status = document.getElementById('cw-deduct-status');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    status.textContent = 'Loading projects…'; status.style.color = 'var(--grey-mid)';
+    const staffId = _cw.staffId;
+    let projects = [], overrides = {}, liveStock = [];
+    try {
+      const [projRes, stockRes, ovRes] = await Promise.all([
+        fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/projects?order=name&select=id,name', () => ({ headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken } })),
+        fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/stock?availability=in.(Available,Reserved)&select=project_id,total_contract,channel_commission,channel_comm_flat,channel_comm_pct', () => ({ headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken } })),
+        fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/rpc/get_staff_commission_overrides_for_owner', () => ({ method: 'POST', headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_staff_id: staffId }) })),
+      ]);
+      if (projRes && projRes.ok)  projects  = await projRes.json();
+      if (stockRes && stockRes.ok) liveStock = await stockRes.json();
+      if (ovRes && ovRes.ok)      overrides = (await ovRes.json()) || {};
+    } catch (e) { status.textContent = 'Could not load projects.'; status.style.color = 'var(--red)'; return; }
+
+    const rangeByProj = {};
+    liveStock.forEach(s => {
+      const raw = resolveRawCommDollars(s);
+      if (raw == null || !s.project_id) return;
+      if (!rangeByProj[s.project_id]) rangeByProj[s.project_id] = { min: raw, max: raw };
+      else { rangeByProj[s.project_id].min = Math.min(rangeByProj[s.project_id].min, raw); rangeByProj[s.project_id].max = Math.max(rangeByProj[s.project_id].max, raw); }
+    });
+    const visibleProjectIds = new Set(Object.keys(rangeByProj));
+    projects = projects.filter(p => visibleProjectIds.has(p.id));
+    if (!projects.length) { status.textContent = 'No projects with live stock yet.'; return; }
+
+    let visibleCount = 0;
+    tbody.innerHTML = projects.map(p => {
+      const row = overrides[p.id] || null;
+      const ded = row ? parseFloat(row.d) : 0;
+      const isVis = !!(row && row.v === true);
+      if (isVis) visibleCount++;
+      const dedAttr = (isFinite(ded) && ded > 0) ? ded : '';
+      const r = rangeByProj[p.id];
+      const rangeText = r ? (r.min === r.max ? fmtCurrency(r.min) : fmtCurrency(r.min) + '–' + fmtCurrency(r.max)) : '—';
+      return `<tr>
+        <td style="padding:6px 8px;text-align:center;"><input type="checkbox" ${isVis ? 'checked' : ''} id="spco-vis-${p.id}" data-staff-id="${staffId}" data-project-id="${p.id}" onchange="saveStaffProjectVisibility(this)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--gold);"></td>
+        <td style="padding:6px 8px;color:var(--white);">${escapeHtml(p.name || '(unnamed)')}</td>
+        <td style="padding:6px 8px;text-align:right;color:var(--grey-light);font-family:'DM Mono',monospace;font-size:12px;">${rangeText}</td>
+        <td style="padding:6px 8px;text-align:right;"><input type="number" min="0" step="100" value="${dedAttr}" data-staff-id="${staffId}" data-project-id="${p.id}" onblur="saveStaffProjectOverride(this)" style="width:96px;text-align:right;padding:5px 8px;background:rgba(255,255,255,0.04);border:1px solid var(--gold-border);color:var(--white);border-radius:3px;font-family:'DM Mono',monospace;font-size:12px;" placeholder="0"></td>
+        <td style="padding:6px 8px;"><span id="spco-status-${p.id}" style="font-size:11px;color:var(--grey-mid);"></span></td>
+      </tr>`;
+    }).join('');
+    status.textContent = visibleCount + ' of ' + projects.length + ' projects visible to this team member';
+    status.style.color = 'var(--grey-mid)';
+  }
+
+  // ── Commission status (read-only summary) ──
+  async function csOpen(staffId, name, type, customVal) {
+    _cw.staffId = staffId; _cw.name = name || ''; _csType = type; _csVal = customVal;
+    cwSetName(name);
+    document.getElementById('cs-sub').textContent = name || '';
+    const box = document.getElementById('cs-box');
+    const adjustBtn = document.getElementById('cs-adjust-btn');
+    adjustBtn.style.display = 'none';
+    document.getElementById('modal-comm-status').style.display = 'flex';
+    if (type === 'hidden') { box.innerHTML = 'Sees <strong>no commission</strong> figures anywhere in the portal.'; return; }
+    if (type === 'custom') { box.innerHTML = 'Always sees a fixed amount: <strong>' + (customVal || '—') + '</strong> on every listing.'; return; }
+    if (!(currentPartnerRecord && currentPartnerRecord.team_commission_override_enabled)) {
+      box.innerHTML = 'Sees the <strong>full commission</strong> on every listing.'; return;
+    }
+    box.innerHTML = 'Loading…';
+    let ov = {};
+    try {
+      const r = await fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/rpc/get_staff_commission_overrides_for_owner', () => ({ method: 'POST', headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_staff_id: staffId }) }));
+      if (r && r.ok) ov = (await r.json()) || {};
+    } catch (e) {}
+    const keys = Object.keys(ov);
+    const visible = keys.filter(k => ov[k] && ov[k].v === true);
+    const deducted = visible.filter(k => parseFloat(ov[k].d) > 0);
+    if (keys.length === 0) {
+      box.innerHTML = 'Sees the <strong>full commission</strong> on every listing.<br><span style="color:var(--grey-mid);font-size:12px;">No per-project limits set.</span>';
+    } else {
+      box.innerHTML = 'Sees the <strong>real commission, adjusted per project</strong>:<br>'
+        + '· Visible on <strong>' + visible.length + '</strong> project' + (visible.length === 1 ? '' : 's') + '<br>'
+        + '· Reduced on <strong>' + deducted.length + '</strong> of those';
+      adjustBtn.style.display = '';
+    }
+  }
+  function csChange() { document.getElementById('modal-comm-status').style.display = 'none'; cwOpen(_cw.staffId, _cw.name, _csType, _csVal, 'full'); }
+  function csAdjust() { document.getElementById('modal-comm-status').style.display = 'none'; cwOpen(_cw.staffId, _cw.name, 'portal', null, 'deduct'); }
+
+  // ── Edit member details (name / access / email) ──
+  function emOpen(staffId, name, email, role) {
+    document.getElementById('em-staff-id').value = staffId;
+    document.getElementById('em-name').value = name || '';
+    document.getElementById('em-email').value = email || '';
+    document.getElementById('em-access').value = (role === 'admin') ? 'admin' : 'standard';
+    document.getElementById('em-msg').style.display = 'none';
+    _emOrigEmail = (email || '').toLowerCase();
+    document.getElementById('modal-edit-member').style.display = 'flex';
+  }
+
+  async function saveMemberDetails() {
+    if (previewReadOnlyGuard('editing a team member')) return;
+    const staffId = document.getElementById('em-staff-id').value;
+    const name  = document.getElementById('em-name').value.trim();
+    const email = document.getElementById('em-email').value.trim().toLowerCase();
+    const role  = document.getElementById('em-access').value;
+    if (!name || !email) { showPsetMsg('em-msg', 'Name and email are required.', false); return; }
+    const btn = document.querySelector('#modal-edit-member .btn-primary');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/partner_staff?id=eq.' + staffId, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ full_name: name, role }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      if (email !== _emOrigEmail) {
+        const er = await fetch(SUPABASE_URL + '/functions/v1/invite-partner', {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'update_staff_email', staff_id: staffId, partner_id: currentPartnerRecord.partner_id, new_email: email }),
+        });
+        const ed = await er.json();
+        if (!er.ok || ed.error) throw new Error(ed.error || 'Email update failed');
+      }
+      document.getElementById('modal-edit-member').style.display = 'none';
+      loadPartnerStaff();
+    } catch (e) {
+      showPsetMsg('em-msg', e.message, false);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Changes';
     }
   }
 
