@@ -5587,7 +5587,7 @@
         <div id="pset-tab-team" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
             <div class="prt-section-title" style="margin:0;">Your Team</div>
-            <button class="btn-outline" onclick="showAddStaffModal()">+ Add Staff Member</button>
+            <button class="btn-outline" onclick="showAddStaffModal()">+ Add Team Member</button>
           </div>
 
           <div id="pset-staff-list">
@@ -5957,7 +5957,7 @@
     <!-- Add Staff Modal -->
     <div id="modal-add-staff" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
       <div style="background:var(--black-soft);border:1px solid var(--gold-border);border-radius:8px;padding:32px;width:460px;max-width:95vw;">
-        <h3 style="font-size:18px;color:var(--white);margin-bottom:4px;">Add Staff Member</h3>
+        <h3 style="font-size:18px;color:var(--white);margin-bottom:4px;">Add Team Member</h3>
         <p style="font-size:12px;color:var(--grey-light);margin-bottom:20px;">They'll receive an email invite to set their password.</p>
         <div class="form-group">
           <label class="form-label">Full Name</label>
@@ -5984,7 +5984,7 @@
           </select>
         </div>
         <div class="form-group" id="staff-comm-custom-row" style="display:none;">
-          <label class="form-label">Custom Commission (shown to this staff member)</label>
+          <label class="form-label">Custom Commission (shown to this team member)</label>
           <input class="form-input" type="text" id="staff-comm-value" placeholder="e.g. $10,000">
         </div>
         <div id="staff-modal-msg" style="display:none;font-size:13px;margin-bottom:12px;"></div>
@@ -7372,7 +7372,7 @@
       const displayName    = session.full_name || session.email?.split('@')[0] || '';
       const initials       = displayName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
       const roleLabel      = session.role === 'staff'
-        ? (session.job_role || 'Staff') + ' · ' + session.company_name
+        ? (session.job_role || 'Team Member') + ' · ' + session.company_name
         : 'Partner · ' + session.company_name;
       applyNavForRole(false, true);
       applyUserCard(displayName, roleLabel, initials);
@@ -7551,7 +7551,7 @@
         const displayName = session.full_name || (session.email || email).split('@')[0];
         const initials    = displayName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
         const roleLabel   = session.role === 'staff'
-          ? (session.job_role || 'Staff') + ' · ' + session.company_name
+          ? (session.job_role || 'Team Member') + ' · ' + session.company_name
           : 'Partner · ' + session.company_name;
         applyNavForRole(false, true);
         applyUserCard(displayName, roleLabel, initials);
@@ -8073,7 +8073,7 @@
             <div style="flex:1;">
               <div style="font-size:13px;color:var(--white);font-weight:500;margin-bottom:4px;">Team Commission Override</div>
               <div style="font-size:11px;color:var(--grey-mid);line-height:1.5;max-width:520px;">
-                When on, this firm's owner can set per-project dollar deductions that apply only to what their staff see. Owner always sees raw commission. Off for everyone by default.
+                When on, this firm's owner can set per-project dollar deductions that apply only to what their team members see. Owner always sees raw commission. Off for everyone by default.
               </div>
             </div>
             <button class="prt-tco-toggle" id="prt-tco-${p.id}"
@@ -8963,6 +8963,16 @@
   // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
 
   const CHANGELOG = [
+    {
+      version: '3.8',
+      date: '16 Jun 2026',
+      title: 'Clearer team commissions, and "team member" throughout',
+      items: [
+        'Your Team settings now spell out exactly what each team member sees for commission — "Full portal commission", a fixed amount, hidden, or adjusted per project — instead of just a setting name.',
+        'Preview the portal as any active team member with one click to see precisely what they see, not only when per-project overrides are switched on.',
+        '"Staff member" is now "team member" across the portal, since your people aren\'t always staff.',
+      ]
+    },
     {
       version: '3.7',
       date: '15 Jun 2026',
@@ -10098,7 +10108,7 @@
       Object.assign(currentPartnerRecord, body);
       saveSession();
       const roleLabel = currentPartnerRecord.role === 'staff'
-        ? (currentPartnerRecord.job_role || 'Staff') + ' · ' + body.company_name
+        ? (currentPartnerRecord.job_role || 'Team Member') + ' · ' + body.company_name
         : 'Partner · ' + body.company_name;
       document.querySelector('.user-name').textContent = body.full_name;
       document.querySelector('.user-role').textContent = roleLabel;
@@ -10227,10 +10237,16 @@
     });
     const staff = await res.json();
     if (!Array.isArray(staff) || staff.length === 0) {
-      listEl.innerHTML = '<div style="color:var(--grey-light);font-size:13px;padding:20px 0;">No team members yet. Add your first staff member above.</div>';
+      listEl.innerHTML = '<div style="color:var(--grey-light);font-size:13px;padding:20px 0;">No team members yet. Add your first team member above.</div>';
       return;
     }
-    const commLabel = { portal: 'Portal rate', custom: '', hidden: 'Hidden' };
+    const overridesOn = !!currentPartnerRecord?.team_commission_override_enabled;
+    // Plain-English "what this person actually sees in the portal", not the setting name.
+    const commText = (type, customVal) => {
+      if (type === 'hidden') return 'Hidden — no commission shown';
+      if (type === 'custom')  return 'Fixed: ' + (customVal || '—') + ' on every listing';
+      return overridesOn ? 'Portal commission, adjusted per project' : 'Full portal commission';
+    };
     const accessLabel = { admin: 'Admin', standard: 'Standard' };
     const owner = currentPartnerRecord;
     const ownerRow = `
@@ -10238,7 +10254,7 @@
         <td style="padding:10px 12px;font-size:13px;color:var(--white);">${owner.full_name} <span style="font-size:10px;color:var(--gold);margin-left:4px;">Owner</span></td>
         <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">${owner.email}</td>
         <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">Admin</td>
-        <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">Portal rate</td>
+        <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">Full portal commission (raw)</td>
         <td style="padding:10px 12px;"><span style="font-size:11px;padding:2px 8px;border-radius:3px;background:rgba(80,200,120,0.15);color:#50c878;">Active</span></td>
         <td style="padding:10px 12px;"></td>
       </tr>`;
@@ -10248,7 +10264,7 @@
           <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Name</th>
           <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Email</th>
           <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Access</th>
-          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Commission Display</th>
+          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">What they see</th>
           <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Status</th>
           <th style="padding:8px 12px;"></th>
         </tr></thead>
@@ -10259,8 +10275,8 @@
               <td style="padding:10px 12px;font-size:13px;color:var(--white);">${s.full_name}</td>
               <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">${s.email}</td>
               <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">${accessLabel[s.role] || s.role || 'Standard'}</td>
-              <td style="padding:10px 12px;font-size:13px;color:var(--gold);">
-                ${s.comm_display_type === 'custom' ? (s.comm_custom_value || 'Custom') : (commLabel[s.comm_display_type] || '—')}
+              <td style="padding:10px 12px;font-size:13px;color:${s.comm_display_type === 'hidden' ? 'var(--grey-light)' : 'var(--gold)'};">
+                ${commText(s.comm_display_type, s.comm_custom_value)}
               </td>
               <td style="padding:10px 12px;">
                 ${(()=>{
@@ -10272,12 +10288,12 @@
                 })()}
               </td>
               <td style="padding:10px 12px;text-align:right;white-space:nowrap;">
-                ${currentPartnerRecord?.team_commission_override_enabled && s.status === 'active'
+                ${s.status === 'active'
                   ? `<button class="btn-outline" style="font-size:11px;padding:4px 10px;margin-right:6px;"
                       data-sid="${s.id}" data-sname="${(s.full_name||'').replace(/"/g,'&quot;')}" data-semail="${(s.email||'').replace(/"/g,'&quot;')}"
                       data-ctype="${s.comm_display_type||'portal'}" data-cval="${(s.comm_custom_value||'').replace(/"/g,'&quot;')}"
                       onclick="enterPreviewAsStaff(this.dataset.sid,this.dataset.sname,this.dataset.semail,this.dataset.ctype,this.dataset.cval)"
-                      title="Browse the portal as this team member">👁 Preview</button>`
+                      title="See the portal exactly as this team member sees it">👁 See their view</button>`
                   : ''}
                 <button class="btn-outline" style="font-size:11px;padding:4px 10px;" data-sid="${s.id}" data-ctype="${s.comm_display_type}" data-cval="${(s.comm_custom_value||'').replace(/"/g,'&quot;')}" onclick="editStaffComm(this.dataset.sid,this.dataset.ctype,this.dataset.cval)">Edit</button>
               </td>
