@@ -146,6 +146,35 @@ function corsFor(origin: string | null) {
   }
 }
 
+// Send a branded email via Resend, with one retry on a transient (429 / 5xx)
+// failure. Returns whether the email ACTUALLY sent so callers can report the
+// truth to the user instead of silently swallowing a failure and claiming
+// success — the bug that let a team-member invite vanish without anyone knowing.
+async function sendResendEmail(
+  resendKey: string,
+  payload: { from: string; to: string[]; subject: string; html: string },
+): Promise<{ sent: boolean; error: string | null }> {
+  if (!resendKey) return { sent: false, error: 'email provider not configured (RESEND_API_KEY missing)' }
+  let lastErr = ''
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (res.ok) return { sent: true, error: null }
+      lastErr = `Resend responded ${res.status}: ${await res.text()}`
+      // A 4xx (other than rate-limit) won't fix itself on retry — stop early.
+      if (res.status < 500 && res.status !== 429) break
+    } catch (e: any) {
+      lastErr = e?.message || String(e)
+    }
+  }
+  console.error('Resend send failed:', lastErr)
+  return { sent: false, error: lastErr }
+}
+
 Deno.serve(async (req) => {
   const cors = corsFor(req.headers.get('origin'))
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
@@ -276,6 +305,8 @@ Deno.serve(async (req) => {
 
       const inviteLink = linkData?.properties?.action_link ?? redirectTo
 
+      let emailResult: { sent: boolean; error: string | null } =
+        { sent: false, error: 'email provider not configured (RESEND_API_KEY missing)' }
       if (resendKey) {
         const html = `<!DOCTYPE html>
 <html>
@@ -325,20 +356,15 @@ Deno.serve(async (req) => {
 </body>
 </html>`
 
-        const emailRes = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: 'TPCH Partner Network <noreply@tpch.com.au>',
-            to: [email],
-            subject: `You've been invited to the TPCH Partner Portal`,
-            html,
-          }),
+        emailResult = await sendResendEmail(resendKey, {
+          from: 'TPCH Partner Network <noreply@tpch.com.au>',
+          to: [email],
+          subject: `You've been invited to the TPCH Partner Portal`,
+          html,
         })
-        if (!emailRes.ok) console.error('Resend error:', await emailRes.text())
       }
 
-      return json({ success: true, partner_id: partner.id })
+      return json({ success: true, partner_id: partner.id, email_sent: emailResult.sent, email_error: emailResult.error })
     }
 
     // ── Staff invite (partner owner → their team member) ──────────
@@ -402,6 +428,10 @@ Deno.serve(async (req) => {
 
       const inviteLink = linkData?.properties?.action_link ?? portalUrl
 
+      // Honest send: capture whether the invite email actually went out so the
+      // portal can surface a failure instead of silently claiming success.
+      let emailResult: { sent: boolean; error: string | null } =
+        { sent: false, error: 'email provider not configured (RESEND_API_KEY missing)' }
       if (resendKey) {
         const html = `<!DOCTYPE html>
 <html>
@@ -434,20 +464,15 @@ Deno.serve(async (req) => {
 </body>
 </html>`
 
-        const emailRes = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: 'TPCH Partner Network <noreply@tpch.com.au>',
-            to: [email],
-            subject: `You've been invited to the TPCH Partner Portal`,
-            html,
-          }),
+        emailResult = await sendResendEmail(resendKey, {
+          from: 'TPCH Partner Network <noreply@tpch.com.au>',
+          to: [email],
+          subject: `You've been invited to the TPCH Partner Portal`,
+          html,
         })
-        if (!emailRes.ok) console.error('Resend error:', await emailRes.text())
       }
 
-      return json({ success: true, staff_id: staff.id })
+      return json({ success: true, staff_id: staff.id, email_sent: emailResult.sent, email_error: emailResult.error })
     }
 
     // ── Update a team member's email (and their portal login) ─────
@@ -553,21 +578,14 @@ Deno.serve(async (req) => {
 </body>
 </html>`
 
-      if (resendKey) {
-        const emailRes = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: 'TPCH Partner Network <noreply@tpch.com.au>',
-            to: [email],
-            subject: `Your TPCH Partner Portal access link`,
-            html: welcomeHtml,
-          }),
-        })
-        if (!emailRes.ok) console.error('Resend error:', await emailRes.text())
-      }
+      const emailResult = await sendResendEmail(resendKey, {
+        from: 'TPCH Partner Network <noreply@tpch.com.au>',
+        to: [email],
+        subject: `Your TPCH Partner Portal access link`,
+        html: welcomeHtml,
+      })
 
-      return json({ success: true })
+      return json({ success: true, email_sent: emailResult.sent, email_error: emailResult.error })
     }
 
     return json({ error: 'type must be "partner", "staff", or "resend"' }, 400)

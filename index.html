@@ -10449,6 +10449,12 @@
                 <button class="btn-outline" style="font-size:11px;padding:4px 10px;"
                   data-sid="${s.id}" data-sname="${(s.full_name||'').replace(/"/g,'&quot;')}" data-semail="${(s.email||'').replace(/"/g,'&quot;')}" data-srole="${s.role||'standard'}"
                   onclick="emOpen(this.dataset.sid,this.dataset.sname,this.dataset.semail,this.dataset.srole)">Edit</button>
+                <button class="btn-outline" style="font-size:11px;padding:4px 10px;margin-left:6px;color:var(--gold);border-color:var(--gold-border);"
+                  id="staff-resend-${s.id}"
+                  data-sid="${s.id}" data-sname="${(s.full_name||'').replace(/"/g,'&quot;')}" data-semail="${(s.email||'').replace(/"/g,'&quot;')}"
+                  data-srole="${s.role||'standard'}" data-ctype="${s.comm_display_type||'portal'}" data-cval="${(s.comm_custom_value||'').replace(/"/g,'&quot;')}"
+                  onclick="resendStaffInvite(this.dataset.sid,this.dataset.semail,this.dataset.sname,this.dataset.srole,this.dataset.ctype,this.dataset.cval)"
+                  title="Resend the portal invite email to this team member">✉ Resend invite</button>
               </td>
             </tr>`).join('')}
         </tbody>
@@ -10522,10 +10528,42 @@
       document.getElementById('modal-add-staff').style.display = 'none';
       await loadPartnerStaff();
       cwOpen(data.staff_id, name, 'portal', null, 'full');   // launch commission wizard
+      // Never claim success on a failed email send — tell the owner straight away
+      // so they can resend, instead of the member silently never hearing from us.
+      if (data.email_sent === false) {
+        alert('⚠ ' + name + ' was added, but the invite email could NOT be sent'
+          + (data.email_error ? '\n(' + data.email_error + ')' : '') + '.\n\n'
+          + 'Use the “✉ Resend invite” button next to their name to try again.');
+      }
     } catch(e) {
       showPsetMsg('staff-modal-msg', e.message, false);
     } finally {
       btn.disabled = false; btn.textContent = 'Next: set commission →';
+    }
+  }
+
+  // Resend the portal invite to an existing team member. Reuses the 'staff'
+  // invite path with the member's CURRENT details (so their commission/role
+  // are preserved, not reset), and reports honestly if the email fails to send.
+  async function resendStaffInvite(staffId, email, name, role, ctype, cval) {
+    if (previewReadOnlyGuard('resending an invite')) return;
+    if (!currentPartnerRecord) return;
+    const btn = document.getElementById('staff-resend-' + staffId);
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    try {
+      const res = await fetch(SUPABASE_URL + '/functions/v1/invite-partner', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'staff', full_name: name, email, role: role || 'standard', partner_id: currentPartnerRecord.partner_id, comm_display_type: ctype || 'portal', comm_custom_value: (ctype === 'custom' ? (cval || null) : null) }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Resend failed');
+      if (data.email_sent === false) throw new Error(data.email_error || 'the invite email could not be sent');
+      if (btn) { btn.textContent = '✓ Sent'; btn.style.background = 'var(--green, #2a7a3b)'; btn.style.color = '#fff'; }
+      setTimeout(() => { if (btn) { btn.disabled = false; btn.textContent = '✉ Resend invite'; btn.style.background = ''; btn.style.color = ''; } }, 3000);
+    } catch (e) {
+      alert('Could not resend invite to ' + (name || email) + ': ' + e.message);
+      if (btn) { btn.disabled = false; btn.textContent = '✉ Resend invite'; }
     }
   }
 
