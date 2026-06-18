@@ -12116,8 +12116,11 @@
     // Update dashboard pipeline tiles
     updateDealTiles(partnerDeals);
 
-    // Update nav badge with whitelisted deal count
-    const dealBadgeCount = partnerDeals.filter(d => isDlpVisible(d.stage)).length;
+    // Update nav badge with whitelisted deal count (a team member only counts
+    // deals assigned to them, matching what they can actually see).
+    const _badgeStaffId = currentPartnerRecord?.role === 'staff' ? currentPartnerRecord.staff_id : null;
+    const dealBadgeCount = partnerDeals.filter(d => isDlpVisible(d.stage)
+      && (!_badgeStaffId || dealAssignments.some(a => a.deal_id === d.id && a.staff_id === _badgeStaffId))).length;
     const dealBadge = document.getElementById('nav-deals-badge');
     if (dealBadge) {
       dealBadge.textContent = String(dealBadgeCount);
@@ -12136,8 +12139,21 @@
     const emptyEl = document.getElementById('dlp-empty');
     const countEl = document.getElementById('dlp-count');
 
+    const _isStaffMember = currentPartnerRecord?.role === 'staff';
+    const _staffCommType = _isStaffMember ? (currentPartnerRecord.comm_display_type || 'portal') : 'portal';
+    const _staffCommCustom = currentPartnerRecord?.comm_custom_value || null;
+    const _canAssign = !_isStaffMember || (currentPartnerRecord?.job_role || '').toLowerCase() === 'admin';
+    const _myStaffId = _isStaffMember ? currentPartnerRecord.staff_id : null;
+
     // 1. Whitelist: only allowed stages
     let visible = partnerDeals.filter(d => isDlpVisible(d.stage));
+
+    // 1b. A team member only sees deals ASSIGNED to them — unassigned and other
+    // members' deals are hidden entirely (matches the dashboard cockpit). Only
+    // the owner sees the whole firm pipeline.
+    if (_myStaffId) {
+      visible = visible.filter(d => dealAssignments.some(a => a.deal_id === d.id && a.staff_id === _myStaffId));
+    }
 
     // 2. Stage sub-filter
     if (dlpFilter !== 'all') {
@@ -12164,12 +12180,6 @@
     }
     if (emptyEl) emptyEl.style.display = 'none';
     if (!tbody) return;
-
-    const _isStaffMember = currentPartnerRecord?.role === 'staff';
-    const _staffCommType = _isStaffMember ? (currentPartnerRecord.comm_display_type || 'portal') : 'portal';
-    const _staffCommCustom = currentPartnerRecord?.comm_custom_value || null;
-    const _canAssign = !_isStaffMember || (currentPartnerRecord?.job_role || '').toLowerCase() === 'admin';
-    const _myStaffId = _isStaffMember ? currentPartnerRecord.staff_id : null;
 
     // Show/hide Assigned To column
     const _assignedTh = document.getElementById('dlp-th-assigned');
