@@ -10505,6 +10505,20 @@
       });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Could not add team member');
+      // If this firm uses per-project visibility, a brand-new member would
+      // otherwise start with ZERO visible projects (deny-by-default) and land on
+      // an empty portal — regardless of their commission setting. Grant all
+      // current projects up front so they begin with a full portal; the owner can
+      // hide specific projects later. Mirrors the original enable-time backfill.
+      if (currentPartnerRecord.team_commission_override_enabled && data.staff_id) {
+        try {
+          await fetch(SUPABASE_URL + '/rest/v1/rpc/set_staff_all_projects_visible', {
+            method: 'POST',
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentAuthToken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p_staff_id: data.staff_id, p_visible: true }),
+          });
+        } catch (_) { /* non-fatal — owner can still use Show All from the commission screen */ }
+      }
       document.getElementById('modal-add-staff').style.display = 'none';
       await loadPartnerStaff();
       cwOpen(data.staff_id, name, 'portal', null, 'full');   // launch commission wizard
