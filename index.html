@@ -10428,11 +10428,26 @@
               </td>
               <td style="padding:10px 12px;">
                 ${(()=>{
-                  const isActive = s.status === 'active';
-                  const label = isActive ? 'Active' : 'Invited';
-                  const bg    = isActive ? 'rgba(80,200,120,0.15)' : 'rgba(201,168,76,0.12)';
-                  const color = isActive ? '#50c878' : 'var(--gold)';
-                  return `<span style="font-size:11px;padding:2px 8px;border-radius:3px;background:${bg};color:${color};">${label}</span>`;
+                  // Real status, in priority order: logged in → delivery problem →
+                  // send failure → delivered → sent → invited (no email yet).
+                  const fmt = (x) => { try { return new Date(x).toLocaleDateString('en-AU',{day:'numeric',month:'short'}); } catch(_) { return ''; } };
+                  let label, bg, color, title = '';
+                  if (s.last_sign_in_at) {
+                    label = 'Logged in'; bg = 'rgba(80,200,120,0.15)'; color = '#50c878'; title = 'Has signed in to the portal';
+                  } else if (s.invite_delivery_status === 'bounced') {
+                    label = 'Bounced'; bg = 'rgba(220,80,80,0.15)'; color = '#e06464'; title = 'Invite email bounced — wrong or blocked address';
+                  } else if (s.invite_delivery_status === 'complained') {
+                    label = 'Marked spam'; bg = 'rgba(220,80,80,0.15)'; color = '#e06464'; title = 'Recipient marked the invite as spam';
+                  } else if (s.invite_email_status === 'failed') {
+                    label = 'Invite failed'; bg = 'rgba(220,80,80,0.15)'; color = '#e06464'; title = s.invite_email_error || 'The invite email could not be sent — use Resend invite';
+                  } else if (s.invite_delivery_status === 'delivered') {
+                    label = 'Delivered' + (s.invite_delivery_at ? ' · ' + fmt(s.invite_delivery_at) : ''); bg = 'rgba(80,200,120,0.12)'; color = '#7bd39a'; title = 'Invite delivered — awaiting first login';
+                  } else if (s.invite_email_status === 'sent') {
+                    label = 'Invite sent' + (s.invite_last_sent_at ? ' · ' + fmt(s.invite_last_sent_at) : ''); bg = 'rgba(201,168,76,0.12)'; color = 'var(--gold)'; title = 'Invite email sent — awaiting first login';
+                  } else {
+                    label = 'Invited'; bg = 'rgba(255,255,255,0.06)'; color = 'var(--grey-light)'; title = 'Account created — no invite email recorded yet';
+                  }
+                  return `<span title="${title.replace(/"/g,'&quot;')}" style="font-size:11px;padding:2px 8px;border-radius:3px;background:${bg};color:${color};">${label}</span>`;
                 })()}
               </td>
               <td style="padding:10px 12px;text-align:right;white-space:nowrap;">
