@@ -2118,6 +2118,60 @@
 
   .btn-outline:hover { background: var(--gold-dim); border-color: var(--gold); }
 
+  /* ── Team list (Settings → Team) ───────────────────────── */
+  .tm-table { width: 100%; border-collapse: collapse; min-width: 620px; }
+  .tm-table thead th {
+    text-align: left; padding: 9px 14px;
+    font-size: 10px; font-weight: 600; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--grey-pale);
+    border-bottom: 1px solid var(--gold-border); white-space: nowrap;
+  }
+  .tm-table thead th.tm-th-actions { text-align: right; }
+  .tm-row { border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.12s; }
+  .tm-row:hover { background: rgba(255,255,255,0.025); }
+  .tm-row td { padding: 12px 14px; vertical-align: middle; }
+  .tm-name { font-size: 13.5px; font-weight: 500; color: var(--white); line-height: 1.3; }
+  .tm-owner-tag {
+    display: inline-block; margin-left: 8px; padding: 1px 6px;
+    font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--gold); border: 1px solid var(--gold-border); border-radius: 3px; vertical-align: middle;
+  }
+  .tm-email { margin-top: 3px; font-size: 11.5px; color: var(--grey-light); font-family: 'DM Mono', monospace; }
+  .tm-pill {
+    display: inline-block; padding: 3px 10px; border-radius: 99px;
+    font-size: 11px; line-height: 1.5; white-space: nowrap;
+  }
+  .tm-access { color: var(--grey-pale); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); }
+  .tm-access.tm-admin { color: var(--gold); background: var(--gold-dim); border-color: var(--gold-border); }
+  .tm-sees { color: var(--gold); background: var(--gold-dim); border: 1px solid var(--gold-border); }
+  .tm-sees.tm-hidden { color: var(--grey-light); background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.09); }
+  .tm-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .tm-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; white-space: nowrap; }
+  .tm-act-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 11px; font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
+    color: var(--gold); background: none; border: 1px solid var(--gold-border);
+    border-radius: 4px; cursor: pointer; transition: all 0.12s;
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+  .tm-act-btn:hover { background: var(--gold-dim); border-color: var(--gold); }
+  .tm-kebab { justify-content: center; width: 30px; height: 28px; padding: 0; font-size: 17px; line-height: 1; }
+  .tm-menu-wrap { position: relative; }
+  .tm-menu {
+    position: fixed; display: none; z-index: 9000; min-width: 172px; padding: 5px;
+    background: var(--black-soft); border: 1px solid var(--gold-border);
+    border-radius: 6px; box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+  }
+  .tm-menu.open { display: block; }
+  .tm-menu button {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    padding: 8px 10px; border: none; border-radius: 4px; background: none; cursor: pointer;
+    font-size: 12.5px; color: var(--grey-pale); font-family: 'Outfit', system-ui, sans-serif;
+    transition: background 0.12s;
+  }
+  .tm-menu button:hover { background: rgba(255,255,255,0.06); color: var(--white); }
+  .tm-menu .tm-mi { width: 16px; text-align: center; opacity: 0.85; }
+
   .btn-primary {
     padding: 10px 18px;
     background: var(--gold); color: var(--black);
@@ -9092,6 +9146,15 @@
 
   const CHANGELOG = [
     {
+      version: '3.11',
+      date: '19 Jun 2026',
+      title: 'A cleaner, easier-to-read Team list',
+      items: [
+        'Your Team settings have been tidied up — each team member is now one clean row with their name, access, what they see for commission, and status at a glance.',
+        'The row actions are decluttered: the main action sits inline, and the rest (Commission, Edit, Resend invite) live under a tidy "⋯" menu, so the list reads clearly even with a large team.',
+      ]
+    },
+    {
       version: '3.10',
       date: '16 Jun 2026',
       title: 'A simple, step-by-step way to set team commissions',
@@ -10373,6 +10436,38 @@
     }
   }
 
+  // ── Team-list row action menu (Settings → Team) ─────────
+  // Each row's "⋯" reveals the secondary actions. Menu is position:fixed and
+  // positioned from the button's rect so no table/overflow ancestor clips it.
+  function tmCloseMenus() {
+    document.querySelectorAll('.tm-menu.open').forEach(m => {
+      m.classList.remove('open'); m.style.display = 'none';
+    });
+  }
+  function tmToggleMenu(e, btn) {
+    e.stopPropagation();
+    const menu = btn.nextElementSibling;
+    const wasOpen = menu.classList.contains('open');
+    tmCloseMenus();
+    if (wasOpen) return;
+    menu.style.display = 'block';            // make measurable before positioning
+    const r = btn.getBoundingClientRect();
+    const mh = menu.offsetHeight, mw = menu.offsetWidth;
+    let top = r.bottom + 6;
+    if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6); // flip up near bottom
+    let left = r.right - mw;                 // right-align under the kebab
+    if (left < 8) left = 8;
+    menu.style.top = top + 'px';
+    menu.style.left = left + 'px';
+    menu.classList.add('open');
+  }
+  if (!window.__tmMenuInit) {
+    window.__tmMenuInit = true;
+    document.addEventListener('click', tmCloseMenus);          // click anywhere closes
+    window.addEventListener('scroll', tmCloseMenus, true);     // fixed menu can't follow scroll
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') tmCloseMenus(); });
+  }
+
   async function loadPartnerStaff() {
     if (!currentPartnerRecord) return;
     const listEl = document.getElementById('pset-staff-list');
@@ -10388,92 +10483,101 @@
       return;
     }
     const overridesOn = !!currentPartnerRecord?.team_commission_override_enabled;
-    // Plain-English "what this person actually sees in the portal", not the setting name.
-    const commText = (type, customVal) => {
-      if (type === 'hidden') return 'Hidden — no commission shown';
-      if (type === 'custom' && customVal) return 'Fixed: ' + customVal + ' on every listing';
+    const esc = (x) => (x == null ? '' : String(x)).replace(/"/g, '&quot;');
+    // Plain-English "what this person actually sees in the portal", not the setting
+    // name. `short` is the pill label; `full` is the hover tooltip so nothing is lost.
+    const commInfo = (type, customVal) => {
+      if (type === 'hidden') return { short: 'Hidden', full: 'Hidden — no commission shown', hidden: true };
+      if (type === 'custom' && customVal) return { short: 'Fixed ' + customVal, full: 'Fixed: ' + customVal + ' on every listing' };
       // 'custom' with no amount falls back to the portal rate in the portal, so show that.
-      return overridesOn ? 'Portal commission, adjusted per project' : 'Full portal commission';
+      return overridesOn
+        ? { short: 'Per project', full: 'Portal commission, adjusted per project' }
+        : { short: 'Full commission', full: 'Full portal commission' };
     };
     const accessLabel = { admin: 'Admin', standard: 'Standard' };
     const owner = currentPartnerRecord;
     const ownerRow = `
-      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
-        <td style="padding:10px 12px;font-size:13px;color:var(--white);">${owner.full_name} <span style="font-size:10px;color:var(--gold);margin-left:4px;">Owner</span></td>
-        <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">${owner.email}</td>
-        <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">Admin</td>
-        <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">Full portal commission (raw)</td>
-        <td style="padding:10px 12px;"><span style="font-size:11px;padding:2px 8px;border-radius:3px;background:rgba(80,200,120,0.15);color:#50c878;">Active</span></td>
-        <td style="padding:10px 12px;"></td>
+      <tr class="tm-row">
+        <td>
+          <div class="tm-name">${owner.full_name}<span class="tm-owner-tag">Owner</span></div>
+          <div class="tm-email">${owner.email}</div>
+        </td>
+        <td><span class="tm-pill tm-access tm-admin">Admin</span></td>
+        <td><span class="tm-pill tm-sees" title="Full portal commission (raw)">Full commission</span></td>
+        <td><span class="tm-pill" style="background:rgba(80,200,120,0.15);color:#50c878;"><span class="tm-dot" style="background:#50c878;"></span>Active</span></td>
+        <td></td>
       </tr>`;
     listEl.innerHTML = `
-      <table style="width:100%;border-collapse:collapse;">
-        <thead><tr style="border-bottom:1px solid var(--gold-border);">
-          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Name</th>
-          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Email</th>
-          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Access</th>
-          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">What they see</th>
-          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--grey-pale);letter-spacing:1px;text-transform:uppercase;">Status</th>
-          <th style="padding:8px 12px;"></th>
+      <div style="overflow-x:auto;">
+      <table class="tm-table">
+        <thead><tr>
+          <th>Name</th>
+          <th>Access</th>
+          <th>What they see</th>
+          <th>Status</th>
+          <th class="tm-th-actions">Actions</th>
         </tr></thead>
         <tbody>
           ${ownerRow}
-          ${staff.map(s => `
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);" id="staff-row-${s.id}">
-              <td style="padding:10px 12px;font-size:13px;color:var(--white);">${s.full_name}</td>
-              <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">${s.email}</td>
-              <td style="padding:10px 12px;font-size:12px;color:var(--grey-light);">${accessLabel[s.role] || s.role || 'Standard'}</td>
-              <td style="padding:10px 12px;font-size:13px;color:${s.comm_display_type === 'hidden' ? 'var(--grey-light)' : 'var(--gold)'};">
-                ${commText(s.comm_display_type, s.comm_custom_value)}
+          ${staff.map(s => {
+            const isActive = s.status === 'active';
+            const ci = commInfo(s.comm_display_type, s.comm_custom_value);
+            // Status pill — priority order: logged in → delivery problem → send
+            // failure → delivered → sent → invited (no email yet).
+            const fmt = (x) => { try { return new Date(x).toLocaleDateString('en-AU',{day:'numeric',month:'short'}); } catch(_) { return ''; } };
+            let label, bg, color, title = '';
+            if (s.last_sign_in_at) {
+              label = 'Logged in'; bg = 'rgba(80,200,120,0.15)'; color = '#50c878'; title = 'Has signed in to the portal';
+            } else if (s.invite_delivery_status === 'bounced') {
+              label = 'Bounced'; bg = 'rgba(220,80,80,0.15)'; color = '#e06464'; title = 'Invite email bounced — wrong or blocked address';
+            } else if (s.invite_delivery_status === 'complained') {
+              label = 'Marked spam'; bg = 'rgba(220,80,80,0.15)'; color = '#e06464'; title = 'Recipient marked the invite as spam';
+            } else if (s.invite_email_status === 'failed') {
+              label = 'Invite failed'; bg = 'rgba(220,80,80,0.15)'; color = '#e06464'; title = s.invite_email_error || 'The invite email could not be sent — use Resend invite';
+            } else if (s.invite_delivery_status === 'delivered') {
+              label = 'Delivered' + (s.invite_delivery_at ? ' · ' + fmt(s.invite_delivery_at) : ''); bg = 'rgba(80,200,120,0.12)'; color = '#7bd39a'; title = 'Invite delivered — awaiting first login';
+            } else if (s.invite_email_status === 'sent') {
+              label = 'Invite sent' + (s.invite_last_sent_at ? ' · ' + fmt(s.invite_last_sent_at) : ''); bg = 'rgba(201,168,76,0.12)'; color = 'var(--gold)'; title = 'Invite email sent — awaiting first login';
+            } else {
+              label = 'Invited'; bg = 'rgba(255,255,255,0.06)'; color = 'var(--grey-light)'; title = 'Account created — no invite email recorded yet';
+            }
+            const statusPill = `<span class="tm-pill" title="${esc(title)}" style="background:${bg};color:${color};"><span class="tm-dot" style="background:${color};"></span>${label}</span>`;
+
+            // Shared data-* for every action button (keeps quotes/apostrophes safe).
+            const d = `data-sid="${s.id}" data-sname="${esc(s.full_name)}" data-semail="${esc(s.email)}" data-srole="${s.role||'standard'}" data-ctype="${s.comm_display_type||'portal'}" data-cval="${esc(s.comm_custom_value||'')}"`;
+            const seeBtn = `<button class="tm-act-btn" ${d} onclick="enterPreviewAsStaff(this.dataset.sid,this.dataset.sname,this.dataset.semail,this.dataset.ctype,this.dataset.cval)" title="See the portal exactly as this team member sees it">👁 See view</button>`;
+            const resendPrimary = `<button class="tm-act-btn" id="staff-resend-${s.id}" ${d} onclick="resendStaffInvite(this.dataset.sid,this.dataset.semail,this.dataset.sname,this.dataset.srole,this.dataset.ctype,this.dataset.cval)" title="Resend the portal invite email to this team member">✉ Resend</button>`;
+            const miCommission = `<button ${d} onclick="tmCloseMenus();csOpen(this.dataset.sid,this.dataset.sname,this.dataset.ctype,this.dataset.cval)"><span class="tm-mi">$</span> Commission</button>`;
+            const miEdit = `<button ${d} onclick="tmCloseMenus();emOpen(this.dataset.sid,this.dataset.sname,this.dataset.semail,this.dataset.srole)"><span class="tm-mi">✎</span> Edit</button>`;
+            const miResend = `<button id="staff-resend-${s.id}" ${d} onclick="tmCloseMenus();resendStaffInvite(this.dataset.sid,this.dataset.semail,this.dataset.sname,this.dataset.srole,this.dataset.ctype,this.dataset.cval)" title="Resend the portal invite email to this team member"><span class="tm-mi">✉</span> Resend invite</button>`;
+            // Primary action inline; the rest live behind the "⋯" menu. Every
+            // action stays reachable — nothing was removed, just decluttered.
+            const primaryHtml = isActive ? seeBtn : resendPrimary;
+            const menuItems = isActive ? (miCommission + miEdit + miResend) : (miCommission + miEdit);
+
+            return `
+            <tr class="tm-row" id="staff-row-${s.id}">
+              <td>
+                <div class="tm-name">${s.full_name}</div>
+                <div class="tm-email">${s.email}</div>
               </td>
-              <td style="padding:10px 12px;">
-                ${(()=>{
-                  // Real status, in priority order: logged in → delivery problem →
-                  // send failure → delivered → sent → invited (no email yet).
-                  const fmt = (x) => { try { return new Date(x).toLocaleDateString('en-AU',{day:'numeric',month:'short'}); } catch(_) { return ''; } };
-                  let label, bg, color, title = '';
-                  if (s.last_sign_in_at) {
-                    label = 'Logged in'; bg = 'rgba(80,200,120,0.15)'; color = '#50c878'; title = 'Has signed in to the portal';
-                  } else if (s.invite_delivery_status === 'bounced') {
-                    label = 'Bounced'; bg = 'rgba(220,80,80,0.15)'; color = '#e06464'; title = 'Invite email bounced — wrong or blocked address';
-                  } else if (s.invite_delivery_status === 'complained') {
-                    label = 'Marked spam'; bg = 'rgba(220,80,80,0.15)'; color = '#e06464'; title = 'Recipient marked the invite as spam';
-                  } else if (s.invite_email_status === 'failed') {
-                    label = 'Invite failed'; bg = 'rgba(220,80,80,0.15)'; color = '#e06464'; title = s.invite_email_error || 'The invite email could not be sent — use Resend invite';
-                  } else if (s.invite_delivery_status === 'delivered') {
-                    label = 'Delivered' + (s.invite_delivery_at ? ' · ' + fmt(s.invite_delivery_at) : ''); bg = 'rgba(80,200,120,0.12)'; color = '#7bd39a'; title = 'Invite delivered — awaiting first login';
-                  } else if (s.invite_email_status === 'sent') {
-                    label = 'Invite sent' + (s.invite_last_sent_at ? ' · ' + fmt(s.invite_last_sent_at) : ''); bg = 'rgba(201,168,76,0.12)'; color = 'var(--gold)'; title = 'Invite email sent — awaiting first login';
-                  } else {
-                    label = 'Invited'; bg = 'rgba(255,255,255,0.06)'; color = 'var(--grey-light)'; title = 'Account created — no invite email recorded yet';
-                  }
-                  return `<span title="${title.replace(/"/g,'&quot;')}" style="font-size:11px;padding:2px 8px;border-radius:3px;background:${bg};color:${color};">${label}</span>`;
-                })()}
+              <td><span class="tm-pill tm-access${s.role === 'admin' ? ' tm-admin' : ''}">${accessLabel[s.role] || s.role || 'Standard'}</span></td>
+              <td><span class="tm-pill tm-sees${ci.hidden ? ' tm-hidden' : ''}" title="${esc(ci.full)}">${ci.short}</span></td>
+              <td>${statusPill}</td>
+              <td>
+                <div class="tm-actions">
+                  ${primaryHtml}
+                  <div class="tm-menu-wrap">
+                    <button class="tm-act-btn tm-kebab" onclick="tmToggleMenu(event,this)" title="More actions" aria-label="More actions">⋯</button>
+                    <div class="tm-menu">${menuItems}</div>
+                  </div>
+                </div>
               </td>
-              <td style="padding:10px 12px;text-align:right;white-space:nowrap;">
-                ${s.status === 'active'
-                  ? `<button class="btn-outline" style="font-size:11px;padding:4px 10px;margin-right:6px;"
-                      data-sid="${s.id}" data-sname="${(s.full_name||'').replace(/"/g,'&quot;')}" data-semail="${(s.email||'').replace(/"/g,'&quot;')}"
-                      data-ctype="${s.comm_display_type||'portal'}" data-cval="${(s.comm_custom_value||'').replace(/"/g,'&quot;')}"
-                      onclick="enterPreviewAsStaff(this.dataset.sid,this.dataset.sname,this.dataset.semail,this.dataset.ctype,this.dataset.cval)"
-                      title="See the portal exactly as this team member sees it">👁 See their view</button>`
-                  : ''}
-                <button class="btn-outline" style="font-size:11px;padding:4px 10px;margin-right:6px;"
-                  data-sid="${s.id}" data-sname="${(s.full_name||'').replace(/"/g,'&quot;')}" data-ctype="${s.comm_display_type||'portal'}" data-cval="${(s.comm_custom_value||'').replace(/"/g,'&quot;')}"
-                  onclick="csOpen(this.dataset.sid,this.dataset.sname,this.dataset.ctype,this.dataset.cval)">Commission</button>
-                <button class="btn-outline" style="font-size:11px;padding:4px 10px;"
-                  data-sid="${s.id}" data-sname="${(s.full_name||'').replace(/"/g,'&quot;')}" data-semail="${(s.email||'').replace(/"/g,'&quot;')}" data-srole="${s.role||'standard'}"
-                  onclick="emOpen(this.dataset.sid,this.dataset.sname,this.dataset.semail,this.dataset.srole)">Edit</button>
-                <button class="btn-outline" style="font-size:11px;padding:4px 10px;margin-left:6px;color:var(--gold);border-color:var(--gold-border);"
-                  id="staff-resend-${s.id}"
-                  data-sid="${s.id}" data-sname="${(s.full_name||'').replace(/"/g,'&quot;')}" data-semail="${(s.email||'').replace(/"/g,'&quot;')}"
-                  data-srole="${s.role||'standard'}" data-ctype="${s.comm_display_type||'portal'}" data-cval="${(s.comm_custom_value||'').replace(/"/g,'&quot;')}"
-                  onclick="resendStaffInvite(this.dataset.sid,this.dataset.semail,this.dataset.sname,this.dataset.srole,this.dataset.ctype,this.dataset.cval)"
-                  title="Resend the portal invite email to this team member">✉ Resend invite</button>
-              </td>
-            </tr>`).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
-      </table>`;
+      </table>
+      </div>`;
   }
 
   function showAddStaffModal() {
