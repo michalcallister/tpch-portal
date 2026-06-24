@@ -1,0 +1,118 @@
+name: Deploy watch
+
+# Watches the LIVE portal and alerts if it falls behind the latest commit on
+# main. This exists because GitHub Pages builds can silently hang in "building"
+# state and keep serving an old version of the site (which is exactly what
+# happened on 2026-06-19 and went unnoticed for 5 days). The check measures the
+# real user-facing symptom: is the live site older than the latest commit?
+#
+# Healthy  -> does nothing (and closes any open alert).
+# Behind   -> opens ONE GitHub issue assigned to Mick (emails him once), then
+#             closes it automatically when the live site catches up.
+
+on:
+  schedule:
+    - cron: '*/20 * * * *'   # every 20 minutes
+  workflow_dispatch:          # allow a manual run from the Actions tab
+
+permissions:
+  contents: read              # read commit metadata
+  pages: read                 # read Pages build status (for context in alerts)
+  issues: write               # open / comment / close the alert issue
+
+concurrency:
+  group: deploy-watch
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the live site is in sync with main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.sha }}
+          SITE_URL: https://portal.tpch.com.au/
+          # If the latest commit is more than this many minutes newer than the
+          # live site, treat the deploy as behind. Generous so a normal build
+          # (1-2 min) never trips it.
+          BEHIND_MIN: '20'
+          ISSUE_TITLE: '⚠️ Portal deploy is behind — live site not serving latest commit'
+        run: |
+          set -euo pipefail
+          now=$(date -u +%s)
+
+          # --- What the live site is currently serving (its build/publish time) ---
+          live_lm=$(curl -sSI "${SITE_URL}?cb=${now}" | tr -d '\r' \
+            | awk -F': ' 'tolower($1)=="last-modified"{print $2}')
+
+          # --- The latest commit on main and when it was made ---
+          head_date=$(gh api "repos/${REPO}/commits/${HEAD_SHA}" --jq '.commit.committer.date')
+          head_ts=$(date -u -d "$head_date" +%s)
+
+          # --- Pages build state, only used to make the alert message useful.
+          # Uses gh's built-in --jq (no dependency on standalone jq). ---
+          bstatus=$(gh api "repos/${REPO}/pages/builds/latest" --jq '.status // "unknown"' 2>/dev/null || echo "unknown")
+          bcommit=$(gh api "repos/${REPO}/pages/builds/latest" --jq '.commit // "unknown"' 2>/dev/null | cut -c1-8)
+          bcreated=$(gh api "repos/${REPO}/pages/builds/latest" --jq '.created_at // empty' 2>/dev/null || echo "")
+
+          problem=""
+          if [ -z "$live_lm" ]; then
+            problem="The live site returned no Last-Modified header (it may be unreachable). URL: ${SITE_URL}"
+            lag_min="n/a"
+          else
+            live_ts=$(date -u -d "$live_lm" +%s)
+            lag_min=$(( (head_ts - live_ts) / 60 ))
+            if [ "$lag_min" -ge "$BEHIND_MIN" ]; then
+              problem="The latest commit is ${lag_min} min newer than what the live site is serving. The deploy has not published."
+            fi
+          fi
+
+          # --- Find an existing open alert (match by exact title) ---
+          existing=$(gh issue list --repo "$REPO" --state open --limit 50 \
+            --json number,title \
+            --jq '[.[] | select(.title==env.ISSUE_TITLE)] | .[0].number // empty')
+
+          if [ -n "$problem" ]; then
+            echo "::warning::$problem"
+            if [ -n "$existing" ]; then
+              echo "Alert issue #$existing already open — not re-notifying."
+            else
+              body=$(cat <<EOF
+          The live portal is **not** serving the latest committed code.
+
+          **Detected:** ${problem}
+
+          - **Latest commit on main:** \`${HEAD_SHA}\` (made ${head_date})
+          - **Live site Last-Modified:** ${live_lm:-none}
+          - **Lag:** ${lag_min} min
+          - **Pages build:** \`${bstatus}\` — commit \`${bcommit}\`${bcreated:+, started ${bcreated}}
+
+          ### Fix
+          A Pages build has most likely hung. Trigger a fresh one:
+          \`\`\`
+          gh api -X POST repos/${REPO}/pages/builds
+          \`\`\`
+          Then confirm it caught up:
+          \`\`\`
+          curl -sSI https://portal.tpch.com.au/ | grep -i last-modified
+          \`\`\`
+
+          _Raised automatically by the **Deploy watch** workflow. It will close itself once the live site catches up._
+          EOF
+          )
+              gh issue create --repo "$REPO" \
+                --title "$ISSUE_TITLE" \
+                --body "$body" \
+                --assignee michalcallister
+              echo "Opened alert issue."
+            fi
+          else
+            echo "Healthy: live site is current (lag ${lag_min} min, build ${bstatus}/${bcommit})."
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" --repo "$REPO" \
+                --comment "✅ Live site has caught up (lag ${lag_min} min). Auto-closed by Deploy watch."
+              echo "Closed stale alert issue #$existing."
+            fi
+          fi
