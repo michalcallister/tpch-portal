@@ -35,6 +35,10 @@ const MONDAY_TOKEN      = Deno.env.get('MONDAY_API_TOKEN')         ?? ''
 const STOCK_BOARD_ID    = Deno.env.get('MONDAY_STOCK_BOARD_ID')   || '6070412774'
 const SUPABASE_URL      = Deno.env.get('SUPABASE_URL')            ?? ''
 const SUPABASE_KEY      = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+// Internal "new reservation" alert recipient(s). Comma-separated; driven by an
+// env var so the list can change without a code edit. Defaults to Sam.
+const RESERVATION_ALERT_TO = (Deno.env.get('RESERVATION_ALERT_TO') || 'sam@tpch.com.au')
+  .split(',').map(s => s.trim()).filter(Boolean)
 const AVAIL_COL         = 'color'
 const PARTNER_LINK_COL  = 'link_to_accounts_mkmv2zxe'  // board_relation on Property board → Channel Partners board (8393705888)
 
@@ -194,6 +198,72 @@ async function sendConfirmationEmail(body: any, reservationId: string, expiresAt
   })
 }
 
+// Internal alert to the TPCH team the moment a reservation is made, so nobody
+// has to dig through Monday + the partner's portal to find who reserved what.
+// Best-effort: fired non-blocking and never allowed to fail the reservation.
+async function sendInternalAlertEmail(opts: {
+  company: string
+  reservedByName: string
+  reservedByEmail: string
+  stockName: string
+  projectName?: string | null
+  clientName: string
+  clientEmail: string
+  clientPhone?: string | null
+  reservationId: string
+  expiresAt: string
+}) {
+  if (!RESERVATION_ALERT_TO.length) return
+
+  const who     = opts.reservedByName || opts.reservedByEmail || 'A partner'
+  const company = opts.company || 'their firm'
+  const expiry  = fmtDate(opts.expiresAt)
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F5F3EE;font-family:'Arial',sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background:#FFFFFF;">
+    <div style="background:#112240;padding:22px 32px;">
+      <div style="font-size:9px;color:#C8A951;letter-spacing:2px;text-transform:uppercase;">TPCH Partner Portal · Internal Alert</div>
+      <div style="font-size:18px;color:#F5F3EE;font-weight:700;margin-top:6px;">New stock reservation</div>
+    </div>
+    <div style="height:3px;background:linear-gradient(90deg,#C8A951,#E8D48B,#C8A951);"></div>
+    <div style="padding:28px 32px;">
+      <p style="margin:0 0 20px;font-size:15px;color:#2A3A50;line-height:1.6;">
+        <strong style="color:#080F1A;">${who}</strong> at <strong style="color:#080F1A;">${company}</strong> just reserved a property.
+      </p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;color:#2A3A50;">
+        <tr><td style="padding:6px 0;color:#98A5B3;width:38%;">Property</td><td style="padding:6px 0;font-weight:600;color:#080F1A;">${opts.stockName}</td></tr>
+        ${opts.projectName ? `<tr><td style="padding:6px 0;color:#98A5B3;">Project</td><td style="padding:6px 0;color:#080F1A;">${opts.projectName}</td></tr>` : ''}
+        <tr><td style="padding:6px 0;color:#98A5B3;">Company</td><td style="padding:6px 0;color:#080F1A;">${company}</td></tr>
+        <tr><td style="padding:6px 0;color:#98A5B3;">Reserved by</td><td style="padding:6px 0;color:#080F1A;">${who}${opts.reservedByEmail ? ` &lt;${opts.reservedByEmail}&gt;` : ''}</td></tr>
+        <tr><td style="padding:6px 0;color:#98A5B3;">Client</td><td style="padding:6px 0;color:#080F1A;">${opts.clientName}</td></tr>
+        <tr><td style="padding:6px 0;color:#98A5B3;">Client email</td><td style="padding:6px 0;color:#080F1A;">${opts.clientEmail}</td></tr>
+        ${opts.clientPhone ? `<tr><td style="padding:6px 0;color:#98A5B3;">Client phone</td><td style="padding:6px 0;color:#080F1A;">${opts.clientPhone}</td></tr>` : ''}
+        <tr><td style="padding:6px 0;color:#98A5B3;">Holds until</td><td style="padding:6px 0;color:#080F1A;">${expiry}</td></tr>
+        <tr><td style="padding:6px 0;color:#98A5B3;">Reservation ID</td><td style="padding:6px 0;font-family:monospace;font-size:12px;color:#5A6878;">${opts.reservationId}</td></tr>
+      </table>
+    </div>
+    <div style="background:#F5F3EE;padding:16px 32px;border-top:1px solid #E6E1D6;">
+      <p style="margin:0;font-size:11px;color:#98A5B3;">Sent automatically by the TPCH Partner Portal on each new reservation.</p>
+    </div>
+  </div>
+</body>
+</html>`
+
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from:    'TPCH Partner Portal <noreply@tpch.com.au>',
+      to:      RESERVATION_ALERT_TO,
+      subject: `New reservation — ${opts.stockName} (${company})`,
+      html,
+    }),
+  })
+}
+
 // ── Main handler ───────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -222,11 +292,12 @@ Deno.serve(async (req) => {
     let partner_id: string | null = null
     let partner_name      = ''
     let partner_email     = callerEmail
+    let partner_company   = ''
     let partner_monday_id: string | null = null
 
     const { data: ownerRow } = await supabase
       .from('channel_partners')
-      .select('id, full_name, email, monday_item_id')
+      .select('id, full_name, email, company_name, monday_item_id')
       .eq('user_id', callerUid)
       .eq('status', 'active')
       .maybeSingle()
@@ -235,6 +306,7 @@ Deno.serve(async (req) => {
       partner_id        = ownerRow.id
       partner_name      = ownerRow.full_name || ''
       partner_email     = ownerRow.email || callerEmail
+      partner_company   = ownerRow.company_name || ''
       partner_monday_id = ownerRow.monday_item_id || null
     } else {
       const { data: staffRow } = await supabase
@@ -247,12 +319,13 @@ Deno.serve(async (req) => {
         partner_id    = staffRow.partner_id
         partner_name  = staffRow.full_name || ''
         partner_email = staffRow.email || callerEmail
-        // Staff users inherit their firm's Monday item id.
+        // Staff users inherit their firm's Monday item id + company name.
         const { data: firmRow } = await supabase
           .from('channel_partners')
-          .select('monday_item_id')
+          .select('company_name, monday_item_id')
           .eq('id', staffRow.partner_id)
           .maybeSingle()
+        partner_company   = firmRow?.company_name || ''
         partner_monday_id = firmRow?.monday_item_id || null
       }
     }
@@ -349,6 +422,20 @@ Deno.serve(async (req) => {
       reservation.id,
       reservation.expires_at
     ).catch(e => console.error('Confirmation email failed:', e))
+
+    // Internal "who reserved what" alert to the TPCH team (non-blocking).
+    sendInternalAlertEmail({
+      company:         partner_company,
+      reservedByName:  partner_name,
+      reservedByEmail: partner_email,
+      stockName:       body.stock_name,
+      projectName:     body.project_name || null,
+      clientName:      body.client_name,
+      clientEmail:     body.client_email,
+      clientPhone:     body.client_phone || null,
+      reservationId:   reservation.id,
+      expiresAt:       reservation.expires_at,
+    }).catch(e => console.error('Internal alert email failed:', e))
 
     return new Response(
       JSON.stringify({ reservation_id: reservation.id, expires_at: reservation.expires_at }),

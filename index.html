@@ -3917,6 +3917,19 @@
           </div>
         </div>
 
+        <!-- Section: Recent reservations (admin operational panel) -->
+        <div class="cp-card" id="dash-reservations-card" style="margin-bottom:24px;">
+          <div class="eng-card-head" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <div class="cp-card-title" style="margin:0;">Recent reservations<span class="eng-info eng-info-below" data-info="The latest active stock reservations across every channel partner. Shows the firm AND the exact person who reserved, so you don't have to cross-reference Monday and the partner's portal. Search by company, person, property, or client to see all active reservations.">i</span></div>
+            <input id="rsv-search" type="search" placeholder="Search company, person, property, client…" oninput="onRsvSearchInput(this.value)" autocomplete="off"
+              style="flex:0 1 320px;min-width:200px;padding:9px 13px;border:1px solid var(--gold-border);border-radius:6px;font-size:13px;background:var(--black-soft);color:var(--white);">
+          </div>
+          <div id="rsv-table-wrap" class="eng-leaderboard-wrap">
+            <div class="eng-empty">Loading reservations…</div>
+          </div>
+          <div id="rsv-hint" style="margin-top:12px;font-size:12px;color:var(--text-muted);"></div>
+        </div>
+
         <!-- Section: Active partners trend (full width) -->
         <div class="cp-card eng-trend-card">
           <div class="eng-card-head">
@@ -6583,6 +6596,109 @@
       });
     } catch (e) {
       console.warn('engagement dashboard load failed:', e);
+    }
+    // Recent reservations panel loads independently of the engagement RPCs so a
+    // failure in either one can't take the other down.
+    loadRecentReservations('');
+  }
+
+  // ── Recent reservations (admin operational panel) ──
+  // Last 5 active reservations by default; typing in the search box switches to
+  // "all active, filtered" via the same admin-gated get_recent_reservations RPC.
+  let _rsvSearchTimer = null;
+  function onRsvSearchInput(v) {
+    clearTimeout(_rsvSearchTimer);
+    _rsvSearchTimer = setTimeout(() => loadRecentReservations(v), 250);
+  }
+
+  async function loadRecentReservations(search) {
+    if (!currentUserIsAdmin) return;
+    const wrap = document.getElementById('rsv-table-wrap');
+    const hint = document.getElementById('rsv-hint');
+    if (!wrap) return;
+    const q = (search || '').trim();
+    const headers = {
+      'apikey':        SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
+      'Content-Type':  'application/json',
+    };
+    // No search → dashboard view (latest 5). Search → all active matches.
+    const body = JSON.stringify({ p_limit: q ? 500 : 5, p_search: q || null });
+    try {
+      const res  = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_recent_reservations', { method: 'POST', headers, body });
+      const rows = res.ok ? await res.json() : [];
+      renderRecentReservations(Array.isArray(rows) ? rows : [], q);
+    } catch (e) {
+      console.warn('recent reservations load failed:', e);
+      wrap.innerHTML = '<div class="enq-empty" style="padding:20px;color:var(--text-muted,#98A5B3);font-size:13px;">Could not load reservations.</div>';
+      if (hint) hint.textContent = '';
+    }
+  }
+
+  function _rsvFmtDate(iso) {
+    if (!iso) return '—';
+    try {
+      return new Date(iso).toLocaleString('en-AU', {
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
+      });
+    } catch (e) { return '—'; }
+  }
+
+  function _rsvRemaining(hrs) {
+    const h = Math.max(0, Math.floor(Number(hrs) || 0));
+    const pill = 'display:inline-block;padding:2px 10px;border-radius:11px;font-size:11px;font-family:\'Outfit\',sans-serif;white-space:nowrap;';
+    if (h <= 0) {
+      return '<span style="' + pill + 'background:rgba(201,76,76,0.14);border:1px solid rgba(201,76,76,0.40);color:var(--red);">expiring</span>';
+    }
+    const label = h < 24 ? h + 'h left' : Math.floor(h / 24) + 'd ' + (h % 24) + 'h left';
+    return '<span style="' + pill + 'background:var(--gold-dim);border:1px solid var(--gold-border);color:var(--gold-light);">' + label + '</span>';
+  }
+
+  function renderRecentReservations(rows, q) {
+    const wrap = document.getElementById('rsv-table-wrap');
+    const hint = document.getElementById('rsv-hint');
+    if (!wrap) return;
+
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="eng-empty">'
+        + (q ? 'No active reservations match “' + engEsc(q) + '”.' : 'No active reservations right now.')
+        + '</div>';
+      if (hint) hint.textContent = '';
+      return;
+    }
+
+    // Reuses the dark-theme .eng-leaderboard table styling (white cell text,
+    // gold header rule) so it reads correctly on the navy dashboard.
+    const head = `
+      <tr>
+        <th>Property</th>
+        <th>Company</th>
+        <th>Reserved by</th>
+        <th>Client</th>
+        <th>Reserved</th>
+        <th>Holds</th>
+      </tr>`;
+
+    const body = rows.map(r => {
+      const person = engEsc(r.reserved_by_name || r.reserved_by_email || '—');
+      const email  = r.reserved_by_email ? `<div class="eng-email">${engEsc(r.reserved_by_email)}</div>` : '';
+      const proj   = r.project_name ? `<div class="eng-email" style="font-family:inherit;">${engEsc(r.project_name)}</div>` : '';
+      return `
+        <tr>
+          <td style="font-weight:600;color:var(--gold);">${engEsc(r.stock_name || '—')}${proj}</td>
+          <td>${engEsc(r.company_name || '—')}</td>
+          <td>${person}${email}</td>
+          <td>${engEsc(r.client_name || '—')}</td>
+          <td class="eng-num" style="text-align:left;white-space:nowrap;">${_rsvFmtDate(r.reserved_at)}</td>
+          <td style="white-space:nowrap;">${_rsvRemaining(r.hours_remaining)}</td>
+        </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `<table class="eng-leaderboard" style="min-width:640px;"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+    if (hint) {
+      hint.textContent = q
+        ? rows.length + ' active reservation' + (rows.length === 1 ? '' : 's') + ' matching “' + q + '”.'
+        : 'Showing the latest 5 active reservations. Search to see all.';
     }
   }
 
