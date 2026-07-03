@@ -7337,11 +7337,18 @@
     return Math.round(months / 12) + 'y ago';
   }
 
-  function engEsc(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  // ── Canonical HTML escape ─────────────────────────────────
+  // THE escape helper for this codebase. Escapes & < > " ' so a value is
+  // safe in element text and in double- OR single-quoted attribute values.
+  // NOTE: it does NOT make values safe inside inline JS strings
+  // (onclick="fn('${...}')") — never build those from data; use data-*
+  // attributes or pass an id and look the record up inside the handler.
+  // engEsc / escHtml / rv2Esc below are legacy aliases kept for their
+  // existing call sites; new code should call escapeHtml.
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
+  function engEsc(s) { return escapeHtml(s); }
 
   // Build region map from live data so state-clicks work
   function buildRegionMap() {
@@ -7985,15 +7992,17 @@
       const badgeText  = rec === 'approve' ? 'Approve' : rec === 'decline' ? 'Decline' :
                          rec === 'review_further' ? 'Review' : 'Pending';
       const date = new Date(e.created_at).toLocaleDateString('en-AU', {day:'numeric', month:'short'});
-      return `<div class="enq-card${currentEnqId === e.id ? ' active' : ''}" onclick="showEnqDetail('${e.id}')">
+      // Every field below originated in the PUBLIC enquiry form — escape all
+      // of it; this HTML renders inside an admin session.
+      return `<div class="enq-card${currentEnqId === e.id ? ' active' : ''}" onclick="showEnqDetail('${escapeHtml(e.id)}')">
         <div class="enq-card-top">
-          <div class="enq-card-name">${e.full_name}</div>
+          <div class="enq-card-name">${escapeHtml(e.full_name)}</div>
           <div class="enq-ai-badge ${badgeClass}">${badgeText}</div>
         </div>
-        <div class="enq-card-company">${e.company_name}${e.state ? ' · ' + e.state : ''}</div>
+        <div class="enq-card-company">${escapeHtml(e.company_name)}${e.state ? ' · ' + escapeHtml(e.state) : ''}</div>
         <div class="enq-card-meta">
-          <div class="enq-status-dot ${e.status}"></div>
-          <div class="enq-card-role">${roleLabelsEnq[e.role_type] || e.role_type || '—'}</div>
+          <div class="enq-status-dot ${escapeHtml(e.status)}"></div>
+          <div class="enq-card-role">${escapeHtml(roleLabelsEnq[e.role_type] || e.role_type || '—')}</div>
           <div class="enq-card-date">${date}</div>
         </div>
       </div>`;
@@ -8017,54 +8026,61 @@
         <div class="enq-field-value">${value || '—'}</div>
       </div>`;
 
+    // Everything in this detail pane came from the PUBLIC enquiry form (or
+    // an AI report generated from it) and renders in an admin session —
+    // escape before any markup is applied.
+    const esc = escapeHtml;
+    // Only allow http(s) links; anything else (javascript:, data:) gets an
+    // https:// prefix which neutralises it as a URL scheme.
+    const safeUrl = u => /^https?:\/\//i.test(u) ? u : 'https://' + u;
     const aiReport = e.ai_report
-      ? e.ai_report.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g,'<br>')
+      ? esc(e.ai_report).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g,'<br>')
       : '<em style="color:var(--grey-mid)">AI report not yet generated.</em>';
 
     detail.innerHTML = `
       <div class="enq-detail-scroll">
         <div class="enq-detail-header">
           <div>
-            <div class="enq-detail-name">${e.full_name}</div>
-            <div class="enq-detail-company">${e.company_name}</div>
+            <div class="enq-detail-name">${esc(e.full_name)}</div>
+            <div class="enq-detail-company">${esc(e.company_name)}</div>
             <div class="enq-detail-submitted">Submitted ${date}</div>
           </div>
           <div class="enq-action-row">
             ${isActioned
               ? `<div class="enq-btn-disabled">${statusLabel}</div>`
-              : `<button class="enq-btn-approve" onclick="setEnqStatus('${e.id}','approved')">✓ Approve</button>
-                 <button class="enq-btn-decline" onclick="setEnqStatus('${e.id}','declined')">✕ Decline</button>`
+              : `<button class="enq-btn-approve" onclick="setEnqStatus('${esc(e.id)}','approved')">✓ Approve</button>
+                 <button class="enq-btn-decline" onclick="setEnqStatus('${esc(e.id)}','declined')">✕ Decline</button>`
             }
           </div>
         </div>
 
         <div class="enq-section-title">Personal Details</div>
         <div class="enq-fields-grid">
-          ${field('Email', e.email ? `<a href="mailto:${e.email}">${e.email}</a>` : null)}
-          ${field('Phone', e.phone ? `<a href="tel:${e.phone}">${e.phone}</a>` : null)}
+          ${field('Email', e.email ? `<a href="mailto:${esc(e.email)}">${esc(e.email)}</a>` : null)}
+          ${field('Phone', e.phone ? `<a href="tel:${esc(e.phone)}">${esc(e.phone)}</a>` : null)}
         </div>
 
         <div class="enq-section-title">Business Details</div>
         <div class="enq-fields-grid">
-          ${field('Company', e.company_name)}
-          ${field('ABN', e.abn)}
-          ${field('AFSL / ACL', e.afsl_acl)}
-          ${field('State', e.state)}
-          ${field('Website', e.website ? `<a href="${e.website}" target="_blank">${e.website}</a>` : null, false)}
-          ${field('LinkedIn', e.linkedin_url ? `<a href="${e.linkedin_url}" target="_blank">View Profile →</a>` : null)}
+          ${field('Company', esc(e.company_name))}
+          ${field('ABN', esc(e.abn))}
+          ${field('AFSL / ACL', esc(e.afsl_acl))}
+          ${field('State', esc(e.state))}
+          ${field('Website', e.website ? `<a href="${esc(safeUrl(e.website))}" target="_blank" rel="noopener">${esc(e.website)}</a>` : null, false)}
+          ${field('LinkedIn', e.linkedin_url ? `<a href="${esc(safeUrl(e.linkedin_url))}" target="_blank" rel="noopener">View Profile →</a>` : null)}
         </div>
 
         <div class="enq-section-title">Practice Profile</div>
         <div class="enq-fields-grid">
-          ${field('Role', roleLabelsEnq[e.role_type] || e.role_type)}
-          ${field('Years in Business', yearsLabelsEnq[e.years_in_business] || e.years_in_business)}
-          ${field('Client Base', clientLabelsEnq[e.num_clients] || e.num_clients)}
-          ${field('How They Heard', e.referral_source)}
+          ${field('Role', esc(roleLabelsEnq[e.role_type] || e.role_type))}
+          ${field('Years in Business', esc(yearsLabelsEnq[e.years_in_business] || e.years_in_business))}
+          ${field('Client Base', esc(clientLabelsEnq[e.num_clients] || e.num_clients))}
+          ${field('How They Heard', esc(e.referral_source))}
         </div>
 
         ${e.message ? `
         <div class="enq-section-title">Their Message</div>
-        <div class="enq-message-box">${e.message}</div>` : ''}
+        <div class="enq-message-box">${esc(e.message).replace(/\n/g,'<br>')}</div>` : ''}
 
         <div class="enq-section-title">◈ AI Due Diligence Report</div>
         <div class="enq-ai-report">${aiReport}</div>
@@ -8247,8 +8263,10 @@
     }
 
     const rows = filtered.map(p => {
+      // Partner rows carry enquiry-sourced text (names, companies) — escape
+      // everything interpolated below.
       const activeCls = currentPrtId === p.id ? ' active' : '';
-      const firmLine  = (p.company_name || '') + (p.state ? ' · ' + p.state : '');
+      const firmLine  = escapeHtml((p.company_name || '') + (p.state ? ' · ' + p.state : ''));
 
       // Last login
       let loginCell;
@@ -8265,8 +8283,8 @@
         const file = AGREEMENT_DOWNLOADS[p.agreement_version] || AGREEMENT_DOWNLOADS['1.0'];
         agreeCell = `<a class="pt-agree-link" href="${file}" download
                        onclick="event.stopPropagation();"
-                       title="Download agreement v${p.agreement_version} accepted by ${p.full_name}">
-                       v${p.agreement_version} ⬇</a>
+                       title="Download agreement v${escapeHtml(p.agreement_version)} accepted by ${escapeHtml(p.full_name)}">
+                       v${escapeHtml(p.agreement_version)} ⬇</a>
                      <div class="pt-agree-meta">${fmtShortDate(p.agreement_accepted_at)}</div>`;
       } else {
         agreeCell = `<span class="pt-agree-none">Not accepted</span>`;
@@ -8278,14 +8296,14 @@
         ? `<span class="pt-flag-pill" title="${pcl30 >= 8 ? '8+ partner cancels in last 30d' : '70%+ lapse over 90d (min 8 reserves)'}">⬡ Watch</span>`
         : '';
 
-      return `<tr class="${activeCls.trim()}" onclick="showPrtDetail('${p.id}')">
+      return `<tr class="${activeCls.trim()}" onclick="showPrtDetail('${escapeHtml(p.id)}')">
         <td class="col-partner">
-          <div class="pt-name">${p.full_name || '—'}${flagPill}</div>
+          <div class="pt-name">${escapeHtml(p.full_name) || '—'}${flagPill}</div>
           <div class="pt-firm">${firmLine || '&nbsp;'}</div>
         </td>
         <td>
           <span class="pt-status">
-            <span class="prt-status-dot ${p.status}"></span>${p.status || '—'}
+            <span class="prt-status-dot ${escapeHtml(p.status)}"></span>${escapeHtml(p.status) || '—'}
           </span>
         </td>
         <td>${loginCell}</td>
@@ -8327,14 +8345,20 @@
     if (p.status !== 'active')    actionBtns.push(`<button class="prt-btn prt-btn-activate" onclick="setPrtStatus('${p.id}','active')">✓ Activate</button>`);
     if (p.status !== 'inactive')  actionBtns.push(`<button class="prt-btn prt-btn-deactivate" onclick="setPrtStatus('${p.id}','inactive')">⊘ Deactivate</button>`);
     if (p.status !== 'suspended') actionBtns.push(`<button class="prt-btn prt-btn-suspend" onclick="setPrtStatus('${p.id}','suspended')">⚑ Suspend</button>`);
-    actionBtns.push(`<button class="prt-btn prt-btn-resend" id="prt-resend-${p.id}" onclick="resendPartnerInvite('${p.id}','${(p.email||'').replace(/'/g,"\\'")}','${(p.full_name||'').replace(/'/g,"\\'")}','${(p.company_name||'').replace(/'/g,"\\'")}')">✉ Resend Invite</button>`);
+    // data-* + dataset instead of interpolating names into the inline JS
+    // string — a quote in a name would otherwise break out of the handler.
+    const esc = escapeHtml;
+    const safeUrl = u => /^https?:\/\//i.test(u) ? u : 'https://' + u;
+    actionBtns.push(`<button class="prt-btn prt-btn-resend" id="prt-resend-${p.id}"
+      data-id="${esc(p.id)}" data-email="${esc(p.email || '')}" data-full-name="${esc(p.full_name || '')}" data-company="${esc(p.company_name || '')}"
+      onclick="resendPartnerInvite(this.dataset.id, this.dataset.email, this.dataset.fullName, this.dataset.company)">✉ Resend Invite</button>`);
 
     detail.innerHTML = `
       <div class="prt-detail-scroll">
         <div class="prt-detail-header">
           <div>
-            <div class="prt-detail-name">${p.full_name}</div>
-            <div class="prt-detail-company">${p.company_name}</div>
+            <div class="prt-detail-name">${esc(p.full_name)}</div>
+            <div class="prt-detail-company">${esc(p.company_name)}</div>
             <div class="prt-detail-joined">Partner since ${joined}</div>
           </div>
           <div class="prt-action-col">
@@ -8348,30 +8372,30 @@
 
         <div class="prt-section-title">Contact</div>
         <div class="prt-fields-grid">
-          ${field('Email', p.email ? `<a href="mailto:${p.email}">${p.email}</a>` : null)}
-          ${field('Phone', p.phone ? `<a href="tel:${p.phone}">${p.phone}</a>` : null)}
+          ${field('Email', p.email ? `<a href="mailto:${esc(p.email)}">${esc(p.email)}</a>` : null)}
+          ${field('Phone', p.phone ? `<a href="tel:${esc(p.phone)}">${esc(p.phone)}</a>` : null)}
         </div>
 
         <div class="prt-section-title">Business</div>
         <div class="prt-fields-grid">
-          ${field('Company', p.company_name)}
-          ${field('State', p.state)}
-          ${field('ABN', p.abn)}
-          ${field('AFSL / ACL', p.afsl_acl)}
-          ${field('Website', p.website ? `<a href="${p.website}" target="_blank">Visit →</a>` : null)}
-          ${field('LinkedIn', p.linkedin_url ? `<a href="${p.linkedin_url}" target="_blank">View Profile →</a>` : null)}
+          ${field('Company', esc(p.company_name))}
+          ${field('State', esc(p.state))}
+          ${field('ABN', esc(p.abn))}
+          ${field('AFSL / ACL', esc(p.afsl_acl))}
+          ${field('Website', p.website ? `<a href="${esc(safeUrl(p.website))}" target="_blank" rel="noopener">Visit →</a>` : null)}
+          ${field('LinkedIn', p.linkedin_url ? `<a href="${esc(safeUrl(p.linkedin_url))}" target="_blank" rel="noopener">View Profile →</a>` : null)}
         </div>
 
         <div class="prt-section-title">Practice Profile</div>
         <div class="prt-fields-grid">
-          ${field('Role', roleLabelsEnq[p.role_type] || p.role_type)}
-          ${field('Years in Business', yearsLabelsEnq[p.years_in_business] || p.years_in_business)}
-          ${field('Client Base', clientLabelsEnq[p.num_clients] || p.num_clients)}
+          ${field('Role', esc(roleLabelsEnq[p.role_type] || p.role_type))}
+          ${field('Years in Business', esc(yearsLabelsEnq[p.years_in_business] || p.years_in_business))}
+          ${field('Client Base', esc(clientLabelsEnq[p.num_clients] || p.num_clients))}
         </div>
 
         <div class="prt-section-title">Internal Notes</div>
         <div class="prt-notes-wrap">
-          <textarea class="prt-notes-textarea" id="prt-notes-${p.id}" placeholder="Add internal notes about this partner...">${p.notes || ''}</textarea>
+          <textarea class="prt-notes-textarea" id="prt-notes-${p.id}" placeholder="Add internal notes about this partner...">${esc(p.notes || '')}</textarea>
           <button class="prt-notes-save" onclick="savePrtNotes('${p.id}')">Save Notes</button>
         </div>
 
@@ -8770,7 +8794,7 @@
     const myRecord = allTeam.find(x => x.email === currentAdminEmail);
     const isSuperAdmin = currentUserRole === 'super_admin' || myRecord?.role === 'super_admin';
     const deleteBtn = (isSuperAdmin && t.role !== 'super_admin')
-      ? `<button class="tm-btn tm-btn-deactivate" style="margin-top:12px;width:100%;background:rgba(180,40,40,0.15);border-color:rgba(180,40,40,0.4);color:#c94c4c;" onclick="deleteTmMember('${t.id}','${(t.full_name||'').replace(/'/g,"\\'")}')">✕ Delete Member</button>`
+      ? `<button class="tm-btn tm-btn-deactivate" style="margin-top:12px;width:100%;background:rgba(180,40,40,0.15);border-color:rgba(180,40,40,0.4);color:#c94c4c;" data-tid="${escapeHtml(t.id)}" data-tname="${escapeHtml(t.full_name || '')}" onclick="deleteTmMember(this.dataset.tid, this.dataset.tname)">✕ Delete Member</button>`
       : '';
 
     detail.innerHTML = `
@@ -10638,7 +10662,7 @@
       return;
     }
     const overridesOn = !!currentPartnerRecord?.team_commission_override_enabled;
-    const esc = (x) => (x == null ? '' : String(x)).replace(/"/g, '&quot;');
+    const esc = escapeHtml;  // full escaping — names/emails are user-entered
     // Plain-English "what this person actually sees in the portal", not the setting
     // name. `short` is the pill label; `full` is the hover tooltip so nothing is lost.
     const commInfo = (type, customVal) => {
@@ -10654,8 +10678,8 @@
     const ownerRow = `
       <tr class="tm-row">
         <td>
-          <div class="tm-name">${owner.full_name}<span class="tm-owner-tag">Owner</span></div>
-          <div class="tm-email">${owner.email}</div>
+          <div class="tm-name">${esc(owner.full_name)}<span class="tm-owner-tag">Owner</span></div>
+          <div class="tm-email">${esc(owner.email)}</div>
         </td>
         <td><span class="tm-pill tm-access tm-admin">Admin</span></td>
         <td><span class="tm-pill tm-sees" title="Full portal commission (raw)">Full commission</span></td>
@@ -10713,11 +10737,11 @@
             return `
             <tr class="tm-row" id="staff-row-${s.id}">
               <td>
-                <div class="tm-name">${s.full_name}</div>
-                <div class="tm-email">${s.email}</div>
+                <div class="tm-name">${esc(s.full_name)}</div>
+                <div class="tm-email">${esc(s.email)}</div>
               </td>
-              <td><span class="tm-pill tm-access${s.role === 'admin' ? ' tm-admin' : ''}">${accessLabel[s.role] || s.role || 'Standard'}</span></td>
-              <td><span class="tm-pill tm-sees${ci.hidden ? ' tm-hidden' : ''}" title="${esc(ci.full)}">${ci.short}</span></td>
+              <td><span class="tm-pill tm-access${s.role === 'admin' ? ' tm-admin' : ''}">${esc(accessLabel[s.role] || s.role || 'Standard')}</span></td>
+              <td><span class="tm-pill tm-sees${ci.hidden ? ' tm-hidden' : ''}" title="${esc(ci.full)}">${esc(ci.short)}</span></td>
               <td>${statusPill}</td>
               <td>
                 <div class="tm-actions">
@@ -11552,17 +11576,18 @@
         const ratingClass = d.overall_rating === 'Strong Buy' ? 'strong' : d.overall_rating === 'Good Buy' ? 'good' : d.overall_rating === 'Moderate' ? 'moderate' : 'caution';
         const pillarNames = { population:'Population Growth', economic:'Economic Growth', supply:'Supply & Demand', affordability:'Affordability', scarcity:'Scarcity' };
         const pillarIcons = { population:'📈', economic:'💼', supply:'⚖️', affordability:'🏷️', scarcity:'💎' };
-        const fmtStats = (stats) => { if (!stats || typeof stats !== 'object') return ''; return Object.entries(stats).map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);gap:8px;"><span style="color:var(--text-muted);font-size:12px;">${k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</span><span style="color:var(--white);font-size:13px;font-weight:600;">${v}</span></div>`).join(''); };
+        // AI-generated content sourced from web research — escape everything.
+        const fmtStats = (stats) => { if (!stats || typeof stats !== 'object') return ''; return Object.entries(stats).map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);gap:8px;"><span style="color:var(--text-muted);font-size:12px;">${escapeHtml(k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()))}</span><span style="color:var(--white);font-size:13px;font-weight:600;">${escapeHtml(v)}</span></div>`).join(''); };
         return `
         <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
           <!-- Header -->
           <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.06);">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-              <div style="font-size:17px;font-weight:600;color:var(--white);flex:1;">${proj?.name || d.project_id}</div>
-              <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--gold);">${d.overall_score || '?'}<span style="font-size:14px;color:var(--text-muted);font-weight:400;">/100</span></div>
-              <div class="ia-key-badge ${ratingClass}">${d.overall_rating || 'Pending'}</div>
+              <div style="font-size:17px;font-weight:600;color:var(--white);flex:1;">${escapeHtml(proj?.name || d.project_id)}</div>
+              <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--gold);">${escapeHtml(d.overall_score) || '?'}<span style="font-size:14px;color:var(--text-muted);font-weight:400;">/100</span></div>
+              <div class="ia-key-badge ${ratingClass}">${escapeHtml(d.overall_rating) || 'Pending'}</div>
             </div>
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:16px;color:var(--grey-pale);line-height:1.65;font-style:italic;margin-bottom:18px;">${d.thesis_text || '—'}</div>
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:16px;color:var(--grey-pale);line-height:1.65;font-style:italic;margin-bottom:18px;">${escapeHtml(d.thesis_text) || '—'}</div>
             <!-- Pillar score bar -->
             <div style="display:flex;gap:8px;">
               ${['population','economic','supply','affordability','scarcity'].map(p => `
@@ -11582,11 +11607,11 @@
               <span style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);">${pillarNames[p]}</span>
               <span style="font-family:'Playfair Display',Georgia,serif;font-size:18px;color:var(--gold);margin-left:auto;">${d[p+'_score'] ?? '—'}/20</span>
             </div>
-            ${d[p+'_headline'] ? `<div style="font-size:15px;font-weight:600;color:var(--gold-light);line-height:1.55;margin-bottom:10px;">${d[p+'_headline']}</div>` : ''}
-            ${d[p+'_score_reasoning'] ? `<div style="font-size:13px;color:var(--grey-pale);line-height:1.65;margin-bottom:14px;padding:12px 16px;background:rgba(255,255,255,0.03);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;"><strong style="color:var(--gold-light);">Score reasoning:</strong> ${d[p+'_score_reasoning']}</div>` : ''}
+            ${d[p+'_headline'] ? `<div style="font-size:15px;font-weight:600;color:var(--gold-light);line-height:1.55;margin-bottom:10px;">${escapeHtml(d[p+'_headline'])}</div>` : ''}
+            ${d[p+'_score_reasoning'] ? `<div style="font-size:13px;color:var(--grey-pale);line-height:1.65;margin-bottom:14px;padding:12px 16px;background:rgba(255,255,255,0.03);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;"><strong style="color:var(--gold-light);">Score reasoning:</strong> ${escapeHtml(d[p+'_score_reasoning'])}</div>` : ''}
             <div style="display:grid;grid-template-columns:220px 1fr;gap:20px;">
               <div>${fmtStats(d[p+'_stats'])}</div>
-              <div style="font-size:14px;color:var(--grey-pale);line-height:1.7;">${(d[p+'_narrative'] || 'No narrative available.').split(/(?:\r?\n){2,}|\\n\\n/).map(para => '<p style="margin-bottom:10px;">'+para+'</p>').join('')}</div>
+              <div style="font-size:14px;color:var(--grey-pale);line-height:1.7;">${(d[p+'_narrative'] || 'No narrative available.').split(/(?:\r?\n){2,}|\\n\\n/).map(para => '<p style="margin-bottom:10px;">'+escapeHtml(para)+'</p>').join('')}</div>
             </div>
           </div>`).join('')}
 
@@ -11597,8 +11622,8 @@
               ${[['Developer', d.developer_name, d.developer_detail], ['Track Record', d.track_record, d.track_record_detail], ['Project Stage', d.project_stage, d.project_stage_detail], ['Warranties', d.warranties, null], ['Memberships', d.memberships, null], ['TPCH Assessment', d.tpch_assessment, null]].map(([label, val, sub]) => `
                 <div style="background:rgba(255,255,255,0.03);border-radius:3px;padding:14px 16px;">
                   <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">${label}</div>
-                  <div style="font-size:14px;color:var(--white);line-height:1.5;">${val || '—'}</div>
-                  ${sub ? `<div style="font-size:12px;color:var(--text-muted);margin-top:5px;line-height:1.5;">${sub}</div>` : ''}
+                  <div style="font-size:14px;color:var(--white);line-height:1.5;">${escapeHtml(val) || '—'}</div>
+                  ${sub ? `<div style="font-size:12px;color:var(--text-muted);margin-top:5px;line-height:1.5;">${escapeHtml(sub)}</div>` : ''}
                 </div>`).join('')}
             </div>
           </div>
@@ -11730,9 +11755,8 @@
     }
     return false;
   }
-  function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-  }
+  // escapeHtml is defined once near the top of this script block (see the
+  // canonical HTML escape by engEsc).
 
   async function aiLoadSuburbResearchDrafts() {
     const el = document.getElementById('aad-results-list');
@@ -11808,13 +11832,13 @@
           <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.06);">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
               <div style="flex:1;">
-                <div style="font-size:17px;font-weight:600;color:var(--white);">${d.suburb || '—'}, ${d.state_code || ''}</div>
-                <div style="font-size:11px;font-family:'DM Mono',monospace;letter-spacing:1.5px;color:var(--text-muted);text-transform:uppercase;margin-top:3px;">${d.lga || ''}${d.lga && d.postcode ? ' · ' : ''}${d.postcode || ''}${d.region ? ' · ' + d.region : ''}</div>
+                <div style="font-size:17px;font-weight:600;color:var(--white);">${escapeHtml(d.suburb) || '—'}, ${escapeHtml(d.state_code || '')}</div>
+                <div style="font-size:11px;font-family:'DM Mono',monospace;letter-spacing:1.5px;color:var(--text-muted);text-transform:uppercase;margin-top:3px;">${escapeHtml((d.lga || '') + (d.lga && d.postcode ? ' · ' : '') + (d.postcode || '') + (d.region ? ' · ' + d.region : ''))}</div>
               </div>
               <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--gold);">${d.conviction_score ?? '?'}<span style="font-size:14px;color:var(--text-muted);font-weight:400;">/100</span></div>
-              <div class="ia-key-badge ${ratingClass(d.rating)}">${d.rating || 'Pending'}</div>
+              <div class="ia-key-badge ${ratingClass(d.rating)}">${escapeHtml(d.rating) || 'Pending'}</div>
             </div>
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:16px;color:var(--grey-pale);line-height:1.65;font-style:italic;margin-bottom:18px;">${d.thesis_short || d.thesis_main || '—'}</div>
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:16px;color:var(--grey-pale);line-height:1.65;font-style:italic;margin-bottom:18px;">${escapeHtml(d.thesis_short || d.thesis_main) || '—'}</div>
             <!-- Hero chips -->
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               ${heroChips.map(([label, val]) => `
@@ -11828,7 +11852,7 @@
           <!-- Thesis -->
           <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
             <div style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);margin-bottom:10px;">Executive Summary</div>
-            <div style="font-size:14px;color:var(--grey-pale);line-height:1.7;">${d.thesis_main || '—'}</div>
+            <div style="font-size:14px;color:var(--grey-pale);line-height:1.7;">${escapeHtml(d.thesis_main) || '—'}</div>
           </div>
 
           <!-- Score breakdown (5 dimensions × 20) -->
@@ -11852,7 +11876,7 @@
                     <div style="background:rgba(255,255,255,0.05);height:6px;border-radius:3px;overflow:hidden;margin-bottom:10px;">
                       <div style="width:${pct}%;height:100%;background:${barColour};"></div>
                     </div>
-                    <div style="font-size:13px;color:var(--grey-pale);line-height:1.6;">${dim.score_reasoning || '<span style="color:var(--text-muted);font-style:italic;">No reasoning captured</span>'}</div>
+                    <div style="font-size:13px;color:var(--grey-pale);line-height:1.6;">${escapeHtml(dim.score_reasoning) || '<span style="color:var(--text-muted);font-style:italic;">No reasoning captured</span>'}</div>
                   </div>`;
                 }).join('')}
               </div>` : `
@@ -11871,9 +11895,9 @@
               ${pillarKeys.map(k => {
                 const p = d.pillars[k] || {};
                 return `<div style="margin-bottom:14px;padding:12px 14px;background:rgba(255,255,255,0.03);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;">
-                  <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold-light);margin-bottom:6px;">${k.replace(/_/g,' ')}</div>
-                  <div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:6px;">${p.headline || ''}</div>
-                  <div style="font-size:13px;color:var(--grey-pale);line-height:1.65;">${p.narrative || ''}</div>
+                  <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold-light);margin-bottom:6px;">${escapeHtml(k.replace(/_/g,' '))}</div>
+                  <div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:6px;">${escapeHtml(p.headline || '')}</div>
+                  <div style="font-size:13px;color:var(--grey-pale);line-height:1.65;">${escapeHtml(p.narrative || '')}</div>
                 </div>`;
               }).join('')}
             </div>
@@ -11887,13 +11911,13 @@
               ${d.endorsements.map(e => `
                 <div style="background:rgba(255,255,255,0.03);border-left:2px solid var(--gold-light);padding:12px 14px;border-radius:0 3px 3px 0;">
                   <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px;">
-                    <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold-light);">${e.source || ''}</div>
-                    <div style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">${e.date || ''}</div>
-                    ${e.supports_pillar ? `<div style="font-size:10px;color:var(--text-muted);">supports ${e.supports_pillar.replace(/_/g,' ')}</div>` : ''}
+                    <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold-light);">${escapeHtml(e.source || '')}</div>
+                    <div style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">${escapeHtml(e.date || '')}</div>
+                    ${e.supports_pillar ? `<div style="font-size:10px;color:var(--text-muted);">supports ${escapeHtml(e.supports_pillar.replace(/_/g,' '))}</div>` : ''}
                   </div>
-                  <div style="font-size:14px;color:var(--white);font-weight:600;margin-bottom:4px;">${e.headline || ''}</div>
-                  <div style="font-size:13px;color:var(--grey-pale);line-height:1.55;margin-bottom:6px;">${e.excerpt || ''}</div>
-                  ${e.url ? `<a href="${e.url}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);text-decoration:none;font-family:'DM Mono',monospace;">${e.url.length > 70 ? e.url.slice(0,70)+'…' : e.url} ↗</a>` : ''}
+                  <div style="font-size:14px;color:var(--white);font-weight:600;margin-bottom:4px;">${escapeHtml(e.headline || '')}</div>
+                  <div style="font-size:13px;color:var(--grey-pale);line-height:1.55;margin-bottom:6px;">${escapeHtml(e.excerpt || '')}</div>
+                  ${e.url ? `<a href="${escapeHtml(/^https?:\/\//i.test(e.url) ? e.url : 'https://' + e.url)}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);text-decoration:none;font-family:'DM Mono',monospace;">${escapeHtml(e.url.length > 70 ? e.url.slice(0,70)+'…' : e.url)} ↗</a>` : ''}
                 </div>`).join('')}
             </div>
           </div>` : ''}
@@ -11904,16 +11928,16 @@
             <div style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);margin-bottom:12px;">Counter-view Considered</div>
             <div style="background:rgba(201,76,76,0.06);border-left:2px solid var(--red);padding:12px 14px;border-radius:0 3px 3px 0;margin-bottom:10px;">
               <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px;">
-                <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--red);">${d.counter_view.source || ''}</div>
-                <div style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">${d.counter_view.date || ''}</div>
+                <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--red);">${escapeHtml(d.counter_view.source || '')}</div>
+                <div style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">${escapeHtml(d.counter_view.date || '')}</div>
               </div>
-              <div style="font-size:14px;color:var(--white);font-weight:600;margin-bottom:4px;">${d.counter_view.headline || ''}</div>
-              <div style="font-size:13px;color:var(--grey-pale);line-height:1.55;margin-bottom:6px;">${d.counter_view.excerpt || ''}</div>
-              ${d.counter_view.url ? `<a href="${d.counter_view.url}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);text-decoration:none;font-family:'DM Mono',monospace;">${d.counter_view.url.length > 70 ? d.counter_view.url.slice(0,70)+'…' : d.counter_view.url} ↗</a>` : ''}
+              <div style="font-size:14px;color:var(--white);font-weight:600;margin-bottom:4px;">${escapeHtml(d.counter_view.headline || '')}</div>
+              <div style="font-size:13px;color:var(--grey-pale);line-height:1.55;margin-bottom:6px;">${escapeHtml(d.counter_view.excerpt || '')}</div>
+              ${d.counter_view.url ? `<a href="${escapeHtml(/^https?:\/\//i.test(d.counter_view.url) ? d.counter_view.url : 'https://' + d.counter_view.url)}" target="_blank" rel="noopener" style="font-size:11px;color:var(--gold);text-decoration:none;font-family:'DM Mono',monospace;">${escapeHtml(d.counter_view.url.length > 70 ? d.counter_view.url.slice(0,70)+'…' : d.counter_view.url)} ↗</a>` : ''}
             </div>
             <div style="background:rgba(80,180,120,0.06);border-left:2px solid var(--green);padding:12px 14px;border-radius:0 3px 3px 0;">
               <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:6px;">TPCH Response</div>
-              <div style="font-size:13px;color:var(--grey-pale);line-height:1.6;">${d.counter_view.response || ''}</div>
+              <div style="font-size:13px;color:var(--grey-pale);line-height:1.6;">${escapeHtml(d.counter_view.response || '')}</div>
             </div>
           </div>` : ''}
 
@@ -11936,12 +11960,12 @@
                 <tbody>
                   ${d.comparable_sales.map(c => `
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
-                      <td style="padding:8px 10px;color:var(--white);">${c.source_url ? `<a href="${c.source_url}" target="_blank" rel="noopener" style="color:var(--white);text-decoration:none;border-bottom:1px dotted var(--gold);">${c.address || ''}</a>` : (c.address || '')}</td>
-                      <td style="padding:8px 10px;color:var(--grey-pale);font-family:'DM Mono',monospace;">${c.date || ''}</td>
+                      <td style="padding:8px 10px;color:var(--white);">${c.source_url ? `<a href="${escapeHtml(/^https?:\/\//i.test(c.source_url) ? c.source_url : 'https://' + c.source_url)}" target="_blank" rel="noopener" style="color:var(--white);text-decoration:none;border-bottom:1px dotted var(--gold);">${escapeHtml(c.address || '')}</a>` : escapeHtml(c.address || '')}</td>
+                      <td style="padding:8px 10px;color:var(--grey-pale);font-family:'DM Mono',monospace;">${escapeHtml(c.date || '')}</td>
                       <td style="padding:8px 10px;color:var(--white);text-align:right;font-family:'DM Mono',monospace;">${c.price ? '$' + Number(c.price).toLocaleString() : '—'}</td>
                       <td style="padding:8px 10px;color:var(--grey-pale);text-align:right;font-family:'DM Mono',monospace;">${c.sqm_internal ?? '—'}</td>
                       <td style="padding:8px 10px;color:var(--grey-pale);text-align:right;font-family:'DM Mono',monospace;">${c.price_per_sqm ? '$' + Number(c.price_per_sqm).toLocaleString() : '—'}</td>
-                      <td style="padding:8px 10px;color:var(--grey-pale);text-transform:capitalize;">${c.property_type || ''}</td>
+                      <td style="padding:8px 10px;color:var(--grey-pale);text-transform:capitalize;">${escapeHtml(c.property_type || '')}</td>
                     </tr>`).join('')}
                 </tbody>
               </table>
@@ -13424,10 +13448,8 @@
     return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
   }
 
-  function escHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+  // Legacy alias — previously skipped apostrophes; now full escaping.
+  function escHtml(str) { return escapeHtml(str); }
 
   async function handleNotifClick(notifId, linkType, linkId) {
     // Mark as read locally + remotely (fire-and-forget). In admin preview
@@ -13559,7 +13581,7 @@
   }
 
   // ── Helpers ────────────────────────────────────────────────
-  const rv2Esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const rv2Esc = s => escapeHtml(s);  // legacy alias — see canonical escapeHtml
   const rv2Money = v => v == null ? '—' : '$' + Number(v).toLocaleString('en-AU');
   const rv2MoneyShort = v => v == null ? '—' : (v >= 1e6 ? '$' + (v/1e6).toFixed(2) + 'M' : '$' + Math.round(v/1e3) + 'k');
   const rv2Pct = v => v == null ? '—' : Number(v).toFixed(1) + '%';
@@ -15528,7 +15550,7 @@ function renderStockMap(projects) {
       iconAnchor: [14, 26]
     });
     const m = L.marker([lat, lng], { icon, title: p.name || '' });
-    m.bindTooltip(`<strong>${p.name || ''}</strong><br><span style="color:#C8A951">${[p.suburb, p.state].filter(Boolean).join(' · ')}</span>`, { direction: 'top' });
+    m.bindTooltip(`<strong>${escapeHtml(p.name || '')}</strong><br><span style="color:#C8A951">${escapeHtml([p.suburb, p.state].filter(Boolean).join(' · '))}</span>`, { direction: 'top' });
     // Pin click navigates straight to the project (H&L lot pins below keep their own showStockListing handler).
     m.on('click', function() { showStockProject(p.id); });
     stkMarkerCluster.addLayer(m);
@@ -15548,7 +15570,7 @@ function renderStockMap(projects) {
     });
     const m = L.marker([lat, lng], { icon, title: s.name || '' });
     const lotLabel = [s.lot_number ? 'Lot ' + s.lot_number : null, s.street].filter(Boolean).join(' · ');
-    m.bindTooltip(`<strong>${s.project_name || s.name || ''}</strong><br><span style="color:#C8A951">${lotLabel || [s.suburb, s.state].filter(Boolean).join(' · ')}</span>`, { direction: 'top' });
+    m.bindTooltip(`<strong>${escapeHtml(s.project_name || s.name || '')}</strong><br><span style="color:#C8A951">${escapeHtml(lotLabel || [s.suburb, s.state].filter(Boolean).join(' · '))}</span>`, { direction: 'top' });
     m.on('click', function() { showStockListing(s.id); });
     stkMarkerCluster.addLayer(m);
     bounds.push([lat, lng]);
@@ -17253,8 +17275,11 @@ async function renderSaveToListOptions(s) {
     container.innerHTML = '<div style="font-size:12px;color:var(--grey-mid);margin-bottom:10px;">No lists yet — create one below.</div>';
     return;
   }
+  // Pass only the id into the inline handler — the name is looked up from
+  // _myLists inside addToExistingList, so quotes/apostrophes in a list name
+  // can't break (or inject into) the onclick attribute.
   container.innerHTML = _myLists.map(l => `
-    <div class="lst-option-row" onclick="addToExistingList('${l.id}','${escHtml(l.name)}')">
+    <div class="lst-option-row" onclick="addToExistingList('${l.id}')">
       <div>
         <div style="font-size:13px;color:var(--white);">${escHtml(l.name)}</div>
         <div style="font-size:11px;color:var(--grey-mid);">${l.item_count} ${l.item_count === 1 ? 'property' : 'properties'}</div>
@@ -17265,6 +17290,9 @@ async function renderSaveToListOptions(s) {
 }
 
 async function addToExistingList(listId, listName) {
+  // Name is optional — resolve from the loaded lists when not supplied
+  // (createList passes it directly because the new list isn't in _myLists yet).
+  if (!listName) listName = (_myLists.find(x => x.id === listId) || {}).name || 'list';
   const s = allStockItems.find(x => x.id === currentStockId) || allAvailableStock.find(x => x.id === currentStockId);
   if (!s) return;
   try {
@@ -22285,18 +22313,20 @@ function renderResearchRows(reports) {
   if (!reports.length) {
     return '<div class="rsc-empty" style="padding:40px 20px;text-align:center;color:var(--grey-mid);"><div class="rsc-empty-icon">◎</div>No reports match your filters.</div>';
   }
+  // Escape every report field — research rows render from research_reports,
+  // which is not TPCH-authored-only until the anon-write policies are fixed.
   return reports.map(r => {
     const badgeClass = rscBadgeClass(r.rating);
-    const name = (r.suburb || '—') + (r.region ? ' — ' + r.region : '');
+    const name = escapeHtml((r.suburb || '—') + (r.region ? ' — ' + r.region : ''));
     return `
-    <div class="rsc-row" data-slug="${r.slug}" onclick="showResearch('${r.slug}')">
-      <div class="ri-state">${r.state_code || ''}</div>
+    <div class="rsc-row" data-slug="${escapeHtml(r.slug)}" onclick="showResearch(this.dataset.slug)">
+      <div class="ri-state">${escapeHtml(r.state_code || '')}</div>
       <div class="ri-info">
         <div class="ri-name">${name}</div>
-        <div class="ri-meta">${(r.thesis_short || '').replace(/"/g, '&quot;')}</div>
+        <div class="ri-meta">${escapeHtml(r.thesis_short || '')}</div>
       </div>
       <div class="ri-score">
-        <div class="score-badge ${badgeClass}">${r.rating || '—'}</div>
+        <div class="score-badge ${badgeClass}">${escapeHtml(r.rating) || '—'}</div>
         <div class="ri-date">${rscFmtDate(r.updated_at)}</div>
       </div>
       <span class="rsc-row-cta">View →</span>
@@ -22305,25 +22335,26 @@ function renderResearchRows(reports) {
 }
 
 function renderResearchCardHtml(r) {
+  // Same rule as renderResearchRows — escape every interpolated field.
   const badgeClass = rscBadgeClass(r.rating);
   const heroSrc = r.cover_image_url || null;
-  const initial = (r.suburb || '?').charAt(0).toUpperCase();
+  const initial = escapeHtml((r.suburb || '?').charAt(0).toUpperCase());
   const heroHtml = heroSrc
-    ? `<img src="${heroSrc}" alt="${(r.suburb||'').replace(/"/g,'&quot;')}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    ? `<img src="${escapeHtml(heroSrc)}" alt="${escapeHtml(r.suburb || '')}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
     : '';
   const placeholderStyle = heroSrc ? 'style="display:none"' : '';
-  const name = (r.suburb || '—') + (r.region ? ' — ' + r.region : '');
+  const name = escapeHtml((r.suburb || '—') + (r.region ? ' — ' + r.region : ''));
   return `
-  <div class="rsc-card" onclick="showResearch('${r.slug}')">
+  <div class="rsc-card" data-slug="${escapeHtml(r.slug)}" onclick="showResearch(this.dataset.slug)">
     <div class="rsc-card-hero">
       ${heroHtml}
       <div class="rsc-card-hero-placeholder" ${placeholderStyle}>${initial}</div>
-      <div class="rsc-card-state">${r.state_code || ''}</div>
-      <div class="rsc-card-rating"><span class="score-badge ${badgeClass}" style="padding:4px 11px;font-size:12px;">${r.rating || '—'}</span></div>
+      <div class="rsc-card-state">${escapeHtml(r.state_code || '')}</div>
+      <div class="rsc-card-rating"><span class="score-badge ${badgeClass}" style="padding:4px 11px;font-size:12px;">${escapeHtml(r.rating) || '—'}</span></div>
     </div>
     <div class="rsc-card-body">
       <div class="rsc-card-name">${name}</div>
-      <div class="rsc-card-meta">${(r.thesis_short || '').replace(/"/g, '&quot;')}</div>
+      <div class="rsc-card-meta">${escapeHtml(r.thesis_short || '')}</div>
       <div class="rsc-card-footer">
         <span class="rsc-card-date">${rscFmtDate(r.updated_at)}</span>
         <span class="rsc-card-cta">View →</span>
@@ -22556,7 +22587,7 @@ function renderResearchMap(reports) {
       iconAnchor: [14, 26],
     });
     const m = L.marker([lat, lng], { icon, title: r.suburb || '' });
-    m.bindTooltip(`<strong>${r.suburb || ''}</strong><br><span style="color:#C8A951">${[r.state_code, r.rating].filter(Boolean).join(' · ')}</span>`, { direction: 'top' });
+    m.bindTooltip(`<strong>${escapeHtml(r.suburb || '')}</strong><br><span style="color:#C8A951">${escapeHtml([r.state_code, r.rating].filter(Boolean).join(' · '))}</span>`, { direction: 'top' });
     // Pin click navigates straight to the research report.
     m.on('click', function() { showResearch(r.slug); });
     rscMarkerCluster.addLayer(m);
