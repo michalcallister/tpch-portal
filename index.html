@@ -12976,11 +12976,16 @@
   function renderRadar() {
     const listEl = document.getElementById('radar-list');
     if (!listEl) return;
-    if (!partnerStockEvents.length) {
+    // Staff visibility: drop events for projects hidden from this staff
+    // member (events without a project_id pass through; clicking them is
+    // still gated inside showStockListing/showStockProject).
+    const events = partnerStockEvents.filter(e =>
+      !e.project_id || typeof isProjectVisibleToStaff !== 'function' || isProjectVisibleToStaff(e.project_id));
+    if (!events.length) {
       listEl.innerHTML = '<div class="radar-empty">No changes in your tracked stock in the last 14 days.</div>';
       return;
     }
-    listEl.innerHTML = partnerStockEvents.map(renderRadarItem).join('');
+    listEl.innerHTML = events.map(renderRadarItem).join('');
   }
 
   function renderRadarItem(e) {
@@ -15615,6 +15620,13 @@ function highlightStkRow(projId, scrollIntoView) {
 
 // ── Project detail ────────────────────────────────────────
 async function showStockProject(id) {
+  // Staff visibility gate. The browse surfaces already filter hidden
+  // projects, but this is the choke point for every other entry path
+  // (notifications, radar, Ask results, saved lists, stale state).
+  if (!isProjectVisibleToStaff(id)) {
+    if (typeof showToast === 'function') showToast('This project is not available on your account.');
+    return;
+  }
   currentProjectId = id;
   const p = allProjects.find(x => x.id === id);
   if (!p) return;
@@ -16178,9 +16190,14 @@ function recordPartnerView(entityType, entityId) {
 }
 
 function showStockListing(id) {
-  currentStockId = id;
   const s = allStockItems.find(x => x.id === id) || allAvailableStock.find(x => x.id === id);
   if (!s) { console.warn('showStockListing: item not found', id, 'allStockItems:', allStockItems.length, 'allAvailableStock:', allAvailableStock.length); return; }
+  // Staff visibility gate — same choke-point rule as showStockProject.
+  if (!isProjectVisibleToStaff(s.project_id)) {
+    if (typeof showToast === 'function') showToast('This listing is not available on your account.');
+    return;
+  }
+  currentStockId = id;
   recordPartnerView('stock', id);
 
   // Header
