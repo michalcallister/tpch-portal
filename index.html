@@ -9278,6 +9278,16 @@
 
   const CHANGELOG = [
     {
+      version: '3.12',
+      date: '3 Jul 2026',
+      title: 'Team commission: clearer rules for what your staff see',
+      items: [
+        'Staff commission ranges now display correctly on project cards — you\'ll see a dollar range (e.g. $15k–$25k) on every project your firm admin has set a commission deduction on.',
+        'A project only appears for a team member once your firm admin has both ticked it visible and set the deduction amount. Ticked projects with no amount set stay hidden until the amount is entered.',
+        'Project updates on your dashboard radar now only mention projects you have access to.',
+      ]
+    },
+    {
       version: '3.11',
       date: '19 Jun 2026',
       title: 'A cleaner, easier-to-read Team list',
@@ -9941,8 +9951,10 @@
       const row     = overrides[p.id] || null;
       const ded     = row ? parseFloat(row.d) : 0;
       const isVis   = !!(row && row.v === true);
-      if (isVis) visibleCount++;
       const dedAttr = (isFinite(ded) && ded > 0) ? ded : '';
+      // Staff only see a project when it's ticked AND has a deduction —
+      // count what they'll actually see, not just the tick state.
+      if (isVis && dedAttr !== '') visibleCount++;
       const r = rangeByProj[p.id];
       const rangeText = r
         ? (r.min === r.max ? fmtCurrency(r.min) : fmtCurrency(r.min) + '–' + fmtCurrency(r.max))
@@ -9967,7 +9979,7 @@
         <td style="padding:6px 8px;width:80px;"><span class="spco-status" style="font-size:11px;color:var(--grey-mid);"></span></td>
       </tr>`;
     }).join('');
-    status.textContent = visibleCount + ' of ' + projects.length + ' projects visible to this team member';
+    status.textContent = visibleCount + ' of ' + projects.length + ' projects visible to this team member (a project needs the tick and a deduction to show)';
     status.style.color = 'var(--grey-mid)';
   }
 
@@ -10987,8 +10999,9 @@
       const row = overrides[p.id] || null;
       const ded = row ? parseFloat(row.d) : 0;
       const isVis = !!(row && row.v === true);
-      if (isVis) visibleCount++;
       const dedAttr = (isFinite(ded) && ded > 0) ? ded : '';
+      // Same rule as isProjectVisibleToStaff: tick + deduction both required.
+      if (isVis && dedAttr !== '') visibleCount++;
       const r = rangeByProj[p.id];
       const rangeText = r ? (r.min === r.max ? fmtCurrency(r.min) : fmtCurrency(r.min) + '–' + fmtCurrency(r.max)) : '—';
       return `<tr>
@@ -10999,7 +11012,7 @@
         <td style="padding:6px 8px;"><span class="spco-status" style="font-size:11px;color:var(--grey-mid);"></span></td>
       </tr>`;
     }).join('');
-    status.textContent = visibleCount + ' of ' + projects.length + ' projects visible to this team member';
+    status.textContent = visibleCount + ' of ' + projects.length + ' projects visible to this team member (a project needs the tick and a deduction to show)';
     status.style.color = 'var(--grey-mid)';
   }
 
@@ -14486,12 +14499,15 @@ function applyTeamOverride(rawDollars, projectId) {
 // Is THIS project visible to the logged-in staff member? Only meaningful when
 // caller is staff under a flagged partner. Owners and non-flagged staff always
 // return true (no filter applies for them).
+// A project is visible ONLY when the owner has ticked it visible AND set a
+// deduction amount. A blank deduction hides the project entirely — the owner
+// must decide the team rate before staff can see (or quote) that stock.
 function isProjectVisibleToStaff(projectId) {
   if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff') return true;
   if (!currentPartnerRecord.team_commission_override_enabled) return true;
   if (!projectId) return false;
   const row = staffCommissionOverrides[projectId];
-  return !!(row && row.v === true);
+  return !!(row && row.v === true && row.d > 0);
 }
 
 // True when the logged-in user is a flagged-partner staff member with ZERO
@@ -14501,7 +14517,8 @@ function staffHasNoVisibleProjects() {
   if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff') return false;
   if (!currentPartnerRecord.team_commission_override_enabled) return false;
   for (const k in staffCommissionOverrides) {
-    if (staffCommissionOverrides[k] && staffCommissionOverrides[k].v === true) return false;
+    const row = staffCommissionOverrides[k];
+    if (row && row.v === true && row.d > 0) return false;
   }
   return true;
 }
