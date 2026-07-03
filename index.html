@@ -3228,7 +3228,7 @@
   .rv2-thesis-block { background: linear-gradient(180deg, rgba(200,169,81,0.06), rgba(200,169,81,0.02)); border: 1px solid var(--gold-border); border-left: 3px solid var(--gold); padding: 28px 32px; margin-bottom: 32px; border-radius: 3px; }
   .rv2-thesis-block.plain { background: linear-gradient(180deg, rgba(245,243,238,0.04), rgba(245,243,238,0.01)); border-left-color: var(--gold-light); }
   .rv2-thesis-label { font-size: 11px; color: var(--gold-light); letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-bottom: 16px; }
-  .rv2-thesis-kicker { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; font-style: italic; color: var(--cream); line-height: 1.45; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid rgba(200,169,81,0.18); font-weight: 400; }
+  .rv2-thesis-kicker { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; font-style: italic; color: var(--white); line-height: 1.45; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid rgba(200,169,81,0.18); font-weight: 400; }
   .rv2-thesis-text { font-family: 'Outfit', 'Inter', sans-serif; font-size: 16px; color: var(--white); line-height: 1.75; font-weight: 400; }
   .rv2-thesis-text p { margin: 0 0 14px; }
   .rv2-thesis-text p:last-child { margin-bottom: 0; }
@@ -7459,7 +7459,18 @@
   let currentRefreshToken = null;
   let _tokenRefreshTimer  = null;
 
-  async function refreshAuthToken() {
+  // Only one refresh may be in flight at a time. Supabase rotates refresh
+  // tokens and treats concurrent reuse of the same one as suspicious (can
+  // revoke the whole session), and parallel 401 retries (e.g. the dashboard's
+  // Promise.all fan-out waking after laptop sleep) would otherwise all
+  // refresh at once. Everyone awaits the same promise instead.
+  let _refreshInFlight = null;
+  function refreshAuthToken() {
+    if (_refreshInFlight) return _refreshInFlight;
+    _refreshInFlight = _doRefreshAuthToken().finally(() => { _refreshInFlight = null; });
+    return _refreshInFlight;
+  }
+  async function _doRefreshAuthToken() {
     if (!currentRefreshToken) return;
     try {
       const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
@@ -9178,11 +9189,16 @@
         body: JSON.stringify({ password: newPass }),
       });
       if (!res.ok) throw new Error(await res.text());
+      // Capture the token before clearing it: the email pre-fill below
+      // decodes its payload.
+      const usedToken = _authRedirectToken;
       _authRedirectToken = null;
       showScreen('screen-login');
       // Pre-fill email if we can retrieve it from the token payload
       try {
-        const payload = JSON.parse(atob(_authRedirectToken?.split('.')[1] ?? ''));
+        // JWT payloads are base64url; swap to standard base64 for atob.
+        const b64 = (usedToken?.split('.')[1] ?? '').replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(atob(b64));
         if (payload?.email) document.getElementById('login-email').value = payload.email;
       } catch (_) { /* ignore */ }
       const errEl = document.getElementById('login-error');
@@ -9520,8 +9536,14 @@
     currentPartnerRecord = null;
     staffCommissionOverrides = {};
     currentUserIsAdmin   = false;
-    // Clear any in-flight admin → CP preview so state doesn't leak into
-    // the next session (e.g. partner login on the same machine).
+    // Clear any in-flight preview (owner → staff, or admin → CP) so state
+    // doesn't leak into the next session (e.g. partner login on the same
+    // machine). Without this, a logout mid staff-preview jams the next
+    // user's preview and could restore the previous user's record.
+    _previewOriginalRecord    = null;
+    _previewOriginalOverrides = null;
+    const staffBanner = document.getElementById('preview-banner');
+    if (staffBanner) staffBanner.style.display = 'none';
     _adminPreviewPartnerId   = null;
     _adminPreviewPartnerName = null;
     _adminPreviewLogId       = null;
@@ -9928,7 +9950,6 @@
       return `<tr>
         <td style="padding:6px 8px;text-align:center;">
           <input type="checkbox" ${isVis ? 'checked' : ''}
-            id="spco-vis-${p.id}"
             data-staff-id="${staffId}" data-project-id="${p.id}"
             onchange="saveStaffProjectVisibility(this)"
             style="width:16px;height:16px;cursor:pointer;accent-color:var(--gold);">
@@ -9943,7 +9964,7 @@
             style="width:110px;text-align:right;padding:5px 8px;background:rgba(255,255,255,0.04);border:1px solid var(--gold-border);color:var(--white);border-radius:3px;font-family:'DM Mono',monospace;font-size:12px;"
             placeholder="0">
         </td>
-        <td style="padding:6px 8px;width:80px;"><span id="spco-status-${p.id}" style="font-size:11px;color:var(--grey-mid);"></span></td>
+        <td style="padding:6px 8px;width:80px;"><span class="spco-status" style="font-size:11px;color:var(--grey-mid);"></span></td>
       </tr>`;
     }).join('');
     status.textContent = visibleCount + ' of ' + projects.length + ' projects visible to this team member';
@@ -9954,7 +9975,11 @@
     if (previewReadOnlyGuard('editing staff commission overrides')) return;
     const staffId   = inputEl.getAttribute('data-staff-id');
     const projectId = inputEl.getAttribute('data-project-id');
-    const statusEl  = document.getElementById('spco-status-' + projectId);
+    // Resolve within this row: the same row template renders in two modals
+    // (edit-commission + commission wizard), so document-wide id lookups
+    // could hit the hidden modal's copy.
+    const rowEl     = inputEl.closest('tr');
+    const statusEl  = rowEl ? rowEl.querySelector('.spco-status') : null;
     if (!staffId || !projectId) return;
     let val = parseFloat(inputEl.value);
     if (!isFinite(val) || val <= 0) val = 0;
@@ -9974,7 +9999,7 @@
       // Setting a deduction implicitly makes the row visible (server-side) —
       // mirror that on the visible checkbox in this row so the UI stays in sync.
       if (val > 0) {
-        const cb = document.getElementById('spco-vis-' + projectId);
+        const cb = rowEl ? rowEl.querySelector('input[type="checkbox"]') : null;
         if (cb) cb.checked = true;
       }
       if (statusEl) { statusEl.textContent = val > 0 ? 'Saved ✓' : 'Cleared'; statusEl.style.color = 'var(--gold)'; }
@@ -9986,7 +10011,9 @@
   async function saveStaffProjectVisibility(checkboxEl) {
     const staffId   = checkboxEl.getAttribute('data-staff-id');
     const projectId = checkboxEl.getAttribute('data-project-id');
-    const statusEl  = document.getElementById('spco-status-' + projectId);
+    // Row-relative lookup (see saveStaffProjectOverride).
+    const rowEl     = checkboxEl.closest('tr');
+    const statusEl  = rowEl ? rowEl.querySelector('.spco-status') : null;
     if (!staffId || !projectId) return;
     const visible = !!checkboxEl.checked;
     if (statusEl) { statusEl.textContent = visible ? 'Showing…' : 'Hiding…'; statusEl.style.color = 'var(--grey-mid)'; }
@@ -10965,11 +10992,11 @@
       const r = rangeByProj[p.id];
       const rangeText = r ? (r.min === r.max ? fmtCurrency(r.min) : fmtCurrency(r.min) + '–' + fmtCurrency(r.max)) : '—';
       return `<tr>
-        <td style="padding:6px 8px;text-align:center;"><input type="checkbox" ${isVis ? 'checked' : ''} id="spco-vis-${p.id}" data-staff-id="${staffId}" data-project-id="${p.id}" onchange="saveStaffProjectVisibility(this)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--gold);"></td>
+        <td style="padding:6px 8px;text-align:center;"><input type="checkbox" ${isVis ? 'checked' : ''} data-staff-id="${staffId}" data-project-id="${p.id}" onchange="saveStaffProjectVisibility(this)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--gold);"></td>
         <td style="padding:6px 8px;color:var(--white);">${escapeHtml(p.name || '(unnamed)')}</td>
         <td style="padding:6px 8px;text-align:right;color:var(--grey-light);font-family:'DM Mono',monospace;font-size:12px;">${rangeText}</td>
         <td style="padding:6px 8px;text-align:right;"><input type="number" min="0" step="100" value="${dedAttr}" data-staff-id="${staffId}" data-project-id="${p.id}" onblur="saveStaffProjectOverride(this)" style="width:96px;text-align:right;padding:5px 8px;background:rgba(255,255,255,0.04);border:1px solid var(--gold-border);color:var(--white);border-radius:3px;font-family:'DM Mono',monospace;font-size:12px;" placeholder="0"></td>
-        <td style="padding:6px 8px;"><span id="spco-status-${p.id}" style="font-size:11px;color:var(--grey-mid);"></span></td>
+        <td style="padding:6px 8px;"><span class="spco-status" style="font-size:11px;color:var(--grey-mid);"></span></td>
       </tr>`;
     }).join('');
     status.textContent = visibleCount + ' of ' + projects.length + ' projects visible to this team member';
@@ -11496,9 +11523,9 @@
       return aiLoadSuburbResearchDrafts();
     }
     try {
-      const res = await fetch(SUPABASE_URL + '/rest/v1/project_analysis?status=eq.draft&order=created_at.desc', {
-        headers: { 'apikey': SUPABASE_ANON_KEY }
-      });
+      const res = await fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/project_analysis?status=eq.draft&order=created_at.desc', () => ({
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
+      }));
       // RLS blocks drafts for anon — use service role via edge function or just show what we get
       let drafts = [];
       if (res.ok) drafts = await res.json();
@@ -11546,7 +11573,7 @@
             ${d[p+'_score_reasoning'] ? `<div style="font-size:13px;color:var(--grey-pale);line-height:1.65;margin-bottom:14px;padding:12px 16px;background:rgba(255,255,255,0.03);border-left:2px solid var(--gold);border-radius:0 3px 3px 0;"><strong style="color:var(--gold-light);">Score reasoning:</strong> ${d[p+'_score_reasoning']}</div>` : ''}
             <div style="display:grid;grid-template-columns:220px 1fr;gap:20px;">
               <div>${fmtStats(d[p+'_stats'])}</div>
-              <div style="font-size:14px;color:var(--grey-pale);line-height:1.7;">${(d[p+'_narrative'] || 'No narrative available.').split('\\n\\n').map(para => '<p style="margin-bottom:10px;">'+para+'</p>').join('')}</div>
+              <div style="font-size:14px;color:var(--grey-pale);line-height:1.7;">${(d[p+'_narrative'] || 'No narrative available.').split(/(?:\r?\n){2,}|\\n\\n/).map(para => '<p style="margin-bottom:10px;">'+para+'</p>').join('')}</div>
             </div>
           </div>`).join('')}
 
@@ -11578,9 +11605,9 @@
   // ── Load run history ───────────────────────────────────
   async function aiLoadRunHistory(agentId) {
     try {
-      const res = await fetch(SUPABASE_URL + '/rest/v1/agent_runs?agent_id=eq.' + agentId + '&order=created_at.desc&limit=20', {
-        headers: { 'apikey': SUPABASE_ANON_KEY }
-      });
+      const res = await fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/agent_runs?agent_id=eq.' + agentId + '&order=created_at.desc&limit=20', () => ({
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
+      }));
       const runs = await res.json();
       const el = document.getElementById('aad-history-list');
       if (!runs.length) {
@@ -13029,9 +13056,9 @@
     if (!allProjects.length) await loadStockProjects();
     let stock = allStockItems.find(s => s.id === stockId);
     if (!stock) {
-      const r = await fetch(SUPABASE_URL + '/rest/v1/stock?id=eq.' + stockId + '&select=*', {
-        headers: { 'apikey': SUPABASE_ANON_KEY },
-      });
+      const r = await fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/stock?id=eq.' + stockId + '&select=*', () => ({
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) },
+      }));
       const rows = await r.json();
       stock = rows?.[0] || null;
       if (stock && stock.project_id) await loadProjectStock(stock.project_id);
@@ -13410,9 +13437,9 @@
       // Fetch this specific stock item if not already loaded
       let stock = allStockItems.find(s => s.id === linkId);
       if (!stock) {
-        const r = await fetch(SUPABASE_URL + '/rest/v1/stock?id=eq.' + linkId + '&select=*', {
-          headers: { 'apikey': SUPABASE_ANON_KEY },
-        });
+        const r = await fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/stock?id=eq.' + linkId + '&select=*', () => ({
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) },
+        }));
         const rows = await r.json();
         stock = rows?.[0] || null;
         if (stock && stock.project_id) {
@@ -14353,6 +14380,7 @@ let stkFilter = {
 // Leaflet map + cluster state for the Stock projects pane
 let stkLeafletMap = null;
 let stkMarkerCluster = null;
+let stkPlainPinGroup = null; // unclustered twin of stkMarkerCluster; holds the markers while clustering is toggled off
 let stkProjectMarkers = {}; // id → marker
 let stkProjectPinCoords = {}; // id → [[lat,lng], ...] (each project may have one project pin OR many H&L lot pins)
 let stkLastFilteredProjects = []; // sorted + data-filtered list (pre-viewport)
@@ -14527,15 +14555,11 @@ function fmtComm(s) {
   return '—';
 }
 function commSortVal(s) {
-  // Compute the raw numeric the same way fmtComm does, then apply the
-  // team override (no-op for owner/non-flagged partners) so staff see
-  // their sort match their displayed values.
-  let raw;
-  if (s.channel_comm_flat && s.channel_comm_pct) raw = s.channel_comm_flat;
-  else if (s.channel_comm_flat) raw = s.channel_comm_flat;
-  else if (s.channel_comm_pct && s.total_contract) raw = Math.round(s.total_contract * s.channel_comm_pct / 100);
-  else raw = s.channel_commission ?? -1;
-  if (raw === -1) return -1;
+  // Resolve the raw numeric via the same helper fmtComm mirrors, then apply
+  // the team override (no-op for owner/non-flagged partners) so the sort
+  // order matches the displayed values.
+  const raw = resolveRawCommDollars(s);
+  if (raw == null) return -1;
   return applyTeamOverride(raw, s.project_id).dollars;
 }
 
@@ -14700,9 +14724,12 @@ async function loadStockProjects() {
       p._maxCommPct      = s.commPcts.length  ? Math.max(...s.commPcts)  : null;
       // For flagged staff with a per-project deduction set: precompute the
       // team-visible $ range so fmtProjCommForUser can show $X–$Y with no %.
-      const ded = (currentPartnerRecord?.role === 'staff'
+      // Overrides are stored as { d: deduction $, v: visible } rows; subtract
+      // the .d amount, mirroring applyTeamOverride's resolution.
+      const _ovRow = (currentPartnerRecord?.role === 'staff'
                 && currentPartnerRecord?.team_commission_override_enabled
                 && staffCommissionOverrides[p.id]) || null;
+      const ded = (_ovRow && _ovRow.d > 0) ? _ovRow.d : null;
       if (ded != null && s.rawDollars.length) {
         const adj = s.rawDollars.map(d => Math.max(0, d - ded));
         p._teamMinComm     = Math.min(...adj);
@@ -15072,9 +15099,18 @@ function renderStkPager(elId, total) {
   el.innerHTML = buttons.join('');
 }
 
+// True when the projects browse is showing the map split. In that state,
+// page/size/sort changes only affect the right-pane list. Re-running the full
+// renderStockBrowse would rebuild every marker and refit bounds, throwing away
+// the user's pan/zoom (and re-narrowing the very subset being paged).
+function _stkInMapMode() {
+  return stkBrowseMode !== 'stock' && stkFilter.viewMode === 'map';
+}
+
 function gotoStkPage(p) {
   stkFilter.page = Math.max(1, p);
-  renderStockBrowse();
+  if (_stkInMapMode()) renderProjectsRightPane();
+  else renderStockBrowse();
 }
 
 function onStkPageSize(v, fromGrid) {
@@ -15086,14 +15122,21 @@ function onStkPageSize(v, fromGrid) {
   if (a) a.value = String(stkFilter.pageSize);
   if (b) b.value = String(stkFilter.pageSize);
   saveStkFilter();
-  renderStockBrowse();
+  if (_stkInMapMode()) renderProjectsRightPane();
+  else renderStockBrowse();
 }
 
 function onStkProjSort(v) {
   stkFilter.projSort = v;
   stkFilter.page = 1;
   saveStkFilter();
-  renderStockBrowse();
+  if (_stkInMapMode()) {
+    // Same marker set, new order: re-sort the cached list, skip the map.
+    stkLastFilteredProjects = sortStockProjects(filteredStockProjects());
+    renderProjectsRightPane();
+  } else {
+    renderStockBrowse();
+  }
 }
 
 function onStkSearchInput() {
@@ -15432,6 +15475,7 @@ function renderStockMap(projects) {
 
   // Rebuild markers
   stkMarkerCluster.clearLayers();
+  if (stkPlainPinGroup) stkPlainPinGroup.clearLayers();
   stkProjectMarkers = {};
   stkProjectPinCoords = {};
   const bounds = [];
@@ -15491,6 +15535,10 @@ function renderStockMap(projects) {
     }
   });
 
+  // Markers are always built into the cluster group; if the user has
+  // clustering toggled off, shift them to the plain group now.
+  _stkApplyPinLayer();
+
   // Invalidate size first (the pane may have been hidden when init() ran),
   // then apply the bounds — otherwise fitBounds calculates against a
   // zero-sized container and zooms to a single pin.
@@ -15520,21 +15568,33 @@ function renderStockMap(projects) {
   setTimeout(applyBounds, 60);
 }
 
+// Put the pins on the map via whichever layer matches the current toggles:
+// the cluster group when clustering is on, a plain layerGroup of the same
+// markers when it's off. (markercluster 1.5.3 has no enable/disableClustering,
+// that's the separate Freezable plugin, so we swap layers instead.)
+function _stkApplyPinLayer() {
+  if (!stkLeafletMap || !stkMarkerCluster) return;
+  if (!stkPlainPinGroup) stkPlainPinGroup = L.layerGroup();
+  if (stkClusteringEnabled) {
+    // Move any markers parked in the plain group back into the cluster group.
+    stkPlainPinGroup.getLayers().forEach(m => { stkPlainPinGroup.removeLayer(m); stkMarkerCluster.addLayer(m); });
+    if (stkLeafletMap.hasLayer(stkPlainPinGroup)) stkLeafletMap.removeLayer(stkPlainPinGroup);
+    if (stkPinsVisible && !stkLeafletMap.hasLayer(stkMarkerCluster)) stkLeafletMap.addLayer(stkMarkerCluster);
+    if (!stkPinsVisible && stkLeafletMap.hasLayer(stkMarkerCluster)) stkLeafletMap.removeLayer(stkMarkerCluster);
+  } else {
+    stkMarkerCluster.getLayers().forEach(m => { stkMarkerCluster.removeLayer(m); stkPlainPinGroup.addLayer(m); });
+    if (stkLeafletMap.hasLayer(stkMarkerCluster)) stkLeafletMap.removeLayer(stkMarkerCluster);
+    if (stkPinsVisible && !stkLeafletMap.hasLayer(stkPlainPinGroup)) stkLeafletMap.addLayer(stkPlainPinGroup);
+    if (!stkPinsVisible && stkLeafletMap.hasLayer(stkPlainPinGroup)) stkLeafletMap.removeLayer(stkPlainPinGroup);
+  }
+}
 function toggleMapClustering() {
   stkClusteringEnabled = document.getElementById('stk-mapkey-cluster').checked;
-  if (!stkLeafletMap || !stkMarkerCluster) return;
-  if (stkClusteringEnabled) {
-    stkMarkerCluster.enableClustering ? stkMarkerCluster.enableClustering() : null;
-    if (!stkLeafletMap.hasLayer(stkMarkerCluster)) stkLeafletMap.addLayer(stkMarkerCluster);
-  } else {
-    if (stkMarkerCluster.disableClustering) stkMarkerCluster.disableClustering();
-  }
+  _stkApplyPinLayer();
 }
 function toggleMapPins() {
   stkPinsVisible = document.getElementById('stk-mapkey-pins').checked;
-  if (!stkLeafletMap || !stkMarkerCluster) return;
-  if (stkPinsVisible) { if (!stkLeafletMap.hasLayer(stkMarkerCluster)) stkLeafletMap.addLayer(stkMarkerCluster); }
-  else { stkLeafletMap.removeLayer(stkMarkerCluster); }
+  _stkApplyPinLayer();
 }
 
 function locateOnStkMap() {
@@ -15801,9 +15861,9 @@ async function renderAnalysis() {
   const editBtn = document.getElementById('ia-edit-btn');
   if (editBtn) editBtn.style.display = 'none';
   try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/project_analysis?project_id=eq.' + currentProjectId + '&status=eq.published&order=published_at.desc&limit=1', {
-      headers: { 'apikey': SUPABASE_ANON_KEY }
-    });
+    const res = await fetchWithAuthRetry(SUPABASE_URL + '/rest/v1/project_analysis?project_id=eq.' + currentProjectId + '&status=eq.published&order=published_at.desc&limit=1', () => ({
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY) }
+    }));
     const rows = await res.json();
     if (!rows.length) return;
     currentAnalysisRow = rows[0];
@@ -16671,6 +16731,18 @@ function closeReserveModal() {
   document.getElementById('rsv-overlay').style.display = 'none';
 }
 
+// Patch a lot's availability in BOTH in-memory stock arrays. A lot can live
+// in allStockItems (project view) and allAvailableStock (flat stock view /
+// map pins / project counts) at the same time; updating only one leaves the
+// other surface showing stale availability until a full reload.
+function setLocalAvailability(stockId, availability) {
+  [allStockItems, allAvailableStock].forEach(arr => {
+    if (!Array.isArray(arr)) return;
+    const row = arr.find(x => x && x.id === stockId);
+    if (row) row.availability = availability;
+  });
+}
+
 async function submitReservation() {
   if (previewReadOnlyGuard('reserving a stock unit')) return;
   const s = allStockItems.find(x => x.id === currentStockId) || allAvailableStock.find(x => x.id === currentStockId);
@@ -16728,8 +16800,7 @@ async function submitReservation() {
     closeReserveModal();
 
     // Update stock availability locally so UI reflects change immediately
-    const idx = allStockItems.findIndex(x => x.id === s.id);
-    if (idx !== -1) allStockItems[idx].availability = 'Reserved';
+    setLocalAvailability(s.id, 'Reserved');
 
     // Update the Reserve button state
     const reserveBtn = document.getElementById('slg-reserve-btn');
@@ -16880,10 +16951,7 @@ async function cancelReservation(reservationId) {
 
     // Update locally
     const rsv = _myReservations.find(r => r.id === reservationId);
-    if (rsv) {
-      const idx = allStockItems.findIndex(x => x.id === rsv.stock_id);
-      if (idx !== -1) allStockItems[idx].availability = 'Available';
-    }
+    if (rsv) setLocalAvailability(rsv.stock_id, 'Available');
 
     _myReservations = _myReservations.filter(r => r.id !== reservationId);
     renderReservations();
@@ -17044,6 +17112,10 @@ async function viewLotFromList(stockId, projectId) {
   if (projectId && !allStockItems.find(x => x.id === stockId)) {
     await loadProjectStock(projectId);
   }
+  // Keep currentProjectId in step with the stock we just loaded, otherwise
+  // the listing's back button returns to a previously viewed project whose
+  // lots table now shows THIS project's stock.
+  if (projectId) currentProjectId = projectId;
   showStockListing(stockId);
 }
 
@@ -17381,9 +17453,11 @@ function buildKitHtml(s, research, brand) {
 </script>
 
 <style>
-/* Leaflet overrides for dark theme */
+/* Leaflet overrides for dark theme. No !important and brand navy (not the
+   pre-rebrand #0A0A08): the stk/rsc map rules set the same value, and the
+   flyer's light map overrides via the higher-specificity #fly-map rule. */
 .leaflet-container {
-  background: #0A0A08 !important;
+  background: var(--black-card);
   font-family: 'Outfit', system-ui, sans-serif;
 }
 .leaflet-control-zoom {
@@ -20716,11 +20790,11 @@ function buildKitHtml(s, research, brand) {
   }
 
   // Show only the flyer screen — hide login/portal/etc., kill the topbar.
+  // Sweep ALL screens (matching researchEnter) rather than a hard-coded
+  // list, so navigating research link → flyer link in the same tab doesn't
+  // leave both public screens visible.
   function flyerEnter() {
-    ['screen-login','screen-enquiry','screen-setpassword','screen-forgot','screen-portal'].forEach(s => {
-      const el = document.getElementById(s);
-      if (el) el.classList.remove('active');
-    });
+    document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
     document.getElementById('screen-flyer').classList.add('active');
     document.title = 'Property Information';
   }
@@ -20768,7 +20842,76 @@ function buildKitHtml(s, research, brand) {
     return tpl.innerHTML;
   }
 
+  // Restore the flyer screen to its pristine pre-render state. flyerBoot
+  // re-runs flyerLoad on every hashchange (e.g. a second flyer link opened
+  // in the same tab); without this reset the previous property's media,
+  // header mode, optional sections and brand colours all leak into the
+  // next render.
+  function flyerResetUi() {
+    const loading = document.getElementById('fly-loading');
+    if (loading) { loading.innerHTML = '<h2>Loading property…</h2>'; loading.style.display = ''; }
+    const content = document.getElementById('fly-content');
+    if (content) content.style.display = 'none';
+
+    const flyerRoot = document.getElementById('screen-flyer');
+    // Brand colour vars are re-applied per partner in flyerRender.
+    if (flyerRoot) {
+      flyerRoot.style.removeProperty('--f-accent');
+      flyerRoot.style.removeProperty('--f-primary');
+      flyerRoot.style.removeProperty('--f-on-accent');
+    }
+
+    // Header: undo dark-logo mode and unbranded hiding.
+    const header = flyerRoot?.querySelector('.fly-header');
+    if (header) { header.classList.remove('fly-header-dark'); header.style.display = ''; }
+    const logoEl = document.getElementById('fly-logo');
+    if (logoEl) { logoEl.style.display = 'none'; logoEl.removeAttribute('src'); logoEl.alt = ''; }
+    const logoFb = document.getElementById('fly-logo-fallback');
+    if (logoFb) { logoFb.textContent = ''; logoFb.style.display = ''; }
+    const website = document.getElementById('fly-header-website');
+    if (website) { website.style.display = 'none'; website.textContent = ''; }
+    const pf = document.getElementById('fly-prepared-for');
+    if (pf) { pf.style.display = 'none'; const n = pf.querySelector('.pf-name'); if (n) n.textContent = ''; }
+
+    const hero = document.getElementById('fly-hero');
+    if (hero) hero.style.backgroundImage = '';
+
+    // Optional sections back to hidden; media mounts emptied so the previous
+    // property's video / floor plan stop loading (and playing) immediately.
+    ['fly-inclusions-section','fly-location-section','fly-gallery-section','fly-video-section','fly-floorplan-section']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    const overview = document.getElementById('fly-overview-section');
+    if (overview) overview.style.display = '';
+    ['fly-gallery','fly-video-mount','fly-floorplan-mount'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.innerHTML = '';
+    });
+
+    // Contact card + footer (unbranded mode hides them).
+    const contactSection = flyerRoot?.querySelector('.fly-contact')?.closest('section');
+    if (contactSection) contactSection.style.display = '';
+    const footer = flyerRoot?.querySelector('.fly-footer');
+    if (footer) footer.style.display = '';
+    const footerSep = document.getElementById('fly-footer-sep');
+    if (footerSep) footerSep.style.display = '';
+    ['fly-contact-phone','fly-contact-email'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
+
+    // Map: tear down the old Leaflet instance and clear the mount (which may
+    // hold the previous load's "Map unavailable" fallback).
+    if (_flyMap) { try { _flyMap.remove(); } catch(_) {} _flyMap = null; }
+    const mapMount = document.getElementById('fly-map');
+    if (mapMount) { mapMount.innerHTML = ''; mapMount.style.cssText = ''; }
+  }
+
+  // Monotonic load counter: a hashchange mid-fetch starts a newer load,
+  // and any older in-flight load must drop its response instead of
+  // rendering the old property over the new one.
+  let _flyLoadSeq = 0;
+
   async function flyerLoad() {
+    const seq = ++_flyLoadSeq;
+    flyerResetUi();
     const route = flyerParseHash();
     if (!route) {
       flyerShowError('This flyer link is invalid.');
@@ -20790,9 +20933,10 @@ function buildKitHtml(s, research, brand) {
       if (!res.ok) throw new Error('Server error ' + res.status);
       payload = await res.json();
     } catch (e) {
-      flyerShowError('Unable to load this property.');
+      if (seq === _flyLoadSeq) flyerShowError('Unable to load this property.');
       return;
     }
+    if (seq !== _flyLoadSeq) return; // a newer load superseded this one
 
     if (!payload || payload.error || !payload.stock || !payload.project || !payload.partner) {
       flyerShowError('This property is no longer available.');
@@ -21385,6 +21529,7 @@ function buildKitHtml(s, research, brand) {
   let _flyMap = null;
 
   async function flyerInitMap(project) {
+    const seq = _flyLoadSeq;
     let lat = project.map_lat;
     let lng = project.map_lng;
 
@@ -21396,10 +21541,16 @@ function buildKitHtml(s, research, brand) {
         flyerCacheGeocode(project.id, lat, lng).catch(() => {});
       }
     }
+    if (seq !== _flyLoadSeq) return; // superseded while geocoding
 
     const mount = document.getElementById('fly-map');
+    if (!mount) return;
     if (lat == null || lng == null) {
-      mount.outerHTML = '<div class="fly-map-fallback">Map unavailable for this address.</div>';
+      // Render the fallback INSIDE the mount. Replacing the node via
+      // outerHTML would permanently destroy #fly-map, breaking the map for
+      // every flyer loaded after this one in the same tab.
+      mount.style.cssText = 'height:auto;border:none;background:transparent;border-radius:0;';
+      mount.innerHTML = '<div class="fly-map-fallback">Map unavailable for this address.</div>';
       return;
     }
 
@@ -21936,6 +22087,7 @@ let rscFilter = {
 };
 let rscLeafletMap = null;
 let rscMarkerCluster = null;
+let rscPlainPinGroup = null; // unclustered twin of rscMarkerCluster; holds the markers while clustering is toggled off
 let rscMarkers = {};        // slug → marker
 let rscReportPinCoords = {}; // slug → [lat, lng]
 let rscLastFilteredReports = []; // sorted + data-filtered list (pre-viewport)
@@ -22355,6 +22507,7 @@ function renderResearchMap(reports) {
   }
 
   rscMarkerCluster.clearLayers();
+  if (rscPlainPinGroup) rscPlainPinGroup.clearLayers();
   rscMarkers = {};
   rscReportPinCoords = {};
   const bounds = [];
@@ -22378,6 +22531,10 @@ function renderResearchMap(reports) {
     bounds.push([lat, lng]);
   });
 
+  // Markers are always built into the cluster group; if the user has
+  // clustering toggled off, shift them to the plain group now.
+  _rscApplyPinLayer();
+
   const applyBounds = () => {
     try { rscLeafletMap.invalidateSize(); } catch(e){}
     if (bounds.length === 1) {
@@ -22399,21 +22556,32 @@ function renderResearchMap(reports) {
   setTimeout(applyBounds, 60);
 }
 
+// Same layer-swap approach as _stkApplyPinLayer on the stock map: the
+// Freezable enable/disableClustering API was never loaded, so clustering
+// on/off is implemented by moving markers between the cluster group and a
+// plain layerGroup.
+function _rscApplyPinLayer() {
+  if (!rscLeafletMap || !rscMarkerCluster) return;
+  if (!rscPlainPinGroup) rscPlainPinGroup = L.layerGroup();
+  if (rscClusteringEnabled) {
+    rscPlainPinGroup.getLayers().forEach(m => { rscPlainPinGroup.removeLayer(m); rscMarkerCluster.addLayer(m); });
+    if (rscLeafletMap.hasLayer(rscPlainPinGroup)) rscLeafletMap.removeLayer(rscPlainPinGroup);
+    if (rscPinsVisible && !rscLeafletMap.hasLayer(rscMarkerCluster)) rscLeafletMap.addLayer(rscMarkerCluster);
+    if (!rscPinsVisible && rscLeafletMap.hasLayer(rscMarkerCluster)) rscLeafletMap.removeLayer(rscMarkerCluster);
+  } else {
+    rscMarkerCluster.getLayers().forEach(m => { rscMarkerCluster.removeLayer(m); rscPlainPinGroup.addLayer(m); });
+    if (rscLeafletMap.hasLayer(rscMarkerCluster)) rscLeafletMap.removeLayer(rscMarkerCluster);
+    if (rscPinsVisible && !rscLeafletMap.hasLayer(rscPlainPinGroup)) rscLeafletMap.addLayer(rscPlainPinGroup);
+    if (!rscPinsVisible && rscLeafletMap.hasLayer(rscPlainPinGroup)) rscLeafletMap.removeLayer(rscPlainPinGroup);
+  }
+}
 function toggleRscMapClustering() {
   rscClusteringEnabled = document.getElementById('rsc-mapkey-cluster').checked;
-  if (!rscLeafletMap || !rscMarkerCluster) return;
-  if (rscClusteringEnabled) {
-    rscMarkerCluster.enableClustering ? rscMarkerCluster.enableClustering() : null;
-    if (!rscLeafletMap.hasLayer(rscMarkerCluster)) rscLeafletMap.addLayer(rscMarkerCluster);
-  } else {
-    if (rscMarkerCluster.disableClustering) rscMarkerCluster.disableClustering();
-  }
+  _rscApplyPinLayer();
 }
 function toggleRscMapPins() {
   rscPinsVisible = document.getElementById('rsc-mapkey-pins').checked;
-  if (!rscLeafletMap || !rscMarkerCluster) return;
-  if (rscPinsVisible) { if (!rscLeafletMap.hasLayer(rscMarkerCluster)) rscLeafletMap.addLayer(rscMarkerCluster); }
-  else { rscLeafletMap.removeLayer(rscMarkerCluster); }
+  _rscApplyPinLayer();
 }
 
 function highlightRscRow(slug, scrollIntoView) {
