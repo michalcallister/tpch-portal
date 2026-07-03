@@ -3036,11 +3036,11 @@
       <h1 class="login-heading">Welcome back.</h1>
       <p class="login-sub">Sign in to access suburb research, investment data, and market reports.</p>
       <div class="form-group">
-        <label class="form-label">Email Address</label>
+        <label class="form-label" for="login-email">Email Address</label>
         <input class="form-input" type="email" placeholder="you@firm.com.au" id="login-email">
       </div>
       <div class="form-group">
-        <label class="form-label">Password</label>
+        <label class="form-label" for="login-pass">Password</label>
         <input class="form-input" type="password" placeholder="••••••••" id="login-pass">
       </div>
       <button class="btn-login" onclick="doLogin()">Access Portal →</button>
@@ -3080,11 +3080,11 @@
       <h1 class="login-heading" id="setpass-heading">Set your password.</h1>
       <p class="login-sub" id="setpass-sub">Choose a secure password to access The Property Clearing House Partner Portal.</p>
       <div class="form-group">
-        <label class="form-label">New Password</label>
+        <label class="form-label" for="setpass-new">New Password</label>
         <input class="form-input" type="password" placeholder="Minimum 8 characters" id="setpass-new">
       </div>
       <div class="form-group">
-        <label class="form-label">Confirm Password</label>
+        <label class="form-label" for="setpass-confirm">Confirm Password</label>
         <input class="form-input" type="password" placeholder="Repeat your password" id="setpass-confirm">
       </div>
       <button class="btn-login" id="setpass-btn" onclick="doSetPassword()">Set Password & Sign In →</button>
@@ -3121,7 +3121,7 @@
       <h1 class="login-heading">Reset your password.</h1>
       <p class="login-sub">Enter your email address and we'll send you a link to reset your password.</p>
       <div class="form-group">
-        <label class="form-label">Email Address</label>
+        <label class="form-label" for="forgot-email">Email Address</label>
         <input class="form-input" type="email" placeholder="you@firm.com.au" id="forgot-email">
       </div>
       <div id="forgot-msg" style="display:none;font-size:13px;padding:10px 14px;margin-bottom:12px;border-left:3px solid var(--gold);background:rgba(201,168,76,0.08);color:var(--grey-light);line-height:1.5;"></div>
@@ -3159,15 +3159,15 @@
         <div class="enquiry-section-title">Your Details</div>
         <div class="enquiry-grid">
           <div class="form-group">
-            <label class="form-label">Full Name</label>
+            <label class="form-label" for="eq-name">Full Name</label>
             <input class="form-input" type="text" id="eq-name" placeholder="Jane Smith">
           </div>
           <div class="form-group">
-            <label class="form-label">Phone Number</label>
+            <label class="form-label" for="eq-phone">Phone Number</label>
             <input class="form-input" type="tel" id="eq-phone" placeholder="04XX XXX XXX">
           </div>
           <div class="form-group full">
-            <label class="form-label">Email Address</label>
+            <label class="form-label" for="eq-email">Email Address</label>
             <input class="form-input" type="email" id="eq-email" placeholder="jane@yourfirm.com.au">
           </div>
         </div>
@@ -3178,23 +3178,23 @@
         <div class="enquiry-section-title">Your Business</div>
         <div class="enquiry-grid">
           <div class="form-group full">
-            <label class="form-label">Company / Business Name</label>
+            <label class="form-label" for="eq-company">Company / Business Name</label>
             <input class="form-input" type="text" id="eq-company" placeholder="Smith Financial Group Pty Ltd">
           </div>
           <div class="form-group">
-            <label class="form-label">ABN</label>
+            <label class="form-label" for="eq-abn">ABN</label>
             <input class="form-input" type="text" id="eq-abn" placeholder="XX XXX XXX XXX">
           </div>
           <div class="form-group full">
-            <label class="form-label">Registered Business Address</label>
+            <label class="form-label" for="eq-address">Registered Business Address</label>
             <input class="form-input" type="text" id="eq-address" placeholder="Street, Suburb, State, Postcode">
           </div>
           <div class="form-group full">
-            <label class="form-label">Business Website</label>
+            <label class="form-label" for="eq-website">Business Website</label>
             <input class="form-input" type="url" id="eq-website" placeholder="https://www.yourfirm.com.au">
           </div>
           <div class="form-group full">
-            <label class="form-label">LinkedIn Profile URL <span class="enquiry-optional">optional</span></label>
+            <label class="form-label" for="eq-linkedin">LinkedIn Profile URL <span class="enquiry-optional">optional</span></label>
             <input class="form-input" type="url" id="eq-linkedin" placeholder="https://www.linkedin.com/in/yourname">
           </div>
         </div>
@@ -3205,7 +3205,7 @@
         <div class="enquiry-section-title">About Your Practice</div>
         <div class="enquiry-grid">
           <div class="form-group">
-            <label class="form-label">Your Role</label>
+            <label class="form-label" for="eq-role">Your Role</label>
             <select class="form-select" id="eq-role">
               <option value="">Select role...</option>
               <option value="mortgage_broker">Mortgage Broker</option>
@@ -3218,7 +3218,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">State / Territory</label>
+            <label class="form-label" for="eq-state">State / Territory</label>
             <select class="form-select" id="eq-state">
               <option value="">Select state...</option>
               <option value="VIC">Victoria</option>
@@ -3232,7 +3232,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Years in Business</label>
+            <label class="form-label" for="eq-years">Years in Business</label>
             <select class="form-select" id="eq-years">
               <option value="">Select...</option>
               <option value="under_1">Less than 1 year</option>
@@ -3243,7 +3243,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Approximate Client Base</label>
+            <label class="form-label" for="eq-clients">Approximate Client Base</label>
             <select class="form-select" id="eq-clients">
               <option value="">Select...</option>
               <option value="under_50">Under 50 clients</option>
@@ -3260,7 +3260,7 @@
         <div class="enquiry-section-title">A Little More</div>
         <div class="enquiry-grid">
           <div class="form-group full">
-            <label class="form-label">How did you hear about TPCH?</label>
+            <label class="form-label" for="eq-referral">How did you hear about TPCH?</label>
             <select class="form-select" id="eq-referral">
               <option value="">Select...</option>
               <option value="referral_partner">Referral from another partner</option>
@@ -3273,7 +3273,7 @@
             </select>
           </div>
           <div class="form-group full">
-            <label class="form-label">Anything else you'd like us to know? <span class="enquiry-optional">optional</span></label>
+            <label class="form-label" for="eq-message">Anything else you'd like us to know? <span class="enquiry-optional">optional</span></label>
             <textarea class="form-textarea" id="eq-message" placeholder="Tell us about your practice, your clients, or why you're interested in partnering with TPCH..."></textarea>
           </div>
         </div>
@@ -3404,7 +3404,7 @@
       <span class="notif-drawer-title">Notifications</span>
       <div style="display:flex;gap:8px;align-items:center;">
         <button class="notif-mark-all" onclick="markAllNotifRead()">Mark all read</button>
-        <button class="notif-close" onclick="toggleNotifPanel()">✕</button>
+        <button class="notif-close" onclick="toggleNotifPanel()" aria-label="Close notifications">✕</button>
       </div>
     </div>
     <div id="notif-list" class="notif-list">
@@ -3607,7 +3607,7 @@
         <div class="cp-card" id="dash-reservations-card" style="margin-bottom:24px;">
           <div class="eng-card-head" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
             <div class="cp-card-title" style="margin:0;">Recent reservations<span class="eng-info eng-info-below" data-info="The latest active stock reservations across every channel partner. Shows the firm AND the exact person who reserved, so you don't have to cross-reference Monday and the partner's portal. Search by company, person, property, or client to see all active reservations.">i</span></div>
-            <input id="rsv-search" type="search" placeholder="Search company, person, property, client…" oninput="onRsvSearchInput(this.value)" autocomplete="off"
+            <input id="rsv-search" type="search" placeholder="Search company, person, property, client…" aria-label="Search reservations" oninput="onRsvSearchInput(this.value)" autocomplete="off"
               style="flex:0 1 320px;min-width:200px;padding:9px 13px;border:1px solid var(--gold-border);border-radius:6px;font-size:13px;background:var(--black-soft);color:var(--white);">
           </div>
           <div id="rsv-table-wrap" class="eng-leaderboard-wrap">
@@ -3901,7 +3901,7 @@
         <!-- FILTER ROW: search + 5 dropdowns + More filters + Clear -->
         <div class="rsc-filter-row" id="rsc-filter-row">
           <div class="rsc-search-wrap">
-            <input type="text" id="rsc-search" class="rsc-search-input" placeholder="Search suburbs" oninput="onRscSearchInput()">
+            <input type="text" id="rsc-search" class="rsc-search-input" placeholder="Search suburbs" aria-label="Search suburbs" oninput="onRscSearchInput()">
             <span class="rsc-search-icon">🔍</span>
           </div>
 
@@ -4138,7 +4138,7 @@
         <!-- FILTER ROW: search + 5 dropdowns + More filters + Clear -->
         <div class="stk-filter-row" id="stk-filter-row">
           <div class="stk-search-wrap">
-            <input type="text" id="stk-search" class="stk-search-input" placeholder="Search projects" oninput="onStkSearchInput()">
+            <input type="text" id="stk-search" class="stk-search-input" placeholder="Search projects" aria-label="Search projects" oninput="onStkSearchInput()">
             <span class="stk-search-icon">🔍</span>
           </div>
 
@@ -5271,11 +5271,11 @@
           <div class="prt-section-title">Firm Details</div>
           <div class="prt-fields-grid" style="margin-bottom:24px;">
             <div class="form-group">
-              <label class="form-label">Company Name</label>
+              <label class="form-label" for="pset-company">Company Name</label>
               <input class="form-input" type="text" id="pset-company" placeholder="Your firm name">
             </div>
             <div class="form-group">
-              <label class="form-label">State</label>
+              <label class="form-label" for="pset-state">State</label>
               <select class="form-input" id="pset-state">
                 <option value="">Select state</option>
                 <option value="NSW">NSW</option><option value="VIC">VIC</option>
@@ -5285,15 +5285,15 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Your Name</label>
+              <label class="form-label" for="pset-name">Your Name</label>
               <input class="form-input" type="text" id="pset-name" placeholder="Full name">
             </div>
             <div class="form-group">
-              <label class="form-label">Role / Title</label>
+              <label class="form-label" for="pset-role">Role / Title</label>
               <input class="form-input" type="text" id="pset-role" placeholder="e.g. Director">
             </div>
             <div class="form-group" style="grid-column:1/-1;">
-              <label class="form-label">Registered Business Address</label>
+              <label class="form-label" for="pset-address">Registered Business Address</label>
               <input class="form-input" type="text" id="pset-address" placeholder="Street, Suburb, State, Postcode">
               <p style="font-size:11px;color:var(--grey-mid);margin-top:5px;">Used in the Parties block of the Marketing Agreement.</p>
             </div>
@@ -5312,7 +5312,7 @@
           </div>
           <div class="prt-fields-grid" style="margin-bottom:24px;">
             <div class="form-group" style="grid-column:1/-1;">
-              <label class="form-label">Website URL</label>
+              <label class="form-label" for="pset-website">Website URL</label>
               <input class="form-input" type="url" id="pset-website" placeholder="https://www.yourfirm.com.au">
               <p style="font-size:11px;color:var(--grey-mid);margin-top:5px;">Displayed on white-labelled Investor Kits and the public Property Marketing Flyer.</p>
             </div>
@@ -5615,7 +5615,7 @@
         <div id="modal-agreement-blocker-body" class="mag-scroll" style="overflow-y:auto;padding:22px 28px;flex:1;"></div>
         <div style="border-top:1px solid var(--gold-border);padding:16px 28px;">
           <div id="blocker-address-wrap" style="display:none;margin-bottom:14px;padding:12px 14px;background:rgba(200,169,81,0.06);border:1px solid var(--gold-border);border-radius:4px;">
-            <label class="form-label" style="margin-bottom:6px;">Confirm Registered Business Address</label>
+            <label class="form-label" for="blocker-address-input" style="margin-bottom:6px;">Confirm Registered Business Address</label>
             <p style="font-size:11px;color:var(--grey-mid);margin:0 0 8px;">Required for the Parties block of the Marketing Agreement. Saved against your partner profile.</p>
             <input class="form-input" type="text" id="blocker-address-input" placeholder="Street, Suburb, State, Postcode" oninput="onBlockerAddressInput()">
           </div>
@@ -5660,19 +5660,19 @@
         <p style="font-size:12px;color:var(--grey-light);margin-bottom:20px;">Fill in their details and they'll receive a professional invite email to set their password.</p>
         <div class="prt-fields-grid">
           <div class="form-group">
-            <label class="form-label">Full Name *</label>
+            <label class="form-label" for="ainv-name">Full Name *</label>
             <input class="form-input" type="text" id="ainv-name" placeholder="Jane Smith">
           </div>
           <div class="form-group">
-            <label class="form-label">Email Address *</label>
+            <label class="form-label" for="ainv-email">Email Address *</label>
             <input class="form-input" type="email" id="ainv-email" placeholder="jane@firm.com.au">
           </div>
           <div class="form-group">
-            <label class="form-label">Company Name *</label>
+            <label class="form-label" for="ainv-company">Company Name *</label>
             <input class="form-input" type="text" id="ainv-company" placeholder="Smith Financial">
           </div>
           <div class="form-group">
-            <label class="form-label">Role Type</label>
+            <label class="form-label" for="ainv-role">Role Type</label>
             <select class="form-input" id="ainv-role">
               <option value="">Select role</option>
               <option value="financial_adviser">Financial Adviser</option>
@@ -5685,7 +5685,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">State</label>
+            <label class="form-label" for="ainv-state">State</label>
             <select class="form-input" id="ainv-state">
               <option value="">Select state</option>
               <option value="NSW">NSW</option><option value="VIC">VIC</option>
@@ -5696,7 +5696,7 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Internal Notes (not shown to partner)</label>
+          <label class="form-label" for="ainv-notes">Internal Notes (not shown to partner)</label>
           <textarea class="form-input" id="ainv-notes" rows="2" placeholder="How you met, referral source, etc." style="resize:vertical;"></textarea>
         </div>
         <div id="ainv-msg" style="display:none;font-size:13px;margin-bottom:12px;"></div>
@@ -5713,15 +5713,15 @@
         <h3 style="font-size:18px;color:var(--white);margin-bottom:4px;">Add Team Member</h3>
         <p style="font-size:12px;color:var(--grey-light);margin-bottom:20px;">They'll receive an email invite to set their password.</p>
         <div class="form-group">
-          <label class="form-label">Full Name</label>
+          <label class="form-label" for="staff-name">Full Name</label>
           <input class="form-input" type="text" id="staff-name" placeholder="Jane Smith">
         </div>
         <div class="form-group">
-          <label class="form-label">Email Address</label>
+          <label class="form-label" for="staff-email">Email Address</label>
           <input class="form-input" type="email" id="staff-email" placeholder="jane@yourfirm.com.au">
         </div>
         <div class="form-group">
-          <label class="form-label">Portal Access Level</label>
+          <label class="form-label" for="staff-job-role">Portal Access Level</label>
           <select class="form-input" id="staff-job-role">
             <option value="standard">Standard — can browse stock and see their own deals</option>
             <option value="admin">Admin — full access including Settings</option>
@@ -5915,16 +5915,16 @@
         <p style="font-size:12px;color:var(--grey-light);margin-bottom:20px;">Update this team member's details. Commission is managed separately.</p>
         <input type="hidden" id="em-staff-id">
         <div class="form-group">
-          <label class="form-label">Full Name</label>
+          <label class="form-label" for="em-name">Full Name</label>
           <input class="form-input" type="text" id="em-name">
         </div>
         <div class="form-group">
-          <label class="form-label">Email Address</label>
+          <label class="form-label" for="em-email">Email Address</label>
           <input class="form-input" type="email" id="em-email">
           <p style="font-size:11px;color:var(--grey-mid);margin-top:5px;">This is also their sign-in. Changing it updates their login.</p>
         </div>
         <div class="form-group">
-          <label class="form-label">Portal Access Level</label>
+          <label class="form-label" for="em-access">Portal Access Level</label>
           <select class="form-input" id="em-access">
             <option value="standard">Standard — can browse stock and see their own deals</option>
             <option value="admin">Admin — full access including Settings</option>
@@ -5949,7 +5949,7 @@
         <div style="font-size:17px;font-weight:700;letter-spacing:-0.3px;">Version History</div>
         <div style="font-size:12px;color:var(--grey-mid);margin-top:2px;">Recent updates to the TPCH Partner Portal</div>
       </div>
-      <button onclick="closeWhatsNew()" style="background:none;border:none;color:var(--grey-mid);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;">×</button>
+      <button onclick="closeWhatsNew()" aria-label="Close" style="background:none;border:none;color:var(--grey-mid);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;">×</button>
     </div>
     <div id="whats-new-body" style="overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:20px;"></div>
   </div>
@@ -6026,7 +6026,7 @@
       Pick an active channel partner. The portal will render exactly what they see — sidebar, dashboard, deals, reservations. Write actions are hidden in preview mode.
     </div>
     <div style="margin-bottom:14px;">
-      <input class="form-input" id="admin-preview-search" type="text" placeholder="Search by company or name…" oninput="filterAdminPartnerPicker()" autocomplete="off">
+      <input class="form-input" id="admin-preview-search" type="text" placeholder="Search by company or name…" aria-label="Search partners by company or name" oninput="filterAdminPartnerPicker()" autocomplete="off">
     </div>
     <div id="admin-preview-list" style="max-height:50vh;overflow-y:auto;border:1px solid var(--gold-border);">
       <div style="padding:20px;text-align:center;color:var(--grey-light);font-size:13px;">Loading partners…</div>
@@ -6061,15 +6061,15 @@
 <!-- Description Editor Modal -->
 <div id="floor-plan-lightbox" onclick="closeFloorPlanLightbox()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:1100;align-items:center;justify-content:center;cursor:zoom-out;">
   <img id="floor-plan-lightbox-img" src="" alt="Floor Plan" style="max-width:90vw;max-height:90vh;object-fit:contain;box-shadow:0 0 60px rgba(0,0,0,0.8);">
-  <button onclick="closeFloorPlanLightbox()" style="position:absolute;top:20px;right:28px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1;">×</button>
+  <button onclick="closeFloorPlanLightbox()" aria-label="Close" style="position:absolute;top:20px;right:28px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1;">×</button>
 </div>
 
 <!-- Gallery lightbox -->
 <div id="gallery-lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:1100;align-items:center;justify-content:center;">
   <img id="gallery-lightbox-img" src="" alt="" style="max-width:88vw;max-height:88vh;object-fit:contain;box-shadow:0 0 60px rgba(0,0,0,0.8);">
-  <button onclick="closeGalleryLightbox()" style="position:absolute;top:20px;right:28px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1;">×</button>
-  <button onclick="galleryNav(-1)" style="position:absolute;left:20px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:24px;cursor:pointer;width:48px;height:48px;line-height:1;">‹</button>
-  <button onclick="galleryNav(1)"  style="position:absolute;right:20px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:24px;cursor:pointer;width:48px;height:48px;line-height:1;">›</button>
+  <button onclick="closeGalleryLightbox()" aria-label="Close" style="position:absolute;top:20px;right:28px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1;">×</button>
+  <button onclick="galleryNav(-1)" aria-label="Previous image" style="position:absolute;left:20px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:24px;cursor:pointer;width:48px;height:48px;line-height:1;">‹</button>
+  <button onclick="galleryNav(1)" aria-label="Next image" style="position:absolute;right:20px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:24px;cursor:pointer;width:48px;height:48px;line-height:1;">›</button>
   <div id="gallery-lightbox-counter" style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.5);font-size:12px;letter-spacing:1px;"></div>
 </div>
 
@@ -6077,7 +6077,7 @@
   <div style="background:var(--black-card);border:1px solid var(--gold-border);width:min(96vw,1000px);max-height:92vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
     <div style="padding:18px 24px;border-bottom:1px solid var(--gold-border);display:flex;align-items:center;justify-content:space-between;">
       <span style="font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:600;">Edit Investment Analysis</span>
-      <button onclick="closeAnalysisEditor()" style="background:none;border:none;color:var(--grey-mid);font-size:22px;cursor:pointer;line-height:1;">×</button>
+      <button onclick="closeAnalysisEditor()" aria-label="Close" style="background:none;border:none;color:var(--grey-mid);font-size:22px;cursor:pointer;line-height:1;">×</button>
     </div>
     <div id="iae-form" style="padding:20px 24px;flex:1;overflow-y:auto;"></div>
     <div style="padding:14px 24px;border-top:1px solid var(--gold-border);display:flex;justify-content:space-between;align-items:center;gap:14px;">
@@ -6094,7 +6094,7 @@
   <div style="background:var(--black-card);border:1px solid var(--gold-border);width:700px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
     <div style="padding:20px 24px;border-bottom:1px solid var(--gold-border);display:flex;align-items:center;justify-content:space-between;">
       <span style="font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:600;">Edit Description</span>
-      <button onclick="closeDescEditor()" style="background:none;border:none;color:var(--grey-mid);font-size:20px;cursor:pointer;line-height:1;">×</button>
+      <button onclick="closeDescEditor()" aria-label="Close" style="background:none;border:none;color:var(--grey-mid);font-size:20px;cursor:pointer;line-height:1;">×</button>
     </div>
     <div style="padding:16px 24px;flex:1;overflow-y:auto;">
       <p style="font-size:11px;color:var(--grey-mid);margin-bottom:12px;">Edit the HTML content below. Basic tags supported: &lt;h3&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;strong&gt;.</p>
@@ -9301,6 +9301,26 @@
     document.getElementById('login-pass').value  = '';
     applyNavForRole(false, false);
   }
+  // The sidebar nav, user card and a couple of back-links are <div>/<span>
+  // with onclick (styled that way, not real buttons). Give them button
+  // semantics so keyboard and screen-reader users can operate them:
+  // focusable, announced as buttons, and activated by Enter/Space. Delegated
+  // keydown so it also covers any matching element rendered later.
+  function initNavKeyboardA11y() {
+    const SEL = '.nav-item, .user-card, .stk-sidebar-link, #slg-project';
+    document.querySelectorAll(SEL).forEach(el => {
+      if (!el.hasAttribute('role'))     el.setAttribute('role', 'button');
+      if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      const el = e.target.closest && e.target.closest(SEL);
+      if (!el) return;
+      e.preventDefault();  // Space would otherwise scroll the page
+      el.click();
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     // Public flyer / research routes — short-circuit the entire portal boot.
     // Each screen handles its own data fetching and rendering.
@@ -9317,6 +9337,7 @@
     document.getElementById('forgot-email').addEventListener('keydown', e => { if (e.key==='Enter') sendPasswordReset(); });
     initTeamAuth(); // load admin emails from tpch_team before first login attempt
     initSidebarCollapse();                     // sets up the icon-rail toggle and auto-collapses on narrow viewports
+    initNavKeyboardA11y();                      // keyboard access for the onclick-driven nav divs
     const wasRedirected = checkAuthRedirect(); // handle invite/recovery links — must run before restoreSession
     if (!wasRedirected) restoreSession();      // only restore session if not handling an auth redirect
   });
@@ -14819,7 +14840,7 @@ function renderStkPager(elId, total) {
   }
   // Build numbered pager (with ellipsis if many pages)
   const buttons = [];
-  buttons.push(`<button class="stk-pager-btn" ${cur === 1 ? 'disabled' : ''} onclick="gotoStkPage(${cur - 1})">‹</button>`);
+  buttons.push(`<button class="stk-pager-btn" ${cur === 1 ? 'disabled' : ''} onclick="gotoStkPage(${cur - 1})" aria-label="Previous page">‹</button>`);
   const window_ = 5;
   let start = Math.max(1, cur - Math.floor(window_ / 2));
   let end = Math.min(totalPages, start + window_ - 1);
@@ -14827,7 +14848,7 @@ function renderStkPager(elId, total) {
   for (let i = start; i <= end; i++) {
     buttons.push(`<button class="stk-pager-btn ${i === cur ? 'active' : ''}" onclick="gotoStkPage(${i})">${i}</button>`);
   }
-  buttons.push(`<button class="stk-pager-btn" ${cur === totalPages ? 'disabled' : ''} onclick="gotoStkPage(${cur + 1})">›</button>`);
+  buttons.push(`<button class="stk-pager-btn" ${cur === totalPages ? 'disabled' : ''} onclick="gotoStkPage(${cur + 1})" aria-label="Next page">›</button>`);
   el.innerHTML = buttons.join('');
 }
 
@@ -16806,7 +16827,7 @@ function renderMyLists() {
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <button class="btn-outline" style="padding:5px 14px;font-size:11px;" onclick="toggleListItems('${l.id}')">View</button>
-          <button class="lst-delete-btn" onclick="deleteList('${l.id}',event)" title="Delete list">✕</button>
+          <button class="lst-delete-btn" onclick="deleteList('${l.id}',event)" title="Delete list" aria-label="Delete list">✕</button>
         </div>
       </div>
       <div class="lst-items-wrap" id="lst-items-${l.id}" style="display:none;"></div>
@@ -16845,7 +16866,7 @@ async function toggleListItems(listId) {
           <div class="lst-item-actions">
             <button class="btn-outline" style="padding:4px 10px;font-size:12px;" onclick="viewLotFromList('${item.stock_id}','${item.project_id || ''}')">View →</button>
             <button class="btn-outline" style="padding:4px 10px;font-size:12px;" onclick="kitFromList('${item.stock_id}')">Investor Kit</button>
-            <button class="lst-item-remove" onclick="removeFromList('${item.id}','${listId}')">✕</button>
+            <button class="lst-item-remove" onclick="removeFromList('${item.id}','${listId}')" aria-label="Remove from list">✕</button>
           </div>
         </div>
       `).join('')}
@@ -19456,7 +19477,7 @@ function buildKitHtml(s, research, brand) {
   <div class="rsv-modal">
     <div class="rsv-modal-header">
       <div class="rsv-modal-title">Reserve Property</div>
-      <button class="rsv-modal-close" onclick="closeReserveModal()">✕</button>
+      <button class="rsv-modal-close" onclick="closeReserveModal()" aria-label="Close">✕</button>
     </div>
     <div class="rsv-modal-body">
       <div class="rsv-property-callout">
@@ -19467,19 +19488,19 @@ function buildKitHtml(s, research, brand) {
       <div class="rsv-section-label">Client Details</div>
       <div class="rsv-fields-grid">
         <div class="form-group rsv-field-full">
-          <label class="form-label">Client Name *</label>
+          <label class="form-label" for="rsv-client-name">Client Name *</label>
           <input class="form-input" id="rsv-client-name" type="text" placeholder="Full name">
         </div>
         <div class="form-group">
-          <label class="form-label">Client Email *</label>
+          <label class="form-label" for="rsv-client-email">Client Email *</label>
           <input class="form-input" id="rsv-client-email" type="email" placeholder="email@example.com">
         </div>
         <div class="form-group">
-          <label class="form-label">Client Phone</label>
+          <label class="form-label" for="rsv-client-phone">Client Phone</label>
           <input class="form-input" id="rsv-client-phone" type="tel" placeholder="04xx xxx xxx">
         </div>
         <div class="form-group rsv-field-full">
-          <label class="form-label">Notes (optional)</label>
+          <label class="form-label" for="rsv-notes">Notes (optional)</label>
           <textarea class="form-input" id="rsv-notes" rows="2" placeholder="Any additional notes for TPCH..." style="resize:vertical;min-height:56px;"></textarea>
         </div>
       </div>
@@ -19509,7 +19530,7 @@ function buildKitHtml(s, research, brand) {
   <div class="rsv-modal" style="max-width:420px;">
     <div class="rsv-modal-header">
       <div class="rsv-modal-title">Save to List</div>
-      <button class="rsv-modal-close" onclick="closeSaveToListModal()">✕</button>
+      <button class="rsv-modal-close" onclick="closeSaveToListModal()" aria-label="Close">✕</button>
     </div>
     <div class="rsv-modal-body" style="padding:20px 28px;">
       <div class="rsv-property-callout" style="margin-bottom:16px;">
@@ -19532,11 +19553,11 @@ function buildKitHtml(s, research, brand) {
   <div class="rsv-modal" style="max-width:380px;">
     <div class="rsv-modal-header">
       <div class="rsv-modal-title">New List</div>
-      <button class="rsv-modal-close" onclick="closeCreateListModal()">✕</button>
+      <button class="rsv-modal-close" onclick="closeCreateListModal()" aria-label="Close">✕</button>
     </div>
     <div class="rsv-modal-body" style="padding:20px 28px;">
       <div class="form-group">
-        <label class="form-label">List Name</label>
+        <label class="form-label" for="lst-create-name">List Name</label>
         <input class="form-input" id="lst-create-name" type="text" placeholder="e.g. High-yield picks" onkeydown="if(event.key==='Enter')submitCreateList()">
       </div>
       <div id="lst-create-err" style="font-size:12px;color:#e74c3c;display:none;margin-top:8px;"></div>
@@ -19553,15 +19574,15 @@ function buildKitHtml(s, research, brand) {
   <div class="rsv-modal" style="max-width:520px;">
     <div class="rsv-modal-header">
       <div class="rsv-modal-title">Share suburb research</div>
-      <button class="rsv-modal-close" onclick="closeShareResearchModal()">✕</button>
+      <button class="rsv-modal-close" onclick="closeShareResearchModal()" aria-label="Close">✕</button>
     </div>
     <div class="rsv-modal-body">
       <p style="font-size:13px;color:var(--grey-pale);margin:0 0 14px;line-height:1.55;">
         Send this link to a partner or client. Anyone with the link can view the research — it doesn't require a login. The page is white-labelled with your brand.
       </p>
-      <label class="form-label" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Prepared for (optional)</label>
+      <label class="form-label" for="share-research-recipient" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Prepared for (optional)</label>
       <input class="form-input" type="text" id="share-research-recipient" placeholder="Recipient's full name" maxlength="80" oninput="rsrShareSync()" style="margin-top:6px;margin-bottom:14px;">
-      <label class="form-label" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Research link</label>
+      <label class="form-label" for="share-research-url" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Research link</label>
       <div style="display:flex;gap:8px;margin-top:6px;align-items:stretch;">
         <input class="form-input" type="text" id="share-research-url" readonly onfocus="this.select()" onclick="this.select()" style="flex:1;font-family:'DM Mono',monospace;font-size:12px;">
         <button class="btn-primary" id="share-research-copy-btn" onclick="copyShareResearchLink()" style="white-space:nowrap;padding:0 18px;font-size:13px;">Copy link</button>
@@ -19579,19 +19600,19 @@ function buildKitHtml(s, research, brand) {
   <div class="rsv-modal" style="max-width:520px;">
     <div class="rsv-modal-header">
       <div class="rsv-modal-title">Share property flyer</div>
-      <button class="rsv-modal-close" onclick="closeShareFlyerModal()">✕</button>
+      <button class="rsv-modal-close" onclick="closeShareFlyerModal()" aria-label="Close">✕</button>
     </div>
     <div class="rsv-modal-body">
       <p style="font-size:13px;color:var(--grey-pale);margin:0 0 14px;line-height:1.55;">
         Send this link to your client by email or text. Anyone with the link can view the property — it doesn't require a login.
       </p>
-      <label class="form-label" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Prepared for (optional)</label>
+      <label class="form-label" for="share-flyer-recipient" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Prepared for (optional)</label>
       <input class="form-input" type="text" id="share-flyer-recipient" placeholder="Client's full name" maxlength="80" oninput="flyShareSync()" style="margin-top:6px;margin-bottom:14px;">
       <label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;color:var(--grey-pale);cursor:pointer;margin-bottom:16px;line-height:1.45;">
         <input type="checkbox" id="share-flyer-unbranded" onchange="flyShareSync()" style="width:14px;height:14px;margin-top:3px;cursor:pointer;accent-color:var(--gold);flex:0 0 auto;">
         <span>Produce unbranded flyer<span style="display:block;color:var(--grey-mid);font-size:12px;margin-top:2px;">Hides your logo, website, contact card and footer — the page shows the property only.</span></span>
       </label>
-      <label class="form-label" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Flyer link</label>
+      <label class="form-label" for="share-flyer-url" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey-mid);">Flyer link</label>
       <div style="display:flex;gap:8px;align-items:stretch;margin-top:6px;">
         <input class="form-input" type="text" id="share-flyer-url" readonly onfocus="this.select()" onclick="this.select()" style="flex:1;font-family:'DM Mono',monospace;font-size:12px;">
         <button class="btn-primary" id="share-flyer-copy-btn" onclick="copyShareFlyerLink()" style="white-space:nowrap;padding:0 18px;font-size:13px;">Copy link</button>
@@ -22062,7 +22083,7 @@ function renderRscPager(elId, total) {
     return;
   }
   const buttons = [];
-  buttons.push(`<button class="rsc-pager-btn" ${cur === 1 ? 'disabled' : ''} onclick="gotoRscPage(${cur - 1})">‹</button>`);
+  buttons.push(`<button class="rsc-pager-btn" ${cur === 1 ? 'disabled' : ''} onclick="gotoRscPage(${cur - 1})" aria-label="Previous page">‹</button>`);
   const window_ = 5;
   let start = Math.max(1, cur - Math.floor(window_ / 2));
   let end = Math.min(totalPages, start + window_ - 1);
@@ -22070,7 +22091,7 @@ function renderRscPager(elId, total) {
   for (let i = start; i <= end; i++) {
     buttons.push(`<button class="rsc-pager-btn ${i === cur ? 'active' : ''}" onclick="gotoRscPage(${i})">${i}</button>`);
   }
-  buttons.push(`<button class="rsc-pager-btn" ${cur === totalPages ? 'disabled' : ''} onclick="gotoRscPage(${cur + 1})">›</button>`);
+  buttons.push(`<button class="rsc-pager-btn" ${cur === totalPages ? 'disabled' : ''} onclick="gotoRscPage(${cur + 1})" aria-label="Next page">›</button>`);
   el.innerHTML = buttons.join('');
 }
 
