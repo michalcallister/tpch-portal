@@ -295,6 +295,28 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ── Auth: require an active TPCH admin ─────────────────────
+    // verify_jwt only proves the caller sent *some* valid project JWT — the
+    // public anon key satisfies that. Re-check here that the bearer belongs to
+    // a logged-in user whose email is in tpch_team (active). Without this,
+    // anyone with the public anon key could trigger Opus + web-search runs on
+    // our Anthropic bill.
+    const authToken = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
+    const { data: userData } = await sb.auth.getUser(authToken)
+    const caller = userData?.user
+    if (!caller?.email) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const { data: admins } = await sb.from('tpch_team').select('email').eq('status', 'active')
+    const isAdmin = (admins || []).some((a: any) => (a.email || '').toLowerCase() === caller.email!.toLowerCase())
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: 'Forbidden — admin access required' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const { agent_slug, project_id, triggered_by, test_mode } = await req.json()
 
     if (!agent_slug || !project_id) {

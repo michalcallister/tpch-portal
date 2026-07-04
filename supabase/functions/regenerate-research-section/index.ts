@@ -313,6 +313,25 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ── Auth: require an active TPCH admin ─────────────────────
+    // verify_jwt is satisfied by the public anon key, so re-check the caller is
+    // a logged-in user in tpch_team (active) before firing an Opus regeneration.
+    const authToken = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
+    const { data: userData } = await sb.auth.getUser(authToken)
+    const caller = userData?.user
+    if (!caller?.email) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const { data: admins } = await sb.from('tpch_team').select('email').eq('status', 'active')
+    const isAdmin = (admins || []).some((a: any) => (a.email || '').toLowerCase() === caller.email!.toLowerCase())
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: 'Forbidden — admin access required' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const body = await req.json()
     const research_id: string = body.research_id
     const section_key: string = body.section_key
