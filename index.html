@@ -9491,6 +9491,17 @@
     btn.disabled = !ok;
     btn.style.opacity = ok ? '1' : '0.5';
     btn.style.cursor  = ok ? 'pointer' : 'not-allowed';
+    // A silently-disabled Accept button reads as a portal fault: say why.
+    const msg = document.getElementById('blocker-msg');
+    if (msg) {
+      if (checked && !addrOk) {
+        msg.textContent = 'Please confirm your registered business address above to enable Accept & Continue.';
+        msg.style.color = 'var(--gold)';
+        msg.style.display = 'block';
+      } else {
+        msg.style.display = 'none';
+      }
+    }
   }
 
   function loadAgreementTab() {
