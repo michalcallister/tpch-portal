@@ -9339,7 +9339,12 @@
     initSidebarCollapse();                     // sets up the icon-rail toggle and auto-collapses on narrow viewports
     initNavKeyboardA11y();                      // keyboard access for the onclick-driven nav divs
     const wasRedirected = checkAuthRedirect(); // handle invite/recovery links — must run before restoreSession
-    if (!wasRedirected) restoreSession();      // only restore session if not handling an auth redirect
+    if (!wasRedirected && window.location.hash === '#apply') {
+      // Deep link from the public site's "Apply" CTAs straight into the
+      // Channel Partner application (same flow as the login-screen button).
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+      showEnquiry();
+    } else if (!wasRedirected) restoreSession(); // only restore session if not handling an auth redirect
   });
 
   // ─── SIDEBAR ICON-RAIL TOGGLE ─────────────────────────
