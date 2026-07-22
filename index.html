@@ -9074,6 +9074,15 @@
 
   const CHANGELOG = [
     {
+      version: '3.14',
+      date: '22 Jul 2026',
+      title: 'Team visibility fix for fixed and hidden commission displays',
+      items: [
+        'Team members set to a fixed commission amount (or with commission hidden) now see every project their firm admin has ticked visible — no deduction amount needed. The deduction requirement still applies to team members who see live commission figures.',
+        'The team member edit screen now says which rule applies when counting visible projects.',
+      ]
+    },
+    {
       version: '3.13',
       date: '22 Jul 2026',
       title: 'Richer project filters and a smarter search box',
@@ -9790,15 +9799,21 @@
       return;
     }
 
+    // The deduction requirement only applies to staff who see real commission
+    // figures; fixed/hidden display staff need the tick alone (mirror the
+    // runtime rule in isProjectVisibleToStaff).
+    const needDed = staffDeductionRequired(
+      document.getElementById('edit-comm-type')?.value || 'portal',
+      (document.getElementById('edit-comm-custom-value')?.value || '').trim()
+    );
     let visibleCount = 0;
     tbody.innerHTML = projects.map(p => {
       const row     = overrides[p.id] || null;
       const ded     = row ? parseFloat(row.d) : 0;
       const isVis   = !!(row && row.v === true);
       const dedAttr = (isFinite(ded) && ded > 0) ? ded : '';
-      // Staff only see a project when it's ticked AND has a deduction —
-      // count what they'll actually see, not just the tick state.
-      if (isVis && dedAttr !== '') visibleCount++;
+      // Count what the staff member will actually see, not just the tick state.
+      if (isVis && (!needDed || dedAttr !== '')) visibleCount++;
       const r = rangeByProj[p.id];
       const rangeText = r
         ? (r.min === r.max ? fmtCurrency(r.min) : fmtCurrency(r.min) + '–' + fmtCurrency(r.max))
@@ -9823,7 +9838,8 @@
         <td style="padding:6px 8px;width:80px;"><span class="spco-status" style="font-size:11px;color:var(--grey-mid);"></span></td>
       </tr>`;
     }).join('');
-    status.textContent = visibleCount + ' of ' + projects.length + ' projects visible to this team member (a project needs the tick and a deduction to show)';
+    status.textContent = visibleCount + ' of ' + projects.length + ' projects visible to this team member'
+      + (needDed ? ' (a project needs the tick and a deduction to show)' : ' (fixed commission display: the tick alone controls access)');
     status.style.color = 'var(--grey-mid)';
   }
 
@@ -14343,18 +14359,32 @@ function applyTeamOverride(rawDollars, projectId) {
   return { dollars: Math.max(0, rawDollars - ded), percentSuppressed: true };
 }
 
+// Does the "deduction must be set before the project shows" rule apply to a
+// staff member with this commission display config? The rule exists so staff
+// can't see (or quote) the full commission before the owner decides the team
+// rate. Staff on a fixed custom amount or with commission hidden never see
+// the raw figures, so for them the visibility tick alone decides access.
+function staffDeductionRequired(commType, commCustomValue) {
+  if (commType === 'hidden') return false;
+  if (commType === 'custom' && commCustomValue) return false;
+  return true;
+}
+
 // Is THIS project visible to the logged-in staff member? Only meaningful when
 // caller is staff under a flagged partner. Owners and non-flagged staff always
 // return true (no filter applies for them).
-// A project is visible ONLY when the owner has ticked it visible AND set a
-// deduction amount. A blank deduction hides the project entirely — the owner
-// must decide the team rate before staff can see (or quote) that stock.
+// A project is visible when the owner has ticked it visible AND, for staff who
+// see real commission figures, set a deduction amount. A blank deduction hides
+// the project from those staff until the owner decides the team rate; staff on
+// a fixed/hidden commission display only need the tick.
 function isProjectVisibleToStaff(projectId) {
   if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff') return true;
   if (!currentPartnerRecord.team_commission_override_enabled) return true;
   if (!projectId) return false;
   const row = staffCommissionOverrides[projectId];
-  return !!(row && row.v === true && row.d > 0);
+  if (!row || row.v !== true) return false;
+  if (!staffDeductionRequired(currentPartnerRecord.comm_display_type, currentPartnerRecord.comm_custom_value)) return true;
+  return row.d > 0;
 }
 
 // True when the logged-in user is a flagged-partner staff member with ZERO
@@ -14363,9 +14393,10 @@ function isProjectVisibleToStaff(projectId) {
 function staffHasNoVisibleProjects() {
   if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff') return false;
   if (!currentPartnerRecord.team_commission_override_enabled) return false;
+  const needDed = staffDeductionRequired(currentPartnerRecord.comm_display_type, currentPartnerRecord.comm_custom_value);
   for (const k in staffCommissionOverrides) {
     const row = staffCommissionOverrides[k];
-    if (row && row.v === true && row.d > 0) return false;
+    if (row && row.v === true && (!needDed || row.d > 0)) return false;
   }
   return true;
 }
