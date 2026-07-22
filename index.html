@@ -4138,7 +4138,7 @@
         <!-- FILTER ROW: search + 5 dropdowns + More filters + Clear -->
         <div class="stk-filter-row" id="stk-filter-row">
           <div class="stk-search-wrap">
-            <input type="text" id="stk-search" class="stk-search-input" placeholder="Search projects" aria-label="Search projects" oninput="onStkSearchInput()">
+            <input type="text" id="stk-search" class="stk-search-input" placeholder="Search address, suburb, or e.g. &quot;under $500k&quot;" aria-label="Search projects" oninput="onStkSearchInput()">
             <span class="stk-search-icon">🔍</span>
           </div>
 
@@ -4467,6 +4467,10 @@
       <!-- Tab: Stock -->
       <div class="stk-tab-content" id="spj-tab-stock">
         <div class="stk-stock-filter-row">
+          <div class="stk-search-wrap">
+            <input type="text" id="spj-search" class="stk-search-input" placeholder="Search lot, address, or e.g. &quot;under $500k&quot;" aria-label="Search lots" oninput="onLotSearchInput()">
+            <span class="stk-search-icon">🔍</span>
+          </div>
           <span style="font-size:11px;color:var(--grey-mid);margin-right:4px;">Beds:</span>
           <button class="stk-pill active" onclick="toggleLotFilter('beds','any',this)" style="padding:4px 10px;font-size:12px;">Any</button>
           <button class="stk-pill" onclick="toggleLotFilter('beds','1',this)" style="padding:4px 10px;font-size:12px;">1</button>
@@ -4477,6 +4481,90 @@
           <button class="stk-pill active" onclick="toggleLotFilter('avail','all',this)" style="padding:4px 10px;font-size:12px;">All</button>
           <button class="stk-pill" onclick="toggleLotFilter('avail','Available',this)" style="padding:4px 10px;font-size:12px;">Available</button>
           <button class="stk-pill" onclick="toggleLotFilter('avail','Reserved',this)" style="padding:4px 10px;font-size:12px;">Reserved</button>
+
+          <div class="stk-fdrop" data-fdrop="spj-types" style="margin-left:12px;">
+            <button class="stk-fdrop-btn" onclick="toggleStkFdrop('spj-types',this)">
+              <span class="stk-fdrop-label">Property type</span>
+              <span class="stk-fdrop-value" id="spj-fdrop-types-val">All</span>
+              <span class="stk-fdrop-caret">▾</span>
+            </button>
+            <div class="stk-fdrop-pop">
+              <div class="stk-pill-row" style="flex-wrap:wrap;gap:6px;">
+                <button class="stk-pill" onclick="toggleLotMulti('types','Apartment',this)">Apartment</button>
+                <button class="stk-pill" onclick="toggleLotMulti('types','Townhouse',this)">Townhouse</button>
+                <button class="stk-pill" onclick="toggleLotMulti('types','House & Land',this)">House & Land</button>
+                <button class="stk-pill" onclick="toggleLotMulti('types','Standard',this)">Standard</button>
+                <button class="stk-pill" onclick="toggleLotMulti('types','Dual living',this)">Dual Living</button>
+                <button class="stk-pill" onclick="toggleLotMulti('types','Co-living',this)">Co-living</button>
+                <button class="stk-pill" onclick="toggleLotMulti('types','NDIS',this)">NDIS</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="stk-fdrop" data-fdrop="spj-price">
+            <button class="stk-fdrop-btn" onclick="toggleStkFdrop('spj-price',this)">
+              <span class="stk-fdrop-label">Price range</span>
+              <span class="stk-fdrop-value" id="spj-fdrop-price-val">Any</span>
+              <span class="stk-fdrop-caret">▾</span>
+            </button>
+            <div class="stk-fdrop-pop" style="min-width:280px">
+              <div class="stk-price-range">
+                <div class="stk-price-label">
+                  <span id="spj-price-min-lbl">$200k</span> — <span id="spj-price-max-lbl">$5m</span>
+                </div>
+                <div class="stk-range-wrap" id="spj-range-wrap">
+                  <div class="stk-range-track"><div class="stk-range-fill" id="spj-range-fill"></div></div>
+                  <input type="range" id="spj-range-min" min="200000" max="5000000" step="10000" value="200000" oninput="updateLotPriceFilter()">
+                  <input type="range" id="spj-range-max" min="200000" max="5000000" step="10000" value="5000000" oninput="updateLotPriceFilter()">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stk-fdrop stk-fdrop-more" data-fdrop="spj-more">
+            <button class="stk-fdrop-btn" onclick="toggleStkFdrop('spj-more',this)">
+              <span class="stk-fdrop-caret-icon">⚙</span>
+              <span class="stk-fdrop-value">More filters</span>
+              <span class="stk-fdrop-badge" id="spj-fdrop-more-badge" style="display:none">0</span>
+            </button>
+            <div class="stk-fdrop-pop stk-fdrop-pop-wide stk-fdrop-pop-right">
+              <div class="stk-filter-group">
+                <span class="stk-filter-label">SMSF Eligible</span>
+                <div class="stk-toggle-row">
+                  <span class="stk-toggle-desc">Show SMSF only</span>
+                  <label class="stk-toggle">
+                    <input type="checkbox" id="spj-smsf-toggle" onchange="toggleLotSmsf()">
+                    <div class="stk-toggle-track"></div>
+                    <div class="stk-toggle-thumb"></div>
+                  </label>
+                </div>
+              </div>
+              <div class="stk-filter-group">
+                <span class="stk-filter-label">Rental Yield</span>
+                <div class="stk-pill-row">
+                  <button class="stk-pill active" onclick="toggleLotFilter('yieldMin',0,this)">Any</button>
+                  <button class="stk-pill" onclick="toggleLotFilter('yieldMin',4,this)">4%+</button>
+                  <button class="stk-pill" onclick="toggleLotFilter('yieldMin',5,this)">5%+</button>
+                  <button class="stk-pill" onclick="toggleLotFilter('yieldMin',6,this)">6%+</button>
+                  <button class="stk-pill" onclick="toggleLotFilter('yieldMin',7,this)">7%+</button>
+                  <button class="stk-pill" onclick="toggleLotFilter('yieldMin',8,this)">8%+</button>
+                </div>
+              </div>
+              <div class="stk-filter-group">
+                <span class="stk-filter-label">Settlement</span>
+                <div class="stk-pill-row">
+                  <button class="stk-pill active" onclick="toggleLotFilter('titleWindow','any',this)">Any</button>
+                  <button class="stk-pill" onclick="toggleLotFilter('titleWindow','completed',this)">Completed</button>
+                  <button class="stk-pill" onclick="toggleLotFilter('titleWindow','0-6',this)">0–6 months</button>
+                  <button class="stk-pill" onclick="toggleLotFilter('titleWindow','6-12',this)">6–12 months</button>
+                  <button class="stk-pill" onclick="toggleLotFilter('titleWindow','12-24',this)">12–24 months</button>
+                  <button class="stk-pill" onclick="toggleLotFilter('titleWindow','24-36',this)">2–3 years</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="stk-clearall" onclick="resetLotFilters()" title="Clear all filters">↺ Clear all</button>
         </div>
         <div class="stk-table-scroll">
           <table class="stk-stock-table">
@@ -8985,6 +9073,17 @@
   // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
 
   const CHANGELOG = [
+    {
+      version: '3.13',
+      date: '22 Jul 2026',
+      title: 'Richer project filters and a smarter search box',
+      items: [
+        'A project\'s Stock tab now has the same rich filters as the Stock browse screen (price range, property type, SMSF eligibility, rental yield, settlement window) — handy for house and land estates with mixed stock.',
+        'Filters you set on the Stock or Projects screen now carry through automatically when you open a project, so you don\'t have to reapply them.',
+        'The search box is smarter: search by address or suburb, or type things like "under $500k" or "3 bed over $600k". It now also works properly on the Stock tab, not just Projects.',
+        'Missing rent or rental yield figures now show "On Request" instead of a blank dash.',
+      ]
+    },
     {
       version: '3.12',
       date: '3 Jul 2026',
@@ -14195,7 +14294,8 @@ function fmtTitleDate(s) {
 // Stamp duty rates by state — sourced from Monday.com Stamp Duty Estimate formula.
 // Update here if Monday.com formula rates are changed.
 const STAMP_DUTY_RATES = { NSW:0.04, VIC:0.055, QLD:0.038, WA:0.045, SA:0.05, TAS:0.037, ACT:0.037, NT:0.062 };
-let lotFilter = { beds: 'any', avail: 'all' };
+let lotFilter = { beds: 'any', avail: 'all', types: [], priceMin: 200000, priceMax: 5000000, smsf: false, yieldMin: 0, titleWindow: 'any', search: '' };
+let lotPriceRange = { min: 200000, max: 5000000 }; // price-slider bounds for the CURRENT project's lots
 let currentStkView = 'grid';
 let stkAllSort = { col: null, dir: 'asc' };
 let stkProjSort = { col: null, dir: 'asc' };
@@ -14408,7 +14508,7 @@ function fmtProjCommForUser(p) {
 }
 
 function calcGrossYield(annual, price) {
-  if (!annual || !price) return '—';
+  if (!annual || !price) return 'On Request';
   return (annual / price * 100).toFixed(1) + '%';
 }
 function calcTotalOutgoings(s) {
@@ -14592,12 +14692,58 @@ function renderStockBrowse() {
   }
 }
 
+// ── Smart search parsing ────────────────────────────────────────
+// Lets partners type a plain search box query like "Smith Street", or
+// "stock under $500k", or "3 bed over $600k" and get something sensible.
+// Pulls a price constraint out of phrases like "under $500k" / "over 700k" /
+// "between 400k and 600k", strips generic filler words ("stock", "show me",
+// "properties"...) that would otherwise break an address/name substring
+// match, and returns whatever's left as plain text to match against.
+const SMART_SEARCH_STOPWORDS = ['stock','stocks','property','properties','house','houses',
+  'home','homes','lot','lots','show','me','find','search','for','any','all',
+  'listing','listings','deal','deals','please','pls','in','at','near','around','within'];
+function parsePriceToken(numStr, suffix) {
+  const n = parseFloat(String(numStr).replace(/,/g, ''));
+  if (isNaN(n)) return null;
+  const s = (suffix || '').toLowerCase();
+  if (s === 'k') return n * 1000;
+  if (s === 'm') return n * 1000000;
+  return n;
+}
+function parseSmartSearch(raw) {
+  let text = raw || '';
+  let priceMin = null, priceMax = null;
+  const tok = '\\$?\\s*([\\d,]+(?:\\.\\d+)?)\\s*(k|m)?\\b';
+  let m = text.match(new RegExp('\\bbetween\\s+' + tok + '\\s*(?:and|-|to)\\s*' + tok, 'i'));
+  if (m) {
+    priceMin = parsePriceToken(m[1], m[2]);
+    priceMax = parsePriceToken(m[3], m[4]);
+    text = text.replace(m[0], ' ');
+  } else {
+    m = text.match(new RegExp('\\b(?:under|below|less than|up to|max)\\s+' + tok, 'i'));
+    if (m) { priceMax = parsePriceToken(m[1], m[2]); text = text.replace(m[0], ' '); }
+    m = text.match(new RegExp('\\b(?:over|above|more than|min|from)\\s+' + tok, 'i'));
+    if (m) { priceMin = parsePriceToken(m[1], m[2]); text = text.replace(m[0], ' '); }
+  }
+  // Bedroom count ("3 bed", "4+ bedrooms", "2br") is already covered by the
+  // dedicated Beds filter — strip it here so it doesn't get treated as
+  // address text and zero out every result.
+  text = text.replace(/\b\d+\+?\s*(bed(?:room)?s?|br)\b/gi, ' ');
+  text = text.replace(new RegExp('\\b(' + SMART_SEARCH_STOPWORDS.join('|') + ')\\b', 'gi'), ' ');
+  text = text.replace(/\s+/g, ' ').trim().toLowerCase();
+  return { priceMin, priceMax, text };
+}
+
 // ── Shared lot-level filter predicate ─────────────────────────────
 // Single source of truth used by the All-stock table, the Projects card/
 // map views (to count matching lots per project), and the H&L lot pins
 // on the map. Keeping one predicate means project counts and map pins
 // stay consistent with the lot table no matter which filter is touched.
-function stockLotMatchesFilters(s, f) {
+// `sq` is the pre-parsed search query (see parseSmartSearch) — callers
+// filtering a whole array should parse it once and pass it in rather than
+// re-parsing per lot.
+function stockLotMatchesFilters(s, f, sq) {
+  sq = sq || parseSmartSearch(f.search);
   if (f.avail !== 'all' && s.availability !== f.avail) return false;
   if (f.states.length && !f.states.includes(s._state)) return false;
   if (f.types.length  && !f.types.includes(s.development_type) && !f.types.includes(s.property_type)) return false;
@@ -14606,8 +14752,10 @@ function stockLotMatchesFilters(s, f) {
     if (f.beds === '4' && (s.bedrooms || 0) < 4) return false;
     if (f.beds !== '4' && String(s.bedrooms) !== f.beds) return false;
   }
+  const effPriceMin = sq.priceMin != null ? Math.max(f.priceMin, sq.priceMin) : f.priceMin;
+  const effPriceMax = sq.priceMax != null ? Math.min(f.priceMax, sq.priceMax) : f.priceMax;
   if (s.total_contract) {
-    if (s.total_contract < f.priceMin || s.total_contract > f.priceMax) return false;
+    if (s.total_contract < effPriceMin || s.total_contract > effPriceMax) return false;
   }
   if (f.smsf && !s.smsf_eligible) return false;
   if (f.yieldMin > 0) {
@@ -14616,6 +14764,11 @@ function stockLotMatchesFilters(s, f) {
     if (_y < f.yieldMin) return false;
   }
   if (f.titleWindow !== 'any' && titleDateBucket(s) !== f.titleWindow) return false;
+  if (sq.text) {
+    const hay = [s.project_name, s.name, s.lot_number, s.street, s.suburb || s._suburb,
+      s.state || s._state, s.development_type, s.property_type].filter(Boolean).join(' ').toLowerCase();
+    if (!hay.includes(sq.text)) return false;
+  }
   return true;
 }
 
@@ -14626,10 +14779,13 @@ function stockLotMatchesFilters(s, f) {
 // surfaces show numbers that agree with the lot table.
 function filteredStockProjects() {
   const f = stkFilter;
-  const q = (f.search || '').trim().toLowerCase();
+  // Parsed once and reused per-lot below — search (including any price
+  // phrase) is matched at the lot level, so a project shows iff it has a
+  // matching lot; no separate project-level text check is needed.
+  const sq = parseSmartSearch(f.search);
   const perProj = {};
   for (const s of (allAvailableStock || [])) {
-    if (!stockLotMatchesFilters(s, f)) continue;
+    if (!stockLotMatchesFilters(s, f, sq)) continue;
     const pid = s.project_id;
     if (!pid) continue;
     let agg = perProj[pid];
@@ -14644,10 +14800,6 @@ function filteredStockProjects() {
     p._filteredMinPrice   = (agg && agg.prices.length) ? Math.min(...agg.prices) : null;
     p._filteredMaxPrice   = (agg && agg.prices.length) ? Math.max(...agg.prices) : null;
     if (p._filteredAvailCount === 0) return false;
-    if (q) {
-      const hay = [p.name, p.suburb, p.state, p.development_type].filter(Boolean).join(' ').toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
     return true;
   });
 }
@@ -15067,9 +15219,10 @@ function applyStkFilterToUI() {
 
 function renderAllStockTable() {
   const f = stkFilter;
+  const sq = parseSmartSearch(f.search);
   const filtered = allAvailableStock.filter(s => {
     if (!isProjectVisibleToStaff(s.project_id)) return false;
-    return stockLotMatchesFilters(s, f);
+    return stockLotMatchesFilters(s, f, sq);
   });
 
   document.getElementById('stk-count').innerHTML = '<strong>' + filtered.length + '</strong> lots';
@@ -15101,7 +15254,7 @@ function renderAllStockTable() {
       <td>${s.land_price ? fmtCurrency(s.land_price) : '—'}</td>
       <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
       <td>${s.build_price ? fmtCurrency(s.build_price) : '—'}</td>
-      <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
+      <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : 'On Request'}</td>
       <td>${(()=>{ const _bm = s.build_total_sqm||s.build_internal_sqm; const _bp = s.build_price; return (_bm&&_bp) ? fmtCurrency(Math.round(_bp/_bm))+'/m²' : '—'; })()}</td>
       <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
       <td style="white-space:nowrap;">${fmtTitleDate(s)}</td>
@@ -15253,10 +15406,11 @@ function renderStockMap(projects) {
   // geocoded address) so partners can see exactly where each lot sits in
   // an estate. Fall back to the project pin when no lot has coords yet
   // (e.g. before sync-monday's geocoding pass has caught up).
+  const hlPinSq = parseSmartSearch(stkFilter.search);
   const hlLotPins = (allAvailableStock || []).filter(s => {
     if (!isProjectVisibleToStaff(s.project_id)) return false;
     if (!isHouseAndLandProject(s)) return false;
-    if (!stockLotMatchesFilters(s, stkFilter)) return false;
+    if (!stockLotMatchesFilters(s, stkFilter, hlPinSq)) return false;
     const lat = s.latitude  != null ? Number(s.latitude)  : null;
     const lng = s.longitude != null ? Number(s.longitude) : null;
     return lat != null && lng != null && !isNaN(lat) && !isNaN(lng);
@@ -15529,7 +15683,41 @@ async function loadProjectStock(projectId) {
       document.getElementById('spj-avail-count').textContent = justAvailable + ' lots';
     }
 
-    lotFilter = { beds: 'any', avail: 'all' };
+    // Price-slider bounds for THIS project's lots (mirrors how stkPriceRange
+    // is derived from allAvailableStock on the browse screen).
+    const lotPrices = allStockItems.map(s => s.total_contract).filter(Boolean);
+    if (lotPrices.length) {
+      lotPriceRange = {
+        min: Math.floor(Math.min(...lotPrices) / 10000) * 10000,
+        max: Math.ceil(Math.max(...lotPrices) / 10000) * 10000,
+      };
+    } else {
+      lotPriceRange = { min: 200000, max: 5000000 };
+    }
+    const minR = document.getElementById('spj-range-min');
+    const maxR = document.getElementById('spj-range-max');
+    if (minR) { minR.min = lotPriceRange.min; minR.max = lotPriceRange.max; }
+    if (maxR) { maxR.min = lotPriceRange.min; maxR.max = lotPriceRange.max; }
+
+    // Carry through the filters active on the Projects/Stock browse screen
+    // (beds, availability, property type, SMSF, yield, settlement window,
+    // search text) so drilling into a project keeps showing what the
+    // partner already filtered for. Price range is clamped into this
+    // project's own bounds so an inherited range from a different project
+    // can't hide every lot here. types is copied (not referenced) so
+    // toggling it in the project view doesn't mutate the browse stkFilter.
+    lotFilter = {
+      beds: stkFilter.beds,
+      avail: stkFilter.avail,
+      types: [...stkFilter.types],
+      smsf: stkFilter.smsf,
+      yieldMin: stkFilter.yieldMin,
+      titleWindow: stkFilter.titleWindow,
+      search: stkFilter.search,
+      priceMin: Math.min(Math.max(stkFilter.priceMin, lotPriceRange.min), lotPriceRange.max),
+      priceMax: Math.max(Math.min(stkFilter.priceMax, lotPriceRange.max), lotPriceRange.min),
+    };
+    applyLotFilterToUI();
     renderStockTable();
   } catch(e) {
     document.getElementById('spj-stock-tbody').innerHTML =
@@ -15539,12 +15727,31 @@ async function loadProjectStock(projectId) {
 
 function renderStockTable() {
   const lf = lotFilter;
+  const sq = parseSmartSearch(lf.search);
   const filtered = allStockItems.filter(s => {
     if (lf.beds !== 'any') {
       if (lf.beds === '4' && (s.bedrooms || 0) < 4) return false;
       if (lf.beds !== '4' && String(s.bedrooms) !== lf.beds) return false;
     }
     if (lf.avail !== 'all' && s.availability !== lf.avail) return false;
+    if (lf.types.length && !lf.types.includes(s.development_type) && !lf.types.includes(s.property_type)) return false;
+    const effPriceMin = sq.priceMin != null ? Math.max(lf.priceMin, sq.priceMin) : lf.priceMin;
+    const effPriceMax = sq.priceMax != null ? Math.min(lf.priceMax, sq.priceMax) : lf.priceMax;
+    if (s.total_contract) {
+      if (s.total_contract < effPriceMin || s.total_contract > effPriceMax) return false;
+    }
+    if (lf.smsf && !s.smsf_eligible) return false;
+    if (lf.yieldMin > 0) {
+      const _ar = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null);
+      const _y = (_ar && s.total_contract) ? (_ar / s.total_contract * 100) : 0;
+      if (_y < lf.yieldMin) return false;
+    }
+    if (lf.titleWindow !== 'any' && titleDateBucket(s) !== lf.titleWindow) return false;
+    if (sq.text) {
+      const hay = [s.name, s.lot_number, s.street, s.suburb, s.state,
+        s.development_type, s.property_type].filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(sq.text)) return false;
+    }
     return true;
   });
 
@@ -15578,7 +15785,7 @@ function renderStockTable() {
       <td>${s.land_price ? fmtCurrency(s.land_price) : '—'}</td>
       <td>${fmtSqm(s.build_total_sqm || s.build_internal_sqm)}</td>
       <td>${s.build_price ? fmtCurrency(s.build_price) : '—'}</td>
-      <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : '—'}</td>
+      <td>${s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : 'On Request'}</td>
       <td>${(()=>{ const _bm = s.build_total_sqm||s.build_internal_sqm; const _bp = s.build_price; return (_bm&&_bp) ? fmtCurrency(Math.round(_bp/_bm))+'/m²' : '—'; })()}</td>
       <td>${calcGrossYield(s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null), s.total_contract)}</td>
       <td style="white-space:nowrap;">${fmtTitleDate(s)}</td>
@@ -15592,7 +15799,144 @@ function toggleLotFilter(group, value, el) {
   el.closest('.stk-stock-filter-row').querySelectorAll('.stk-pill[onclick*="' + group + '"]')
     .forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  updateLotFdropSummaries();
   renderStockTable();
+}
+
+function toggleLotMulti(group, value, el) {
+  // Multi-select pill groups (currently just property type).
+  const arr = lotFilter[group];
+  const idx = arr.indexOf(value);
+  if (idx >= 0) { arr.splice(idx, 1); el.classList.remove('active'); }
+  else           { arr.push(value);   el.classList.add('active'); }
+  updateLotFdropSummaries();
+  renderStockTable();
+}
+
+function toggleLotSmsf() {
+  lotFilter.smsf = document.getElementById('spj-smsf-toggle').checked;
+  updateLotFdropSummaries();
+  renderStockTable();
+}
+
+function onLotSearchInput() {
+  lotFilter.search = document.getElementById('spj-search').value;
+  renderStockTable();
+}
+
+function updateLotPriceFilter() {
+  const minEl = document.getElementById('spj-range-min');
+  const maxEl = document.getElementById('spj-range-max');
+  let min = parseInt(minEl.value), max = parseInt(maxEl.value);
+  const step = 10000;
+  if (min > max - step) {
+    if (document.activeElement === minEl) min = max - step;
+    else max = min + step;
+    minEl.value = min; maxEl.value = max;
+  }
+  lotFilter.priceMin = min;
+  lotFilter.priceMax = max;
+  document.getElementById('spj-price-min-lbl').textContent = fmtCurrencyShort(min);
+  document.getElementById('spj-price-max-lbl').textContent = fmtCurrencyShort(max);
+  const range = lotPriceRange.max - lotPriceRange.min;
+  const pct1 = range > 0 ? (min - lotPriceRange.min) / range * 100 : 0;
+  const pct2 = range > 0 ? (max - lotPriceRange.min) / range * 100 : 100;
+  const fill = document.getElementById('spj-range-fill');
+  if (fill) { fill.style.left = pct1 + '%'; fill.style.right = (100 - pct2) + '%'; }
+  updateLotFdropSummaries();
+  renderStockTable();
+}
+
+function resetLotFilters() {
+  lotFilter = {
+    beds: 'any', avail: 'all', types: [],
+    priceMin: lotPriceRange.min, priceMax: lotPriceRange.max,
+    smsf: false, yieldMin: 0, titleWindow: 'any', search: '',
+  };
+  applyLotFilterToUI();
+  renderStockTable();
+}
+
+// Mirrors applyStkFilterToUI() but for the project-detail Stock tab's
+// lotFilter — keeps the pills/toggle/price-slider in sync whenever
+// lotFilter is set programmatically (carry-through on project entry,
+// or resetLotFilters()) rather than via a direct pill click.
+function applyLotFilterToUI() {
+  const lf = lotFilter;
+  const row = document.querySelector('#spj-tab-stock .stk-stock-filter-row');
+  if (!row) return;
+
+  const search = document.getElementById('spj-search');
+  if (search) search.value = lf.search || '';
+
+  const reSingle = /toggleLotFilter\('([^']+)',\s*([^,]+),/;
+  const reMulti  = /toggleLotMulti\('([^']+)',\s*'([^']*)'/;
+  row.querySelectorAll('.stk-pill').forEach(b => {
+    const oc = b.getAttribute('onclick') || '';
+    let m = oc.match(reSingle);
+    if (m) {
+      const group = m[1];
+      let raw = m[2].trim();
+      if ((raw.startsWith("'") && raw.endsWith("'")) ||
+          (raw.startsWith('"') && raw.endsWith('"'))) raw = raw.slice(1, -1);
+      b.classList.toggle('active', String(lf[group]) === raw);
+      return;
+    }
+    m = oc.match(reMulti);
+    if (m) {
+      const group = m[1];
+      const value = m[2];
+      const arr = Array.isArray(lf[group]) ? lf[group] : [];
+      b.classList.toggle('active', arr.includes(value));
+    }
+  });
+
+  const smsf = document.getElementById('spj-smsf-toggle');
+  if (smsf) smsf.checked = !!lf.smsf;
+
+  const minR = document.getElementById('spj-range-min');
+  const maxR = document.getElementById('spj-range-max');
+  if (minR) minR.value = lf.priceMin;
+  if (maxR) maxR.value = lf.priceMax;
+  const minL = document.getElementById('spj-price-min-lbl');
+  const maxL = document.getElementById('spj-price-max-lbl');
+  if (minL) minL.textContent = fmtCurrencyShort(lf.priceMin);
+  if (maxL) maxL.textContent = fmtCurrencyShort(lf.priceMax);
+  const range = lotPriceRange.max - lotPriceRange.min;
+  const pct1 = range > 0 ? (lf.priceMin - lotPriceRange.min) / range * 100 : 0;
+  const pct2 = range > 0 ? (lf.priceMax - lotPriceRange.min) / range * 100 : 100;
+  const fill = document.getElementById('spj-range-fill');
+  if (fill) { fill.style.left = pct1 + '%'; fill.style.right = (100 - pct2) + '%'; }
+
+  updateLotFdropSummaries();
+}
+
+function updateLotFdropSummaries() {
+  const lf = lotFilter;
+  const typesEl = document.getElementById('spj-fdrop-types-val');
+  if (typesEl) {
+    typesEl.textContent = lf.types.length ? (lf.types.length === 1 ? lf.types[0] : lf.types.length + ' selected') : 'All';
+    const dr = document.querySelector('#spj-tab-stock .stk-fdrop[data-fdrop="spj-types"]');
+    if (dr) dr.classList.toggle('has-value', lf.types.length > 0);
+  }
+  const priceEl = document.getElementById('spj-fdrop-price-val');
+  if (priceEl) {
+    const rangeIsAll = lf.priceMin <= lotPriceRange.min && lf.priceMax >= lotPriceRange.max;
+    priceEl.textContent = rangeIsAll ? 'Any' : (fmtCurrencyShort(lf.priceMin) + ' – ' + fmtCurrencyShort(lf.priceMax));
+    const dr = document.querySelector('#spj-tab-stock .stk-fdrop[data-fdrop="spj-price"]');
+    if (dr) dr.classList.toggle('has-value', !rangeIsAll);
+  }
+  let extras = 0;
+  if (lf.smsf) extras++;
+  if (lf.yieldMin > 0) extras++;
+  if (lf.titleWindow !== 'any') extras++;
+  const badge = document.getElementById('spj-fdrop-more-badge');
+  if (badge) {
+    if (extras > 0) { badge.textContent = String(extras); badge.style.display = ''; }
+    else            { badge.style.display = 'none'; }
+  }
+  const moreDr = document.querySelector('#spj-tab-stock .stk-fdrop[data-fdrop="spj-more"]');
+  if (moreDr) moreDr.classList.toggle('has-value', extras > 0);
 }
 
 function switchProjTab(tab, el) {
@@ -16027,7 +16371,7 @@ function showStockListing(id) {
   document.getElementById('slg-stamp-duty').textContent  = fmtCurrency(_stampDuty);
   // Rental — annual rent = stored value or rent_per_week * 52 as fallback
   const _annualRent = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null);
-  document.getElementById('slg-rent-week').textContent   = s.rent_per_week ? fmtCurrency(s.rent_per_week) + ' / wk' : '—';
+  document.getElementById('slg-rent-week').textContent   = s.rent_per_week ? fmtCurrency(s.rent_per_week) + ' / wk' : 'On Request';
   document.getElementById('slg-rent-annual').textContent = fmtCurrency(_annualRent);
   document.getElementById('slg-gross-yield').textContent = calcGrossYield(_annualRent, s.total_contract);
   // Floor plan
@@ -16150,7 +16494,7 @@ function showStockListing(id) {
   document.getElementById('slg-sidebar-price').textContent = fmtCurrency(s.total_contract);
   document.getElementById('slg-sidebar-badge').innerHTML   =
     `<span class="stk-badge ${stkAvailBadgeClass(s.availability)}">${s.availability || '—'}</span>`;
-  document.getElementById('slg-sb-rent').textContent  = s.rent_per_week ? fmtCurrency(s.rent_per_week) + ' / wk' : '—';
+  document.getElementById('slg-sb-rent').textContent  = s.rent_per_week ? fmtCurrency(s.rent_per_week) + ' / wk' : 'On Request';
   document.getElementById('slg-sb-yield').textContent = calcGrossYield(_annualRent, s.total_contract);
 
   // Reserve button: enabled for partners on Available stock only
@@ -20961,7 +21305,7 @@ function buildKitHtml(s, research, brand) {
     }
 
     document.getElementById('fly-price').textContent = stock.total_contract ? flyerFmtCurrency(stock.total_contract) : '—';
-    document.getElementById('fly-rent').textContent  = stock.rent_per_week ? '$' + Math.round(stock.rent_per_week).toLocaleString('en-AU') : '—';
+    document.getElementById('fly-rent').textContent  = stock.rent_per_week ? '$' + Math.round(stock.rent_per_week).toLocaleString('en-AU') : 'On Req.';
 
     // ── Project overview / Location Highlights ──
     // For H&L lots, the project narrative is replaced with a suburb-level
