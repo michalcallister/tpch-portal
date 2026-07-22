@@ -9074,6 +9074,15 @@
 
   const CHANGELOG = [
     {
+      version: '3.15',
+      date: '22 Jul 2026',
+      title: 'Property flyers now name the person who shared them',
+      items: [
+        'When a team member shares a property flyer, the "Speak with" card at the bottom now shows their own name and email, so the client contacts the person they\'re actually dealing with. The firm\'s phone number, logo and branding stay the same.',
+        'Flyers shared by the firm owner, and links shared before today, are unchanged.',
+      ]
+    },
+    {
       version: '3.14',
       date: '22 Jul 2026',
       title: 'Team visibility fix for fixed and hidden commission displays',
@@ -20937,6 +20946,7 @@ function buildKitHtml(s, research, brand) {
     if (!FLY_STOCK_RE.test(parts[1]) || !FLY_UUID_RE.test(parts[2])) return null;
     let preparedFor = null;
     let unbranded = false;
+    let staffId = null;
     if (query) {
       try {
         const params = new URLSearchParams(query);
@@ -20946,9 +20956,11 @@ function buildKitHtml(s, research, brand) {
           preparedFor = f.replace(/[\x00-\x1F\x7F<>]/g, '').trim().slice(0, 80) || null;
         }
         unbranded = params.get('unbranded') === '1';
+        const st = params.get('staff');
+        if (st && FLY_UUID_RE.test(st)) staffId = st;
       } catch (_) { /* malformed query — ignore */ }
     }
-    return { stockId: parts[1], partnerId: parts[2], preparedFor, unbranded };
+    return { stockId: parts[1], partnerId: parts[2], preparedFor, unbranded, staffId };
   }
 
   // Show only the flyer screen — hide login/portal/etc., kill the topbar.
@@ -21090,7 +21102,7 @@ function buildKitHtml(s, research, brand) {
           'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ p_stock_id: route.stockId, p_partner_id: route.partnerId }),
+        body: JSON.stringify({ p_stock_id: route.stockId, p_partner_id: route.partnerId, p_staff_id: route.staffId || null }),
       });
       if (!res.ok) throw new Error('Server error ' + res.status);
       payload = await res.json();
@@ -21446,7 +21458,10 @@ function buildKitHtml(s, research, brand) {
 
     if (!unbranded) {
       // ── Contact card ──
-      document.getElementById('fly-contact-name').textContent    = partner.full_name || 'Your advisor';
+      // Staff-shared links resolve the sharer's name + email; the Call button
+      // stays the firm's number (staff records carry no phone).
+      const contact = p.staff || partner;
+      document.getElementById('fly-contact-name').textContent    = contact.full_name || 'Your advisor';
       document.getElementById('fly-contact-company').textContent = partner.company_name || '';
       if (partner.phone) {
         const a = document.getElementById('fly-contact-phone');
@@ -21454,10 +21469,10 @@ function buildKitHtml(s, research, brand) {
         a.textContent = '📞 ' + partner.phone;
         a.style.display = '';
       }
-      if (partner.email) {
+      if (contact.email) {
         const a = document.getElementById('fly-contact-email');
-        a.href = 'mailto:' + partner.email + '?subject=' + encodeURIComponent('Enquiry: ' + (stock.name || project.name || 'Property'));
-        a.textContent = '✉ ' + partner.email;
+        a.href = 'mailto:' + contact.email + '?subject=' + encodeURIComponent('Enquiry: ' + (stock.name || project.name || 'Property'));
+        a.textContent = '✉ ' + contact.email;
         a.style.display = '';
       }
 
@@ -21798,6 +21813,11 @@ function buildKitHtml(s, research, brand) {
     const partnerId = currentPartnerRecord?.partner_id || '';
     let url = location.origin + location.pathname + '#flyer/' + stock + '/' + partnerId;
     const params = [];
+    // Staff-shared links carry the staff id so the public flyer's contact
+    // card names the person who shared it, not the firm owner.
+    if (currentPartnerRecord?.role === 'staff' && currentPartnerRecord.staff_id) {
+      params.push('staff=' + encodeURIComponent(currentPartnerRecord.staff_id));
+    }
     const recipientEl = document.getElementById('share-flyer-recipient');
     const recipient = (recipientEl?.value || '').trim();
     if (recipient) params.push('for=' + encodeURIComponent(recipient));
