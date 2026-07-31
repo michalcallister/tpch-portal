@@ -4955,16 +4955,10 @@
             </div>
             <div class="stk-detail-section" id="slg-floor-plan-section" style="display:none;">
               <div class="stk-detail-section-title">Floor Plan</div>
-              <!-- Image floor plan (shown for PNG/JPG) -->
-              <div id="slg-floor-plan-thumb" onclick="openFloorPlanLightbox()" style="display:none;cursor:zoom-in;max-width:420px;border:1px solid var(--gold-border);overflow:hidden;position:relative;">
-                <img id="slg-floor-plan-img" src="" alt="Floor Plan" style="width:100%;display:block;object-fit:contain;max-height:300px;background:#111;">
-                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.6));padding:10px 14px;font-size:11px;color:var(--grey-light);letter-spacing:0.5px;">Click to enlarge</div>
-              </div>
-              <!-- PDF floor plan (shown for PDF) -->
-              <div id="slg-floor-plan-pdf" style="display:none;">
-                <iframe id="slg-floor-plan-iframe" src="" style="width:100%;height:500px;border:1px solid var(--gold-border);background:#111;"></iframe>
-                <a id="slg-floor-plan-pdf-link" href="#" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;color:var(--gold);text-decoration:none;letter-spacing:0.5px;">Open in new tab ↗</a>
-              </div>
+              <!-- Images and PDFs both land here as plain images —
+                   renderFloorPlanInto() rasterises PDFs so partners never
+                   get handed an embedded PDF viewer. -->
+              <div id="slg-floor-plan-mount"></div>
             </div>
           </div>
 
@@ -6146,10 +6140,24 @@
   </div>
 </div>
 
-<!-- Description Editor Modal -->
-<div id="floor-plan-lightbox" onclick="closeFloorPlanLightbox()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:1100;align-items:center;justify-content:center;cursor:zoom-out;">
-  <img id="floor-plan-lightbox-img" src="" alt="Floor Plan" style="max-width:90vw;max-height:90vh;object-fit:contain;box-shadow:0 0 60px rgba(0,0,0,0.8);">
-  <button onclick="closeFloorPlanLightbox()" aria-label="Close" style="position:absolute;top:20px;right:28px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1;">×</button>
+<!-- Floor plan / facade lightbox — fills the screen, scroll or +/− to zoom,
+     drag to pan, arrows to page through a multi-page plan. -->
+<div id="floor-plan-lightbox" class="fpl" style="display:none;" onclick="fplBackdrop(event)">
+  <div class="fpl-stage" id="fpl-stage">
+    <img id="floor-plan-lightbox-img" class="fpl-img" src="" alt="Floor Plan" draggable="false">
+  </div>
+  <button class="fpl-close" onclick="closeFloorPlanLightbox()" aria-label="Close">×</button>
+  <div class="fpl-toolbar">
+    <button onclick="fplZoomStep(-1)" aria-label="Zoom out">−</button>
+    <span id="fpl-zoom-label">Fit</span>
+    <button onclick="fplZoomStep(1)" aria-label="Zoom in">+</button>
+    <button onclick="fplRotate(1)" aria-label="Rotate">Rotate</button>
+    <button onclick="fplResetView()" aria-label="Reset view">Reset</button>
+    <a id="fpl-original" href="#" target="_blank" rel="noopener" style="display:none;">Original ↗</a>
+  </div>
+  <button id="fpl-prev" class="fpl-nav prev" onclick="fplStep(-1)" aria-label="Previous page">‹</button>
+  <button id="fpl-next" class="fpl-nav next" onclick="fplStep(1)" aria-label="Next page">›</button>
+  <div id="fpl-counter" class="fpl-counter" style="display:none;"></div>
 </div>
 
 <!-- Gallery lightbox -->
@@ -9073,6 +9081,17 @@
   // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
 
   const CHANGELOG = [
+    {
+      version: '3.16',
+      date: '31 Jul 2026',
+      title: 'Floor plans now display as images, not PDFs',
+      items: [
+        'Floor plans that come to us as PDFs now show as a full-size image on the property page. There is no PDF viewer to scroll inside, and no toolbar in the way.',
+        'Click any floor plan to open it full screen, where you can zoom in on dimensions, drag to move around, and rotate plans that were drawn sideways. Plans with more than one page have page arrows.',
+        'Property flyers show floor plans the same way, and your client can enlarge and rotate them too. Floor plans now also appear when a flyer is printed or saved as a PDF.',
+        'The original PDF is still one click away if you want to download it or send it on.',
+      ]
+    },
     {
       version: '3.15',
       date: '22 Jul 2026',
@@ -16414,35 +16433,21 @@ function showStockListing(id) {
   document.getElementById('slg-rent-week').textContent   = s.rent_per_week ? fmtCurrency(s.rent_per_week) + ' / wk' : 'On Request';
   document.getElementById('slg-rent-annual').textContent = fmtCurrency(_annualRent);
   document.getElementById('slg-gross-yield').textContent = calcGrossYield(_annualRent, s.total_contract);
-  // Floor plan
+  // Floor plan — image or PDF, both presented as a full-width image.
   const fpSection = document.getElementById('slg-floor-plan-section');
-  const fpThumb   = document.getElementById('slg-floor-plan-thumb');
-  const fpPdf     = document.getElementById('slg-floor-plan-pdf');
+  const fpMount   = document.getElementById('slg-floor-plan-mount');
   if (s.floor_plan_url) {
-    const isPdf = s.floor_plan_url.toLowerCase().endsWith('.pdf');
     fpSection.style.display = '';
-    if (isPdf) {
-      fpThumb.style.display = 'none';
-      document.getElementById('slg-floor-plan-iframe').src = s.floor_plan_url;
-      const pdfLink = document.getElementById('slg-floor-plan-pdf-link');
-      pdfLink.href = s.floor_plan_url;
-      if (!pdfLink._engBound) {
-        pdfLink._engBound = true;
-        pdfLink.addEventListener('click', () => {
-          logEvent('floor_plan_pdf_open', {
-            entityType: 'stock',
-            entityId: (typeof currentStockId !== 'undefined' ? currentStockId : null),
-          });
-        });
-      }
-      fpPdf.style.display = '';
-    } else {
-      fpPdf.style.display = 'none';
-      document.getElementById('slg-floor-plan-img').src = s.floor_plan_url;
-      fpThumb.style.display = '';
-    }
+    renderFloorPlanInto(fpMount, s.floor_plan_url, {
+      onOpen: (srcs, i) => openImageLightbox(srcs, i, s.floor_plan_url),
+      onOriginal: () => logEvent('floor_plan_pdf_open', {
+        entityType: 'stock',
+        entityId: (typeof currentStockId !== 'undefined' ? currentStockId : null),
+      }),
+    });
   } else {
     fpSection.style.display = 'none';
+    fpMount.innerHTML = '';
   }
 
   // Walkthrough video — self-hosted MP4, tab only shown when one exists.
@@ -16706,21 +16711,370 @@ function stkBack() {
   showPage('stock', document.querySelector('.nav-item[onclick*="\'stock\'"]'));
 }
 
-function openFloorPlanLightbox() {
-  document.getElementById('floor-plan-lightbox-img').src = document.getElementById('slg-floor-plan-img').src;
+// ── Floor plans ───────────────────────────────────────────────────
+// Monday hands us most floor plans as PDFs (651 of 766 at last count).
+// Dropped into an <iframe> the partner gets the browser's own PDF viewer:
+// a toolbar, a grey gutter, and a page they have to scroll inside a small
+// box. Instead we rasterise the PDF with pdf.js and present plain images,
+// so a PDF plan and a PNG plan look identical — full width, nothing to
+// scroll, click to enlarge. If pdf.js can't load (blocked CDN, offline) or
+// the file won't parse, we fall back to the old iframe rather than nothing.
+const PDFJS_CDN   = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38';
+const FP_MAX_DIM  = 2200;  // longest raster edge, px — crisp at full zoom
+const FP_MAX_PAGE = 8;     // pages rendered per plan
+const FP_CACHE_MAX = 6;    // rendered plans held in memory
+
+function isPdfUrl(url) { return /\.pdf(\?|#|$)/i.test(url || ''); }
+
+let _pdfjsPromise = null;
+function loadPdfJs() {
+  if (_pdfjsPromise) return _pdfjsPromise;
+  // pdf.js 4.x calls Promise.withResolvers (Chrome 119+ / Safari 17.4+).
+  if (typeof Promise.withResolvers !== 'function') {
+    Promise.withResolvers = function () {
+      let resolve, reject;
+      const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+      return { promise, resolve, reject };
+    };
+  }
+  _pdfjsPromise = import(PDFJS_CDN + '/pdf.min.mjs')
+    .then(mod => {
+      const lib = (mod && mod.getDocument) ? mod : mod.default;
+      lib.GlobalWorkerOptions.workerSrc = PDFJS_CDN + '/pdf.worker.min.mjs';
+      return lib;
+    })
+    .catch(err => { _pdfjsPromise = null; throw err; });
+  return _pdfjsPromise;
+}
+
+// url → Promise<[{src, width, height}]>. Cached so reopening a lot (or
+// enlarging it) doesn't re-render; oldest entries are freed as we go.
+const _fpPdfCache = new Map();
+
+function renderPdfToImages(url) {
+  if (_fpPdfCache.has(url)) return _fpPdfCache.get(url);
+  const job = (async () => {
+    const pdfjsLib = await loadPdfJs();
+    const doc = await pdfjsLib.getDocument({ url, isEvalSupported: false }).promise;
+    const pages = [];
+    try {
+      for (let n = 1; n <= Math.min(doc.numPages, FP_MAX_PAGE); n++) {
+        const page = await doc.getPage(n);
+        const unit = page.getViewport({ scale: 1 });
+        // Plenty of builders export plans on a small custom page (lot 3303 is
+        // 240x375pt). The source is vector, so upscale freely — the cap only
+        // exists to stop a pathological file eating canvas memory.
+        const scale = Math.min(FP_MAX_DIM / Math.max(unit.width, unit.height), 8);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width  = Math.round(viewport.width);
+        canvas.height = Math.round(viewport.height);
+        const ctx = canvas.getContext('2d', { alpha: false });
+        // Plans are line art with no background box — without this they
+        // rasterise transparent, which reads as black on a dark surface.
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+        if (!blob) throw new Error('canvas encode failed');
+        pages.push({ src: URL.createObjectURL(blob), width: canvas.width, height: canvas.height });
+        canvas.width = canvas.height = 0;   // release the bitmap
+        page.cleanup();
+      }
+    } finally {
+      doc.destroy();
+    }
+    if (!pages.length) throw new Error('no pages rendered');
+    return pages;
+  })().catch(err => { _fpPdfCache.delete(url); throw err; });
+  _fpPdfCache.set(url, job);
+  while (_fpPdfCache.size > FP_CACHE_MAX) {
+    const oldest = _fpPdfCache.keys().next().value;
+    const dropped = _fpPdfCache.get(oldest);
+    _fpPdfCache.delete(oldest);
+    Promise.resolve(dropped).then(
+      pp => pp.forEach(p => URL.revokeObjectURL(p.src)),
+      () => {}
+    );
+  }
+  return job;
+}
+
+/**
+ * Render a floor plan into `mount` as one or more images.
+ *   opts.variant     'flyer' for the light client-facing flyer, else portal
+ *   opts.onOpen      (srcs, index) => void  — click-to-enlarge handler
+ *   opts.onOriginal  () => void             — fired when the source PDF is opened
+ */
+function renderFloorPlanInto(mount, url, opts) {
+  opts = opts || {};
+  mount.innerHTML = '';
+  if (!url) return Promise.resolve();
+
+  const wrap = document.createElement('div');
+  wrap.className = 'fp' + (opts.variant === 'flyer' ? ' fp-flyer' : '');
+  mount.appendChild(wrap);
+
+  const show = (pages, isPdf) => {
+    let idx = 0;
+    wrap.innerHTML = '';
+
+    const stage = document.createElement('div');
+    stage.className = 'fp-stage';
+    const img = document.createElement('img');
+    img.className = 'fp-img';
+    img.alt = 'Floor plan';
+    img.decoding = 'async';
+    img.addEventListener('click', () => opts.onOpen && opts.onOpen(pages.map(p => p.src), idx));
+    const hint = document.createElement('span');
+    hint.className = 'fp-hint';
+    hint.textContent = 'Click to enlarge';
+    stage.appendChild(img);
+    stage.appendChild(hint);
+    wrap.appendChild(stage);
+
+    let label = null;
+    if (pages.length > 1) {
+      const pager = document.createElement('div');
+      pager.className = 'fp-pager';
+      const mk = (text, delta, aria) => {
+        const b = document.createElement('button');
+        b.className = 'fp-pg-btn';
+        b.type = 'button';
+        b.textContent = text;
+        b.setAttribute('aria-label', aria);
+        b.addEventListener('click', () => {
+          idx = Math.min(Math.max(idx + delta, 0), pages.length - 1);
+          paint();
+        });
+        return b;
+      };
+      const prev = mk('‹', -1, 'Previous page');
+      const next = mk('›',  1, 'Next page');
+      label = document.createElement('span');
+      label.className = 'fp-pg-label';
+      pager.appendChild(prev);
+      pager.appendChild(label);
+      pager.appendChild(next);
+      wrap.appendChild(pager);
+      pager._prev = prev;
+      pager._next = next;
+      wrap._pager = pager;
+    }
+
+    if (isPdf) {
+      const a = document.createElement('a');
+      a.className = 'fp-original';
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = 'Open the original PDF ↗';
+      if (opts.onOriginal) a.addEventListener('click', opts.onOriginal);
+      wrap.appendChild(a);
+    }
+
+    function paint() {
+      img.src = pages[idx].src;
+      if (label) {
+        label.textContent = 'Page ' + (idx + 1) + ' of ' + pages.length;
+        wrap._pager._prev.disabled = idx === 0;
+        wrap._pager._next.disabled = idx === pages.length - 1;
+      }
+    }
+    paint();
+  };
+
+  if (!isPdfUrl(url)) { show([{ src: url }], false); return Promise.resolve(); }
+
+  const loading = document.createElement('div');
+  loading.className = 'fp-loading';
+  loading.textContent = 'Preparing floor plan…';
+  wrap.appendChild(loading);
+
+  return renderPdfToImages(url).then(
+    pages => show(pages, true),
+    () => {
+      // Last resort: hand the browser viewer back, sized as large as the
+      // surface allows and hinted to fit the page width.
+      wrap.innerHTML = '';
+      const frame = document.createElement('iframe');
+      frame.className = 'fp-iframe';
+      frame.src = url + '#view=FitH&toolbar=0&navpanes=0';
+      const a = document.createElement('a');
+      a.className = 'fp-original';
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = 'Open the original PDF ↗';
+      if (opts.onOriginal) a.addEventListener('click', opts.onOriginal);
+      wrap.appendChild(frame);
+      wrap.appendChild(a);
+    }
+  );
+}
+
+// ── Floor plan lightbox — zoom, pan, page ─────────────────────────
+let _fplSrcs = [], _fplIndex = 0, _fplScale = 1, _fplX = 0, _fplY = 0, _fplRot = 0, _fplDrag = null;
+const FPL_MIN = 1, FPL_MAX = 8;
+
+function openImageLightbox(srcs, index, originalUrl) {
+  _fplSrcs = (Array.isArray(srcs) ? srcs : [srcs]).filter(Boolean);
+  if (!_fplSrcs.length) return;
+  _fplIndex = Math.min(Math.max(index || 0, 0), _fplSrcs.length - 1);
+  const orig = document.getElementById('fpl-original');
+  if (originalUrl && isPdfUrl(originalUrl)) { orig.href = originalUrl; orig.style.display = ''; }
+  else { orig.style.display = 'none'; }
   document.getElementById('floor-plan-lightbox').style.display = 'flex';
   document.body.style.overflow = 'hidden';
+  fplShow();
 }
+
+// The facade hero opens a single image with no source PDF behind it.
 function openFacadeLightbox() {
-  // Reuses the floor-plan lightbox container; src is swapped on each open.
-  document.getElementById('floor-plan-lightbox-img').src = document.getElementById('slg-facade-img').src;
-  document.getElementById('floor-plan-lightbox').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
+  openImageLightbox([document.getElementById('slg-facade-img').src], 0, null);
 }
+
 function closeFloorPlanLightbox() {
   document.getElementById('floor-plan-lightbox').style.display = 'none';
   document.body.style.overflow = '';
+  _fplSrcs = [];
 }
+
+function fplShow() {
+  document.getElementById('floor-plan-lightbox-img').src = _fplSrcs[_fplIndex] || '';
+  const multi = _fplSrcs.length > 1;
+  const counter = document.getElementById('fpl-counter');
+  counter.style.display = multi ? '' : 'none';
+  counter.textContent = 'Page ' + (_fplIndex + 1) + ' of ' + _fplSrcs.length;
+  const prev = document.getElementById('fpl-prev');
+  const next = document.getElementById('fpl-next');
+  prev.style.display = multi ? '' : 'none';
+  next.style.display = multi ? '' : 'none';
+  prev.disabled = _fplIndex === 0;
+  next.disabled = _fplIndex === _fplSrcs.length - 1;
+  fplResetView();
+}
+
+function fplStep(delta) {
+  if (_fplSrcs.length < 2) return;
+  _fplIndex = Math.min(Math.max(_fplIndex + delta, 0), _fplSrcs.length - 1);
+  fplShow();
+}
+
+function fplResetView() { _fplScale = 1; _fplX = 0; _fplY = 0; _fplRot = 0; fplApplyView(); }
+
+// Some builders draw the plan sideways on a portrait page — the browser's PDF
+// viewer had a rotate control, so ours does too.
+function fplRotate(dir) {
+  _fplRot = (_fplRot + dir * 90 + 360) % 360;
+  _fplX = 0; _fplY = 0;
+  fplApplyView();
+}
+
+// Turned on its side the image no longer fits the stage, so shrink it back to
+// the available box. Constant per rotation, so it doesn't disturb zoom maths.
+function fplFitFactor() {
+  if (_fplRot % 180 === 0) return 1;
+  const stage = document.getElementById('fpl-stage');
+  const img   = document.getElementById('floor-plan-lightbox-img');
+  const w = img.offsetWidth, h = img.offsetHeight;
+  if (!w || !h) return 1;
+  const cs = getComputedStyle(stage);
+  const availW = stage.clientWidth  - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const availH = stage.clientHeight - parseFloat(cs.paddingTop)  - parseFloat(cs.paddingBottom);
+  return Math.min(availW / h, availH / w, 1);
+}
+
+function fplApplyView() {
+  const img = document.getElementById('floor-plan-lightbox-img');
+  if (_fplScale <= FPL_MIN) { _fplX = 0; _fplY = 0; }
+  img.style.transform = 'translate(' + _fplX + 'px,' + _fplY + 'px)' +
+    ' scale(' + (_fplScale * fplFitFactor()) + ')' +
+    ' rotate(' + _fplRot + 'deg)';
+  img.classList.toggle('zoomed', _fplScale > FPL_MIN);
+  document.getElementById('fpl-zoom-label').textContent =
+    _fplScale <= FPL_MIN ? 'Fit' : Math.round(_fplScale * 100) + '%';
+}
+
+// Zoom about a point so the detail under the cursor stays put.
+function fplZoomAt(factor, cx, cy) {
+  const stage = document.getElementById('fpl-stage');
+  const r = stage.getBoundingClientRect();
+  const px = cx - r.left - r.width / 2;
+  const py = cy - r.top  - r.height / 2;
+  const next = Math.min(Math.max(_fplScale * factor, FPL_MIN), FPL_MAX);
+  const k = next / _fplScale;
+  _fplX = px - k * (px - _fplX);
+  _fplY = py - k * (py - _fplY);
+  _fplScale = next;
+  fplApplyView();
+}
+
+function fplZoomStep(dir) {
+  const stage = document.getElementById('fpl-stage').getBoundingClientRect();
+  fplZoomAt(dir > 0 ? 1.35 : 1 / 1.35, stage.left + stage.width / 2, stage.top + stage.height / 2);
+}
+
+// Clicking the empty surround closes; the image, buttons and a finished
+// drag do not.
+function fplBackdrop(ev) {
+  if (ev.target.closest('.fpl-img, .fpl-toolbar, .fpl-nav, .fpl-close')) return;
+  if (_fplDrag && _fplDrag.moved) return;
+  closeFloorPlanLightbox();
+}
+
+(function bindFloorPlanLightbox() {
+  const box   = document.getElementById('floor-plan-lightbox');
+  const stage = document.getElementById('fpl-stage');
+  const img   = document.getElementById('floor-plan-lightbox-img');
+  if (!box || !stage || !img) return;
+
+  stage.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    fplZoomAt(ev.deltaY < 0 ? 1.18 : 1 / 1.18, ev.clientX, ev.clientY);
+  }, { passive: false });
+
+  // Double-click toggles between fit and a readable 2.5x.
+  img.addEventListener('dblclick', ev => {
+    if (_fplScale > FPL_MIN) fplResetView();
+    else fplZoomAt(2.5, ev.clientX, ev.clientY);
+  });
+
+  img.addEventListener('pointerdown', ev => {
+    if (_fplScale <= FPL_MIN) return;
+    _fplDrag = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, ox: _fplX, oy: _fplY, moved: false };
+    img.classList.add('dragging');   // drops the transform transition mid-pan
+    img.setPointerCapture(ev.pointerId);
+    ev.preventDefault();
+  });
+  img.addEventListener('pointermove', ev => {
+    if (!_fplDrag || _fplDrag.id !== ev.pointerId) return;
+    const dx = ev.clientX - _fplDrag.x, dy = ev.clientY - _fplDrag.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) _fplDrag.moved = true;
+    _fplX = _fplDrag.ox + dx;
+    _fplY = _fplDrag.oy + dy;
+    fplApplyView();
+  });
+  const endDrag = ev => {
+    if (!_fplDrag || _fplDrag.id !== ev.pointerId) return;
+    img.classList.remove('dragging');
+    // Held briefly so the click that follows a pan doesn't close the box.
+    setTimeout(() => { _fplDrag = null; }, 0);
+  };
+  img.addEventListener('pointerup', endDrag);
+  img.addEventListener('pointercancel', endDrag);
+
+  document.addEventListener('keydown', ev => {
+    if (box.style.display !== 'flex') return;
+    if (ev.key === 'Escape')     closeFloorPlanLightbox();
+    else if (ev.key === 'ArrowLeft')  fplStep(-1);
+    else if (ev.key === 'ArrowRight') fplStep(1);
+    else if (ev.key === '+' || ev.key === '=') fplZoomStep(1);
+    else if (ev.key === '-')     fplZoomStep(-1);
+    else if (ev.key === 'r' || ev.key === 'R') fplRotate(1);
+    else if (ev.key === '0')     fplResetView();
+  });
+})();
 
 let galleryImages = [], galleryIndex = 0;
 function renderGallery(photos) {
@@ -18899,6 +19253,152 @@ function buildKitHtml(s, research, brand) {
 .stk-sidebar-link:hover { color: var(--gold-light); }
 
 /* Detail data rows */
+/* ── Floor plans ──────────────────────────────────────────────
+   One set of rules for both surfaces: the flyer re-points the gold /
+   text tokens for white-label, so these adapt without a second theme.
+   PDFs are rasterised to images before they get here, so a plan is
+   always a picture on a plate — never a scroll box. */
+/* The plate hugs the plan rather than stretching — most plans are portrait
+   and a full-width plate leaves a cream void either side. */
+.fp-stage {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: fit-content; max-width: 100%;
+  background: #F7F5F0;
+  border: 1px solid var(--gold-border);
+  padding: 12px;
+}
+.fp-img {
+  display: block;
+  max-width: 100%;
+  max-height: min(70vh, 720px);
+  object-fit: contain;
+  cursor: zoom-in;
+}
+.fp-hint {
+  position: absolute; right: 12px; bottom: 12px;
+  background: rgba(8,15,26,0.72);
+  color: #F5F3EE;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 5px 9px;
+  pointer-events: none;
+}
+.fp-loading {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 200px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--gold-border);
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; letter-spacing: 1px;
+}
+.fp-pager {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 10px;
+}
+.fp-pg-btn {
+  background: transparent;
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+  width: 28px; height: 28px;
+  font-size: 16px; line-height: 1;
+  cursor: pointer;
+}
+.fp-pg-btn:hover:not([disabled]) { background: rgba(200,169,81,0.10); }
+.fp-pg-btn[disabled] { opacity: 0.28; cursor: default; }
+.fp-pg-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.fp-original {
+  display: inline-block; margin-top: 10px;
+  font-size: 11px; letter-spacing: 0.5px;
+  color: var(--gold); text-decoration: none;
+}
+.fp-original:hover { text-decoration: underline; }
+/* Only reached when pdf.js can't load or parse the file. */
+.fp-iframe {
+  width: 100%; height: min(70vh, 640px);
+  border: 1px solid var(--gold-border);
+  background: #F7F5F0;
+}
+/* The flyer has the full page width to play with, so give plans more room. */
+.fp-flyer .fp-stage { border-radius: 4px; }
+.fp-flyer .fp-img   { max-height: min(78vh, 880px); }
+.fp-flyer .fp-iframe { height: min(78vh, 880px); border-radius: 4px; }
+
+/* Lightbox — full screen, scroll or +/− to zoom, drag to pan. */
+.fpl {
+  position: fixed; inset: 0; z-index: 1100;
+  background: rgba(6,10,18,0.96);
+  align-items: center; justify-content: center;
+}
+/* Padding keeps the plan clear of the counter, arrows and toolbar. */
+.fpl-stage {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 56px 76px 82px;
+  box-sizing: border-box;
+  overflow: hidden;
+  touch-action: none;
+}
+.fpl-img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+  transform-origin: center center;
+  transition: transform 0.09s ease-out;
+  box-shadow: 0 0 60px rgba(0,0,0,0.8);
+  user-select: none; -webkit-user-drag: none;
+}
+.fpl-img.zoomed   { cursor: grab; }
+.fpl-img.dragging { cursor: grabbing; transition: none; }
+.fpl-close {
+  position: absolute; top: 18px; right: 24px;
+  background: none; border: none; color: #fff;
+  font-size: 30px; line-height: 1; cursor: pointer;
+}
+.fpl-close:hover { opacity: 0.7; }
+.fpl-counter {
+  position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+}
+.fpl-toolbar {
+  position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(8,15,26,0.94);
+  border: 1px solid rgba(200,169,81,0.22);
+  padding: 6px 8px;
+}
+.fpl-toolbar button, .fpl-toolbar a {
+  background: transparent; border: none;
+  color: #C8A951;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; letter-spacing: 1px;
+  padding: 5px 10px; cursor: pointer; text-decoration: none;
+}
+.fpl-toolbar button:hover, .fpl-toolbar a:hover { background: rgba(200,169,81,0.12); }
+.fpl-toolbar #fpl-zoom-label {
+  min-width: 52px; text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: 1px;
+  color: rgba(255,255,255,0.6);
+}
+.fpl-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 48px; height: 48px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff; font-size: 24px; line-height: 1; cursor: pointer;
+}
+.fpl-nav:hover:not([disabled]) { background: rgba(255,255,255,0.18); }
+.fpl-nav[disabled] { opacity: 0.2; cursor: default; }
+.fpl-nav.prev { left: 20px; }
+.fpl-nav.next { right: 20px; }
+
 .stk-detail-section { margin-bottom: 32px; }
 .stk-detail-section-title {
   font-family: 'DM Mono', monospace;
@@ -20265,16 +20765,14 @@ function buildKitHtml(s, research, brand) {
     color: rgba(255,255,255,0.78);
   }
 
-  /* Floor plan */
-  .fly-floorplan-img {
-    width: 100%; max-height: 720px; object-fit: contain;
-    background: #F0F0EC; border: 1px solid var(--f-line);
-    border-radius: 4px; cursor: zoom-in;
-  }
-  .fly-floorplan-iframe {
-    width: 100%; height: 720px; border: 1px solid var(--f-line);
-    background: #F0F0EC; border-radius: 4px;
-  }
+  /* Floor plan — presentation lives in the shared .fp-* rules; the flyer
+     only re-points the line colour so plates match the light theme. */
+  .fp-flyer .fp-stage,
+  .fp-flyer .fp-iframe { border-color: var(--f-line); }
+  .fp-flyer .fp-stage,
+  .fp-flyer .fp-iframe,
+  .fp-flyer .fp-loading { background: #F0F0EC; }
+  .fp-flyer .fp-loading { border-color: var(--f-line); color: var(--f-muted); }
 
   /* Map */
   #fly-map {
@@ -20406,6 +20904,17 @@ function buildKitHtml(s, research, brand) {
   }
   .fly-lightbox-close { top: 18px; right: 22px; font-size: 32px; }
   .fly-lightbox-close:hover { opacity: 0.7; }
+  .fly-lightbox-rotate {
+    position: absolute; top: 22px; right: 70px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.22);
+    color: #fff;
+    font-family: inherit; font-size: 12px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 7px 14px; cursor: pointer;
+    border-radius: 3px;
+  }
+  .fly-lightbox-rotate:hover { background: rgba(255,255,255,0.18); }
   .fly-lightbox-nav {
     top: 50%; transform: translateY(-50%);
     width: 56px; height: 56px;
@@ -20495,6 +21004,10 @@ function buildKitHtml(s, research, brand) {
     .fly-contact-btn { display: none; }
     .fly-section { page-break-inside: avoid; }
     #fly-map { height: 320px; }
+    /* Rasterised plans print properly (an embedded PDF never did). Drop the
+       on-screen controls and let the plan take the page. */
+    .fp-hint, .fp-pager, .fp-original { display: none !important; }
+    .fp-flyer .fp-img { max-height: 200mm; }
   }
 
   /* ── Suburb Research (public share) ─────────────────────────────
@@ -20823,6 +21336,8 @@ function buildKitHtml(s, research, brand) {
   <div id="fly-lightbox" class="fly-lightbox" onclick="flyLightboxBackdrop(event)">
     <button class="fly-lightbox-close" onclick="flyLightboxClose()" aria-label="Close">×</button>
     <div id="fly-lightbox-counter" class="fly-lightbox-counter" style="display:none;"></div>
+    <!-- Floor plans only — some builders draw the plan sideways on the page. -->
+    <button id="fly-lightbox-rotate" class="fly-lightbox-rotate" onclick="flyLightboxRotate()" style="display:none;">Rotate</button>
     <button id="fly-lightbox-prev" class="fly-lightbox-nav prev" onclick="flyLightboxStep(-1)" aria-label="Previous">‹</button>
     <div class="fly-lightbox-stage">
       <img id="fly-lightbox-img" alt="">
@@ -21437,22 +21952,14 @@ function buildKitHtml(s, research, brand) {
     }
 
     // ── Floor plan ──
+    // Same renderer as the portal: PDFs are rasterised to images so the
+    // client sees a plan, not an embedded PDF viewer. Enlarging hands the
+    // pages to the flyer's own lightbox, which already pages and thumbs.
     if (stock.floor_plan_url) {
-      const mount = document.getElementById('fly-floorplan-mount');
-      const isPdf = /\.pdf(\?|$)/i.test(stock.floor_plan_url);
-      if (isPdf) {
-        mount.innerHTML = '<iframe class="fly-floorplan-iframe" src="' + stock.floor_plan_url + '"></iframe>'
-          + '<a href="' + stock.floor_plan_url + '" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--f-muted);">Open floor plan in new tab ↗</a>';
-      } else {
-        const img = document.createElement('img');
-        img.className = 'fly-floorplan-img';
-        img.src = stock.floor_plan_url;
-        img.alt = 'Floor plan';
-        img.loading = 'lazy';
-        img.decoding = 'async';
-        img.onclick = () => flyLightboxOpen([stock.floor_plan_url], 0);
-        mount.appendChild(img);
-      }
+      renderFloorPlanInto(document.getElementById('fly-floorplan-mount'), stock.floor_plan_url, {
+        variant: 'flyer',
+        onOpen: (srcs, i) => flyLightboxOpen(srcs, i, { rotatable: true }),
+      });
       document.getElementById('fly-floorplan-section').style.display = '';
     }
 
@@ -21604,11 +22111,16 @@ function buildKitHtml(s, research, brand) {
   // of URLs and an index; prev/next + keyboard arrows navigate within it.
   let _flyLightboxImages = [];
   let _flyLightboxIndex  = 0;
+  let _flyLightboxRot    = 0;   // floor plans only — degrees, 0/90/180/270
 
-  function flyLightboxOpen(images, index) {
+  // opts.rotatable adds the rotate control (floor plans; photos don't need it).
+  function flyLightboxOpen(images, index, opts) {
     _flyLightboxImages = Array.isArray(images) ? images.filter(Boolean) : [images].filter(Boolean);
     _flyLightboxIndex  = Math.max(0, Math.min(index || 0, _flyLightboxImages.length - 1));
     if (_flyLightboxImages.length === 0) return;
+    _flyLightboxRot = 0;
+    document.getElementById('fly-lightbox-rotate').style.display =
+      (opts && opts.rotatable) ? '' : 'none';
     flyLightboxRenderThumbs();
     flyLightboxShow();
     document.getElementById('fly-lightbox').classList.add('active');
@@ -21643,9 +22155,30 @@ function buildKitHtml(s, research, brand) {
     flyLightboxShow();
   }
 
+  function flyLightboxRotate() {
+    _flyLightboxRot = (_flyLightboxRot + 90) % 360;
+    flyLightboxApplyRotation();
+  }
+
+  // Turned on its side the image overflows its box, so scale it back to fit.
+  function flyLightboxApplyRotation() {
+    const img = document.getElementById('fly-lightbox-img');
+    if (!_flyLightboxRot) { img.style.transform = ''; return; }
+    const stage = img.parentElement;
+    const w = img.offsetWidth, h = img.offsetHeight;
+    const fit = (_flyLightboxRot % 180 && w && h)
+      ? Math.min(stage.clientWidth / h, stage.clientHeight / w, 1)
+      : 1;
+    img.style.transform = 'scale(' + fit + ') rotate(' + _flyLightboxRot + 'deg)';
+  }
+
   function flyLightboxShow() {
     const url = _flyLightboxImages[_flyLightboxIndex];
-    document.getElementById('fly-lightbox-img').src = url || '';
+    const img = document.getElementById('fly-lightbox-img');
+    img.src = url || '';
+    // Rotation is per-page; re-apply once the new page has its layout size.
+    img.onload = flyLightboxApplyRotation;
+    flyLightboxApplyRotation();
     // Counter + nav arrow availability + active thumb.
     const total = _flyLightboxImages.length;
     const counter = document.getElementById('fly-lightbox-counter');
