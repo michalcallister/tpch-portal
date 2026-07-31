@@ -126,6 +126,7 @@ const STOCK_COLS = {
   floorPlan:          'files',
   hlInclusions:       'long_text_mm2x3w9p',  // House & Land inclusions list
   hlFacade:           'file_mm2xrah9',       // House & Land facade image
+  photos:             'file_mm38fp8r',       // Property gallery photos (multi-file upload)
   walkthroughVideo:   'file_mm4ba51d',       // Walkthrough video (MP4 file upload)
 }
 
@@ -680,6 +681,10 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
   // 1a. Geocode any project that has an address but still no coords.
   // Uses Nominatim (1 req/sec) and only patches latitude/longitude so any
   // other admin-edited fields are untouched. Failures are logged, not fatal.
+  // Per-cycle cap (same pattern as the file-upload steps below) so a large
+  // backlog can't eat the whole 150s function budget — leftovers are picked
+  // up on the next cron run.
+  const MAX_GEOCODE_PER_CYCLE = 40
   try {
     const { data: needsGeocode } = await supabase
       .from('projects')
@@ -687,9 +692,10 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
       .is('latitude', null)
     const candidates = (needsGeocode || []).filter(p => p.address || p.suburb || p.state)
     if (candidates.length > 0) {
-      console.log(`Geocoding ${candidates.length} project(s) without coords via Nominatim`)
+      const batch = candidates.slice(0, MAX_GEOCODE_PER_CYCLE)
+      console.log(`Geocoding ${batch.length}/${candidates.length} project(s) without coords via Nominatim`)
       let geocodedCount = 0
-      for (const p of candidates) {
+      for (const p of batch) {
         const query = (p.address && p.address.trim())
           || ([p.suburb, p.state].filter(Boolean).join(', ') + ', Australia')
         const coords = await geocodeAddress(query)
@@ -709,7 +715,7 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
         // Nominatim usage policy: max 1 req/sec
         await new Promise(r => setTimeout(r, 1100))
       }
-      console.log(`Geocoded ${geocodedCount}/${candidates.length} project(s)`)
+      console.log(`Geocoded ${geocodedCount}/${batch.length} project(s)`)
     }
   } catch (e) {
     console.error('Geocode pass failed:', e)
@@ -800,11 +806,11 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
 
   const stockRows = stockItems.map(item => mapStock(item, projectNameMap, projectDataMap))
 
-  // Walkthrough-video keep policy — used by the cleanup pass (2d, below) and the
-  // upload pass (2e, which runs LAST so the heavy video streaming can't starve
-  // the rest of the sync of its 150s budget). A video is kept only while the
-  // property is shown in the portal (Available / Reserved).
-  const KEEP_VIDEO_STATUSES = new Set(['Available', 'Reserved'])
+  // Media keep policy — used by the walkthrough-video and gallery-photo passes
+  // (both upload and cleanup). Property media is kept only while the property is
+  // shown in the portal (Available / Reserved), so storage stays proportional to
+  // live stock rather than to the full 1,300-row board.
+  const KEEP_MEDIA_STATUSES = new Set(['Available', 'Reserved'])
   const availById = new Map(stockRows.map((r: any) => [String(r.id), r.availability]))
 
   // Pre-fetch existing stock so we can detect price/status/new-lot deltas
@@ -907,45 +913,6 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
     console.log(`Recorded ${stockEvents.length} stock event(s)`)
   }
 
-  // 2a2. Geocode H&L stock addresses for the lot-level map view.
-  // Apartments / townhouses share a project-level pin and don't need
-  // per-lot coords. Same Nominatim throttle as the project pass (1 req/sec).
-  try {
-    const { data: needsStockGeocode } = await supabase
-      .from('stock')
-      .select('id, name, street, suburb, state, development_type')
-      .is('latitude', null)
-    const hlCandidates = (needsStockGeocode || []).filter((s: any) => {
-      const t = String(s.development_type || '').toLowerCase()
-      if (t.includes('townhouse') || t.includes('apartment')) return false
-      if (!(t.includes('house') || t.includes('land') || t === 'h&l')) return false
-      return s.street && s.street.trim()
-    })
-    if (hlCandidates.length > 0) {
-      console.log(`Geocoding ${hlCandidates.length} H&L stock item(s) via Nominatim`)
-      let geocodedCount = 0
-      for (const s of hlCandidates) {
-        const query = [s.street, s.suburb, s.state, 'Australia'].filter(Boolean).join(', ')
-        const coords = await geocodeAddress(query)
-        if (coords) {
-          const { error: patchErr } = await supabase
-            .from('stock')
-            .update({ latitude: coords.lat, longitude: coords.lng })
-            .eq('id', s.id)
-          if (patchErr) console.error(`Stock geocode PATCH ${s.name} failed:`, patchErr.message)
-          else geocodedCount++
-        } else {
-          console.log(`Stock geocode miss for ${s.name} (${query})`)
-        }
-        await new Promise(r => setTimeout(r, 1100))
-      }
-      console.log(`Geocoded ${geocodedCount}/${hlCandidates.length} H&L stock item(s)`)
-    }
-  } catch (e) {
-    console.error('Stock geocode pass failed:', e)
-    errors.push(`Stock geocode: ${(e as Error).message}`)
-  }
-
   // 2b. Download & store stock file-column assets → Supabase Storage.
   // Each file column on the Property board (Floor Plan, HL Facade) is
   // synced into its own bucket. Per-column lookup means we don't rely on
@@ -1036,7 +1003,174 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
     if (uploadedThisSpec > 0) console.log(`${spec.fileName}: uploaded ${uploadedThisSpec} this cycle`)
   }
 
-  // 2c. Walkthrough videos → property-videos bucket (STREAMED).
+  // 2b-ii. Property gallery photos → property-photos bucket.
+  // Source is the multi-file "Photos" column on the Property board. This is the
+  // property-level twin of the project gallery (projects.photo_urls).
+  //
+  // Change detection is a signature of the Monday asset_ids in column order, so
+  // a property is only re-downloaded when a photo is actually added, removed or
+  // reordered. Storage paths are versioned by asset_id, so a swapped photo can
+  // never be served from a stale CDN/browser cache.
+  //
+  // Defined here, EXECUTED LAST (background, alongside the walkthrough videos)
+  // so a property with 20 photos can't eat the sync's 150s request budget.
+  const PHOTO_BUCKET = 'property-photos'
+  const PHOTO_MIME: Record<string, string> = {
+    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+    webp: 'image/webp', gif: 'image/gif',
+  }
+  const MAX_PHOTO_ITEMS_PER_CYCLE = 10  // properties updated per sync run
+  const MAX_PHOTOS_PER_ITEM       = 20  // photos kept per property
+
+  // Image files on a property's Photos column, in Monday's own order.
+  function stockPhotoFiles(item: any): any[] {
+    const col = item.column_values?.find((c: any) => c.id === STOCK_COLS.photos)
+    return (col?.files || [])
+      .filter((f: any) => {
+        const ext = (f.name || f.asset?.name || '').split('.').pop()?.toLowerCase()
+        return (f.asset_id || f.asset?.id) && ext && PHOTO_MIME[ext]
+      })
+      .slice(0, MAX_PHOTOS_PER_ITEM)
+  }
+
+  // Public URL → storage path, for deleting superseded files.
+  function photoPathFromUrl(u: string): string | null {
+    const m = String(u).match(/\/property-photos\/(.+)$/)
+    return m ? decodeURIComponent(m[1].split('?')[0]) : null
+  }
+
+  const runPropertyPhotoUploads = async () => {
+    const candidates = stockItems.filter((item: any) =>
+      stockPhotoFiles(item).length > 0 &&
+      KEEP_MEDIA_STATUSES.has(availById.get(String(item.id)))
+    )
+    if (!candidates.length) return
+
+    // Most-recently-edited first so photos added in Monday land on the very next
+    // cycle even when the backlog is larger than the per-cycle cap.
+    candidates.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')))
+
+    const { data: photoRows } = await supabase
+      .from('stock')
+      .select('id, photo_urls, photos_asset_sig')
+      .in('id', candidates.map(i => String(i.id)))
+    const storedPhotos = new Map(
+      (photoRows || []).map((r: any) => [r.id, { urls: r.photo_urls || [], sig: r.photos_asset_sig }])
+    )
+
+    let updatedThisCycle = 0
+    for (const item of candidates) {
+      const stockId = String(item.id)
+      try {
+        const files = stockPhotoFiles(item)
+        const sig   = files.map((f: any) => String(f.asset_id || f.asset.id)).join(',')
+        const prev  = storedPhotos.get(stockId) as { urls: string[], sig: string | null } | undefined
+        if (prev && prev.sig === sig && prev.urls.length === files.length) continue
+        if (updatedThisCycle >= MAX_PHOTO_ITEMS_PER_CYCLE) break
+
+        // Resume support. This pass runs in the worker's leftover background
+        // time, so a big gallery can be cut off mid-way. Photos already sitting
+        // in storage from an earlier (truncated) run are reused instead of
+        // re-downloaded, so every cycle makes real progress rather than
+        // restarting the property from scratch.
+        const { data: existingObjs } = await supabase.storage
+          .from(PHOTO_BUCKET).list(`stock/${stockId}`, { limit: 100 })
+        const existingNames = new Set((existingObjs || []).map((o: any) => o.name))
+
+        const urls: string[] = []
+        for (let i = 0; i < files.length; i++) {
+          const f        = files[i]
+          const asset    = f.asset || {}
+          const assetId  = String(f.asset_id || asset.id)
+          const ext      = ((f.name || asset.name || '').split('.').pop() || 'jpg').toLowerCase()
+          const fileName = `photo-${assetId}.${ext}`
+          const path     = `stock/${stockId}/${fileName}`
+          if (!existingNames.has(fileName)) {
+            const bytes = await downloadAsset(
+              { name: f.name, url: asset.url, public_url: asset.public_url },
+              item.name, `Photo #${i + 1}`
+            )
+            if (!bytes) continue
+            const { error: upErr } = await supabase.storage
+              .from(PHOTO_BUCKET).upload(path, bytes, { upsert: true, contentType: PHOTO_MIME[ext] || 'image/jpeg' })
+            if (upErr) { errors.push(`Photo upload failed: ${item.name} #${i + 1}: ${upErr.message}`); continue }
+          }
+          urls.push(supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl)
+        }
+        if (!urls.length) continue
+
+        await supabase.from('stock')
+          .update({ photo_urls: urls, photos_asset_sig: sig })
+          .eq('id', stockId)
+
+        // Swap cleanup: anything left in this property's folder that the current
+        // gallery doesn't reference (a replaced photo, or one deleted in Monday
+        // after a partial run) goes, so storage never accumulates orphans.
+        const keepNames  = new Set(urls.map(u => String(photoPathFromUrl(u) || '').split('/').pop()))
+        const stalePaths = [...existingNames]
+          .filter(n => !keepNames.has(n))
+          .map(n => `stock/${stockId}/${n}`)
+        if (stalePaths.length) await supabase.storage.from(PHOTO_BUCKET).remove(stalePaths)
+
+        updatedThisCycle++
+        console.log(`Stored ${urls.length} photo(s) for ${item.name}`)
+      } catch (e: any) {
+        errors.push(`Photos error for ${item.name}: ${e.message}`)
+      }
+    }
+    if (updatedThisCycle > 0) console.log(`Property photos: updated ${updatedThisCycle} property(ies) this cycle`)
+  }
+
+  // 2c. Geocode H&L stock addresses for the lot-level map view.
+  // Apartments / townhouses share a project-level pin and don't need
+  // per-lot coords. Same Nominatim throttle as the project pass (1 req/sec).
+  //
+  // Runs AFTER the floor-plan/HL-facade file sync above (2b) and is capped
+  // per cycle (MAX_GEOCODE_PER_CYCLE, defined in step 1a) — a large backlog
+  // here previously ate the entire 150s function budget on its own (149
+  // candidates × 1.1s ≈ 164s), timing out the sync before it ever reached
+  // the file-sync step, so newly-added floor plans/facades never made it
+  // into Storage. Capping + reordering means partner-facing content syncs
+  // first even when the geocode backlog is large; leftovers roll to the
+  // next cron run.
+  try {
+    const { data: needsStockGeocode } = await supabase
+      .from('stock')
+      .select('id, name, street, suburb, state, development_type')
+      .is('latitude', null)
+    const hlCandidates = (needsStockGeocode || []).filter((s: any) => {
+      const t = String(s.development_type || '').toLowerCase()
+      if (t.includes('townhouse') || t.includes('apartment')) return false
+      if (!(t.includes('house') || t.includes('land') || t === 'h&l')) return false
+      return s.street && s.street.trim()
+    })
+    if (hlCandidates.length > 0) {
+      const batch = hlCandidates.slice(0, MAX_GEOCODE_PER_CYCLE)
+      console.log(`Geocoding ${batch.length}/${hlCandidates.length} H&L stock item(s) via Nominatim`)
+      let geocodedCount = 0
+      for (const s of batch) {
+        const query = [s.street, s.suburb, s.state, 'Australia'].filter(Boolean).join(', ')
+        const coords = await geocodeAddress(query)
+        if (coords) {
+          const { error: patchErr } = await supabase
+            .from('stock')
+            .update({ latitude: coords.lat, longitude: coords.lng })
+            .eq('id', s.id)
+          if (patchErr) console.error(`Stock geocode PATCH ${s.name} failed:`, patchErr.message)
+          else geocodedCount++
+        } else {
+          console.log(`Stock geocode miss for ${s.name} (${query})`)
+        }
+        await new Promise(r => setTimeout(r, 1100))
+      }
+      console.log(`Geocoded ${geocodedCount}/${batch.length} H&L stock item(s)`)
+    }
+  } catch (e) {
+    console.error('Stock geocode pass failed:', e)
+    errors.push(`Stock geocode: ${(e as Error).message}`)
+  }
+
+  // 2d. Walkthrough videos → property-videos bucket (STREAMED).
   // Videos are too large to buffer (a big MP4 arrayBuffer OOMs the worker —
   // WORKER_RESOURCE_LIMIT), so we pipe Monday's download straight into Storage's
   // REST endpoint as a stream. Auth mirrors supabase-js exactly: the service key
@@ -1063,7 +1197,7 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
       const col = item.column_values?.find((c: any) => c.id === STOCK_COLS.walkthroughVideo)
       if (!(col?.files?.length > 0)) return false
       // Don't upload for properties that aren't shown — step 2d would only delete it.
-      return KEEP_VIDEO_STATUSES.has(availById.get(String(item.id)))
+      return KEEP_MEDIA_STATUSES.has(availById.get(String(item.id)))
     })
     if (candidates.length) {
       // Most-recently-edited first so a freshly-uploaded video propagates on the
@@ -1150,7 +1284,7 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
     }
   };
 
-  // 2d. Video cleanup — remove stored walkthroughs that should no longer exist:
+  // 2e. Video cleanup — remove stored walkthroughs that should no longer exist:
   // property no longer shown (availability left Available/Reserved), the video was
   // removed from the Monday column, or the stock item is gone. Videos are large,
   // so this is the main lever for keeping storage usage (and cost) down.
@@ -1171,7 +1305,7 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
     for (const row of (storedVids || [])) {
       const id = String(row.id)
       const inMonday = availById.has(id)
-      const keep = inMonday && KEEP_VIDEO_STATUSES.has(availById.get(id)) && hasVideoFile.get(id) === true
+      const keep = inMonday && KEEP_MEDIA_STATUSES.has(availById.get(id)) && hasVideoFile.get(id) === true
       if (keep) continue
       const m = String(row.walkthrough_video_url).match(/\/property-videos\/(.+)$/)
       const path = m ? decodeURIComponent(m[1].split('?')[0]) : null
@@ -1190,6 +1324,42 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
     if (removed > 0) console.log(`Video cleanup: removed ${removed} walkthrough video(s)`)
   } catch (e: any) {
     errors.push(`Video cleanup: ${(e as Error).message}`)
+  }
+
+  // 2e-ii. Photo cleanup — same policy as videos: drop stored galleries whose
+  // property is no longer shown (left Available/Reserved), whose Photos column
+  // was emptied in Monday, or whose stock item is gone.
+  try {
+    const hasPhotoFiles = new Map(
+      stockItems.map((it: any) => [String(it.id), stockPhotoFiles(it).length > 0])
+    )
+    const { data: storedGalleries } = await supabase
+      .from('stock')
+      .select('id, photo_urls')
+      .not('photo_urls', 'is', null)
+
+    let cleared = 0
+    for (const row of (storedGalleries || [])) {
+      const id       = String(row.id)
+      const inMonday = availById.has(id)
+      const keep     = inMonday && KEEP_MEDIA_STATUSES.has(availById.get(id)) && hasPhotoFiles.get(id) === true
+      if (keep) continue
+      const paths = ((row as any).photo_urls || []).map(photoPathFromUrl).filter(Boolean) as string[]
+      if (paths.length) {
+        const { error: rmErr } = await supabase.storage.from(PHOTO_BUCKET).remove(paths)
+        if (rmErr) { errors.push(`Photo cleanup remove failed (${id}): ${rmErr.message}`); continue }
+      }
+      // Clear the DB pointer (skip when the row is about to be deleted as stale).
+      if (inMonday) {
+        await supabase.from('stock')
+          .update({ photo_urls: null, photos_asset_sig: null })
+          .eq('id', id)
+      }
+      cleared++
+    }
+    if (cleared > 0) console.log(`Photo cleanup: cleared ${cleared} property gallery(ies)`)
+  } catch (e: any) {
+    errors.push(`Photo cleanup: ${(e as Error).message}`)
   }
 
   // 3. Delete stale records no longer in Monday.com
@@ -1352,21 +1522,28 @@ async function runSync(): Promise<{ projects: number; stock: number; deals: numb
     }
   }
 
-  // 2e. Kick off walkthrough-video uploads in the BACKGROUND so this response
-  // returns promptly — streaming 300 MB+ files inline would blow the 150s
-  // request limit. EdgeRuntime.waitUntil keeps the worker alive to finish them;
-  // falls back to awaiting inline if the runtime lacks it.
+  // 2f. Kick off the media uploads in the BACKGROUND so this response returns
+  // promptly — streaming 300 MB+ videos (or a 20-photo gallery) inline would
+  // blow the 150s request limit. EdgeRuntime.waitUntil keeps the worker alive
+  // to finish them; falls back to awaiting inline if the runtime lacks it.
+  // Photos first: they're small, partner-facing, and shouldn't queue behind a
+  // half-gigabyte video.
   try {
-    const videoTask = runWalkthroughUploads()
+    const mediaTask = (async () => {
+      try { await runPropertyPhotoUploads() }
+      catch (e: any) { console.error('Property photo uploads failed:', e?.message || e) }
+      try { await runWalkthroughUploads() }
+      catch (e: any) { console.error('Walkthrough uploads failed:', e?.message || e) }
+    })()
     // @ts-ignore EdgeRuntime is provided by the Supabase edge runtime
     if (typeof EdgeRuntime !== 'undefined' && (EdgeRuntime as any).waitUntil) {
       // @ts-ignore
-      ;(EdgeRuntime as any).waitUntil(videoTask)
+      ;(EdgeRuntime as any).waitUntil(mediaTask)
     } else {
-      await videoTask
+      await mediaTask
     }
   } catch (e: any) {
-    errors.push(`Walkthrough uploads: ${(e as Error).message}`)
+    errors.push(`Media uploads: ${(e as Error).message}`)
   }
 
   return { projects: projectCount, stock: stockCount, deals: dealCount, errors }

@@ -4921,6 +4921,7 @@
           <div class="stk-tab-nav stk-lot-tabs">
             <button class="stk-tab-btn active" onclick="switchLotTab('details',this)">Details</button>
             <button class="stk-tab-btn" id="slg-video-tab-btn" onclick="switchLotTab('video',this)" style="display:none;">Walkthrough</button>
+            <button class="stk-tab-btn" id="slg-gallery-tab-btn" onclick="switchLotTab('gallery',this)" style="display:none;">Gallery</button>
             <button class="stk-tab-btn" id="slg-location-tab-btn" onclick="switchLotTab('location',this)" style="display:none;">Location Highlights</button>
             <button class="stk-tab-btn" id="slg-inclusions-tab-btn" onclick="switchLotTab('inclusions',this)" style="display:none;">Inclusions</button>
             <button class="stk-tab-btn" id="slg-investment-tab-btn" onclick="switchLotTab('investment',this)">Investment</button>
@@ -4968,6 +4969,11 @@
               <div class="stk-detail-section-title">Property Walkthrough</div>
               <div id="slg-video-mount" style="max-width:760px;"></div>
             </div>
+          </div>
+
+          <!-- Tab: Gallery (visible only when the property has photos of its own) -->
+          <div class="stk-tab-content" id="slg-tab-gallery" style="padding:28px 32px;">
+            <div id="slg-gallery-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"></div>
           </div>
 
           <!-- Tab: Inclusions (H&L only — visible when hl_inclusions is set) -->
@@ -9081,6 +9087,16 @@
   // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
 
   const CHANGELOG = [
+    {
+      version: '3.17',
+      date: '31 Jul 2026',
+      title: 'Photo galleries on individual properties',
+      items: [
+        'Individual properties now have their own Gallery tab, showing photos of that exact property rather than the development it sits in. Click any photo to open it full screen and page through with the arrow keys.',
+        'The tab only appears on properties we hold photos for, so nothing changes on the rest.',
+        'Property flyers lead their gallery with the same photos, followed by the development photos, so your client sees the actual property first.',
+      ]
+    },
     {
       version: '3.16',
       date: '31 Jul 2026',
@@ -16453,6 +16469,9 @@ function showStockListing(id) {
   // Walkthrough video — self-hosted MP4, tab only shown when one exists.
   renderLotWalkthrough(s.walkthrough_video_url);
 
+  // Photo gallery — property's own photos, tab only shown when it has some.
+  renderLotGallery(s.photo_urls);
+
   // HL Facade hero — first thing partners see for House & Land properties.
   const facadeHero = document.getElementById('slg-facade-hero');
   if (s.hl_facade_url) {
@@ -17076,19 +17095,49 @@ function fplBackdrop(ev) {
   });
 })();
 
+// galleryImages is the array the lightbox is currently paging through. Each
+// gallery (project / property) keeps its own list and hands it over on open.
 let galleryImages = [], galleryIndex = 0;
+let projGalleryImages = [];
 function renderGallery(photos) {
   const btn = document.getElementById('spj-gallery-tab-btn');
   const grid = document.getElementById('spj-gallery-grid');
-  galleryImages = photos || [];
-  if (!galleryImages.length) { btn.style.display = 'none'; grid.innerHTML = ''; return; }
+  projGalleryImages = photos || [];
+  galleryImages = projGalleryImages;
+  if (!projGalleryImages.length) { btn.style.display = 'none'; grid.innerHTML = ''; return; }
   btn.style.display = '';
-  grid.innerHTML = galleryImages.map((url, i) =>
-    `<div onclick="openGalleryLightbox(${i})" style="aspect-ratio:4/3;overflow:hidden;cursor:zoom-in;border:1px solid var(--gold-border);">
+  grid.innerHTML = projGalleryImages.map((url, i) =>
+    `<div onclick="openProjGalleryLightbox(${i})" style="aspect-ratio:4/3;overflow:hidden;cursor:zoom-in;border:1px solid var(--gold-border);">
       <img src="${url}" loading="lazy" style="width:100%;height:100%;object-fit:cover;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">
     </div>`
   ).join('');
 }
+function openProjGalleryLightbox(index) {
+  galleryImages = projGalleryImages;
+  openGalleryLightbox(index);
+}
+// Property gallery — same grid + lightbox as the project gallery above, but fed
+// by the property's own Photos column. No photos means no tab at all.
+let lotGalleryImages = [];
+function renderLotGallery(photos) {
+  const btn  = document.getElementById('slg-gallery-tab-btn');
+  const grid = document.getElementById('slg-gallery-grid');
+  lotGalleryImages = (photos || []).filter(Boolean);
+  if (!lotGalleryImages.length) { btn.style.display = 'none'; grid.innerHTML = ''; return; }
+  btn.style.display = '';
+  grid.innerHTML = lotGalleryImages.map((url, i) =>
+    `<div onclick="openLotGalleryLightbox(${i})" style="aspect-ratio:4/3;overflow:hidden;cursor:zoom-in;border:1px solid var(--gold-border);">
+      <img src="${url}" loading="lazy" style="width:100%;height:100%;object-fit:cover;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">
+    </div>`
+  ).join('');
+}
+// Hand the property's photos to the shared lightbox before opening it, so the
+// project gallery and the property gallery can't step on each other's arrays.
+function openLotGalleryLightbox(index) {
+  galleryImages = lotGalleryImages;
+  openGalleryLightbox(index);
+}
+
 // ── Video embeds ─────────────────────────────────────────────────
 // Build a responsive 16:9 player for a video URL. Handles YouTube and Vimeo
 // links (project overview videos) and direct/self-hosted video files
@@ -21795,8 +21844,11 @@ function buildKitHtml(s, research, brand) {
     // partners see the same cover on the flyer as they do in the portal.
     // Resized via Supabase image transformation — the visible hero is
     // ~960px wide so 1600x900 is plenty even on retina displays.
+    // Last resort is the property's own first photo, so a development with no
+    // cover image still opens on a picture rather than an empty band.
     const heroUrl = project.hero_image_url
       || (project.photo_urls && project.photo_urls[0])
+      || (stock.photo_urls && stock.photo_urls[0])
       || null;
     const hero = document.getElementById('fly-hero');
     if (heroUrl) {
@@ -21911,13 +21963,18 @@ function buildKitHtml(s, research, brand) {
       }
     }
 
-    // ── Gallery (project photos) ──
+    // ── Gallery (this property's photos, then the project's) ──
+    // The property's own images lead, because the flyer is about that
+    // property; the development's photos follow for context. Deduped in case
+    // the same file is loaded against both.
     // The grid only shows the first FLY_GALLERY_CAP photos; if there are
     // more, the last visible tile is replaced with a "+N more" overlay that
     // opens the full lightbox carousel. Each visible thumb is served via
     // Supabase Storage's image transformation endpoint at thumbnail size,
     // dropping ~4x off the per-image weight versus the originals.
-    const photos = (project.photo_urls || []).filter(Boolean);
+    const photos = [...new Set(
+      [...(stock.photo_urls || []), ...(project.photo_urls || [])].filter(Boolean)
+    )];
     if (photos.length > 0) {
       const grid = document.getElementById('fly-gallery');
       grid.innerHTML = '';
