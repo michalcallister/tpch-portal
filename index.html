@@ -9100,6 +9100,16 @@
       ]
     },
     {
+      version: '3.18',
+      date: '3 Aug 2026',
+      title: 'New projects reach fixed-fee team members automatically',
+      items: [
+        'If you have a team member set to a fixed commission figure, they now see every new project as soon as it goes live, at that same fixed figure. You no longer need to grant each new project to them by hand.',
+        'You can still hide any individual project from them by unticking it in their commission settings, and that stays hidden.',
+        'Team members who see the real commission are unchanged: a project stays hidden from them until you tick it and set their amount.',
+      ]
+    },
+    {
       version: '3.17',
       date: '31 Jul 2026',
       title: 'Photo galleries on individual properties',
@@ -9858,15 +9868,18 @@
     // The deduction requirement only applies to staff who see real commission
     // figures; fixed/hidden display staff need the tick alone (mirror the
     // runtime rule in isProjectVisibleToStaff).
-    const needDed = staffDeductionRequired(
-      document.getElementById('edit-comm-type')?.value || 'portal',
-      (document.getElementById('edit-comm-custom-value')?.value || '').trim()
-    );
+    const commType = document.getElementById('edit-comm-type')?.value || 'portal';
+    const commVal  = (document.getElementById('edit-comm-custom-value')?.value || '').trim();
+    const needDed  = staffDeductionRequired(commType, commVal);
+    // Flat-fee staff default to visible where no row exists, so the tick has to
+    // render checked for a project they can already see (mirror the runtime
+    // rule in isProjectVisibleToStaff, or the owner is looking at a lie).
+    const defVis   = staffProjectsDefaultVisible(commType, commVal);
     let visibleCount = 0;
     tbody.innerHTML = projects.map(p => {
       const row     = overrides[p.id] || null;
       const ded     = row ? parseFloat(row.d) : 0;
-      const isVis   = !!(row && row.v === true);
+      const isVis   = row ? row.v === true : defVis;
       const dedAttr = (isFinite(ded) && ded > 0) ? ded : '';
       // Count what the staff member will actually see, not just the tick state.
       if (isVis && (!needDed || dedAttr !== '')) visibleCount++;
@@ -9895,7 +9908,9 @@
       </tr>`;
     }).join('');
     status.textContent = visibleCount + ' of ' + projects.length + ' projects visible to this team member'
-      + (needDed ? ' (a project needs the tick and a deduction to show)' : ' (fixed commission display: the tick alone controls access)');
+      + (needDed  ? ' (a project needs the tick and a deduction to show)'
+      : (defVis   ? ' (flat fee: new projects show automatically, untick to hide one)'
+                  : ' (fixed commission display: the tick alone controls access)'));
     status.style.color = 'var(--grey-mid)';
   }
 
@@ -14426,6 +14441,19 @@ function staffDeductionRequired(commType, commCustomValue) {
   return true;
 }
 
+// Do projects default to VISIBLE for this staff member when no per-project
+// row exists? True only for flat-fee staff — those on a fixed dollar display.
+// They see the same figure on every listing, so there's no per-project rate
+// for the owner to approve and nothing is gained by withholding new stock:
+// a project shows the moment it goes live, and the owner hides one by
+// explicitly unticking it (which now persists as visible=false server-side).
+// Every other display type stays approval-basis — 'portal' staff see real
+// commission, 'hidden' staff see none — so for them an absent row still
+// means hidden and the owner grants access deliberately.
+function staffProjectsDefaultVisible(commType, commCustomValue) {
+  return commType === 'custom' && !!String(commCustomValue || '').trim();
+}
+
 // Is THIS project visible to the logged-in staff member? Only meaningful when
 // caller is staff under a flagged partner. Owners and non-flagged staff always
 // return true (no filter applies for them).
@@ -14433,12 +14461,18 @@ function staffDeductionRequired(commType, commCustomValue) {
 // see real commission figures, set a deduction amount. A blank deduction hides
 // the project from those staff until the owner decides the team rate; staff on
 // a fixed/hidden commission display only need the tick.
+// With no row at all the answer comes from staffProjectsDefaultVisible(): flat-fee
+// staff get new projects automatically, everyone else waits to be granted.
 function isProjectVisibleToStaff(projectId) {
   if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff') return true;
   if (!currentPartnerRecord.team_commission_override_enabled) return true;
   if (!projectId) return false;
   const row = staffCommissionOverrides[projectId];
-  if (!row || row.v !== true) return false;
+  if (!row) {
+    return staffProjectsDefaultVisible(currentPartnerRecord.comm_display_type,
+                                       currentPartnerRecord.comm_custom_value);
+  }
+  if (row.v !== true) return false;
   if (!staffDeductionRequired(currentPartnerRecord.comm_display_type, currentPartnerRecord.comm_custom_value)) return true;
   return row.d > 0;
 }
@@ -14449,6 +14483,10 @@ function isProjectVisibleToStaff(projectId) {
 function staffHasNoVisibleProjects() {
   if (!currentPartnerRecord || currentPartnerRecord.role !== 'staff') return false;
   if (!currentPartnerRecord.team_commission_override_enabled) return false;
+  // Flat-fee staff see anything not explicitly hidden, so "nothing assigned"
+  // never applies to them — an empty stock list is a filter problem instead.
+  if (staffProjectsDefaultVisible(currentPartnerRecord.comm_display_type,
+                                  currentPartnerRecord.comm_custom_value)) return false;
   const needDed = staffDeductionRequired(currentPartnerRecord.comm_display_type, currentPartnerRecord.comm_custom_value);
   for (const k in staffCommissionOverrides) {
     const row = staffCommissionOverrides[k];
@@ -17684,6 +17722,7 @@ async function toggleListItems(listId) {
                  page — leaving this one live would be the same feature by
                  another door. Uncomment when the kit generates properly. -->
             <!-- <button class="btn-outline" style="padding:4px 10px;font-size:12px;" onclick="kitFromList('${item.stock_id}')">Investor Kit</button> -->
+
             <button class="lst-item-remove" onclick="removeFromList('${item.id}','${listId}')" aria-label="Remove from list">✕</button>
           </div>
         </div>
