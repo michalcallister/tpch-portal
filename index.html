@@ -5135,8 +5135,11 @@
           <div id="slg-reserve-status" class="stk-sidebar-phase" style="display:none;"></div>
 
           <button class="stk-sidebar-btn partner-only-btn" id="slg-save-list-btn" onclick="openSaveToListModal()" style="margin-top:4px;background:transparent;border-color:var(--gold-border);color:var(--grey-pale);">♡ Save to List</button>
-          <button class="stk-sidebar-btn partner-only-btn" id="slg-kit-btn" onclick="generateInvestorKit()" style="margin-top:4px;">Generate Investor Kit</button>
-          <button class="stk-sidebar-btn partner-only-btn" id="slg-flyer-btn" onclick="shareFlyerLink()" style="margin-top:4px;background:transparent;border-color:var(--gold-border);color:var(--grey-pale);">↗ Share Property Flyer</button>
+          <!-- Investor Kit is parked until it generates properly. Hidden rather
+               than removed so it can come back with one style change. The flyer
+               takes the gold treatment in its place. -->
+          <button class="stk-sidebar-btn partner-only-btn" id="slg-kit-btn" onclick="generateInvestorKit()" style="margin-top:4px;display:none;">Generate Investor Kit</button>
+          <button class="stk-sidebar-btn partner-only-btn" id="slg-flyer-btn" onclick="shareFlyerLink()" style="margin-top:4px;">↗ Share Property Flyer</button>
 
           <div class="stk-sidebar-link" onclick="stkListingBack()">← View Project</div>
         </div>
@@ -9087,6 +9090,15 @@
   // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
 
   const CHANGELOG = [
+    {
+      version: '3.19',
+      date: '3 Aug 2026',
+      title: 'Property flyer is now the main way to share a property',
+      items: [
+        'Share Property Flyer is now the primary action on a property page, so putting a property in front of a client is one click.',
+        'Generate Investor Kit is unavailable while we rebuild it. Use the property flyer in the meantime.',
+      ]
+    },
     {
       version: '3.17',
       date: '31 Jul 2026',
@@ -17668,7 +17680,10 @@ async function toggleListItems(listId) {
           <div class="lst-item-proj">${escHtml(item.project_name || '')}</div>
           <div class="lst-item-actions">
             <button class="btn-outline" style="padding:4px 10px;font-size:12px;" onclick="viewLotFromList('${item.stock_id}','${item.project_id || ''}')">View →</button>
-            <button class="btn-outline" style="padding:4px 10px;font-size:12px;" onclick="kitFromList('${item.stock_id}')">Investor Kit</button>
+            <!-- Investor Kit parked alongside the sidebar button on the listing
+                 page — leaving this one live would be the same feature by
+                 another door. Uncomment when the kit generates properly. -->
+            <!-- <button class="btn-outline" style="padding:4px 10px;font-size:12px;" onclick="kitFromList('${item.stock_id}')">Investor Kit</button> -->
             <button class="lst-item-remove" onclick="removeFromList('${item.id}','${listId}')" aria-label="Remove from list">✕</button>
           </div>
         </div>
