@@ -5059,9 +5059,6 @@
               <table class="stk-outgoings-table">
                 <tr><td style="color:var(--grey-mid);">Council Rates</td><td id="slg-rates">—</td></tr>
                 <tr><td style="color:var(--grey-mid);">Body Corporate</td><td id="slg-bc">—</td></tr>
-                <tr><td style="color:var(--grey-mid);">Landlord Insurance</td><td id="slg-insurance">—</td></tr>
-                <tr><td style="color:var(--grey-mid);">Letting Fees</td><td id="slg-letting">—</td></tr>
-                <tr><td style="color:var(--grey-mid);">Maintenance</td><td id="slg-maintenance">—</td></tr>
                 <tr><td>Total Annual Costs</td><td id="slg-total-costs">—</td></tr>
               </table>
             </div>
@@ -9090,6 +9087,17 @@
   // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
 
   const CHANGELOG = [
+    {
+      version: '3.20',
+      date: '11 Aug 2026',
+      title: 'Annual outgoings on property flyers',
+      items: [
+        'Property flyers now show the annual outgoings, council rates and body corporate, so your client sees the holding costs without having to ask.',
+        'Where we do not hold a figure it reads "On Req." rather than a blank, the same as rent. Body corporate shows $0 on House and Land lots that genuinely have none.',
+        'The Investment tab on a property no longer lists landlord insurance, letting fees or maintenance. Annual outgoings are council rates and body corporate, and the total, net income and net yield now follow those same figures.',
+        'House and Land flyers show their Inclusions and Location Highlights again.',
+      ]
+    },
     {
       version: '3.19',
       date: '3 Aug 2026',
@@ -14636,10 +14644,27 @@ function calcGrossYield(annual, price) {
   if (!annual || !price) return 'On Request';
   return (annual / price * 100).toFixed(1) + '%';
 }
+// The only outgoings we publish are council rates and body corporate.
+// Landlord insurance, letting fees and maintenance are no longer shown
+// anywhere, so they stay out of the total as well — otherwise the listed
+// rows wouldn't add up to the total sitting under them.
 function calcTotalOutgoings(s) {
-  return (s.rates_annual || 0) + (s.body_corporate_annual || 0) +
-         (s.insurance_annual || 0) + (s.letting_fees_annual || 0) +
-         (s.maintenance_annual || 0);
+  return (s.rates_annual || 0) + (s.body_corporate_annual || 0);
+}
+// The two published outgoings read their blanks differently.
+//
+// Council rates: every property carries them, so a 0 is a blank Monday cell,
+// never a real cost. Needs a positive number to count as supplied.
+// Body corporate: a genuine $0 for a House & Land lot with no strata, so a 0
+// is published as $0. Only a null is unknown.
+function hasRates(v)     { return v != null && !isNaN(v) && Number(v) > 0; }
+function hasBodyCorp(v)  { return v != null && !isNaN(v); }
+
+// Council rates gate the totals: they're the one cost every property has, so
+// without them a "Total Annual Costs" figure would understate rather than
+// inform, and the net income and yield built on it would be wrong.
+function hasKnownOutgoings(s) {
+  return hasRates(s.rates_annual);
 }
 function calcNetYield(annualRent, totalCosts, price) {
   if (!annualRent || !price) return '—';
@@ -16551,19 +16576,23 @@ function showStockListing(id) {
   document.getElementById('slg-location-tab-btn').style.display   = _isHLListing ? '' : 'none';
   if (_isHLListing) loadLocationHighlights(s.suburb, s.state);
 
-  // Investment tab
-  document.getElementById('slg-rates').textContent       = fmtCurrency(s.rates_annual);
-  document.getElementById('slg-bc').textContent          = fmtCurrency(s.body_corporate_annual);
-  document.getElementById('slg-insurance').textContent   = fmtCurrency(s.insurance_annual);
-  document.getElementById('slg-letting').textContent     = fmtCurrency(s.letting_fees_annual);
-  document.getElementById('slg-maintenance').textContent = fmtCurrency(s.maintenance_annual);
+  // Investment tab. Missing figures read "On Req." (same treatment as rent)
+  // so a blank isn't mistaken for a nil cost — see hasRates / hasBodyCorp for
+  // why the two read zero differently. Without council rates the net figures
+  // can't be honest either, so they read "On Req." too rather than quietly
+  // equalling the gross.
+  document.getElementById('slg-rates').textContent = hasRates(s.rates_annual)
+    ? fmtCurrency(s.rates_annual) : 'On Req.';
+  document.getElementById('slg-bc').textContent    = hasBodyCorp(s.body_corporate_annual)
+    ? fmtCurrency(s.body_corporate_annual) : 'On Req.';
+  const knownCosts = hasKnownOutgoings(s);
   const totalCosts = calcTotalOutgoings(s);
-  document.getElementById('slg-total-costs').textContent = fmtCurrency(totalCosts);
+  document.getElementById('slg-total-costs').textContent = knownCosts ? fmtCurrency(totalCosts) : 'On Req.';
   document.getElementById('slg-inv-annual-rent').textContent = fmtCurrency(_annualRent);
-  document.getElementById('slg-inv-total-costs').textContent = totalCosts ? '−' + fmtCurrency(totalCosts) : '—';
+  document.getElementById('slg-inv-total-costs').textContent = knownCosts ? '−' + fmtCurrency(totalCosts) : 'On Req.';
   const netIncome = (_annualRent || 0) - totalCosts;
-  document.getElementById('slg-net-income').textContent  = fmtCurrency(netIncome);
-  document.getElementById('slg-net-yield').textContent   = calcNetYield(_annualRent, totalCosts, s.total_contract);
+  document.getElementById('slg-net-income').textContent  = knownCosts ? fmtCurrency(netIncome) : 'On Req.';
+  document.getElementById('slg-net-yield').textContent   = knownCosts ? calcNetYield(_annualRent, totalCosts, s.total_contract) : 'On Req.';
 
   // Commission tab — staff may have an override set by their firm owner
   const _isStaff = currentPartnerRecord?.role === 'staff';
@@ -20979,6 +21008,22 @@ function buildKitHtml(s, research, brand) {
     #screen-flyer .fly-loc-trends-grid { grid-template-columns: 1fr; }
   }
 
+  /* Annual outgoings — same stat-cell language as the location metrics. */
+  #screen-flyer .fly-cost-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  #screen-flyer .fly-cost       { background: var(--f-surface); padding: 16px 18px; }
+  #screen-flyer .fly-cost-label { font-size: 10px; letter-spacing: 0.08em; color: var(--f-muted); text-transform: uppercase; margin-bottom: 6px; }
+  #screen-flyer .fly-cost-value { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: var(--f-accent); }
+  #screen-flyer .fly-cost-note  { font-size: 11px; color: var(--f-muted); margin: 12px 0 0; line-height: 1.6; }
+  @media (max-width: 720px) {
+    #screen-flyer .fly-cost-grid { grid-template-columns: 1fr; }
+  }
+
   /* Lightbox — navigable carousel with arrows, counter, and thumbnail strip. */
   .fly-lightbox {
     position: fixed; inset: 0; z-index: 9999;
@@ -21334,6 +21379,24 @@ function buildKitHtml(s, research, brand) {
           <div class="fly-spec"><span class="fly-spec-val" id="fly-rent">—</span><span class="fly-spec-label">Rent / wk</span></div>
         </div>
       </div>
+
+      <!-- Annual outgoings — the holding costs the buyer carries each year.
+           Always rendered: a blank figure shows "On Req." so the client knows
+           to ask rather than reading the gap as a nil cost. -->
+      <section class="fly-section" id="fly-outgoings-section">
+        <div class="fly-section-title">Annual Outgoings</div>
+        <div class="fly-cost-grid">
+          <div class="fly-cost">
+            <div class="fly-cost-label">Council Rates</div>
+            <div class="fly-cost-value" id="fly-rates">—</div>
+          </div>
+          <div class="fly-cost">
+            <div class="fly-cost-label">Body Corporate</div>
+            <div class="fly-cost-value" id="fly-bodycorp">—</div>
+          </div>
+        </div>
+        <p class="fly-cost-note">Indicative annual outgoings. Figures exclude financing costs, depreciation and individual tax outcomes.</p>
+      </section>
 
       <section class="fly-section" id="fly-overview-section">
         <div class="fly-section-title">Project Overview</div>
@@ -21970,6 +22033,19 @@ function buildKitHtml(s, research, brand) {
 
     document.getElementById('fly-price').textContent = stock.total_contract ? flyerFmtCurrency(stock.total_contract) : '—';
     document.getElementById('fly-rent').textContent  = stock.rent_per_week ? '$' + Math.round(stock.rent_per_week).toLocaleString('en-AU') : 'On Req.';
+
+    // ── Annual outgoings ──
+    // Council rates and body corporate are the only outgoings TPCH publishes.
+    // Missing figures read "On Req." rather than a dash, matching the rent
+    // cell. The two treat zero differently: a $0 council rate is a blank
+    // Monday cell (every property is rated), while a $0 body corporate is
+    // real on a House & Land lot with no strata, so it publishes as $0.
+    const flyRates = stock.rates_annual;
+    const flyBc    = stock.body_corporate_annual;
+    document.getElementById('fly-rates').textContent =
+      (flyRates != null && !isNaN(flyRates) && Number(flyRates) > 0) ? flyerFmtCurrency(flyRates) : 'On Req.';
+    document.getElementById('fly-bodycorp').textContent =
+      (flyBc != null && flyBc !== '' && !isNaN(flyBc)) ? flyerFmtCurrency(flyBc) : 'On Req.';
 
     // ── Project overview / Location Highlights ──
     // For H&L lots, the project narrative is replaced with a suburb-level
