@@ -4302,6 +4302,10 @@
                 <div class="stk-mapkey-legend"><span class="stk-mapkey-cluster1">1</span> 1 project</div>
                 <div class="stk-mapkey-legend"><span class="stk-mapkey-pin">●</span> Project</div>
               </div>
+              <!-- Pin peek card. Clicking a pin fills this in rather than
+                   navigating, so a partner can size a project up without
+                   leaving the map (and without losing their pan/zoom). -->
+              <div class="stk-peek" id="stk-peek" style="display:none;"></div>
             </div>
             <div class="stk-rightpane">
               <div class="stk-rightpane-head">
@@ -9087,6 +9091,16 @@
   // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
 
   const CHANGELOG = [
+    {
+      version: '3.21',
+      date: '12 Aug 2026',
+      title: 'The stock map keeps your place',
+      items: [
+        'Clicking a pin on the stock map now opens a quick overview card instead of taking you off the map. You get the price, commission, available lots and key details at a glance, with a button through to the full project when you want it.',
+        'On a House and Land estate, clicking a lot pin shows that lot: price, commission, yield, beds, baths, cars, land and build size, rent and title timing.',
+        'The map no longer resets your zoom. Open a project, look around, press Back, and you return to exactly the position and zoom level you left. Changing a filter still refits the map so the matching pins come into view.',
+      ]
+    },
     {
       version: '3.20',
       date: '11 Aug 2026',
@@ -14345,6 +14359,9 @@ let stkProjectPinCoords = {}; // id → [[lat,lng], ...] (each project may have 
 let stkLastFilteredProjects = []; // sorted + data-filtered list (pre-viewport)
 let stkClusteringEnabled = true;
 let stkPinsVisible = true;
+// Signature of the filter set the map view was last auto-fitted to. The map
+// only refits when the pins being shown actually change — see renderStockMap.
+let _stkMapLastFitSig = null;
 // Parse title_forecast text — handles "Titled", ISO dates, and "Month'YY" / "Month 'YY" formats
 function parseTitleForecast(raw) {
   if (!raw) return null;
@@ -15543,9 +15560,16 @@ function renderStockMap(projects) {
     stkLeafletMap.on('moveend', function() {
       if (typeof renderProjectsRightPane === 'function') renderProjectsRightPane();
     });
+    // Clicking bare map (or pressing Escape) dismisses the peek card.
+    stkLeafletMap.on('click', closeStkPeek);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && _stkPeek) closeStkPeek();
+    });
   }
 
-  // Rebuild markers
+  // Rebuild markers. Any open peek card refers to a marker that's about to be
+  // thrown away, so it goes with them.
+  closeStkPeek();
   stkMarkerCluster.clearLayers();
   if (stkPlainPinGroup) stkPlainPinGroup.clearLayers();
   stkProjectMarkers = {};
@@ -15580,8 +15604,9 @@ function renderStockMap(projects) {
     });
     const m = L.marker([lat, lng], { icon, title: p.name || '' });
     m.bindTooltip(`<strong>${escapeHtml(p.name || '')}</strong><br><span style="color:#C8A951">${escapeHtml([p.suburb, p.state].filter(Boolean).join(' · '))}</span>`, { direction: 'top' });
-    // Pin click navigates straight to the project (H&L lot pins below keep their own showStockListing handler).
-    m.on('click', function() { showStockProject(p.id); });
+    // Pin click opens the peek card, not the project page — the card carries
+    // an "Open project" CTA for partners who want the full detail.
+    m.on('click', function(e) { L.DomEvent.stopPropagation(e); openStkProjectPeek(p.id); });
     stkMarkerCluster.addLayer(m);
     stkProjectMarkers[p.id] = m;
     bounds.push([lat, lng]);
@@ -15600,7 +15625,7 @@ function renderStockMap(projects) {
     const m = L.marker([lat, lng], { icon, title: s.name || '' });
     const lotLabel = [s.lot_number ? 'Lot ' + s.lot_number : null, s.street].filter(Boolean).join(' · ');
     m.bindTooltip(`<strong>${escapeHtml(s.project_name || s.name || '')}</strong><br><span style="color:#C8A951">${escapeHtml(lotLabel || [s.suburb, s.state].filter(Boolean).join(' · '))}</span>`, { direction: 'top' });
-    m.on('click', function() { showStockListing(s.id); });
+    m.on('click', function(e) { L.DomEvent.stopPropagation(e); openStkLotPeek(s.id); });
     stkMarkerCluster.addLayer(m);
     bounds.push([lat, lng]);
     if (s.project_id) {
@@ -15635,10 +15660,38 @@ function renderStockMap(projects) {
       stkLeafletMap.fitBounds(bounds, { padding: [40, 40], maxZoom: z });
     }
   };
-  // Run twice — once now, once after the next paint — so a pane that just
-  // transitioned from display:none picks up the correct dimensions.
-  applyBounds();
-  setTimeout(applyBounds, 60);
+  // Auto-fit is tied to the *filter set*, not to every render. The map refits
+  // when the pins on it change (first render, a filter tweak, a data reload
+  // that shifts the result set) and holds still otherwise — so drilling into a
+  // project and pressing Back drops the partner back at the exact pan and zoom
+  // they left, instead of snapping to the whole-of-Australia default.
+  const fitSig = _stkMapFitSignature() + '|' + bounds.length;
+  if (fitSig !== _stkMapLastFitSig) {
+    _stkMapLastFitSig = fitSig;
+    // Run twice — once now, once after the next paint — so a pane that just
+    // transitioned from display:none picks up the correct dimensions.
+    applyBounds();
+    setTimeout(applyBounds, 60);
+  } else {
+    // Same pins as the last fit: keep the view, but still let Leaflet re-measure
+    // its container (it was zero-sized while the project page was showing), then
+    // re-narrow the right pane against the corrected bounds.
+    const remeasure = () => {
+      try { stkLeafletMap.invalidateSize(); } catch(e){}
+      if (typeof renderProjectsRightPane === 'function') renderProjectsRightPane();
+    };
+    remeasure();
+    setTimeout(remeasure, 60);
+  }
+}
+
+// What counts as "the pins changed" for auto-fit purposes: any data-level
+// filter. Deliberately excludes page / pageSize / sort / viewMode, which only
+// reorder or paginate the right-pane list and shouldn't move the map.
+function _stkMapFitSignature() {
+  const f = stkFilter;
+  return JSON.stringify([f.avail, f.states, f.types, f.beds, f.priceMin, f.priceMax,
+    f.projStatus, f.smsf, f.yieldMin, f.titleWindow, f.search]);
 }
 
 // Put the pins on the map via whichever layer matches the current toggles:
@@ -15684,6 +15737,163 @@ function highlightStkRow(projId, scrollIntoView) {
   row.classList.add('flash');
   if (scrollIntoView) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   setTimeout(() => row.classList.remove('flash'), 1500);
+}
+
+// ── Map pin peek card ─────────────────────────────────────
+// A pin click used to jump straight to the project page, which meant every
+// look at a pin cost the partner their pan and zoom. Instead the pin fills a
+// card docked to the top-right of the map: hero, location, badges, the numbers
+// that decide whether it's worth a closer look, and a CTA into the full page.
+// { kind: 'project' | 'lot', id } for whatever's currently shown, or null.
+let _stkPeek = null;
+
+function closeStkPeek() {
+  _stkPeek = null;
+  const el = document.getElementById('stk-peek');
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+  const wrap = document.querySelector('.stk-mapwrap');
+  if (wrap) wrap.classList.remove('peek-open');
+}
+
+// Shell shared by both card shapes: hero strip, title block, then caller rows.
+function _stkPeekShell(o) {
+  const heroHtml = o.hero
+    ? `<img src="${escapeHtml(o.hero)}" alt="${escapeHtml(o.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    : '';
+  const initial = (o.name || '?').charAt(0).toUpperCase();
+  return `
+    <button class="stk-peek-close" onclick="closeStkPeek()" title="Close" aria-label="Close">×</button>
+    <div class="stk-peek-hero">
+      ${heroHtml}
+      <div class="stk-peek-hero-placeholder" ${o.hero ? 'style="display:none"' : ''}>${escapeHtml(initial)}</div>
+      ${o.chips ? `<div class="stk-peek-hero-chips">${o.chips}</div>` : ''}
+    </div>
+    <div class="stk-peek-body">
+      <div class="stk-peek-overline">${escapeHtml(o.overline || '')}</div>
+      <div class="stk-peek-name">${escapeHtml(o.name || '—')}</div>
+      <div class="stk-peek-loc">${escapeHtml(o.location || '')}</div>
+      ${o.badges ? `<div class="stk-peek-badges">${o.badges}</div>` : ''}
+      ${o.stats ? `<div class="stk-peek-stats">${o.stats}</div>` : ''}
+      ${o.rows ? `<div class="stk-peek-rows">${o.rows}</div>` : ''}
+      <div class="stk-peek-actions">${o.actions || ''}</div>
+    </div>`;
+}
+
+function _stkPeekStat(label, value, gold) {
+  return `<div class="stk-peek-stat">
+      <div class="stk-peek-stat-label">${escapeHtml(label)}</div>
+      <div class="stk-peek-stat-val${gold ? ' gold' : ''}">${escapeHtml(value == null || value === '' ? '—' : String(value))}</div>
+    </div>`;
+}
+
+function _stkPeekRow(label, value) {
+  if (value == null || value === '' || value === '—') return '';
+  return `<div class="stk-peek-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(String(value))}</strong></div>`;
+}
+
+function _showStkPeek(html) {
+  const el = document.getElementById('stk-peek');
+  if (!el) return;
+  el.innerHTML = html;
+  el.style.display = '';
+  el.scrollTop = 0;
+  const wrap = document.querySelector('.stk-mapwrap');
+  if (wrap) wrap.classList.add('peek-open');
+}
+
+function openStkProjectPeek(id) {
+  if (!isProjectVisibleToStaff(id)) return;
+  // Prefer the filtered copy — it carries the _filtered* counts that agree with
+  // the numbers already on screen in the right-pane list.
+  const p = (stkLastFilteredProjects || []).find(x => x.id === id)
+         || (allProjects || []).find(x => x.id === id);
+  if (!p) return;
+  _stkPeek = { kind: 'project', id: id };
+
+  const chips = [
+    p.smsf_eligible ? '<span class="stk-badge stk-badge-smsf">SMSF</span>' : '',
+    p.sales_status === 'Sold Out'    ? '<span class="stk-badge stk-badge-settled">Sold Out</span>'
+      : p.sales_status === 'Coming Soon' ? '<span class="stk-badge stk-badge-coming-soon">Coming Soon</span>'
+      : '<span class="stk-avail-chip">Available</span>',
+  ].filter(Boolean).join('');
+
+  const typeClass = stkTypeBadgeClass(p.development_type);
+  const statusClass = stkProjStatusClass(p.project_status);
+  const badges = [
+    typeClass   ? `<span class="stk-badge ${typeClass}">${escapeHtml(p.development_type || '')}</span>` : '',
+    statusClass ? `<span class="stk-badge ${statusClass}">${escapeHtml(p.project_status || '')}</span>` : '',
+  ].filter(Boolean).join('');
+
+  const lots = p._filteredAvailCount != null ? p._filteredAvailCount : p._availCount;
+  const stats =
+      _stkPeekStat('From', p._filteredMinPrice ? fmtCurrencyShort(p._filteredMinPrice) : (p._minPrice ? fmtCurrencyShort(p._minPrice) : '—'))
+    + _stkPeekStat('Comm', fmtProjCommForUser(p), true)
+    + _stkPeekStat('Available', lots > 0 ? lots + (lots === 1 ? ' lot' : ' lots') : '—');
+
+  const rows =
+      _stkPeekRow('Developer', p.developer)
+    + _stkPeekRow('Address', p.address)
+    + _stkPeekRow('Completion', p.est_construction_finish
+        ? new Date(p.est_construction_finish).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })
+        : null);
+
+  _showStkPeek(_stkPeekShell({
+    hero: p.hero_image_url || (p.photo_urls && p.photo_urls.length ? p.photo_urls[0] : null),
+    name: p.name,
+    overline: 'Project',
+    location: [p.suburb, p.state].filter(Boolean).join(' · '),
+    chips, badges, stats, rows,
+    actions: `<button class="stk-peek-cta" onclick="showStockProject('${p.id}')">Open project →</button>`,
+  }));
+
+  highlightStkRow(id, true);
+}
+
+function openStkLotPeek(stockId) {
+  const s = (allAvailableStock || []).find(x => x.id === stockId);
+  if (!s || !isProjectVisibleToStaff(s.project_id)) return;
+  _stkPeek = { kind: 'lot', id: stockId };
+  const proj = (allProjects || []).find(x => x.id === s.project_id);
+
+  const chips = [
+    s.smsf_eligible ? '<span class="stk-badge stk-badge-smsf">SMSF</span>' : '',
+    `<span class="stk-badge ${stkAvailBadgeClass(s.availability)}">${escapeHtml(s.availability || '—')}</span>`,
+  ].filter(Boolean).join('');
+
+  const typeClass = stkTypeBadgeClass(s.development_type || s.property_type);
+  const badges = typeClass
+    ? `<span class="stk-badge ${typeClass}">${escapeHtml(s.property_type || s.development_type || '')}</span>`
+    : '';
+
+  const annualRent = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null);
+  const stats =
+      _stkPeekStat('Price', s.total_contract ? fmtCurrency(s.total_contract) : '—')
+    + _stkPeekStat('Comm', fmtCommForUser(s), true)
+    + _stkPeekStat('Yield', calcGrossYield(annualRent, s.total_contract));
+
+  const rows =
+      _stkPeekRow('Beds · Baths · Cars', `${fmtNum(s.bedrooms)} · ${fmtNum(s.bathrooms)} · ${fmtNum(s.car_parks)}`)
+    + _stkPeekRow('Land', s.lot_size_sqm ? fmtSqm(s.lot_size_sqm) : null)
+    + _stkPeekRow('Build', (s.build_total_sqm || s.build_internal_sqm) ? fmtSqm(s.build_total_sqm || s.build_internal_sqm) : null)
+    + _stkPeekRow('Rent', s.rent_per_week ? fmtCurrency(s.rent_per_week) + '/wk' : 'On Request')
+    + _stkPeekRow('Title', fmtTitleDate(s))
+    + _stkPeekRow('Project', s.project_name || (proj && proj.name));
+
+  const lotName = [s.lot_number ? 'Lot ' + s.lot_number : null, s.street].filter(Boolean).join(' · ')
+    || s.name || s.project_name || '—';
+
+  _showStkPeek(_stkPeekShell({
+    hero: (s.photo_urls && s.photo_urls.length ? s.photo_urls[0] : null)
+       || (proj && (proj.hero_image_url || (proj.photo_urls && proj.photo_urls.length ? proj.photo_urls[0] : null))),
+    name: lotName,
+    overline: 'Property',
+    location: [s.suburb || s._suburb, s.state || s._state].filter(Boolean).join(' · '),
+    chips, badges, stats, rows,
+    actions: `<button class="stk-peek-cta" onclick="showStockListing('${s.id}')">Open property →</button>`
+      + (s.project_id ? `<button class="stk-peek-cta-alt" onclick="showStockProject('${s.project_id}')">View project</button>` : ''),
+  }));
+
+  if (s.project_id) highlightStkRow(s.project_id, true);
 }
 
 // ── Project detail ────────────────────────────────────────
@@ -18283,7 +18493,15 @@ function buildKitHtml(s, research, brand) {
   grid-template-columns: minmax(0, 1fr) minmax(min(420px, 100%), 58%);
   height: 100%;
 }
-.stk-mapwrap { position: relative; background: var(--black-card); border-right: 1px solid var(--gold-border); }
+/* Named container so the peek card can reflow against the MAP PANE's width
+   rather than the viewport (same trick .stk-rightpane uses for its rows). The
+   map and its overlays are absolutely positioned, so the wrapper's size still
+   comes from the grid — containment changes nothing for Leaflet. */
+.stk-mapwrap {
+  position: relative; background: var(--black-card);
+  border-right: 1px solid var(--gold-border);
+  container-type: inline-size; container-name: stk-map-pane;
+}
 .stk-map { position: absolute; inset: 0; }
 .leaflet-container { background: var(--black-card); outline: none; font-family: 'Outfit', system-ui, sans-serif; }
 /* Tint Carto Dark Matter toward the brand navy. Combined sepia + hue-rotate
@@ -18331,6 +18549,126 @@ function buildKitHtml(s, research, brand) {
   border-radius: 50%;
 }
 .stk-mapkey-pin { color: var(--gold); font-size: 16px; line-height: 1; }
+
+/* Pin peek card — docked top-right of the map so it clears the map key
+   (top-left) and the zoom controls (bottom-left). Width is fluid so the card
+   still fits when the map pane is squeezed at zoom or on a tablet. */
+.stk-peek {
+  /* Above Leaflet's own controls (they run to z-index 1000 inside the map),
+     which matters for the narrow-pane variant that docks over the bottom. */
+  position: absolute; top: 16px; right: 16px; z-index: 1200;
+  /* Width is measured off the MAP PANE, not the viewport: 320px when there's
+     room, shrinking as the pane narrows so the card's left edge always clears
+     the map key sitting at top-left (~186px + its 16px inset). */
+  width: clamp(240px, calc(100cqw - 230px), 320px);
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+  background: var(--black-card);
+  border: 1px solid var(--gold-border);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+  animation: stkPeekIn 0.16s ease-out;
+}
+@keyframes stkPeekIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+.stk-peek-close {
+  position: absolute; top: 6px; right: 6px; z-index: 2;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(8, 15, 26, 0.78);
+  border: 1px solid var(--gold-border);
+  color: var(--grey-pale);
+  font-size: 17px; line-height: 1; cursor: pointer;
+}
+.stk-peek-close:hover { color: var(--gold); border-color: var(--gold); }
+.stk-peek-hero { position: relative; height: 124px; background: var(--black); overflow: hidden; }
+.stk-peek-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.stk-peek-hero-placeholder {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-size: 40px;
+  color: rgba(200, 169, 81, 0.35);
+}
+.stk-peek-hero-chips {
+  position: absolute; bottom: 8px; left: 8px; right: 8px;
+  display: flex; flex-wrap: wrap; gap: 5px;
+}
+.stk-peek-hero-chips .stk-badge, .stk-peek-hero-chips .stk-avail-chip { font-size: 10px; padding: 2px 7px; }
+.stk-peek-body { padding: 12px 14px 14px; }
+.stk-peek-overline {
+  font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 5px;
+}
+.stk-peek-name {
+  font-family: 'Playfair Display', serif;
+  font-size: var(--type-md); line-height: 1.25;
+  color: var(--white);
+}
+.stk-peek-loc { font-size: 12px; color: var(--grey-pale); margin-top: 3px; }
+.stk-peek-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.stk-peek-badges .stk-badge { font-size: 10px; padding: 2px 7px; }
+/* Stat strip — the three numbers that decide whether this is worth opening. */
+.stk-peek-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-top: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--gold-border);
+  border-bottom: 1px solid var(--gold-border);
+}
+.stk-peek-stat { min-width: 0; }
+.stk-peek-stat-label {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--grey-mid); margin-bottom: 3px;
+}
+.stk-peek-stat-val {
+  font-size: 13px; font-weight: 500; color: var(--white);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.stk-peek-stat-val.gold { color: var(--gold); }
+.stk-peek-rows { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.stk-peek-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font-size: 12px; color: var(--grey-mid);
+}
+.stk-peek-row strong {
+  font-weight: 500; color: var(--grey-pale); text-align: right;
+  min-width: 0; overflow-wrap: anywhere;
+}
+.stk-peek-actions { display: flex; flex-direction: column; gap: 7px; margin-top: 13px; }
+.stk-peek-cta, .stk-peek-cta-alt {
+  width: 100%; padding: 9px 12px;
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.stk-peek-cta {
+  background: var(--gold); border: 1px solid var(--gold); color: var(--black);
+  font-weight: 600;
+}
+.stk-peek-cta:hover { background: #d9bc66; }
+.stk-peek-cta-alt {
+  background: transparent; border: 1px solid var(--gold-border); color: var(--grey-pale);
+}
+.stk-peek-cta-alt:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Once the map pane is too narrow for the card to sit beside the map key, dock
+   it across the top as a full-width sheet and drop the key while it's open.
+   Docking to the TOP (not the bottom) deliberately keeps Leaflet's zoom buttons
+   at bottom-left and the attribution at bottom-right clear of the card. */
+@container stk-map-pane (max-width: 490px) {
+  .stk-peek {
+    top: 0; left: 0; right: 0;
+    width: auto;
+    /* Stop short of the bottom so the zoom buttons stay tappable; the card
+       scrolls internally when its content doesn't fit. */
+    max-height: calc(100% - 96px);
+    border-left: none; border-right: none; border-top: none;
+  }
+  .stk-mapwrap.peek-open .stk-mapkey { display: none; }
+}
 
 /* Leaflet zoom buttons — bottom-left of the map */
 .stk-mapwrap .leaflet-control-zoom {

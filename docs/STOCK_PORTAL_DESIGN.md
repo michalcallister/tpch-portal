@@ -468,7 +468,11 @@ const icon = L.divIcon({
 });
 const m = L.marker([lat, lng], { icon, title: p.name || '' });
 m.bindTooltip(`<strong>${p.name}</strong><br><span style="color:#C8A951">${[p.suburb, p.state].filter(Boolean).join(' · ')}</span>`, { direction: 'top' });
-m.on('click', () => highlightXRow(p.id, true));
+// A pin click opens the peek card (§7h) — it must NOT navigate. Navigating
+// unmounts the map, and the re-render on the way back costs the user their
+// pan/zoom. stopPropagation keeps the map's own click handler (which closes
+// the card) from firing on the same gesture.
+m.on('click', (e) => { L.DomEvent.stopPropagation(e); openXPeek(p.id); });
 xMarkerCluster.addLayer(m);
 ```
 
@@ -488,9 +492,59 @@ xLeafletMap.fitBounds(bounds, { padding: [40, 40], maxZoom: z });
 
 // Run twice to handle the case where the pane was display:none on init
 const applyBounds = () => { try { xLeafletMap.invalidateSize(); } catch(e){} /* …fitBounds…*/ };
-applyBounds();
-setTimeout(applyBounds, 60);
 ```
+
+### 7g-ii. Only auto-fit when the pins change
+
+Refitting on *every* render is the trap: any re-entry into the page (coming back
+from a detail view, a data reload) throws away the pan and zoom the user set.
+Gate the fit on a signature of the **data-level filters only** — page, page
+size, sort and view mode must not move the map.
+
+```js
+let _xMapLastFitSig = null;
+
+function _xMapFitSignature() {
+  const f = xFilter;   // deliberately excludes page / pageSize / sort / viewMode
+  return JSON.stringify([f.avail, f.states, f.types, f.beds, f.priceMin, f.priceMax,
+    f.projStatus, f.smsf, f.yieldMin, f.titleWindow, f.search]);
+}
+
+const fitSig = _xMapFitSignature() + '|' + bounds.length;
+if (fitSig !== _xMapLastFitSig) {
+  _xMapLastFitSig = fitSig;
+  applyBounds();
+  setTimeout(applyBounds, 60);
+} else {
+  // Same pins: keep the view, but still let Leaflet re-measure (the container
+  // was zero-sized while the detail page showed), then re-narrow the right pane.
+  const remeasure = () => {
+    try { xLeafletMap.invalidateSize(); } catch(e){}
+    renderXRightPane();
+  };
+  remeasure();
+  setTimeout(remeasure, 60);
+}
+```
+
+### 7h. Pin peek card
+
+Docked overlay inside `.<x>-mapwrap`, filled on pin click so the user can size a
+record up without leaving the map. Rules that matter:
+
+- **z-index above 1000** — Leaflet's own controls run that high inside the map.
+- **Width in container units**, not viewport: `clamp(240px, calc(100cqw - 230px),
+  320px)` keeps the card's left edge clear of the map key at top-left. Requires
+  `container-type: inline-size; container-name: <x>-map-pane` on the mapwrap.
+- Below `490px` of pane, dock it across the **top** (not the bottom, which would
+  bury the zoom buttons) with `max-height: calc(100% - 96px)`, and hide the map
+  key via a `.peek-open` class on the wrapper.
+- Close on: the × button, a bare-map click (`xLeafletMap.on('click', closeXPeek)`),
+  Escape, and any marker rebuild (the card points at markers being discarded).
+- The card is a **sibling** of the map div, not a Leaflet popup: clicks and wheel
+  events inside it never reach the map, and nothing auto-pans the view.
+- Carry an explicit CTA into the full record. The right-pane rows still navigate
+  directly on click, so both a quick look and a deep dive are one gesture.
 
 ---
 
