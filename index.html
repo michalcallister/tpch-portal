@@ -11354,10 +11354,13 @@
       document.getElementById('aad-run-all-btn').disabled = agent.status !== 'active';
     }
 
-    // Load results + history (for project-bound agents — others have no draft results to show
-    // but the history tab can still surface their runs).
+    // Load results + history. Project-bound agents show per-project drafts;
+    // suburb-research is on-demand but still has drafts to review, and
+    // aiLoadDraftResults() delegates to aiLoadSuburbResearchDrafts() for it.
+    // Anything else genuinely has no draft results, though the history tab
+    // can still surface its runs.
     await Promise.all([
-      isProjectBound ? aiLoadDraftResults(agent.id) : Promise.resolve(),
+      (isProjectBound || isSuburbResearch) ? aiLoadDraftResults(agent.id) : Promise.resolve(),
       aiLoadRunHistory(agent.id),
     ]);
   }
