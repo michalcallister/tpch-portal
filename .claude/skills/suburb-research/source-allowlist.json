@@ -1,0 +1,99 @@
+{
+  "$schema_version": "1.0.0",
+  "last_updated": "2026-08-14",
+  "purpose": "Strict allow-list for the Source-Finder agent. Source-Finder may fetch only from domains listed here. Anything else is dropped, regardless of how relevant the result looks.",
+  "tiers": {
+    "1": {
+      "label": "Primary data, analysis, market context",
+      "usage": "Acceptable for any citation in any pillar. Required substrate for the pillars: demographics, migration, employment, supply_pipeline, vacancy_trend, price_growth, rent_trend, affordability, infrastructure, risk_register.",
+      "domains": [
+        { "domain": "abs.gov.au", "publisher": "Australian Bureau of Statistics", "use_for": ["demographics", "migration", "employment", "affordability"] },
+        { "domain": "rba.gov.au", "publisher": "Reserve Bank of Australia", "use_for": ["affordability", "risk_register", "macro_overlay"] },
+        { "domain": "corelogic.com.au", "publisher": "CoreLogic", "use_for": ["price_growth", "rent_trend", "vacancy_trend"] },
+        { "domain": "sqmresearch.com.au", "publisher": "SQM Research", "use_for": ["vacancy_trend", "rent_trend", "supply_pipeline"] },
+        { "domain": "domain.com.au/research", "publisher": "Domain Research", "use_for": ["price_growth", "rent_trend", "vacancy_trend"], "notes": "Research arm only — NOT the listings site." },
+        { "domain": "realestate.com.au/news/research", "publisher": "REA Group / PropTrack", "use_for": ["price_growth", "rent_trend"], "notes": "Research/PropTrack content only — NOT listings." },
+        { "domain": "reiv.com.au", "publisher": "Real Estate Institute of Victoria", "use_for": ["price_growth", "rent_trend", "vacancy_trend"] },
+        { "domain": "reinsw.com.au", "publisher": "Real Estate Institute of New South Wales", "use_for": ["price_growth", "rent_trend", "vacancy_trend"] },
+        { "domain": "reiq.com.au", "publisher": "Real Estate Institute of Queensland", "use_for": ["price_growth", "rent_trend", "vacancy_trend"] },
+        { "domain": "reiwa.com.au", "publisher": "Real Estate Institute of Western Australia", "use_for": ["price_growth", "rent_trend", "vacancy_trend"] },
+        { "domain": "reisa.com.au", "publisher": "Real Estate Institute of South Australia", "use_for": ["price_growth", "rent_trend", "vacancy_trend"] },
+        { "domain": "reit.com.au", "publisher": "Real Estate Institute of Tasmania", "use_for": ["price_growth", "rent_trend", "vacancy_trend"] },
+        { "domain": "reiact.com.au", "publisher": "Real Estate Institute of the Australian Capital Territory", "use_for": ["price_growth", "rent_trend", "vacancy_trend"] },
+        { "domain": "reint.com.au", "publisher": "Real Estate Institute of the Northern Territory", "use_for": ["price_growth", "rent_trend", "vacancy_trend"] },
+        { "domain": "propertycouncil.com.au", "publisher": "Property Council of Australia", "use_for": ["supply_pipeline", "infrastructure", "affordability"] },
+        { "domain": "housingdata.gov.au", "publisher": "National Housing Supply and Affordability Council", "use_for": ["supply_pipeline", "affordability"] },
+        { "domain": "nhsac.gov.au", "publisher": "National Housing Supply and Affordability Council", "use_for": ["supply_pipeline", "affordability"] },
+        { "domain": "infrastructureaustralia.gov.au", "publisher": "Infrastructure Australia", "use_for": ["infrastructure"] },
+        { "domain": "infrastructure.vic.gov.au", "publisher": "Infrastructure Victoria", "use_for": ["infrastructure"] },
+        { "domain": "transport.nsw.gov.au", "publisher": "Transport for NSW", "use_for": ["infrastructure"] },
+        { "domain": "majorprojects.transport.nsw.gov.au", "publisher": "Transport for NSW Major Projects", "use_for": ["infrastructure"] },
+        { "domain": "majorprojects.vic.gov.au", "publisher": "Major Transport Infrastructure Authority (VIC)", "use_for": ["infrastructure"] },
+        { "domain": "tmr.qld.gov.au", "publisher": "Transport and Main Roads (QLD)", "use_for": ["infrastructure"] },
+        { "domain": "mainroads.wa.gov.au", "publisher": "Main Roads Western Australia", "use_for": ["infrastructure"] },
+        { "domain": "transport.sa.gov.au", "publisher": "Department for Infrastructure and Transport (SA)", "use_for": ["infrastructure"] },
+        { "domain": "planning.vic.gov.au", "publisher": "Department of Transport and Planning (VIC)", "use_for": ["supply_pipeline", "infrastructure"] },
+        { "domain": "planning.nsw.gov.au", "publisher": "Department of Planning, Housing and Infrastructure (NSW)", "use_for": ["supply_pipeline", "infrastructure"] },
+        { "domain": "planning.qld.gov.au", "publisher": "Department of State Development, Infrastructure, Local Government and Planning (QLD)", "use_for": ["supply_pipeline", "infrastructure"] },
+        { "domain": "dplh.wa.gov.au", "publisher": "Department of Planning, Lands and Heritage (WA)", "use_for": ["supply_pipeline", "infrastructure"] },
+        { "domain": "plan.sa.gov.au", "publisher": "PlanSA — Department for Trade and Investment (SA)", "use_for": ["supply_pipeline", "infrastructure"] },
+        { "domain": "planning.tas.gov.au", "publisher": "Tasmanian Planning Commission", "use_for": ["supply_pipeline", "infrastructure"] },
+        { "domain": "planning.act.gov.au", "publisher": "Environment, Planning and Sustainable Development Directorate (ACT)", "use_for": ["supply_pipeline", "infrastructure"] },
+        { "domain": "*.lgov.au", "publisher": "Local government (LGA) websites", "use_for": ["supply_pipeline", "infrastructure", "demographics"], "notes": "Wildcard — any *.lgov.au domain is in. Covers LGA-level planning portals, DA registers, council reports." },
+        { "domain": "*.nsw.gov.au", "publisher": "NSW Government", "use_for": ["supply_pipeline", "infrastructure", "demographics", "employment"], "notes": "Wildcard. Includes Treasury, Health, Education, etc." },
+        { "domain": "*.vic.gov.au", "publisher": "Victorian Government", "use_for": ["supply_pipeline", "infrastructure", "demographics", "employment"], "notes": "Wildcard." },
+        { "domain": "*.qld.gov.au", "publisher": "Queensland Government", "use_for": ["supply_pipeline", "infrastructure", "demographics", "employment"], "notes": "Wildcard." },
+        { "domain": "*.wa.gov.au", "publisher": "Western Australian Government", "use_for": ["supply_pipeline", "infrastructure", "demographics", "employment"], "notes": "Wildcard." },
+        { "domain": "*.sa.gov.au", "publisher": "South Australian Government", "use_for": ["supply_pipeline", "infrastructure", "demographics", "employment"], "notes": "Wildcard." },
+        { "domain": "*.tas.gov.au", "publisher": "Tasmanian Government", "use_for": ["supply_pipeline", "infrastructure", "demographics", "employment"], "notes": "Wildcard." },
+        { "domain": "*.act.gov.au", "publisher": "ACT Government", "use_for": ["supply_pipeline", "infrastructure", "demographics", "employment"], "notes": "Wildcard." },
+        { "domain": "*.nt.gov.au", "publisher": "Northern Territory Government", "use_for": ["supply_pipeline", "infrastructure", "demographics", "employment"], "notes": "Wildcard." },
+        { "domain": "knightfrank.com.au", "publisher": "Knight Frank Australia", "use_for": ["price_growth", "rent_trend", "supply_pipeline", "infrastructure"], "notes": "Research insights specifically; avoid agent-facing marketing pages." },
+        { "domain": "urbis.com.au", "publisher": "Urbis", "use_for": ["supply_pipeline", "infrastructure", "demographics", "affordability"] },
+        { "domain": "charterkc.com.au", "publisher": "Charter Keck Cramer", "use_for": ["supply_pipeline", "price_growth", "rent_trend"], "notes": "Apartment market research is the standout publication." },
+        { "domain": "htw.com.au", "publisher": "Herron Todd White", "use_for": ["price_growth", "rent_trend", "supply_pipeline", "risk_register"], "notes": "Month In Review is gold-standard. Treat as a primary signal on cycle position." },
+        { "domain": "jll.com.au", "publisher": "JLL Australia", "use_for": ["price_growth", "supply_pipeline", "infrastructure"] },
+        { "domain": "cbre.com.au", "publisher": "CBRE Australia", "use_for": ["price_growth", "supply_pipeline", "infrastructure"] },
+        { "domain": "colliers.com.au", "publisher": "Colliers Australia", "use_for": ["price_growth", "supply_pipeline", "infrastructure"] },
+        { "domain": "savills.com.au", "publisher": "Savills Australia", "use_for": ["price_growth", "supply_pipeline"] },
+        { "domain": "kpmg.com.au", "publisher": "KPMG Australia", "use_for": ["affordability", "supply_pipeline", "employment"], "notes": "Property and infrastructure publications only." },
+        { "domain": "pwc.com.au", "publisher": "PwC Australia", "use_for": ["affordability", "employment"], "notes": "Real-estate and economic outlook publications only." },
+        { "domain": "deloitte.com.au", "publisher": "Deloitte Australia", "use_for": ["affordability", "employment"], "notes": "Property and economic outlook publications only." },
+        { "domain": "demographia.com", "publisher": "Demographia", "use_for": ["affordability"], "notes": "International housing affordability benchmark. Annual report." }
+      ]
+    },
+    "2": {
+      "label": "Journalism — endorsement and counter-view only",
+      "usage": "Acceptable ONLY for the endorsements array (>=3 required) and the counter_view object (exactly 1 required) in the final report. NEVER for primary data, statistics, or pillar narratives. Must be a named, dated article within 12 months of retrieval.",
+      "domains": [
+        { "domain": "afr.com", "publisher": "Australian Financial Review", "use_for": ["endorsement", "counter_view"] },
+        { "domain": "theaustralian.com.au", "publisher": "The Australian", "use_for": ["endorsement", "counter_view"] },
+        { "domain": "theage.com.au", "publisher": "The Age", "use_for": ["endorsement", "counter_view"] },
+        { "domain": "smh.com.au", "publisher": "Sydney Morning Herald", "use_for": ["endorsement", "counter_view"] },
+        { "domain": "news.com.au", "publisher": "news.com.au", "use_for": ["endorsement", "counter_view"], "notes": "Finance/real-estate sections only — not lifestyle/gossip." },
+        { "domain": "abc.net.au", "publisher": "ABC News", "use_for": ["endorsement", "counter_view"], "notes": "Business/property reporting only." },
+        { "domain": "smartpropertyinvestment.com.au", "publisher": "Smart Property Investment", "use_for": ["endorsement", "counter_view"] },
+        { "domain": "theurbandeveloper.com", "publisher": "The Urban Developer", "use_for": ["endorsement", "counter_view"] },
+        { "domain": "propertyobserver.com.au", "publisher": "Property Observer", "use_for": ["endorsement", "counter_view"] },
+        { "domain": "thecourier.com.au", "publisher": "The Courier (Ballarat)", "use_for": ["endorsement", "counter_view"], "notes": "Australian Community Media regional masthead for Ballarat and the Central Highlands. Property, planning, and local-economy reporting only, not sport or lifestyle. Added 2026-08-14 during the Ballarat pass, where the absence of a city-specific masthead left the endorsement panel short." },
+        { "domain": "macrobusiness.com.au", "publisher": "MacroBusiness", "use_for": ["counter_view"], "notes": "Skews bearish — strong counter-view source." }
+      ]
+    }
+  },
+  "banned": {
+    "patterns": [
+      "Any agent-sponsored \"suburb guide\" or \"investor report\" PDF, regardless of publisher",
+      "SEO blog farms and microblog content (e.g. homely.com.au editorial sections, openagent.com.au editorial, ratemyagent.com.au editorial)",
+      "Buyer's-agent or development-marketer content (conflict of interest — they're selling a thesis, not reporting on one)",
+      "Forum posts, Reddit threads, Facebook groups, LinkedIn posts",
+      "Wikipedia (use the underlying source it cites instead)",
+      "AI-generated content farms",
+      "Realtor/agent personal blogs"
+    ],
+    "rationale": "Banned sources either have a commercial interest in a specific narrative, lack editorial accountability, or are too transient to cite. A report that cites banned sources will fail server-side validation at upload-research."
+  },
+  "fallback_policy": {
+    "in_allowlist_miss": "If Source-Finder finds a relevant URL that is NOT in the allow-list, do not fetch it. Append to log.md as a `## [YYYY-MM-DD] allowlist_miss | <publisher> | <url> | <reason it was relevant>` entry for human review. If multiple suburbs surface the same missing publisher, that's a signal to add it to the allow-list.",
+    "in_tier1_gap": "If a pillar genuinely cannot be supported by any Tier-1 source (e.g. an obscure regional employment figure), the Copywriter must mark that pillar with a partial data flag and a clearly-stated gap rather than reach into Tier 2 for primary data."
+  }
+}
