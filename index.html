@@ -6,13 +6,13 @@
 <title>The Property Clearing House — Partner Portal</title>
 
 <!-- Start DNS + TLS to the origins first paint needs before they're first
-     requested. Fonts + Supabase gate the login screen; Carto tiles only
+     requested. Fonts + Supabase gate the login screen; map tiles only
      matter once a map opens, so those are a lighter dns-prefetch. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://oreklvbzwgbufbkvvzny.supabase.co">
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-<link rel="dns-prefetch" href="https://a.basemaps.cartocdn.com">
+<link rel="dns-prefetch" href="https://tiles.openfreemap.org">
 <link rel="dns-prefetch" href="https://nominatim.openstreetmap.org">
 
 <link rel="icon" href="assets/brand/favicon.ico" sizes="any">
@@ -28,10 +28,12 @@
 <link rel="stylesheet" media="print" onload="this.media='all'" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" media="print" onload="this.media='all'" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" media="print" onload="this.media='all'" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.css">
 <noscript>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.css">
 </noscript>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -55,6 +57,17 @@
     --green: #4CAF7A;
     --teal: #14A3A8;
     --teal-dim: rgba(20,163,168,0.12);
+
+    /* ── Map surface ────────────────────────────────────────
+       The basemap uses conventional street-map colours, so the
+       map is a LIGHT surface sitting inside the dark portal
+       shell. --map-bg matches the basemap's own land colour so
+       there's no flash while tiles load. Pins and overlays use
+       --map-ink (deep navy) for contrast against that light
+       ground; gold alone is too low-contrast on pale land. */
+    --map-bg: #F8F4F0;
+    --map-ink: #0E1B2E;
+    --map-ink-soft: rgba(14, 27, 46, 0.55);
 
     /* ── Adaptive layout primitives ─────────────────────────
        Type scale uses clamp(min, fluid, max) so headings/labels
@@ -9092,6 +9105,17 @@
 
   const CHANGELOG = [
     {
+      version: '3.22',
+      date: '31 Aug 2026',
+      title: 'Maps in standard colours',
+      items: [
+        'Every map in the portal now uses standard street colours, so you and your client can read the roads, parks, schools and shops around a property at a glance.',
+        'Zoom in further than before and you get street-level detail, including building footprints and street names, which makes it easier to show a client exactly where a property sits.',
+        'Property pins and the grouped pin counters have been redrawn to stand out clearly against the lighter map.',
+        'The "API key required" watermark that recently appeared across the maps is gone.',
+      ]
+    },
+    {
       version: '3.21',
       date: '12 Aug 2026',
       title: 'The stock map keeps your place',
@@ -13672,15 +13696,14 @@
     _rv2Map = L.map('rv2-map', {
       center: [lat || 0, lng || 0], zoom: 13,
       zoomControl: true, scrollWheelZoom: false, attributionControl: true,
+      // maxZoom must live here: the GL basemap supplies none (see createBaseLayer).
+      maxZoom: 19, minZoom: 3,
     });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap © CARTO', maxZoom: 19, subdomains: 'abcd',
-    }).addTo(_rv2Map);
+    createBaseLayer(_rv2Map);
 
     if (hasPoly) {
-      const brand = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#C8A951';
       const layer = L.geoJSON(d.boundary_geojson, {
-        style: () => ({ color: brand, weight: 2.5, opacity: 0.95, fillColor: brand, fillOpacity: 0.14 }),
+        style: () => SUBURB_BOUNDARY_STYLE,
       });
       layer.addTo(_rv2Map);
       try { _rv2Map.fitBounds(layer.getBounds(), { padding: [24, 24], maxZoom: 13 }); } catch (_) {}
@@ -14056,9 +14079,79 @@
      defer lets the parser finish the ~14k-line document instead of stopping
      to fetch + run ~180KB of Leaflet. Every L.* call is inside a function
      invoked after login, so L is guaranteed present by first map open. The
-     two scripts keep document order, so markercluster runs after Leaflet. -->
+     scripts keep document order, so markercluster and the MapLibre bridge
+     both run after Leaflet.
+
+     MapLibre GL renders the vector basemap (see createBaseLayer below).
+     Leaflet still owns every marker, cluster, popup and GeoJSON overlay —
+     maplibre-gl-leaflet only swaps the base tiles for a GL canvas. -->
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+<script defer src="https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.js"></script>
+<script defer src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
+<script>
+// ── BASEMAP — single point of control for every map surface ──────────────
+//
+// All six maps in this file go through createBaseLayer(). When the tile
+// provider changes, this is the only place that needs editing.
+//
+// History: we ran on CARTO's keyless raster tiles until Aug 2026, when CARTO
+// began requiring an API key and started stamping "API KEY REQUIRED" across
+// every keyless tile. CARTO is also retiring raster basemaps entirely. We
+// moved to OpenFreeMap, which needs no key, permits commercial use and sets
+// no request limit. If it ever goes away, the OSM extract for Australia is
+// small enough to build our own tiles and self-host cheaply — and only this
+// block would change.
+//
+// Style is "liberty": conventional street-map colours (roads, parks, land
+// use), which is what partners and their clients expect to see under a
+// property pin.
+const BASEMAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+
+// Licence requirement — OpenFreeMap and OSM must be credited on every map.
+//
+// Do NOT add this by hand. The GL layer reads attribution from the style and
+// pushes it into whatever attribution control the map has, so a hand-added
+// credit renders a second, duplicate line. Maps that pass
+// attributionControl:false therefore add an EMPTY control purely to give the
+// layer somewhere to write to (see the .addTo calls at each map). Styling for
+// that strip lives in the .leaflet-control-attribution rule.
+
+/**
+ * Add the vector basemap to a Leaflet map.
+ *
+ * Two things here are load-bearing and easy to break:
+ *
+ * 1. canvasContextAttributes.preserveDrawingBuffer — MapLibre v5 moved this
+ *    out of the top level. Passing `preserveDrawingBuffer: true` directly is
+ *    SILENTLY IGNORED (no error, no warning) and the WebGL canvas then prints
+ *    as a blank white box. The flyer is printed by partners, so this must
+ *    stay where it is.
+ *
+ * 2. The calling map MUST declare maxZoom in its L.map() options. Leaflet
+ *    used to take maxZoom from the tile layer; a GL layer supplies none, so
+ *    without it Leaflet throws "Map has no maxZoom specified" and marker
+ *    clustering breaks.
+ */
+function createBaseLayer(map, opts) {
+  if (typeof L === 'undefined' || typeof L.maplibreGL !== 'function') return null;
+  return L.maplibreGL(Object.assign({
+    style: BASEMAP_STYLE,
+    canvasContextAttributes: { preserveDrawingBuffer: true },
+  }, opts || {})).addTo(map);
+}
+
+/* Suburb boundary outline on TPCH-branded maps. Gold at 2.5px/14% was built
+   for the old dark basemap; on light land it reads as a faint yellow smear,
+   so the outline is now deep navy with a gold fill behind it. The white-label
+   research map keeps the partner's own colour instead (see its call site). */
+const SUBURB_BOUNDARY_STYLE = {
+  color: '#0E1B2E', weight: 3, opacity: 0.95,
+  // Kept light: the navy outline defines the suburb, and a heavier gold wash
+  // turns the streets underneath khaki and muddies the whole shape.
+  fillColor: '#C8A951', fillOpacity: 0.10,
+};
+</script>
 <script>
 // ── LEAFLET MAP WITH AUSTRALIAN STATE OVERLAYS ───────────────────────────
 
@@ -14167,10 +14260,13 @@ function refreshResearchPins() {
   RESEARCH_PINS.forEach(pin => {
     const icon = L.divIcon({
       className: '',
+      // Navy core with a gold pulse ring: on the light basemap a gold dot
+      // alone washes out, so the solid mass carries navy and the ring keeps
+      // the brand colour and the "live" feel.
       html: `
         <div style="position:relative;width:28px;height:28px;cursor:pointer;">
-          <div style="position:absolute;inset:0;border-radius:50%;border:2px solid #C9A84C;opacity:0.8;animation:leafPulse 2s ease-in-out infinite;"></div>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:#C9A84C;box-shadow:0 0 8px rgba(201,168,76,0.8);"></div>
+          <div style="position:absolute;inset:0;border-radius:50%;border:2px solid #C9A84C;opacity:0.9;animation:leafPulse 2s ease-in-out infinite;"></div>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:11px;height:11px;border-radius:50%;background:#0E1B2E;border:2px solid #C9A84C;box-shadow:0 0 0 2px rgba(255,255,255,0.85);"></div>
         </div>`,
       iconSize: [28, 28],
       iconAnchor: [14, 14]
@@ -14178,7 +14274,8 @@ function refreshResearchPins() {
     const marker = L.marker([pin.lat, pin.lng], { icon }).addTo(researchPinsLayer);
     const labelIcon = L.divIcon({
       className: '',
-      html: `<div style="font-family:'Outfit',system-ui,sans-serif;font-size:10px;font-weight:600;color:#C9A84C;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.9);padding-left:16px;margin-top:-5px;">${pin.label}</div>`,
+      // Navy label with a white halo — gold-on-pale-land is unreadable.
+      html: `<div style="font-family:'Outfit',system-ui,sans-serif;font-size:10px;font-weight:700;color:#0E1B2E;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 1px 2px rgba(255,255,255,0.95);padding-left:16px;margin-top:-5px;">${pin.label}</div>`,
       iconSize: [120, 20],
       iconAnchor: [0, 10]
     });
@@ -14202,13 +14299,7 @@ function initLeafletMap() {
     maxZoom: 10
   });
 
-  // Dark styled tile layer — Stadia dark theme (free, no key needed)
-  // CartoDB Dark Matter — free, no API key required
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 19
-  }).addTo(leafletMap);
+  createBaseLayer(leafletMap);
 
   // State overlay layer
   stateLayerGroup = L.layerGroup().addTo(leafletMap);
@@ -14216,27 +14307,14 @@ function initLeafletMap() {
 
   L.geoJSON(AUS_STATES, {
     style: function(feature) {
-      const hasResearch = feature.properties.hasResearch;
-      return {
-        fillColor:   hasResearch ? 'rgba(201,168,76,0.15)' : 'rgba(201,168,76,0.04)',
-        fillOpacity: 1,
-        color:       '#C9A84C',
-        weight:      hasResearch ? 1.5 : 0.8,
-        opacity:     hasResearch ? 0.9 : 0.4,
-        dashArray:   hasResearch ? null : '4 4'
-      };
+      return stateStyle(feature.properties.hasResearch);
     },
     onEachFeature: function(feature, layer) {
       const props = feature.properties;
 
       layer.on('mouseover', function(e) {
         if (activeLayer !== layer) {
-          layer.setStyle({
-            fillColor:   'rgba(201,168,76,0.3)',
-            fillOpacity: 1,
-            color:       '#E8C96A',
-            weight:      2
-          });
+          layer.setStyle(STATE_HOVER_STYLE);
         }
         // Show tooltip near cursor
         const tt = document.getElementById('mapTooltip');
@@ -14268,12 +14346,7 @@ function initLeafletMap() {
           resetLayerStyle(activeLayer, prevProps.hasResearch);
         }
         activeLayer = layer;
-        layer.setStyle({
-          fillColor:   'rgba(201,168,76,0.35)',
-          fillOpacity: 1,
-          color:       '#E8C96A',
-          weight:      2.5
-        });
+        layer.setStyle(STATE_ACTIVE_STYLE);
         selectRegion(props.code);
       });
     }
@@ -14283,22 +14356,35 @@ function initLeafletMap() {
   // call refreshResearchPins again when the async fetch completes.
   refreshResearchPins();
 
-  // Small attribution bottom right
+  // Empty on purpose — the GL layer writes the OpenFreeMap/OSM credit into
+  // it on load. Seeding text here would render a duplicate line.
   L.control.attribution({ prefix: false, position: 'bottomright' })
-    .addAttribution('<span style="font-size:9px;color:#555">© Stadia Maps © OSM</span>')
+
     .addTo(leafletMap);
 }
 
 
-function resetLayerStyle(layer, hasResearch) {
-  layer.setStyle({
-    fillColor:   hasResearch ? 'rgba(201,168,76,0.15)' : 'rgba(201,168,76,0.04)',
+/* State overlay palette, tuned for the light street basemap.
+   The old values (gold fill at 4–15%, gold stroke at 40% opacity) were built
+   for a near-black map and vanish against pale land. States with research
+   now carry a stronger gold wash with a deep bronze edge; the rest sit as a
+   faint navy tint with a dashed navy edge, so "has research" still reads at
+   a glance without the map turning into a block of colour. */
+function stateStyle(hasResearch) {
+  return {
+    fillColor:   hasResearch ? 'rgba(201,168,76,0.34)' : 'rgba(14,27,46,0.05)',
     fillOpacity: 1,
-    color:       '#C9A84C',
-    weight:      hasResearch ? 1.5 : 0.8,
-    opacity:     hasResearch ? 0.9 : 0.4,
-    dashArray:   hasResearch ? null : '4 4'
-  });
+    color:       hasResearch ? '#8A6D2F' : 'rgba(14,27,46,0.45)',
+    weight:      hasResearch ? 1.6 : 0.9,
+    opacity:     1,
+    dashArray:   hasResearch ? null : '4 4',
+  };
+}
+const STATE_HOVER_STYLE  = { fillColor: 'rgba(201,168,76,0.50)', fillOpacity: 1, color: '#6E551F', weight: 2,   opacity: 1 };
+const STATE_ACTIVE_STYLE = { fillColor: 'rgba(201,168,76,0.62)', fillOpacity: 1, color: '#0E1B2E', weight: 2.5, opacity: 1 };
+
+function resetLayerStyle(layer, hasResearch) {
+  layer.setStyle(stateStyle(hasResearch));
 }
 
 // ── Existing region panel functions ──────────────────────────────────────
@@ -15536,13 +15622,11 @@ function renderStockMap(projects) {
       maxZoom: 18,
       worldCopyJump: false
     });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd', maxZoom: 19
-    }).addTo(stkLeafletMap);
+    createBaseLayer(stkLeafletMap);
     // Zoom buttons sit at the bottom-left (just above the Locate me button).
     L.control.zoom({ position: 'bottomleft' }).addTo(stkLeafletMap);
     L.control.attribution({ prefix: false, position: 'bottomright' })
-      .addAttribution('<span style="font-size:9px;color:#555">© CARTO © OSM</span>')
+
       .addTo(stkLeafletMap);
     stkMarkerCluster = L.markerClusterGroup({
       maxClusterRadius: 50,
@@ -18323,11 +18407,13 @@ function buildKitHtml(s, research, brand) {
 </script>
 
 <style>
-/* Leaflet overrides for dark theme. No !important and brand navy (not the
-   pre-rebrand #0A0A08): the stk/rsc map rules set the same value, and the
-   flyer's light map overrides via the higher-specificity #fly-map rule. */
+/* Leaflet overrides. Every map now renders a conventional light street
+   basemap, so the container ground is light too — a dark ground here shows
+   as a black flash before tiles paint. The zoom/attribution controls stay
+   dark-on-brand: they read as portal chrome floating over the map, and the
+   contrast against pale land is good. */
 .leaflet-container {
-  background: var(--black-card);
+  background: var(--map-bg);
   font-family: 'Outfit', system-ui, sans-serif;
 }
 .leaflet-control-zoom {
@@ -18347,6 +18433,15 @@ function buildKitHtml(s, research, brand) {
 }
 .leaflet-bar { border-radius: 0 !important; }
 .leaflet-attribution-flag { display: none !important; }
+/* Basemap credit. Required by the OpenFreeMap/OSM licence, so it stays
+   visible — just small and quiet against the light map. */
+.leaflet-control-attribution {
+  background: rgba(255,255,255,0.72) !important;
+  color: #6B7280 !important;
+  font-size: 9px !important;
+  padding: 1px 6px !important;
+}
+.leaflet-control-attribution a { color: #4B5563 !important; }
 @keyframes leafPulse {
   0%, 100% { transform: scale(1); opacity: 0.8; }
   50%       { transform: scale(2.2); opacity: 0; }
@@ -18501,27 +18596,19 @@ function buildKitHtml(s, research, brand) {
    map and its overlays are absolutely positioned, so the wrapper's size still
    comes from the grid — containment changes nothing for Leaflet. */
 .stk-mapwrap {
-  position: relative; background: var(--black-card);
+  /* Light ground: the basemap is a light street map, so a navy wrapper
+     shows as a dark flash before the first tiles paint. */
+  position: relative; background: var(--map-bg);
   border-right: 1px solid var(--gold-border);
   container-type: inline-size; container-name: stk-map-pane;
 }
 .stk-map { position: absolute; inset: 0; }
-.leaflet-container { background: var(--black-card); outline: none; font-family: 'Outfit', system-ui, sans-serif; }
-/* Tint Carto Dark Matter toward the brand navy. Combined sepia + hue-rotate
-   colourises the grey tiles, then a brand-coloured overlay (mix-blend-mode
-   colour) pulls the whole map firmly into the navy palette so the map flows
-   into the surrounding panel. */
-.stk-mapwrap .leaflet-tile {
-  filter: sepia(1) saturate(2.6) hue-rotate(180deg) brightness(1.15);
-}
-.stk-mapwrap .leaflet-tile-pane::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(21, 34, 56, 0.45);
-  mix-blend-mode: multiply;
-  pointer-events: none;
-  z-index: 1;
-}
+/* Conventional street-map colours (see BASEMAP_STYLE). The old sepia +
+   hue-rotate tint and the navy multiply overlay are deliberately gone: they
+   existed only to drag CARTO's grey dark tiles toward brand navy, and on a
+   normal basemap they'd just muddy it. Brand presence now comes from the
+   pins, the gold panel borders and the surrounding chrome. */
+.stk-mapwrap .leaflet-container { background: var(--map-bg); outline: none; }
 
 /* Map key — top-left, where the zoom buttons used to sit */
 .stk-mapkey {
@@ -18702,52 +18789,56 @@ function buildKitHtml(s, research, brand) {
 }
 .stk-mapwrap .leaflet-control-zoom-in { border-bottom: none !important; }
 
-/* Custom cluster + pin styles — glass-outlined gold so they read clearly
-   against the navy map but stay visually light/translucent. */
+/* Custom cluster + pin styles, tuned for the LIGHT street basemap.
+   The previous treatment was translucent gold with an outer glow, which
+   depended on a near-black map behind it. On pale land that reads as a
+   faint smudge, so both now use a solid navy body with a gold rim: navy
+   carries the contrast, gold carries the brand. */
 .stk-cluster {
   display: flex; align-items: center; justify-content: center;
-  background: rgba(200, 169, 81, 0.12);
-  color: var(--gold);
+  background: var(--map-ink);
+  color: var(--gold-light);
   font-family: 'DM Mono', monospace; font-weight: 700;
   font-size: 14px;
   border: 2px solid var(--gold);
   border-radius: 50%;
+  /* White halo separates the bubble from busy streets underneath. */
   box-shadow:
-    0 0 0 4px rgba(200, 169, 81, 0.10),
-    0 0 14px rgba(200, 169, 81, 0.45),
-    inset 0 0 10px rgba(200, 169, 81, 0.18);
-  text-shadow: 0 0 4px rgba(200, 169, 81, 0.6);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+    0 0 0 3px rgba(255, 255, 255, 0.85),
+    0 2px 8px rgba(14, 27, 46, 0.35);
 }
 .stk-pin {
   position: relative;
   width: 28px; height: 28px;
-  /* Solid gold body with a subtle highlight gradient for a glassy sheen. */
-  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 55%, #A88A36 100%);
+  background: linear-gradient(135deg, #1B2E4A 0%, var(--map-ink) 60%, #060D18 100%);
   border: 2px solid var(--gold);
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
   box-shadow:
-    0 0 0 1px rgba(200, 169, 81, 0.35),
-    0 0 14px rgba(200, 169, 81, 0.55),
-    inset 1px 1px 4px rgba(255, 240, 200, 0.45),
-    inset -1px -2px 4px rgba(0, 0, 0, 0.25);
+    0 0 0 2px rgba(255, 255, 255, 0.8),
+    0 3px 8px rgba(14, 27, 46, 0.4);
   cursor: pointer;
 }
-/* Inner "lens" circle — dark cut-out reads as the classic pin lens. */
+/* Inner "lens" circle — gold cut-out reads as the classic pin lens and
+   puts the brand colour where the eye lands. */
 .stk-pin::after {
   content: '';
   position: absolute;
   top: 50%; left: 50%;
   width: 10px; height: 10px;
-  background: var(--black-card);
-  border: 1.5px solid rgba(0, 0, 0, 0.35);
+  background: var(--gold);
   border-radius: 50%;
   transform: translate(-50%, -50%) rotate(45deg);
-  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.5);
 }
-.stk-pin.active { box-shadow: 0 0 0 2px var(--gold), 0 0 20px rgba(200, 169, 81, 0.8); }
+.stk-pin.active {
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 60%, #A88A36 100%);
+  border-color: var(--map-ink);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.9),
+    0 0 0 4px var(--gold),
+    0 4px 12px rgba(14, 27, 46, 0.5);
+}
+.stk-pin.active::after { background: var(--map-ink); }
 .leaflet-marker-icon.stk-pin-wrap { background: transparent !important; border: none !important; }
 
 /* Right pane (list of projects beside map). Acts as a query
@@ -20499,20 +20590,11 @@ function buildKitHtml(s, research, brand) {
   grid-template-columns: minmax(0, 1fr) minmax(min(400px, 100%), 52%);
   height: 100%;
 }
-.rsc-mapwrap { position: relative; background: var(--black-card); border-right: 1px solid var(--gold-border); }
+.rsc-mapwrap { position: relative; background: var(--map-bg); border-right: 1px solid var(--gold-border); }
 .rsc-map { position: absolute; inset: 0; }
-.rsc-mapwrap .leaflet-container { background: var(--black-card); outline: none; font-family: 'Outfit', system-ui, sans-serif; }
-.rsc-mapwrap .leaflet-tile {
-  filter: sepia(1) saturate(2.6) hue-rotate(180deg) brightness(1.15);
-}
-.rsc-mapwrap .leaflet-tile-pane::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(21, 34, 56, 0.45);
-  mix-blend-mode: multiply;
-  pointer-events: none;
-  z-index: 1;
-}
+/* Normal street-map colours; the navy tint that used to sit over the old
+   dark tiles is gone (see the matching note on .stk-mapwrap). */
+.rsc-mapwrap .leaflet-container { background: var(--map-bg); outline: none; }
 
 .rsc-mapkey {
   position: absolute; top: 16px; left: 16px; z-index: 500;
@@ -20566,45 +20648,39 @@ function buildKitHtml(s, research, brand) {
 .rsc-mapwrap .leaflet-control-zoom a.leaflet-disabled { opacity: 0.4; }
 .rsc-mapwrap .leaflet-control-zoom-in { border-bottom: none !important; }
 
+/* Matches .stk-cluster / .stk-pin — solid navy with a gold rim so the
+   markers hold up against the light street basemap. */
 .rsc-cluster {
   display: flex; align-items: center; justify-content: center;
-  background: rgba(200, 169, 81, 0.12);
-  color: var(--gold);
+  background: var(--map-ink);
+  color: var(--gold-light);
   font-family: 'DM Mono', monospace; font-weight: 700;
   font-size: 14px;
   border: 2px solid var(--gold);
   border-radius: 50%;
   box-shadow:
-    0 0 0 4px rgba(200, 169, 81, 0.10),
-    0 0 14px rgba(200, 169, 81, 0.45),
-    inset 0 0 10px rgba(200, 169, 81, 0.18);
-  text-shadow: 0 0 4px rgba(200, 169, 81, 0.6);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+    0 0 0 3px rgba(255, 255, 255, 0.85),
+    0 2px 8px rgba(14, 27, 46, 0.35);
 }
 .rsc-pin {
   position: relative;
   width: 28px; height: 28px;
-  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 55%, #A88A36 100%);
+  background: linear-gradient(135deg, #1B2E4A 0%, var(--map-ink) 60%, #060D18 100%);
   border: 2px solid var(--gold);
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
   box-shadow:
-    0 0 0 1px rgba(200, 169, 81, 0.35),
-    0 0 14px rgba(200, 169, 81, 0.55),
-    inset 1px 1px 4px rgba(255, 240, 200, 0.45),
-    inset -1px -2px 4px rgba(0, 0, 0, 0.25);
+    0 0 0 2px rgba(255, 255, 255, 0.8),
+    0 3px 8px rgba(14, 27, 46, 0.4);
   cursor: pointer;
 }
 .rsc-pin::after {
   content: '';
   position: absolute; top: 50%; left: 50%;
   width: 10px; height: 10px;
-  background: var(--black-card);
-  border: 1.5px solid rgba(0, 0, 0, 0.35);
+  background: var(--gold);
   border-radius: 50%;
   transform: translate(-50%, -50%) rotate(45deg);
-  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.5);
 }
 .leaflet-marker-icon.rsc-pin-wrap { background: transparent !important; border: none !important; }
 
@@ -21493,6 +21569,10 @@ function buildKitHtml(s, research, brand) {
     .fly-contact-btn { display: none; }
     .fly-section { page-break-inside: avoid; }
     #fly-map { height: 320px; }
+    /* The basemap is a WebGL canvas (see createBaseLayer). It prints because
+       preserveDrawingBuffer is on; the zoom buttons are screen furniture and
+       would otherwise print as two grey squares over the map. */
+    #fly-map .leaflet-control-zoom { display: none !important; }
     /* Rasterised plans print properly (an embedded PDF never did). Drop the
        on-screen controls and let the plan take the page. */
     .fp-hint, .fp-pager, .fp-original { display: none !important; }
@@ -22797,12 +22877,11 @@ function buildKitHtml(s, research, brand) {
     if (_flyMap) { _flyMap.remove(); _flyMap = null; }
     _flyMap = L.map('fly-map', {
       center: [lat, lng], zoom: 15,
-      zoomControl: true, attributionControl: true, scrollWheelZoom: false
+      zoomControl: true, attributionControl: true, scrollWheelZoom: false,
+      // maxZoom must live here: the GL basemap supplies none (see createBaseLayer).
+      maxZoom: 19, minZoom: 3,
     });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
-      subdomains: 'abcd', maxZoom: 19
-    }).addTo(_flyMap);
+    createBaseLayer(_flyMap);
     L.marker([lat, lng]).addTo(_flyMap)
       .bindPopup((project.name || 'Property') + '<br>' + (project.address || ''));
   }
@@ -23160,10 +23239,10 @@ function buildKitHtml(s, research, brand) {
     _rsrMap = L.map('rsr-map', {
       center: [lat, lng], zoom: 13,
       zoomControl: true, scrollWheelZoom: false, attributionControl: true,
+      // maxZoom must live here: the GL basemap supplies none (see createBaseLayer).
+      maxZoom: 19, minZoom: 3,
     });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap © CARTO', maxZoom: 19, subdomains: 'abcd',
-    }).addTo(_rsrMap);
+    createBaseLayer(_rsrMap);
 
     // Suburb boundary polygon (when available); fit map to the polygon's bounds.
     if (r.boundary_geojson && (r.boundary_geojson.type === 'Polygon' || r.boundary_geojson.type === 'MultiPolygon')) {
@@ -23173,8 +23252,11 @@ function buildKitHtml(s, research, brand) {
       const brand = getComputedStyle(wrapper).getPropertyValue('--f-primary').trim()
                  || getComputedStyle(wrapper).getPropertyValue('--f-accent').trim()
                  || '#1E2733';
+      // White-labelled surface, so the partner's own brand colour stays —
+      // but weight/opacity come up to hold the outline against the light
+      // street basemap (see SUBURB_BOUNDARY_STYLE for the TPCH-brand twin).
       const layer = L.geoJSON(r.boundary_geojson, {
-        style: () => ({ color: brand, weight: 2.5, opacity: 0.95, fillColor: brand, fillOpacity: 0.14 }),
+        style: () => ({ color: brand, weight: 3, opacity: 1, fillColor: brand, fillOpacity: 0.18 }),
       });
       layer.addTo(_rsrMap);
       // maxZoom cap stops Leaflet zooming into a single street when the
@@ -23723,12 +23805,10 @@ function renderResearchMap(reports) {
       minZoom: 3, maxZoom: 18,
       worldCopyJump: false,
     });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd', maxZoom: 19,
-    }).addTo(rscLeafletMap);
+    createBaseLayer(rscLeafletMap);
     L.control.zoom({ position: 'bottomleft' }).addTo(rscLeafletMap);
     L.control.attribution({ prefix: false, position: 'bottomright' })
-      .addAttribution('<span style="font-size:9px;color:#555">© CARTO © OSM</span>')
+
       .addTo(rscLeafletMap);
     rscMarkerCluster = L.markerClusterGroup({
       maxClusterRadius: 50,

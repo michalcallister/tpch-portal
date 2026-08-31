@@ -4,7 +4,7 @@ This document captures every layout, styling, and behavioural decision baked
 into the Stock Portal redesign so the same patterns can be applied to other
 pages (e.g. the Research page) in a fresh session.
 
-Everything below lives in the single SPA file [tpch-portal/index.html](tpch-portal/index.html) — there's no build step or component framework.
+Everything below lives in the single SPA file [tpch-portal/index.html](../index.html) — there's no build step or component framework.
 
 ---
 
@@ -35,6 +35,8 @@ The whole page must fit inside the viewport with **no document scroll**.
 --black:       #080F1A    /* darkest — header strip          */
 --black-soft:  #0F1B2D    /* recessed input surfaces         */
 --black-card:  #152238    /* nav + main centre tone          */
+--map-bg:      #F8F4F0    /* map ground (light basemap)      */
+--map-ink:     #0E1B2E    /* pins/overlays on the light map  */
 --black-hover: #1A2D47    /* hover / row hover               */
 --grey:        #2A3A50
 --grey-mid:    #5A6878
@@ -273,7 +275,7 @@ relocates the existing pill rows. Dropdown buttons reset `page = 1` and call
 .<x>-body { flex: 1; overflow: hidden; display: flex; min-height: 0; }
 .<x>-body > * { flex: 1; min-width: 0; min-height: 0; }
 .<x>-projects-map { display: grid; grid-template-columns: minmax(0, 1fr) minmax(720px, 58%); height: 100%; }
-.<x>-mapwrap { position: relative; background: var(--black-card); border-right: 1px solid var(--gold-border); }
+.<x>-mapwrap { position: relative; background: var(--map-bg); border-right: 1px solid var(--gold-border); }
 .<x>-map { position: absolute; inset: 0; }
 ```
 
@@ -288,9 +290,19 @@ CDN imports added to `<head>`:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
 
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.css">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+<script src="https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
 ```
+
+**Pin `maplibre-gl-leaflet` at 0.1.4 or later.** On 0.1.2, anything above
+Leaflet zoom 15 silently degrades: tiles never finish loading, so buildings
+and street labels never render and the map falls back to a bare road grid.
+No error is thrown, and it looks correct at suburb zoom, so it only shows up
+when someone zooms in to a specific property.
 
 ```js
 xLeafletMap = L.map(mapEl, {
@@ -299,12 +311,16 @@ xLeafletMap = L.map(mapEl, {
   attributionControl: false,
   minZoom: 3, maxZoom: 18,
 });
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  subdomains: 'abcd', maxZoom: 19,
-}).addTo(xLeafletMap);
+// Always go through the shared helper — never hardcode a tile URL. It sets
+// the basemap style and the print-critical canvas options in one place.
+// The map above MUST declare maxZoom: a GL basemap supplies none, and
+// without it Leaflet throws "Map has no maxZoom specified" and clustering
+// breaks.
+createBaseLayer(xLeafletMap);
 L.control.zoom({ position: 'bottomleft' }).addTo(xLeafletMap);
+// Empty on purpose: the GL layer writes the OpenFreeMap/OSM credit into this
+// control on load. Seeding text here renders a duplicate line.
 L.control.attribution({ prefix: false, position: 'bottomright' })
-  .addAttribution('<span style="font-size:9px;color:#555">© CARTO © OSM</span>')
   .addTo(xLeafletMap);
 
 xMarkerCluster = L.markerClusterGroup({
@@ -322,25 +338,25 @@ xMarkerCluster = L.markerClusterGroup({
 xLeafletMap.addLayer(xMarkerCluster);
 ```
 
-### 7a. Navy tile tint (so the map flows into the panel)
+### 7a. Light map ground
+
+The basemap uses conventional street-map colours, so the map is a LIGHT
+surface inside the dark portal shell. Give the wrapper and the Leaflet
+container the same light ground as the basemap's own land colour, or a navy
+wrapper flashes dark before the first tiles paint.
 
 ```css
-.<x>-mapwrap { background: var(--black-card); border-right: 1px solid var(--gold-border); }
-.leaflet-container { background: var(--black-card); }
-
-/* Tint the Carto Dark Matter tiles toward the brand navy. */
-.<x>-mapwrap .leaflet-tile {
-  filter: sepia(1) saturate(2.6) hue-rotate(180deg) brightness(1.15);
-}
-.<x>-mapwrap .leaflet-tile-pane::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(21, 34, 56, 0.45);
-  mix-blend-mode: multiply;
-  pointer-events: none;
-  z-index: 1;
-}
+.<x>-mapwrap { background: var(--map-bg); border-right: 1px solid var(--gold-border); }
+.<x>-mapwrap .leaflet-container { background: var(--map-bg); outline: none; }
 ```
+
+There is no tile filter any more. The old `sepia + hue-rotate` tint and the
+navy multiply overlay existed only to drag CARTO's grey dark tiles toward
+brand navy; on a normal basemap they just muddy it. A CSS filter also cannot
+work here any more: the basemap is a single WebGL canvas, not a grid of
+`<img>` tiles, so restyling means editing the style JSON rather than
+filtering the DOM. Brand presence comes from the pins, the gold panel
+borders and the surrounding chrome.
 
 ### 7b. Zoom buttons (bottom-left, navy)
 
@@ -406,56 +422,67 @@ xLeafletMap.addLayer(xMarkerCluster);
 .<x>-mapkey-pin { color: var(--gold); font-size: 16px; line-height: 1; }
 ```
 
-### 7d. Pins — solid gold with glass sheen
+### 7d. Pins — solid navy with a gold lens
 
 ```css
+/* Navy body, gold rim, white halo. The halo is what separates the pin from
+   busy streets underneath — without it the marker dissolves into the map. */
 .<x>-pin {
   position: relative;
   width: 28px; height: 28px;
-  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 55%, #A88A36 100%);
+  background: linear-gradient(135deg, #1B2E4A 0%, var(--map-ink) 60%, #060D18 100%);
   border: 2px solid var(--gold);
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
   box-shadow:
-    0 0 0 1px rgba(200,169,81,0.35),
-    0 0 14px rgba(200,169,81,0.55),
-    inset 1px 1px 4px rgba(255,240,200,0.45),
-    inset -1px -2px 4px rgba(0,0,0,0.25);
+    0 0 0 2px rgba(255,255,255,0.8),
+    0 3px 8px rgba(14,27,46,0.4);
   cursor: pointer;
 }
-/* Inner "lens" — counter-rotated so it stays a circle */
+/* Inner "lens" — counter-rotated so it stays a circle. Gold, so the brand
+   colour sits where the eye lands. */
 .<x>-pin::after {
   content: '';
   position: absolute; top: 50%; left: 50%;
   width: 10px; height: 10px;
-  background: var(--black-card);
-  border: 1.5px solid rgba(0,0,0,0.35);
+  background: var(--gold);
   border-radius: 50%;
   transform: translate(-50%, -50%) rotate(45deg);
-  box-shadow: inset 0 0 3px rgba(0,0,0,0.5);
 }
+/* Selected pin inverts: gold body, navy rim and lens. */
+.<x>-pin.active {
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 60%, #A88A36 100%);
+  border-color: var(--map-ink);
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,0.9),
+    0 0 0 4px var(--gold),
+    0 4px 12px rgba(14,27,46,0.5);
+}
+.<x>-pin.active::after { background: var(--map-ink); }
 .leaflet-marker-icon.<x>-pin-wrap { background: transparent !important; border: none !important; }
 ```
 
-### 7e. Cluster bubble — outlined gold, transparent fill
+### 7e. Cluster bubble — solid navy, gold rim
 
 ```css
 .<x>-cluster {
   display: flex; align-items: center; justify-content: center;
-  background: rgba(200,169,81,0.12);
-  color: var(--gold);
+  background: var(--map-ink);
+  color: var(--gold-light);
   font-family: 'DM Mono', monospace; font-weight: 700;
   font-size: 14px;
   border: 2px solid var(--gold);
   border-radius: 50%;
+  /* Same white halo as the pin, for the same reason. */
   box-shadow:
-    0 0 0 4px rgba(200,169,81,0.10),
-    0 0 14px rgba(200,169,81,0.45),
-    inset 0 0 10px rgba(200,169,81,0.18);
-  text-shadow: 0 0 4px rgba(200,169,81,0.6);
-  backdrop-filter: blur(2px);
+    0 0 0 3px rgba(255,255,255,0.85),
+    0 2px 8px rgba(14,27,46,0.35);
 }
 ```
+
+Translucent gold fills and outer glows do NOT work on this basemap: they were
+built against a near-black map and read as a faint smudge on pale land. Solid
+navy carries the contrast, gold carries the brand.
 
 ### 7f. Marker creation
 
@@ -836,7 +863,7 @@ ALTER TABLE projects
   ADD COLUMN IF NOT EXISTS longitude numeric(9,6);
 ```
 
-Backfill script lives at [tpch-portal/scripts/backfill-project-coords.mjs](tpch-portal/scripts/backfill-project-coords.mjs):
+Backfill script lives at [tpch-portal/scripts/backfill-project-coords.mjs](../scripts/backfill-project-coords.mjs):
 geocodes any row missing coords via Nominatim (1 req/sec), idempotent,
 skips rows that already have lat/lng.
 
@@ -897,8 +924,8 @@ SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… node scripts/backfill-project-coo
 
 | File | Purpose |
 |---|---|
-| [tpch-portal/index.html](tpch-portal/index.html) | All markup, CSS, JS for the page (single-file SPA) |
-| [tpch-portal/scripts/backfill-project-coords.mjs](tpch-portal/scripts/backfill-project-coords.mjs) | One-off geocode script (Nominatim + service-role PATCH) |
+| [tpch-portal/index.html](../index.html) | All markup, CSS, JS for the page (single-file SPA) |
+| [tpch-portal/scripts/backfill-project-coords.mjs](../scripts/backfill-project-coords.mjs) | One-off geocode script (Nominatim + service-role PATCH) |
 | Supabase migration `add_project_lat_lng` | `latitude`/`longitude` columns on `projects` |
 
 ---
