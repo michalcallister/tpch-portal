@@ -4388,17 +4388,6 @@
                 </div>
               </div>
               <div class="stk-filter-group">
-                <span class="stk-filter-label">SMSF Eligible</span>
-                <div class="stk-toggle-row">
-                  <span class="stk-toggle-desc">Show SMSF only</span>
-                  <label class="stk-toggle">
-                    <input type="checkbox" id="stk-smsf-toggle" onchange="toggleStkSmsf()">
-                    <div class="stk-toggle-track"></div>
-                    <div class="stk-toggle-thumb"></div>
-                  </label>
-                </div>
-              </div>
-              <div class="stk-filter-group">
                 <span class="stk-filter-label">Rental Yield</span>
                 <div class="stk-pill-row">
                   <button class="stk-pill active" onclick="toggleStkPill('yieldMin',0,this)">Any</button>
@@ -4532,7 +4521,6 @@
             <span id="spj-location">—</span>
             <span id="spj-type-badge"></span>
             <span id="spj-status-badge"></span>
-            <span id="spj-smsf-badge" style="display:none" class="stk-badge stk-badge-smsf">SMSF</span>
           </div>
         </div>
       </div>
@@ -4672,17 +4660,6 @@
               <span class="stk-fdrop-badge" id="spj-fdrop-more-badge" style="display:none">0</span>
             </button>
             <div class="stk-fdrop-pop stk-fdrop-pop-wide stk-fdrop-pop-right">
-              <div class="stk-filter-group">
-                <span class="stk-filter-label">SMSF Eligible</span>
-                <div class="stk-toggle-row">
-                  <span class="stk-toggle-desc">Show SMSF only</span>
-                  <label class="stk-toggle">
-                    <input type="checkbox" id="spj-smsf-toggle" onchange="toggleLotSmsf()">
-                    <div class="stk-toggle-track"></div>
-                    <div class="stk-toggle-thumb"></div>
-                  </label>
-                </div>
-              </div>
               <div class="stk-filter-group">
                 <span class="stk-filter-label">Rental Yield</span>
                 <div class="stk-pill-row">
@@ -5037,7 +5014,6 @@
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <span class="stk-lot-header-project" id="slg-project" onclick="stkListingBack()">—</span>
             <span id="slg-avail-badge"></span>
-            <span id="slg-smsf-badge" style="display:none" class="stk-badge stk-badge-smsf">SMSF</span>
           </div>
         </div>
       </div>
@@ -5266,10 +5242,6 @@
               <span class="stk-yield-key">Gross Yield</span>
               <span class="stk-yield-val" id="slg-sb-yield">—</span>
             </div>
-          </div>
-
-          <div id="slg-sb-smsf" style="display:none;margin-bottom:12px;">
-            <span class="stk-badge stk-badge-smsf" style="display:inline-block;padding:5px 12px;font-size:11px;">SMSF Eligible</span>
           </div>
 
           <button class="stk-sidebar-btn" id="slg-reserve-btn" onclick="openReserveModal()">Reserve This Property</button>
@@ -9233,6 +9205,14 @@
   // ─── WHAT'S NEW / CHANGELOG ──────────────────────────────
 
   const CHANGELOG = [
+    {
+      version: '3.24',
+      date: '1 Sep 2026',
+      title: 'SMSF labelling removed',
+      items: [
+        'SMSF badges and the "SMSF Eligible" filter have been removed from the portal, and the SMSF line no longer appears in Investor Kits. SMSF buyers can no longer purchase with a loan, so flagging stock as SMSF-eligible was no longer useful to you or your clients.',
+      ]
+    },
     {
       version: '3.23',
       date: '1 Sep 2026',
@@ -13339,8 +13319,7 @@
       const beds = r.bedrooms != null ? r.bedrooms + ' bed' : null;
       const sqm  = r.sqm != null      ? Math.round(r.sqm) + 'm²' : null;
       const yld  = r.yield_pct != null? r.yield_pct + '% yield' : null;
-      const smsf = r.smsf_eligible    ? 'SMSF' : null;
-      const stats = [beds, sqm, yld, smsf].filter(Boolean);
+      const stats = [beds, sqm, yld].filter(Boolean);
       const priceStr = r.price != null ? '$' + Math.round(r.price).toLocaleString('en-AU') : '';
       return `<div class="ask-card" onclick="askOpenStock(${argSafe(r.id)})">
         <div class="ask-card-kind">${escHtml(r.development_type || 'Stock')}</div>
@@ -14615,7 +14594,7 @@ let stkPriceRange = { min: 200000, max: 5000000 };
 let stkFilter = {
   avail: 'all', states: [], types: [],
   beds: 'any', priceMin: 200000, priceMax: 5000000,
-  projStatus: 'all', smsf: false, yieldMin: 0, titleWindow: 'any',
+  projStatus: 'all', yieldMin: 0, titleWindow: 'any',
   search: '',
   page: 1,
   pageSize: 10,
@@ -14678,7 +14657,7 @@ function fmtTitleDate(s) {
 // Stamp duty rates by state — sourced from Monday.com Stamp Duty Estimate formula.
 // Update here if Monday.com formula rates are changed.
 const STAMP_DUTY_RATES = { NSW:0.04, VIC:0.055, QLD:0.038, WA:0.045, SA:0.05, TAS:0.037, ACT:0.037, NT:0.062 };
-let lotFilter = { beds: 'any', avail: 'all', types: [], priceMin: 200000, priceMax: 5000000, smsf: false, yieldMin: 0, titleWindow: 'any', search: '' };
+let lotFilter = { beds: 'any', avail: 'all', types: [], priceMin: 200000, priceMax: 5000000, yieldMin: 0, titleWindow: 'any', search: '' };
 let lotPriceRange = { min: 200000, max: 5000000 }; // price-slider bounds for the CURRENT project's lots
 let currentStkView = 'grid';
 let stkAllSort = { col: null, dir: 'asc' };
@@ -15196,7 +15175,6 @@ function stockLotMatchesFilters(s, f, sq) {
   if (s.total_contract) {
     if (s.total_contract < effPriceMin || s.total_contract > effPriceMax) return false;
   }
-  if (f.smsf && !s.smsf_eligible) return false;
   if (f.yieldMin > 0) {
     const _ar = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null);
     const _y = (_ar && s.total_contract) ? (_ar / s.total_contract * 100) : 0;
@@ -15342,7 +15320,7 @@ function renderProjectCardHtml(p) {
       ${heroHtml}
       <div class="stk-card-hero-placeholder" ${placeholderStyle}>${initial}</div>
       <div class="stk-card-badges">
-        ${p.smsf_eligible ? '<span class="stk-badge stk-badge-smsf" style="font-size:11px;padding:2px 7px;">SMSF</span>' : '<span></span>'}
+        <span></span>
         ${p.sales_status === 'Sold Out'
           ? '<span class="stk-badge stk-badge-settled">Sold Out</span>'
           : p.sales_status === 'Coming Soon'
@@ -15400,7 +15378,6 @@ function renderProjectRows(projects) {
       <div class="stk-row-thumb">
         ${heroHtml}
         <div class="stk-row-thumb-placeholder" ${heroSrc ? 'style="display:none"' : ''}>${initial}</div>
-        ${p.smsf_eligible ? '<span class="stk-row-thumb-smsf">SMSF</span>' : ''}
       </div>
       <div class="stk-row-body">
         <div class="stk-row-body-top">
@@ -15573,7 +15550,6 @@ function updateStkFdropSummaries() {
   // More-filters badge count
   let extras = 0;
   if (f.beds !== 'any') extras++;
-  if (f.smsf) extras++;
   if (f.yieldMin > 0) extras++;
   if (f.titleWindow !== 'any') extras++;
   const badge = document.getElementById('stk-fdrop-more-badge');
@@ -15586,7 +15562,7 @@ function updateStkFdropSummaries() {
 
 // Re-sync every stock-filter control to the current stkFilter state.
 // Called after loadStockProjects() so when a partner navigates back from
-// a property the pill highlights, search box, smsf toggle, price slider,
+// a property the pill highlights, search box, price slider,
 // and PROJECTS/STOCK tab all reflect the filter they had set, not the
 // hardcoded HTML defaults. Also called by resetStkFilters() to keep one
 // canonical place that knows how to mirror stkFilter into the DOM.
@@ -15618,9 +15594,7 @@ function applyStkFilterToUI() {
     }
   });
 
-  // SMSF, search input
-  const smsf   = document.getElementById('stk-smsf-toggle');
-  if (smsf)   smsf.checked = !!f.smsf;
+  // Search input
   const search = document.getElementById('stk-search');
   if (search) search.value = f.search || '';
 
@@ -15725,14 +15699,6 @@ function toggleStkMulti(group, value, el) {
   renderStockBrowse();
 }
 
-function toggleStkSmsf() {
-  stkFilter.smsf = document.getElementById('stk-smsf-toggle').checked;
-  stkFilter.page = 1;
-  updateStkFdropSummaries();
-  saveStkFilter();
-  renderStockBrowse();
-}
-
 function updatePriceFilter() {
   const minEl = document.getElementById('stk-range-min');
   const maxEl = document.getElementById('stk-range-max');
@@ -15766,7 +15732,6 @@ function resetStkFilters() {
   stkFilter.priceMin = stkPriceRange.min;
   stkFilter.priceMax = stkPriceRange.max;
   stkFilter.projStatus = 'all';
-  stkFilter.smsf = false;
   stkFilter.yieldMin = 0;
   stkFilter.titleWindow = 'any';
   stkFilter.search = '';
@@ -15778,7 +15743,6 @@ function resetStkFilters() {
     const t = b.textContent.trim().toLowerCase();
     if (t === 'all' || t === 'any') b.classList.add('active');
   });
-  const smsf = document.getElementById('stk-smsf-toggle'); if (smsf) smsf.checked = false;
   const search = document.getElementById('stk-search'); if (search) search.value = '';
   const minR = document.getElementById('stk-range-min'); if (minR) minR.value = stkPriceRange.min;
   const maxR = document.getElementById('stk-range-max'); if (maxR) maxR.value = stkPriceRange.max;
@@ -15961,7 +15925,7 @@ function renderStockMap(projects) {
 function _stkMapFitSignature() {
   const f = stkFilter;
   return JSON.stringify([f.avail, f.states, f.types, f.beds, f.priceMin, f.priceMax,
-    f.projStatus, f.smsf, f.yieldMin, f.titleWindow, f.search]);
+    f.projStatus, f.yieldMin, f.titleWindow, f.search]);
 }
 
 // Put the pins on the map via whichever layer matches the current toggles:
@@ -16081,7 +16045,6 @@ function openStkProjectPeek(id) {
   _stkPeek = { kind: 'project', id: id };
 
   const chips = [
-    p.smsf_eligible ? '<span class="stk-badge stk-badge-smsf">SMSF</span>' : '',
     p.sales_status === 'Sold Out'    ? '<span class="stk-badge stk-badge-settled">Sold Out</span>'
       : p.sales_status === 'Coming Soon' ? '<span class="stk-badge stk-badge-coming-soon">Coming Soon</span>'
       : '<span class="stk-avail-chip">Available</span>',
@@ -16126,7 +16089,6 @@ function openStkLotPeek(stockId) {
   const proj = (allProjects || []).find(x => x.id === s.project_id);
 
   const chips = [
-    s.smsf_eligible ? '<span class="stk-badge stk-badge-smsf">SMSF</span>' : '',
     `<span class="stk-badge ${stkAvailBadgeClass(s.availability)}">${escapeHtml(s.availability || '—')}</span>`,
   ].filter(Boolean).join('');
 
@@ -16195,7 +16157,6 @@ async function showStockProject(id) {
   const statusClass = stkProjStatusClass(p.project_status);
   document.getElementById('spj-status-badge').innerHTML =
     statusClass ? `<span class="stk-badge ${statusClass}">${p.project_status}</span>` : '';
-  document.getElementById('spj-smsf-badge').style.display = p.smsf_eligible ? '' : 'none';
 
   // Stats bar
   document.getElementById('spj-total-lots').textContent  = p.stock_to_sell || p.total_volume || '—';
@@ -16330,7 +16291,7 @@ async function loadProjectStock(projectId) {
     if (maxR) { maxR.min = lotPriceRange.min; maxR.max = lotPriceRange.max; }
 
     // Carry through the filters active on the Projects/Stock browse screen
-    // (beds, availability, property type, SMSF, yield, settlement window,
+    // (beds, availability, property type, yield, settlement window,
     // search text) so drilling into a project keeps showing what the
     // partner already filtered for. Price range is clamped into this
     // project's own bounds so an inherited range from a different project
@@ -16340,7 +16301,6 @@ async function loadProjectStock(projectId) {
       beds: stkFilter.beds,
       avail: stkFilter.avail,
       types: [...stkFilter.types],
-      smsf: stkFilter.smsf,
       yieldMin: stkFilter.yieldMin,
       titleWindow: stkFilter.titleWindow,
       search: stkFilter.search,
@@ -16370,7 +16330,6 @@ function renderStockTable() {
     if (s.total_contract) {
       if (s.total_contract < effPriceMin || s.total_contract > effPriceMax) return false;
     }
-    if (lf.smsf && !s.smsf_eligible) return false;
     if (lf.yieldMin > 0) {
       const _ar = s.annual_rent || (s.rent_per_week ? s.rent_per_week * 52 : null);
       const _y = (_ar && s.total_contract) ? (_ar / s.total_contract * 100) : 0;
@@ -16443,12 +16402,6 @@ function toggleLotMulti(group, value, el) {
   renderStockTable();
 }
 
-function toggleLotSmsf() {
-  lotFilter.smsf = document.getElementById('spj-smsf-toggle').checked;
-  updateLotFdropSummaries();
-  renderStockTable();
-}
-
 function onLotSearchInput() {
   lotFilter.search = document.getElementById('spj-search').value;
   renderStockTable();
@@ -16481,7 +16434,7 @@ function resetLotFilters() {
   lotFilter = {
     beds: 'any', avail: 'all', types: [],
     priceMin: lotPriceRange.min, priceMax: lotPriceRange.max,
-    smsf: false, yieldMin: 0, titleWindow: 'any', search: '',
+    yieldMin: 0, titleWindow: 'any', search: '',
   };
   applyLotFilterToUI();
   renderStockTable();
@@ -16521,9 +16474,6 @@ function applyLotFilterToUI() {
     }
   });
 
-  const smsf = document.getElementById('spj-smsf-toggle');
-  if (smsf) smsf.checked = !!lf.smsf;
-
   const minR = document.getElementById('spj-range-min');
   const maxR = document.getElementById('spj-range-max');
   if (minR) minR.value = lf.priceMin;
@@ -16557,7 +16507,6 @@ function updateLotFdropSummaries() {
     if (dr) dr.classList.toggle('has-value', !rangeIsAll);
   }
   let extras = 0;
-  if (lf.smsf) extras++;
   if (lf.yieldMin > 0) extras++;
   if (lf.titleWindow !== 'any') extras++;
   const badge = document.getElementById('spj-fdrop-more-badge');
@@ -16943,8 +16892,6 @@ function showStockListing(id) {
   document.getElementById('slg-project').textContent = s.project_name || '—';
   document.getElementById('slg-avail-badge').innerHTML =
     `<span class="stk-badge ${stkAvailBadgeClass(s.availability)}">${s.availability || '—'}</span>`;
-  document.getElementById('slg-smsf-badge').style.display = s.smsf_eligible ? '' : 'none';
-  document.getElementById('slg-sb-smsf').style.display    = s.smsf_eligible ? '' : 'none';
 
   // Specs bar
   document.getElementById('slg-beds').textContent  = fmtNum(s.bedrooms);
@@ -18528,7 +18475,6 @@ function buildKitHtml(s, research, brand) {
           ${row('Lot Size', s.lot_size_sqm ? s.lot_size_sqm.toFixed(1) + ' m²' : null)}
           ${row('Level', fn(s.level))}
           ${row('Lot Number', s.lot_number)}
-          ${row('SMSF Eligible', s.smsf_eligible ? 'Yes' : null)}
           ${row('Location', [s._suburb, s._state].filter(Boolean).join(', '))}
         </table>
 
@@ -19117,7 +19063,7 @@ function buildKitHtml(s, research, brand) {
   align-items: center;
   min-height: 116px;
   padding: 0 var(--space-lg) 0 0;
-  border-bottom: 1px solid rgba(201,168,76,0.10);
+  border-bottom: 1px solid var(--divider);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
   position: relative;
@@ -19128,7 +19074,7 @@ function buildKitHtml(s, research, brand) {
   width: clamp(140px, 22cqi, 240px);
   aspect-ratio: 240 / 96;
   height: auto;
-  background: linear-gradient(135deg, var(--black-hover) 0%, #1E1E18 100%);
+  background: linear-gradient(135deg, var(--black-hover) 0%, var(--black-soft) 100%);
   position: relative; overflow: hidden;
 }
 .stk-row-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -19136,13 +19082,6 @@ function buildKitHtml(s, research, brand) {
   width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 32px; color: rgba(201,168,76,0.25);
-}
-.stk-row-thumb-smsf {
-  position: absolute; top: 7px; left: 7px;
-  font-size: 10px; padding: 3px 7px;
-  background: rgba(201,168,76,0.92); color: var(--black);
-  font-family: 'DM Mono', monospace; font-weight: 700;
-  letter-spacing: 0.6px;
 }
 .stk-row-body {
   display: flex; flex-direction: column;
@@ -19261,7 +19200,7 @@ function buildKitHtml(s, research, brand) {
   pointer-events: none;
 }
 
-/* SMSF toggle */
+/* Toggle switch — used by the Research "Exclusive only" filter. */
 .stk-toggle-row { display: flex; align-items: center; justify-content: space-between; }
 .stk-toggle-desc { font-size: 14px; color: var(--grey-pale); }
 .stk-toggle {
@@ -19498,8 +19437,23 @@ function buildKitHtml(s, research, brand) {
 .stk-badge-development { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid var(--gold-border); }
 .stk-badge-off-plan   { background: rgba(90,90,82,0.2); color: var(--grey-light); border: 1px solid rgba(90,90,82,0.3); }
 
-/* SMSF */
-.stk-badge-smsf       { background: rgba(201,168,76,0.2); color: var(--gold-light); border: 1px solid var(--gold); }
+/* ── Badge text in light mode ──────────────────────────────────────────
+   Every badge pairs a low-alpha tint with a BRIGHT pastel text colour
+   (#5EC9C9, #E8A85E, #4CAF7A …). That pairing is built for a dark ground:
+   the tint stays dark and the pastel glows. Flip the ground to white and
+   the tint becomes a pale wash while the text stays pale, which measured
+   as low as 1.46:1.
+
+   The tints are fine as they are, so only the ink changes here. Each value
+   is the same hue darkened until it clears 4.5:1 against that badge's own
+   composited background, not against white. */
+:root[data-theme="light"] .stk-badge-apartment   { color: #0B5C5C; }  /* 5.77:1 */
+:root[data-theme="light"] .stk-badge-townhouse   { color: #35357A; }  /* 7.68:1 */
+:root[data-theme="light"] .stk-badge-hl          { color: #7A4A12; }  /* 5.45:1 */
+:root[data-theme="light"] .stk-badge-completed   { color: #1F6B45; }  /* 5.91:1 */
+:root[data-theme="light"] .stk-badge-under-offer { color: #2A55A0; }  /* 6.03:1 */
+:root[data-theme="light"] .stk-badge-developer   { color: #6B2E96; }  /* 6.97:1 */
+:root[data-theme="light"] .stk-avail-chip        { color: #1F6B45; }  /* 5.64:1 */
 
 /* Available count chip */
 .stk-avail-chip {
