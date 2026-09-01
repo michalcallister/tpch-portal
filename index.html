@@ -22,6 +22,23 @@
 <link rel="manifest" href="assets/brand/site.webmanifest">
 <meta name="theme-color" content="#080F1A">
 
+<!-- Apply the saved theme BEFORE first paint. If this ran with the rest of
+     the app JS the page would paint dark and then snap to light, which is
+     the flash every themed site gets wrong. Kept tiny and inline for that
+     reason. localStorage is wrapped because it throws outright in some
+     privacy modes; the catch just leaves the dark default in place. -->
+<script>
+(function () {
+  try {
+    if (localStorage.getItem('tpch-theme') === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      var m = document.querySelector('meta[name="theme-color"]');
+      if (m) m.setAttribute('content', '#FBFAF7');
+    }
+  } catch (e) { /* dark default stands */ }
+})();
+</script>
+
 <!-- Map stylesheets load non-blocking: no map exists on the login screen,
      so these shouldn't gate first paint. media="print" downloads without
      blocking render, then onload flips it to all. -->
@@ -91,6 +108,72 @@
     --sidebar-w-rail: 64px;
     --thumb-w-min: 140px;
     --thumb-w-max: 240px;
+
+    /* ── Always-on-dark ────────────────────────────────────
+       Some surfaces keep a dark ground in BOTH themes: the
+       login hero photo, the flyer's navy contact card, text
+       sitting on a gold button. Their foreground must not
+       follow the theme, or it inverts into the background
+       and disappears. These three never flip. Reach for them
+       whenever the ground behind the text is fixed rather
+       than themed. */
+    /* Row/grid separators. On dark a faint gold hairline reads fine, but
+       the same 8-10% gold on white is invisible, which flattens every
+       list into one block. Light gets a solid warm grey instead. */
+    --divider: rgba(201,168,76,0.10);
+
+    --on-dark:       #F5F3EE;
+    --on-dark-muted: #B8C2CC;
+    --on-dark-gold:  #C8A951;
+  }
+
+  /* ── LIGHT THEME ────────────────────────────────────────────────────
+     Set data-theme="light" on <html> to flip the portal to a light
+     surface. Dark stays the default; this is a toggle, not a
+     replacement.
+
+     A note on the naming, because it reads oddly at first: the tokens
+     are named for their DARK values (--black-card, --white) rather than
+     their role (--surface, --text). Renaming them would mean touching
+     ~2,000 var() references across a 24k-line file, so instead each
+     token keeps its ROLE and changes its value. Read --black-card as
+     "the card surface" and --white as "primary text", and the block
+     below makes sense.
+
+     Values are contrast-checked against the card (#FFFFFF) and page
+     (#FBFAF7) grounds. Every text token clears 4.5:1.
+
+     The gold is the important one. #C8A951 is only 2.27:1 on white and
+     is used as a TEXT colour in ~300 places, so it darkens to a bronze
+     (#8A6D2F, 4.87:1) that still reads as the brand. --gold-light
+     INVERTS: on dark it is brighter than gold for emphasis, on light it
+     must be darker, or emphasis text disappears. */
+  :root[data-theme="light"] {
+    --gold:        #7A5F28;   /* brand text + borders   6.01:1 on white,
+                                 5.18:1 on --gold-dim, 5.43:1 on active nav */
+    --gold-light:  #6E551F;   /* emphasis, darker here  7.04:1          */
+    --gold-pale:   #57431A;   /* strongest gold text                    */
+    --gold-dim:    rgba(138,109,47,0.08);
+    --gold-border: rgba(138,109,47,0.28);
+
+    --black:       #FBFAF7;   /* page ground                            */
+    --black-soft:  #F4F2ED;   /* recessed panels, table headers         */
+    --black-card:  #FFFFFF;   /* card + main content surface            */
+    --black-hover: #F0EDE6;   /* row/nav hover                          */
+
+    --grey:        #DCD7CC;   /* dividers + borders                     */
+    --grey-mid:    #767065;   /* faint labels           4.91:1          */
+    --grey-light:  #5F5A4E;   /* secondary text         6.86:1          */
+    --grey-pale:   #2E3238;   /* body text             12.89:1          */
+    --text-muted:  #5A6068;   /* muted body             6.35:1          */
+    --white:       #0E1B2E;   /* primary text/headings 17.29:1          */
+
+    --red:         #B03030;
+    --green:       #2E7D52;
+    --teal:        #0E7C80;
+    --teal-dim:    rgba(14,124,128,0.10);
+
+    --divider:     #DAD4C6;   /* visible hairline on white */
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -144,17 +227,19 @@
     top: 60px; left: 52px; right: 52px;
   }
 
+  /* The hero caption sits on the photo, so it uses the always-on-dark
+     tokens and stays light in both themes. */
   .login-image-label {
     display: inline-flex; align-items: center; gap: 10px;
     font-family: 'DM Mono', monospace;
-    font-size: 9px; color: var(--gold);
+    font-size: 9px; color: var(--on-dark-gold);
     letter-spacing: 3.5px; text-transform: uppercase;
     margin-bottom: 28px;
   }
 
   .login-image-label-dot {
     width: 5px; height: 5px; border-radius: 50%;
-    background: var(--gold); flex-shrink: 0;
+    background: var(--on-dark-gold); flex-shrink: 0;
     animation: pulse 2.5s ease-in-out infinite;
   }
 
@@ -166,12 +251,12 @@
     font-weight: 500;
     line-height: 1.0;
     letter-spacing: -1px;
-    color: var(--white);
+    color: var(--on-dark);
     text-shadow: 0 2px 28px rgba(8,15,26,0.6);
   }
 
   .login-image-tagline span {
-    color: var(--gold);
+    color: var(--on-dark-gold);
     font-style: italic;
     display: block;
   }
@@ -504,6 +589,38 @@
     background: var(--gold-dim);
     border-color: var(--gold);
   }
+
+  /* ── Theme toggle (sidebar bottom, above the Version link) ────────── */
+  .theme-toggle {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 12px; padding: 4px 0;
+    background: none; border: none; cursor: pointer;
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 10px; font-weight: 500; letter-spacing: 0.5px;
+    color: var(--text-muted);
+    transition: color 0.15s;
+    align-self: flex-start;
+  }
+  .theme-toggle:hover { color: var(--gold); }
+  .theme-toggle-track {
+    position: relative; flex: none;
+    width: 30px; height: 16px;
+    border: 1px solid var(--gold-border);
+    border-radius: 8px;
+    background: var(--black-soft);
+    transition: background 0.18s, border-color 0.18s;
+  }
+  .theme-toggle:hover .theme-toggle-track { border-color: var(--gold); }
+  .theme-toggle-thumb {
+    position: absolute; top: 2px; left: 2px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--gold);
+    transition: transform 0.18s ease, background 0.18s;
+  }
+  /* Thumb sits right when the LIGHT theme is on. */
+  :root[data-theme="light"] .theme-toggle-thumb { transform: translateX(14px); }
+  /* Collapsed rail: hide the word, keep the switch. */
+  #screen-portal.sidebar-collapsed .theme-toggle-label { display: none; }
 
   .version-tag {
     display: inline-flex; align-items: center; gap: 6px;
@@ -860,7 +977,7 @@
   .eng-leaderboard th.eng-sort-desc::after { content: ' ▼'; color: var(--gold); font-size: 10px; }
   .eng-leaderboard td {
     padding: 12px 12px; color: var(--white);
-    border-bottom: 1px solid rgba(201,168,76,0.08);
+    border-bottom: 1px solid var(--divider);
     vertical-align: middle;
   }
   .eng-leaderboard tbody tr:hover td { background: rgba(201,168,76,0.03); }
@@ -963,7 +1080,7 @@
   }
   .eng-bar-track {
     height: 14px; background: rgba(201,168,76,0.06);
-    border: 1px solid rgba(201,168,76,0.15);
+    border: 1px solid var(--divider);
   }
   .eng-bar-fill {
     height: 100%;
@@ -1106,7 +1223,7 @@
     display: grid; grid-template-columns: 24px 1fr auto;
     align-items: baseline; gap: 10px;
     padding: 8px 10px;
-    border: 1px solid rgba(201,168,76,0.08);
+    border: 1px solid var(--divider);
     background: rgba(201,168,76,0.015);
     transition: background 0.15s;
   }
@@ -1230,7 +1347,7 @@
     padding-top: 10px; border-top: 1px solid var(--gold-border);
   }
   .pdetail-day-events { display: flex; flex-direction: column; gap: 6px;
-    padding-top: 8px; border-top: 1px solid rgba(201,168,76,0.08); }
+    padding-top: 8px; border-top: 1px solid var(--divider); }
   .pdetail-event {
     display: grid; grid-template-columns: 60px 1fr; gap: 14px;
     align-items: baseline; font-size: 13px;
@@ -1330,7 +1447,7 @@
     text-transform: uppercase; letter-spacing: 0.8px; }
   .cp-funnel-track {
     height: 18px; background: rgba(201,168,76,0.06);
-    border: 1px solid rgba(201,168,76,0.15);
+    border: 1px solid var(--divider);
   }
   .cp-funnel-fill {
     height: 100%;
@@ -1440,7 +1557,7 @@
   .brief-pulse-row {
     display: flex; gap: 14px; align-items: flex-start;
     padding: 10px 0;
-    border-bottom: 1px dashed rgba(201,168,76,0.1);
+    border-bottom: 1px dashed var(--divider);
   }
   .brief-pulse-row:last-child { border-bottom: 0; }
   .brief-pulse-icon {
@@ -1843,6 +1960,8 @@
   }
 
   .score-badge.high { background: rgba(76,175,122,0.15); color: var(--green); }
+  /* Same washout as the stock badges: pale green on a pale green tint. */
+  :root[data-theme="light"] .score-badge.high { color: #1F6B45; }  /* 5.64:1 */
   .score-badge.med { background: rgba(201,168,76,0.15); color: var(--gold); }
   .score-badge.low { background: rgba(201,76,76,0.15); color: var(--red); }
 
@@ -1857,7 +1976,7 @@
 
   .activity-item {
     display: flex; gap: 14px; padding: 14px 0;
-    border-bottom: 1px solid rgba(201,168,76,0.08);
+    border-bottom: 1px solid var(--divider);
     font-size: 14px;
     animation: fadeUp 0.5s ease both;
   }
@@ -2157,7 +2276,7 @@
     border-bottom: 1px solid var(--gold-border); white-space: nowrap;
   }
   .tm-table thead th.tm-th-actions { text-align: right; }
-  .tm-row { border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.12s; }
+  .tm-row { border-bottom: 1px solid var(--divider); transition: background 0.12s; }
   .tm-row:hover { background: rgba(255,255,255,0.025); }
   .tm-row td { padding: 12px 14px; vertical-align: middle; }
   .tm-name { font-size: 13.5px; font-weight: 500; color: var(--white); line-height: 1.3; }
@@ -2171,7 +2290,7 @@
     display: inline-block; padding: 3px 10px; border-radius: 99px;
     font-size: 11px; line-height: 1.5; white-space: nowrap;
   }
-  .tm-access { color: var(--grey-pale); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); }
+  .tm-access { color: var(--grey-pale); background: rgba(255,255,255,0.05); border: 1px solid var(--divider); }
   .tm-access.tm-admin { color: var(--gold); background: var(--gold-dim); border-color: var(--gold-border); }
   .tm-sees { color: var(--gold); background: var(--gold-dim); border: 1px solid var(--gold-border); }
   .tm-sees.tm-hidden { color: var(--grey-light); background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.09); }
@@ -2282,7 +2401,7 @@
     font-size: 15px; color: var(--grey-pale);
     padding: 9px 0; padding-left: 18px; position: relative;
     line-height: 1.7;
-    border-bottom: 1px solid rgba(201,168,76,0.06);
+    border-bottom: 1px solid var(--divider);
   }
 
   .bullet-list li:last-child { border-bottom: none; }
@@ -2322,7 +2441,7 @@
   .data-row {
     display: flex; justify-content: space-between; align-items: center;
     padding: 10px 0;
-    border-bottom: 1px solid rgba(201,168,76,0.06);
+    border-bottom: 1px solid var(--divider);
     font-size: 14px;
   }
 
@@ -2334,7 +2453,7 @@
   .download-item {
     display: flex; align-items: center; gap: 10px;
     padding: 12px 16px;
-    border-bottom: 1px solid rgba(201,168,76,0.06);
+    border-bottom: 1px solid var(--divider);
     cursor: pointer; transition: background 0.15s;
     font-size: 14px; color: var(--grey-pale);
   }
@@ -2583,7 +2702,7 @@
   .prt-empty { padding: 40px 20px; text-align: center; font-size: 14px; color: var(--text-muted); }
 
   .prt-card {
-    padding: 14px 16px; border-bottom: 1px solid rgba(201,168,76,0.08); cursor: pointer; transition: background 0.15s;
+    padding: 14px 16px; border-bottom: 1px solid var(--divider); cursor: pointer; transition: background 0.15s;
   }
   .prt-card:hover { background: rgba(201,168,76,0.04); }
   .prt-card.active { background: rgba(201,168,76,0.08); border-left: 2px solid var(--gold); }
@@ -2611,7 +2730,7 @@
     font-weight: 600;
   }
   .prt-table tbody tr {
-    cursor: pointer; border-bottom: 1px solid rgba(201,168,76,0.08); transition: background 0.15s;
+    cursor: pointer; border-bottom: 1px solid var(--divider); transition: background 0.15s;
   }
   .prt-table tbody tr:hover { background: rgba(201,168,76,0.04); }
   .prt-table tbody tr.active { background: rgba(201,168,76,0.10); border-left: 2px solid var(--gold); }
@@ -2772,7 +2891,7 @@
   .tm-list { flex: 1; overflow-y: auto; padding: 8px 0; }
   .tm-empty { padding: 40px 20px; text-align: center; font-size: 14px; color: var(--text-muted); }
 
-  .tm-card { padding: 14px 16px; border-bottom: 1px solid rgba(201,168,76,0.08); cursor: pointer; transition: background 0.15s; }
+  .tm-card { padding: 14px 16px; border-bottom: 1px solid var(--divider); cursor: pointer; transition: background 0.15s; }
   .tm-card:hover { background: rgba(201,168,76,0.04); }
   .tm-card.active { background: rgba(201,168,76,0.08); border-left: 2px solid var(--gold); }
   .tm-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
@@ -2865,7 +2984,7 @@
 
   /* Section pattern */
   .rv2-group { padding-top: 8px; padding-bottom: 56px; scroll-margin-top: 120px; }
-  .rv2-group:not(:last-child) { border-bottom: 1px solid rgba(200,169,81,0.12); margin-bottom: 24px; }
+  .rv2-group:not(:last-child) { border-bottom: 1px solid var(--divider); margin-bottom: 24px; }
   .rv2-group-title { font-family: 'Playfair Display', Georgia, serif; font-size: 32px; font-weight: 500; color: var(--white); margin-bottom: 8px; letter-spacing: -0.5px; }
   .rv2-group-tagline { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; max-width: 720px; line-height: 1.6; }
 
@@ -2877,7 +2996,7 @@
   .rv2-narrative p:last-child { margin-bottom: 0; }
   .rv2-narrative .rv2-narr-label { color: var(--gold-light); letter-spacing: 1px; font-weight: 700; margin-right: 4px; }
   .rv2-narrative .rv2-bullet-list { margin: 0; padding-left: 0; list-style: none; }
-  .rv2-narrative .rv2-bullet-list li { padding: 10px 0 10px 22px; border-bottom: 1px solid rgba(200,169,81,0.12); position: relative; line-height: 1.6; }
+  .rv2-narrative .rv2-bullet-list li { padding: 10px 0 10px 22px; border-bottom: 1px solid var(--divider); position: relative; line-height: 1.6; }
   .rv2-narrative .rv2-bullet-list li:last-child { border-bottom: none; }
   .rv2-narrative .rv2-bullet-list li::before { content: ''; position: absolute; left: 0; top: 18px; width: 12px; height: 1px; background: var(--gold); }
   .rv2-narrative .rv2-bullet-list li strong { color: var(--white); font-weight: 600; }
@@ -2933,7 +3052,7 @@
   .rv2-thesis-text p:last-child { margin-bottom: 0; }
 
   /* Score breakdown bars */
-  .rv2-dim-row { padding: 18px 0; border-bottom: 1px solid rgba(200,169,81,0.08); }
+  .rv2-dim-row { padding: 18px 0; border-bottom: 1px solid var(--divider); }
   .rv2-dim-row:last-child { border-bottom: none; }
   .rv2-dim-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; gap: 12px; }
   .rv2-dim-label { font-size: 13.5px; color: var(--white); font-weight: 600; letter-spacing: 0.3px; }
@@ -2945,7 +3064,7 @@
   /* Comparable sales table */
   .rv2-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13.5px; }
   .rv2-table th { text-align: left; font-size: 11px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--gold-border); background: rgba(200,169,81,0.04); }
-  .rv2-table td { padding: 12px 14px; border-bottom: 1px solid rgba(200,169,81,0.08); color: var(--grey-pale); vertical-align: top; }
+  .rv2-table td { padding: 12px 14px; border-bottom: 1px solid var(--divider); color: var(--grey-pale); vertical-align: top; }
   .rv2-table tr:hover td { background: rgba(200,169,81,0.04); }
   .rv2-table td b { color: var(--white); font-weight: 600; }
   .rv2-table-link { color: var(--gold-light); text-decoration: none; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; }
@@ -2954,7 +3073,7 @@
   /* Risk register table */
   .rv2-risk-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13.5px; }
   .rv2-risk-table th { text-align: left; font-size: 11px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--gold-border); }
-  .rv2-risk-table td { padding: 14px; border-bottom: 1px solid rgba(200,169,81,0.08); color: var(--grey-pale); vertical-align: top; line-height: 1.55; }
+  .rv2-risk-table td { padding: 14px; border-bottom: 1px solid var(--divider); color: var(--grey-pale); vertical-align: top; line-height: 1.55; }
   .rv2-sev-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.4px; }
   .rv2-sev-low { background: rgba(76,175,122,0.15); color: var(--green); }
   .rv2-sev-mid { background: rgba(200,169,81,0.18); color: var(--gold-light); }
@@ -2984,7 +3103,7 @@
   .rv2-response-text { font-size: 14px; color: var(--white); line-height: 1.65; }
 
   /* Sources list */
-  .rv2-source-row { padding: 12px 0; border-bottom: 1px solid rgba(200,169,81,0.08); display: grid; grid-template-columns: 110px 1fr; gap: 18px; align-items: baseline; }
+  .rv2-source-row { padding: 12px 0; border-bottom: 1px solid var(--divider); display: grid; grid-template-columns: 110px 1fr; gap: 18px; align-items: baseline; }
   .rv2-source-row:last-child { border-bottom: none; }
   .rv2-source-tag { font-size: 11px; color: var(--gold-light); letter-spacing: 0.8px; text-transform: uppercase; font-weight: 600; }
   .rv2-source-meta { font-size: 13.5px; color: var(--grey-pale); line-height: 1.55; }
@@ -2993,7 +3112,7 @@
   .rv2-source-meta a:hover { text-decoration: underline; }
 
   /* Disclaimer */
-  .rv2-disclaimer { background: var(--black-soft); border: 1px solid rgba(200,169,81,0.10); padding: 22px 26px; border-radius: 3px; margin-top: 32px; }
+  .rv2-disclaimer { background: var(--black-soft); border: 1px solid var(--divider); padding: 22px 26px; border-radius: 3px; margin-top: 32px; }
   .rv2-disclaimer-label { font-size: 11px; color: var(--text-muted); letter-spacing: 1.6px; text-transform: uppercase; font-weight: 600; margin-bottom: 10px; }
   .rv2-disclaimer-text { font-size: 12.5px; color: var(--text-muted); line-height: 1.7; }
 
@@ -3006,7 +3125,7 @@
   .rv2-sb-conviction-score b { color: var(--white); font-weight: 600; font-size: 18px; }
   .rv2-sb-card-head { padding: 12px 18px; font-size: 11px; color: var(--gold-light); letter-spacing: 1.6px; text-transform: uppercase; font-weight: 600; background: rgba(200,169,81,0.04); border-bottom: 1px solid var(--gold-border); }
   .rv2-sb-card-body { padding: 14px 18px; }
-  .rv2-sb-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(200,169,81,0.06); font-size: 13px; }
+  .rv2-sb-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--divider); font-size: 13px; }
   .rv2-sb-row:last-child { border-bottom: none; }
   .rv2-sb-row-label { color: var(--text-muted); }
   .rv2-sb-row-value { color: var(--white); font-weight: 600; }
@@ -3403,6 +3522,14 @@
         <button class="btn-logout partner-write-action" id="btn-change-pw" onclick="event.stopPropagation();showAdminChangePwModal()" title="Change password" style="display:none;font-size:15px;">🔑</button>
         <button class="btn-logout" onclick="event.stopPropagation();doLogout()" title="Sign out">⏻</button>
       </div>
+      <button type="button" class="theme-toggle" id="theme-toggle"
+              onclick="toggleTheme()" role="switch" aria-checked="false"
+              title="Switch between dark and light">
+        <span class="theme-toggle-track" aria-hidden="true">
+          <span class="theme-toggle-thumb"></span>
+        </span>
+        <span class="theme-toggle-label" id="theme-toggle-label">Dark</span>
+      </button>
       <a href="#" id="whats-new-btn" class="version-tag" onclick="openWhatsNew();return false;" style="display:none;">
         <span id="whats-new-version">Version</span>
         <span id="whats-new-badge" style="display:none;"></span>
@@ -3449,7 +3576,7 @@
         <span style="margin-right:8px;">👁</span>
         Previewing the portal as <strong id="preview-banner-name">…</strong> — what they see is what you see. Don't take real actions while previewing.
       </div>
-      <button onclick="exitPreview()" style="padding:6px 14px;background:#0A0A08;color:var(--gold);border:none;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;">Exit Preview</button>
+      <button onclick="exitPreview()" style="padding:6px 14px;background:var(--black);color:var(--gold);border:none;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;">Exit Preview</button>
     </div>
 
     <!-- Admin → CP preview banner (TPCH-team only, hidden by default) -->
@@ -3459,8 +3586,8 @@
         TPCH admin preview — viewing the portal as <strong id="admin-preview-banner-name">…</strong>. Read-only; partner write actions are hidden.
       </div>
       <div style="display:flex;gap:8px;">
-        <button onclick="openAdminPartnerPicker()" style="padding:6px 14px;background:#0A0A08;color:var(--gold);border:none;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;">Switch partner</button>
-        <button onclick="exitAdminPreview()" style="padding:6px 14px;background:#0A0A08;color:var(--gold);border:none;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;">Exit preview</button>
+        <button onclick="openAdminPartnerPicker()" style="padding:6px 14px;background:var(--black);color:var(--gold);border:none;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;">Switch partner</button>
+        <button onclick="exitAdminPreview()" style="padding:6px 14px;background:var(--black);color:var(--gold);border:none;border-radius:3px;font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;">Exit preview</button>
       </div>
     </div>
 
@@ -5206,7 +5333,7 @@
             <button id="aad-run-btn" onclick="aiAgentRun()" style="background:var(--gold);color:var(--black);border:none;padding:11px 22px;border-radius:3px;font-size:13px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;">
               ▶ Run for Project
             </button>
-            <button id="aad-test-btn" onclick="aiAgentRun(true)" style="background:transparent;color:var(--grey-pale);border:1px solid rgba(255,255,255,0.15);padding:11px 22px;border-radius:3px;font-size:13px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;" title="Runs with Haiku (cheap) to test prompt quality">
+            <button id="aad-test-btn" onclick="aiAgentRun(true)" style="background:transparent;color:var(--grey-pale);border: 1px solid var(--divider);padding:11px 22px;border-radius:3px;font-size:13px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;" title="Runs with Haiku (cheap) to test prompt quality">
               🧪 Test (Haiku)
             </button>
             <button id="aad-run-all-btn" onclick="aiAgentRunAll()" style="background:transparent;color:var(--gold);border:1px solid var(--gold-border);padding:11px 22px;border-radius:3px;font-size:13px;font-weight:600;letter-spacing:0.5px;cursor:pointer;white-space:nowrap;">
@@ -5235,14 +5362,14 @@
         </div>
 
         <!-- Results tab -->
-        <div id="aad-tab-results" class="stk-tab-content" style="display:block;background:var(--black-card);border:1px solid rgba(255,255,255,0.06);border-radius:0 0 4px 4px;padding:20px 24px;">
+        <div id="aad-tab-results" class="stk-tab-content" style="display:block;background:var(--black-card);border: 1px solid var(--divider);border-radius:0 0 4px 4px;padding:20px 24px;">
           <div id="aad-results-list" style="display:flex;flex-direction:column;gap:12px;">
             <div style="text-align:center;padding:40px;color:var(--text-muted);font-size:14px;">No draft results yet. Run the agent on a project to generate analysis.</div>
           </div>
         </div>
 
         <!-- History tab -->
-        <div id="aad-tab-history" class="stk-tab-content" style="display:none;background:var(--black-card);border:1px solid rgba(255,255,255,0.06);border-radius:0 0 4px 4px;padding:20px 24px;">
+        <div id="aad-tab-history" class="stk-tab-content" style="display:none;background:var(--black-card);border: 1px solid var(--divider);border-radius:0 0 4px 4px;padding:20px 24px;">
           <div id="aad-history-list" style="display:flex;flex-direction:column;gap:8px;">
             <div style="text-align:center;padding:40px;color:var(--grey-mid);font-size:13px;">No runs yet.</div>
           </div>
@@ -5426,10 +5553,10 @@
               <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;">
                 <button type="button" class="btn-outline" id="pset-extract-btn" onclick="extractBrandColours()" style="padding:8px 14px;font-size:12px;">↻ Refresh from website</button>
                 <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--grey-mid);">
-                  <span style="display:inline-block;width:22px;height:22px;border-radius:3px;border:1px solid rgba(255,255,255,0.15);background:transparent;" id="pset-swatch-primary"></span>
+                  <span style="display:inline-block;width:22px;height:22px;border-radius:3px;border: 1px solid var(--divider);background:transparent;" id="pset-swatch-primary"></span>
                   <span id="pset-brand-primary-hex" style="font-family:'DM Mono',monospace;">—</span>
                   <span style="margin:0 4px;color:var(--grey);">/</span>
-                  <span style="display:inline-block;width:22px;height:22px;border-radius:3px;border:1px solid rgba(255,255,255,0.15);background:transparent;" id="pset-swatch-accent"></span>
+                  <span style="display:inline-block;width:22px;height:22px;border-radius:3px;border: 1px solid var(--divider);background:transparent;" id="pset-swatch-accent"></span>
                   <span id="pset-brand-accent-hex" style="font-family:'DM Mono',monospace;">—</span>
                 </div>
               </div>
@@ -5886,11 +6013,11 @@
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
                 <thead>
                   <tr>
-                    <th style="text-align:center;padding:8px 6px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;width:60px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Visible</th>
-                    <th style="text-align:left;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Project</th>
-                    <th style="text-align:right;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Raw $ Range</th>
-                    <th style="text-align:right;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Deduct $</th>
-                    <th style="text-align:left;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;width:80px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Status</th>
+                    <th style="text-align:center;padding:8px 6px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;width:60px;background:var(--black-soft);border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Visible</th>
+                    <th style="text-align:left;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:var(--black-soft);border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Project</th>
+                    <th style="text-align:right;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:var(--black-soft);border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Raw $ Range</th>
+                    <th style="text-align:right;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:var(--black-soft);border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Deduct $</th>
+                    <th style="text-align:left;padding:8px 10px;color:var(--grey-light);font-weight:500;text-transform:uppercase;letter-spacing:0.6px;font-size:10px;width:80px;background:var(--black-soft);border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Status</th>
                   </tr>
                 </thead>
                 <tbody id="edit-comm-projects-tbody"></tbody>
@@ -5967,11 +6094,11 @@
           <div style="max-height:300px;overflow-y:auto;border:1px solid var(--gold-border);border-radius:3px;">
             <table style="width:100%;border-collapse:collapse;font-size:12px;">
               <thead><tr>
-                <th style="text-align:center;padding:8px 6px;color:var(--grey-light);text-transform:uppercase;letter-spacing:0.6px;font-size:10px;width:54px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Show</th>
-                <th style="text-align:left;padding:8px 10px;color:var(--grey-light);text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Project</th>
-                <th style="text-align:right;padding:8px 10px;color:var(--grey-light);text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Real $</th>
-                <th style="text-align:right;padding:8px 10px;color:var(--grey-light);text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Deduct $</th>
-                <th style="width:74px;background:#0F1B2E;border-bottom:1px solid var(--gold-border);position:sticky;top:0;"></th>
+                <th style="text-align:center;padding:8px 6px;color:var(--grey-light);text-transform:uppercase;letter-spacing:0.6px;font-size:10px;width:54px;background:var(--black-soft);border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Show</th>
+                <th style="text-align:left;padding:8px 10px;color:var(--grey-light);text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:var(--black-soft);border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Project</th>
+                <th style="text-align:right;padding:8px 10px;color:var(--grey-light);text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:var(--black-soft);border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Real $</th>
+                <th style="text-align:right;padding:8px 10px;color:var(--grey-light);text-transform:uppercase;letter-spacing:0.6px;font-size:10px;background:var(--black-soft);border-bottom:1px solid var(--gold-border);position:sticky;top:0;">Deduct $</th>
+                <th style="width:74px;background:var(--black-soft);border-bottom:1px solid var(--gold-border);position:sticky;top:0;"></th>
               </tr></thead>
               <tbody id="cw-deduct-tbody"></tbody>
             </table>
@@ -6144,21 +6271,23 @@
 
 <!-- Admin Change Password Modal -->
 <div id="admin-pw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1200;align-items:center;justify-content:center;" onclick="closeAdminChangePwModal()">
-  <div style="background:#1A1A16;border:1px solid rgba(201,168,76,0.25);padding:36px;width:380px;max-width:90vw;" onclick="event.stopPropagation()">
-    <div style="font-size:16px;font-weight:700;color:#F8F6F0;margin-bottom:4px;">Change Password</div>
-    <div style="font-size:12px;color:#8A8A80;margin-bottom:24px;">Update your portal sign-in password</div>
+  <div style="background:var(--black-card);border:1px solid var(--gold-border);padding:36px;width:380px;max-width:90vw;" onclick="event.stopPropagation()">
+    <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:4px;">Change Password</div>
+    <div style="font-size:12px;color:var(--grey-mid);margin-bottom:24px;">Update your portal sign-in password</div>
     <div style="margin-bottom:14px;">
-      <div style="font-size:11px;color:#9A8A6A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">New Password</div>
-      <input id="admin-pw-new" type="password" placeholder="Enter new password" style="width:100%;background:#0F0F0C;border:1px solid rgba(201,168,76,0.2);color:#F8F6F0;padding:10px 12px;font-size:13px;box-sizing:border-box;">
+      <div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">New Password</div>
+      <input id="admin-pw-new" type="password" placeholder="Enter new password" style="width:100%;background:var(--black);border:1px solid var(--gold-border);color:var(--white);padding:10px 12px;font-size:13px;box-sizing:border-box;">
     </div>
     <div style="margin-bottom:20px;">
-      <div style="font-size:11px;color:#9A8A6A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Confirm Password</div>
-      <input id="admin-pw-confirm" type="password" placeholder="Confirm new password" style="width:100%;background:#0F0F0C;border:1px solid rgba(201,168,76,0.2);color:#F8F6F0;padding:10px 12px;font-size:13px;box-sizing:border-box;">
+      <div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Confirm Password</div>
+      <input id="admin-pw-confirm" type="password" placeholder="Confirm new password" style="width:100%;background:var(--black);border:1px solid var(--gold-border);color:var(--white);padding:10px 12px;font-size:13px;box-sizing:border-box;">
     </div>
-    <div id="admin-pw-error" style="font-size:12px;color:#c94c4c;margin-bottom:12px;min-height:16px;"></div>
+    <div id="admin-pw-error" style="font-size:12px;color:var(--red);margin-bottom:12px;min-height:16px;"></div>
     <div style="display:flex;gap:10px;">
-      <button onclick="submitAdminPasswordChange()" style="flex:1;background:#C9A84C;color:#0A0A08;border:none;padding:11px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Save Password</button>
-      <button onclick="closeAdminChangePwModal()" style="flex:1;background:transparent;color:#9A8A6A;border:1px solid rgba(201,168,76,0.2);padding:11px;font-size:12px;cursor:pointer;">Cancel</button>
+      <!-- Gold button: the label sits on a gold fill in BOTH themes, so it
+           uses the always-on-dark ink rather than a themed token. -->
+      <button onclick="submitAdminPasswordChange()" style="flex:1;background:var(--gold);color:#0A0A08;border:none;padding:11px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Save Password</button>
+      <button onclick="closeAdminChangePwModal()" style="flex:1;background:transparent;color:var(--gold);border:1px solid var(--gold-border);padding:11px;font-size:12px;cursor:pointer;">Cancel</button>
     </div>
   </div>
 </div>
@@ -9105,6 +9234,15 @@
 
   const CHANGELOG = [
     {
+      version: '3.23',
+      date: '1 Sep 2026',
+      title: 'Light mode',
+      items: [
+        'The portal now has a light theme. Use the Dark / Light switch at the bottom of the sidebar to change between them, and your choice is remembered on that browser.',
+        'Dark remains the default, so nothing changes unless you switch.',
+      ]
+    },
+    {
       version: '3.22',
       date: '31 Aug 2026',
       title: 'Maps in standard colours',
@@ -9430,6 +9568,50 @@
       document.getElementById('whats-new-badge').style.display = 'block';
     }
   }
+
+  /* ── THEME ─────────────────────────────────────────────────────────
+     Dark is the default and stays the default. Light is opt-in per
+     browser, held in localStorage; there is no server-side preference,
+     so a partner on two machines sets it on each.
+
+     The initial read happens in a tiny inline script in <head> so the
+     page never paints dark then snaps to light. Everything here is the
+     runtime half: flipping it, and keeping the control in sync. */
+  const THEME_KEY = 'tpch-theme';
+
+  function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+
+  function applyTheme(theme) {
+    const light = theme === 'light';
+    if (light) document.documentElement.setAttribute('data-theme', 'light');
+    else       document.documentElement.removeAttribute('data-theme');
+
+    // Keep the browser chrome (mobile address bar, PWA) in step.
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', light ? '#FBFAF7' : '#080F1A');
+
+    const label = document.getElementById('theme-toggle-label');
+    if (label) label.textContent = light ? 'Light' : 'Dark';
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.setAttribute('aria-checked', light ? 'true' : 'false');
+
+    // Leaflet sizes itself against its container; a theme flip can change
+    // surrounding layout, so nudge any open map to re-measure.
+    [window._rv2Map, window._rsrMap, window._flyMap,
+     window.leafletMap, window.stkLeafletMap, window.rscLeafletMap]
+      .forEach(m => { try { m && m.invalidateSize(); } catch (_) {} });
+  }
+
+  function toggleTheme() {
+    const next = currentTheme() === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (_) { /* session-only */ }
+  }
+
+  // Sync the control on load with whatever the <head> script decided.
+  applyTheme(currentTheme());
 
   function openWhatsNew() {
     const body = document.getElementById('whats-new-body');
@@ -11533,11 +11715,11 @@
         const pillarNames = { population:'Population Growth', economic:'Economic Growth', supply:'Supply & Demand', affordability:'Affordability', scarcity:'Scarcity' };
         const pillarIcons = { population:'📈', economic:'💼', supply:'⚖️', affordability:'🏷️', scarcity:'💎' };
         // AI-generated content sourced from web research — escape everything.
-        const fmtStats = (stats) => { if (!stats || typeof stats !== 'object') return ''; return Object.entries(stats).map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);gap:8px;"><span style="color:var(--text-muted);font-size:12px;">${escapeHtml(k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()))}</span><span style="color:var(--white);font-size:13px;font-weight:600;">${escapeHtml(v)}</span></div>`).join(''); };
+        const fmtStats = (stats) => { if (!stats || typeof stats !== 'object') return ''; return Object.entries(stats).map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom: 1px solid var(--divider);gap:8px;"><span style="color:var(--text-muted);font-size:12px;">${escapeHtml(k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()))}</span><span style="color:var(--white);font-size:13px;font-weight:600;">${escapeHtml(v)}</span></div>`).join(''); };
         return `
-        <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
+        <div style="background:var(--black-soft);border: 1px solid var(--divider);border-radius:4px;overflow:hidden;">
           <!-- Header -->
-          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="padding:20px 24px;border-bottom: 1px solid var(--divider);">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
               <div style="font-size:17px;font-weight:600;color:var(--white);flex:1;">${escapeHtml(proj?.name || d.project_id)}</div>
               <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--gold);">${escapeHtml(d.overall_score) || '?'}<span style="font-size:14px;color:var(--text-muted);font-weight:400;">/100</span></div>
@@ -11557,7 +11739,7 @@
 
           <!-- Pillar details -->
           ${['population','economic','supply','affordability','scarcity'].map(p => `
-          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="padding:20px 24px;border-bottom: 1px solid var(--divider);">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
               <span>${pillarIcons[p]}</span>
               <span style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);">${pillarNames[p]}</span>
@@ -11572,7 +11754,7 @@
           </div>`).join('')}
 
           <!-- Developer & Trust -->
-          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="padding:20px 24px;border-bottom: 1px solid var(--divider);">
             <div style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);margin-bottom:14px;">Developer & Trust</div>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
               ${[['Developer', d.developer_name, d.developer_detail], ['Track Record', d.track_record, d.track_record_detail], ['Project Stage', d.project_stage, d.project_stage_detail], ['Warranties', d.warranties, null], ['Memberships', d.memberships, null], ['TPCH Assessment', d.tpch_assessment, null]].map(([label, val, sub]) => `
@@ -11614,7 +11796,7 @@
         const statusIcons = { completed:'◉', failed:'✕', running:'◌', queued:'○' };
         const duration = r.duration_ms ? (r.duration_ms/1000).toFixed(1) + 's' : '—';
         return `
-        <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:14px 18px;cursor:pointer;" onclick="this.querySelector('.aar-logs').style.display=this.querySelector('.aar-logs').style.display==='none'?'block':'none'">
+        <div style="background:var(--black-soft);border: 1px solid var(--divider);border-radius:4px;padding:14px 18px;cursor:pointer;" onclick="this.querySelector('.aar-logs').style.display=this.querySelector('.aar-logs').style.display==='none'?'block':'none'">
           <div style="display:flex;align-items:center;gap:12px;">
             <span style="color:${statusColors[r.status]||'var(--text-muted)'};font-size:16px;">${statusIcons[r.status]||'○'}</span>
             <div style="flex:1;">
@@ -11624,7 +11806,7 @@
             <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:${statusColors[r.status]||'var(--text-muted)'};">${r.status}</div>
           </div>
           ${r.error ? `<div style="font-size:13px;color:var(--red);margin-top:8px;padding:8px 12px;background:rgba(201,76,76,0.08);border-radius:3px;line-height:1.5;">${r.error}</div>` : ''}
-          <div class="aar-logs" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
+          <div class="aar-logs" style="display:none;margin-top:12px;padding-top:12px;border-top: 1px solid var(--divider);">
             ${(r.logs||[]).map(l => `<div style="font-size:12px;color:var(--grey-pale);padding:3px 0;font-family:'DM Mono',monospace;line-height:1.5;"><span style="color:var(--text-muted);">${new Date(l.ts).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span> ${l.message}</div>`).join('')}
           </div>
         </div>`;
@@ -11783,9 +11965,9 @@
         const openCount = openComments.length;
         const versions = versionsByResearch[d.id] || [];
         return `
-        <div style="background:var(--black-soft);border:1px solid rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
+        <div style="background:var(--black-soft);border: 1px solid var(--divider);border-radius:4px;overflow:hidden;">
           <!-- Header -->
-          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="padding:20px 24px;border-bottom: 1px solid var(--divider);">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
               <div style="flex:1;">
                 <div style="font-size:17px;font-weight:600;color:var(--white);">${escapeHtml(d.suburb) || '—'}, ${escapeHtml(d.state_code || '')}</div>
@@ -11806,13 +11988,13 @@
           </div>
 
           <!-- Thesis -->
-          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="padding:20px 24px;border-bottom: 1px solid var(--divider);">
             <div style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);margin-bottom:10px;">Executive Summary</div>
             <div style="font-size:14px;color:var(--grey-pale);line-height:1.7;">${escapeHtml(d.thesis_main) || '—'}</div>
           </div>
 
           <!-- Score breakdown (5 dimensions × 20) -->
-          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="padding:20px 24px;border-bottom: 1px solid var(--divider);">
             <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px;">
               <span style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);">Score Breakdown</span>
               <span style="font-size:12px;color:var(--text-muted);">5 dimensions · 20 points each · sums to ${d.conviction_score ?? '?'}/100</span>
@@ -11842,7 +12024,7 @@
           </div>
 
           <!-- Pillars (collapsible) -->
-          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="padding:20px 24px;border-bottom: 1px solid var(--divider);">
             <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
               <span style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);">12 Pillars</span>
               <span style="font-size:12px;color:var(--text-muted);">${pillarKeys.length} populated · click to expand</span>
@@ -11861,7 +12043,7 @@
 
           <!-- Endorsements (full list) -->
           ${Array.isArray(d.endorsements) && d.endorsements.length ? `
-          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="padding:20px 24px;border-bottom: 1px solid var(--divider);">
             <div style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);margin-bottom:12px;">In the Press <span style="font-size:12px;color:var(--text-muted);font-weight:400;letter-spacing:0;text-transform:none;">· ${endorseCount} endorsement${endorseCount===1?'':'s'}</span></div>
             <div style="display:flex;flex-direction:column;gap:10px;">
               ${d.endorsements.map(e => `
@@ -11880,7 +12062,7 @@
 
           <!-- Counter-view (full) -->
           ${d.counter_view ? `
-          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="padding:20px 24px;border-bottom: 1px solid var(--divider);">
             <div style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);margin-bottom:12px;">Counter-view Considered</div>
             <div style="background:rgba(201,76,76,0.06);border-left:2px solid var(--red);padding:12px 14px;border-radius:0 3px 3px 0;margin-bottom:10px;">
               <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px;">
@@ -11899,12 +12081,12 @@
 
           <!-- Comparable sales -->
           ${Array.isArray(d.comparable_sales) && d.comparable_sales.length ? `
-          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="padding:20px 24px;border-bottom: 1px solid var(--divider);">
             <div style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);margin-bottom:12px;">Comparable Sales <span style="font-size:12px;color:var(--text-muted);font-weight:400;letter-spacing:0;text-transform:none;">· ${d.comparable_sales.length} transaction${d.comparable_sales.length===1?'':'s'}</span></div>
             <div style="overflow-x:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
                 <thead>
-                  <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+                  <tr style="border-bottom: 1px solid var(--divider);">
                     <th style="text-align:left;padding:8px 10px;color:var(--text-muted);font-weight:600;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Address</th>
                     <th style="text-align:left;padding:8px 10px;color:var(--text-muted);font-weight:600;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Date</th>
                     <th style="text-align:right;padding:8px 10px;color:var(--text-muted);font-weight:600;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Price</th>
@@ -11915,7 +12097,7 @@
                 </thead>
                 <tbody>
                   ${d.comparable_sales.map(c => `
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <tr style="border-bottom: 1px solid var(--divider);">
                       <td style="padding:8px 10px;color:var(--white);">${c.source_url ? `<a href="${escapeHtml(/^https?:\/\//i.test(c.source_url) ? c.source_url : 'https://' + c.source_url)}" target="_blank" rel="noopener" style="color:var(--white);text-decoration:none;border-bottom:1px dotted var(--gold);">${escapeHtml(c.address || '')}</a>` : escapeHtml(c.address || '')}</td>
                       <td style="padding:8px 10px;color:var(--grey-pale);font-family:'DM Mono',monospace;">${escapeHtml(c.date || '')}</td>
                       <td style="padding:8px 10px;color:var(--white);text-align:right;font-family:'DM Mono',monospace;">${c.price ? '$' + Number(c.price).toLocaleString() : '—'}</td>
@@ -11929,7 +12111,7 @@
           </div>` : ''}
 
           <!-- Quick stats strip (sources count) -->
-          <div style="padding:14px 24px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;gap:24px;font-size:12px;color:var(--text-muted);flex-wrap:wrap;">
+          <div style="padding:14px 24px;border-bottom: 1px solid var(--divider);display:flex;gap:24px;font-size:12px;color:var(--text-muted);flex-wrap:wrap;">
             <span><span style="color:var(--white);font-weight:600;">${endorseCount}</span> endorsements</span>
             <span><span style="color:var(--white);font-weight:600;">${sourceCount}</span> sources cited</span>
             <span><span style="color:var(--white);font-weight:600;">${pillarKeys.length}</span> pillars populated</span>
@@ -11937,14 +12119,14 @@
           </div>
 
           <!-- Review comments rail -->
-          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="padding:20px 24px;border-bottom: 1px solid var(--divider);">
             <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
               <span style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);">Review Comments</span>
               <span style="font-size:12px;color:var(--text-muted);">${comments.length} thread${comments.length===1?'':'s'}${openCount>0?' · <span style=\"color:var(--red);font-weight:600;\">'+openCount+' open</span>':''} · click to expand</span>
             </div>
             <div style="display:${openCount>0?'block':'none'};margin-top:14px;">
               <!-- New comment form -->
-              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:3px;padding:14px 16px;margin-bottom:16px;">
+              <div style="background:rgba(255,255,255,0.03);border: 1px solid var(--divider);border-radius:3px;padding:14px 16px;margin-bottom:16px;">
                 <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold-light);margin-bottom:10px;">Add comment</div>
                 <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
                   <select id="sc-section-${d.id}" style="flex:1;min-width:200px;background:var(--black-soft);color:var(--white);border:1px solid rgba(255,255,255,0.1);padding:8px 10px;border-radius:3px;font-size:12px;">
@@ -11985,7 +12167,7 @@
                     ${canRegen ? `<button onclick="aiToggleRegenForm('${c.id}')" style="background:transparent;color:var(--gold);border:1px solid rgba(200,169,81,0.3);padding:4px 10px;border-radius:3px;font-size:11px;cursor:pointer;">Regenerate with notes</button>` : ''}
                   </div>
                   ${canRegen ? `
-                    <div id="regen-form-${c.id}" style="display:none;margin-top:10px;padding:10px;background:rgba(200,169,81,0.04);border:1px solid rgba(200,169,81,0.15);border-radius:3px;">
+                    <div id="regen-form-${c.id}" style="display:none;margin-top:10px;padding:10px;background:rgba(200,169,81,0.04);border: 1px solid var(--divider);border-radius:3px;">
                       <label style="display:block;font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--gold-light);margin-bottom:6px;">Optional extra guidance for Opus 4.7</label>
                       <textarea id="regen-notes-${c.id}" rows="2" placeholder="e.g. 'Lead with the LGA rezoning approved in Feb 2026.' Leave blank to let the comment speak for itself." style="width:100%;box-sizing:border-box;background:var(--black-soft);color:var(--white);border:1px solid rgba(255,255,255,0.1);padding:8px;border-radius:3px;font-size:12px;font-family:inherit;resize:vertical;"></textarea>
                       <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
@@ -12000,7 +12182,7 @@
           </div>
 
           <!-- Version history -->
-          <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="padding:20px 24px;border-bottom: 1px solid var(--divider);">
             <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
               <span style="font-size:13px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--white);">Version History</span>
               <span style="font-size:12px;color:var(--text-muted);">${versions.length} snapshot${versions.length===1?'':'s'} · click to expand</span>
@@ -12289,23 +12471,24 @@
            s.includes('under construct') || s.includes('construction');
   }
 
-  // Stage → visual style mapping (keyword-based, handles any Monday.com label)
+  // Stage → visual style mapping (keyword-based, handles any Monday.com label).
+  //
+  // Returns a KEY, not colours. The colours live in CSS against
+  // [data-stage="..."] so both themes can style them and the theme toggle
+  // takes effect immediately. Returning inline colours here meant the badge
+  // kept its dark-mode pastels until the list happened to re-render, and on
+  // a light ground those measured as low as 1.44:1.
   function dealStageMeta(stage) {
-    if (!stage) return { bg: 'rgba(90,90,82,0.2)', color: '#9A9A8A', border: 'rgba(90,90,82,0.3)' };
+    if (!stage) return { key: 'none' };
     const s = stage.toLowerCase();
     if (s.includes('settl') && (s.includes('fully') || s.includes('paid') || s.includes('complet')))
-      return { bg: 'rgba(30,100,60,0.2)', color: '#60C080', border: 'rgba(30,100,60,0.35)' };  // green
-    if (s.includes('settl'))
-      return { bg: 'rgba(60,130,80,0.15)', color: '#70D090', border: 'rgba(60,130,80,0.3)' };  // lighter green
-    if (s.includes('approval') || s.includes('finance') || s.includes('uncondit'))
-      return { bg: 'rgba(100,50,180,0.15)', color: '#B080E8', border: 'rgba(100,50,180,0.3)' }; // purple
-    if (s.includes('cos executed') || s.includes('contracted') || s.includes('exchange'))
-      return { bg: 'rgba(30,90,180,0.15)', color: '#70B0F0', border: 'rgba(30,90,180,0.3)' };  // blue
-    if (s.includes('cos issued') || s.includes('cos sent') || s.includes('contract'))
-      return { bg: 'rgba(180,140,30,0.15)', color: '#E8C060', border: 'rgba(180,140,30,0.3)' }; // gold
-    if (s.includes('fallen') || s.includes('cancel') || s.includes('lost') || s.includes('dead'))
-      return { bg: 'rgba(180,40,40,0.15)', color: '#E06060', border: 'rgba(180,40,40,0.3)' };  // red
-    return { bg: 'rgba(60,100,140,0.15)', color: '#80B8D8', border: 'rgba(60,100,140,0.3)' };  // default blue-grey
+      return { key: 'settled-paid' };
+    if (s.includes('settl'))                                                    return { key: 'settled' };
+    if (s.includes('approval') || s.includes('finance') || s.includes('uncondit')) return { key: 'approval' };
+    if (s.includes('cos executed') || s.includes('contracted') || s.includes('exchange')) return { key: 'contracted' };
+    if (s.includes('cos issued') || s.includes('cos sent') || s.includes('contract')) return { key: 'cos-issued' };
+    if (s.includes('fallen') || s.includes('cancel') || s.includes('lost') || s.includes('dead')) return { key: 'lost' };
+    return { key: 'default' };
   }
 
   function fmtDealDate(isoStr) {
@@ -12442,7 +12625,7 @@
 
     tbody.innerHTML = visible.map(d => {
       const meta      = dealStageMeta(d.stage);
-      const badge     = `<span class="dlp-stage-badge" style="background:${meta.bg};color:${meta.color};border-color:${meta.border}">${escHtml(d.stage || '—')}</span>`;
+      const badge     = `<span class="dlp-stage-badge" data-stage="${meta.key}">${escHtml(d.stage || '—')}</span>`;
       const settlCls  = isUpcoming(d.expected_settlement_date) ? ' upcoming' : '';
       const approvCls = isUpcoming(d.expected_approval_date) ? ' upcoming' : '';
 
@@ -18420,6 +18603,9 @@ function buildKitHtml(s, research, brand) {
   border: 1px solid rgba(201,168,76,0.3) !important;
   border-radius: 0 !important;
 }
+/* Deliberately NOT themed. The basemap is a light street map in both themes,
+   so these buttons sit on a fixed light ground and stay dark-on-gold in each.
+   Flipping them with the theme would put a light control on a light map. */
 .leaflet-control-zoom a {
   background: #161614 !important;
   color: #C9A84C !important;
@@ -18797,7 +18983,9 @@ function buildKitHtml(s, research, brand) {
 .stk-cluster {
   display: flex; align-items: center; justify-content: center;
   background: var(--map-ink);
-  color: var(--gold-light);
+  /* Fixed navy bubble on the light basemap: the numeral uses the
+     always-on-dark gold, or it inverts to bronze-on-navy in light mode. */
+  color: var(--on-dark-gold);
   font-family: 'DM Mono', monospace; font-weight: 700;
   font-size: 14px;
   border: 2px solid var(--gold);
@@ -19113,7 +19301,7 @@ function buildKitHtml(s, research, brand) {
   border-bottom: 1px solid var(--gold-border); font-weight: 600; font-family: 'DM Mono', monospace;
   white-space: nowrap;
 }
-.stk-all-stock-table td { padding: 10px 10px; border-bottom: 1px solid rgba(201,168,76,0.08); color: var(--grey-pale); }
+.stk-all-stock-table td { padding: 10px 10px; border-bottom: 1px solid var(--divider); color: var(--grey-pale); }
 .stk-all-stock-table tr:hover td { background: var(--gold-dim); cursor: pointer; }
 
 .stk-count { font-size: 15px; color: var(--grey-pale); }
@@ -19220,7 +19408,7 @@ function buildKitHtml(s, research, brand) {
 /* ── Project card ────────────────────────────────────────────── */
 .stk-card {
   background: var(--black-soft);
-  border: 1px solid rgba(201,168,76,0.12);
+  border: 1px solid var(--divider);
   cursor: pointer;
   transition: all 0.15s;
   display: flex; flex-direction: column;
@@ -19235,7 +19423,7 @@ function buildKitHtml(s, research, brand) {
   height: 180px;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--black-hover) 0%, #1E1E18 50%, #252520 100%);
+  background: linear-gradient(135deg, var(--black-hover) 0%, var(--black-soft) 50%, var(--grey) 100%);
   flex-shrink: 0;
 }
 .stk-card-hero img {
@@ -19478,7 +19666,7 @@ function buildKitHtml(s, research, brand) {
 }
 .stk-stock-table td {
   padding: 14px 12px;
-  border-bottom: 1px solid rgba(201,168,76,0.1);
+  border-bottom: 1px solid var(--divider);
   color: var(--grey-pale);
   vertical-align: middle;
 }
@@ -19557,7 +19745,7 @@ function buildKitHtml(s, research, brand) {
 }
 .ia-pillar-card {
   background: var(--black-card);
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--divider);
   border-radius: 4px;
   padding: 22px 18px 20px;
   display: flex; flex-direction: column; gap: 12px;
@@ -19599,7 +19787,7 @@ function buildKitHtml(s, research, brand) {
 .ia-key-item {
   display: flex; align-items: center; gap: 14px;
   background: var(--black-card);
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--divider);
   border-radius: 4px;
   padding: 18px 22px;
   flex: 1; min-width: 240px;
@@ -19619,14 +19807,14 @@ function buildKitHtml(s, research, brand) {
 /* Detail sections */
 .ia-detail-section {
   background: var(--black-card);
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--divider);
   border-radius: 4px;
   overflow: hidden;
 }
 .ia-detail-header {
   display: flex; align-items: center; gap: 14px;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--divider);
 }
 .ia-detail-icon { font-size: 18px; }
 .ia-detail-title {
@@ -19671,7 +19859,7 @@ function buildKitHtml(s, research, brand) {
 }
 .ia-trust-card {
   background: var(--black-card);
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--divider);
   border-radius: 4px;
   padding: 22px;
   display: flex; flex-direction: column; gap: 10px;
@@ -19970,12 +20158,12 @@ function buildKitHtml(s, research, brand) {
   text-transform: uppercase; color: var(--text-muted);
   margin-bottom: 14px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(201,168,76,0.15);
+  border-bottom: 1px solid var(--divider);
 }
 .stk-detail-row {
   display: flex; justify-content: space-between;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--divider);
   font-size: 15px;
 }
 .stk-detail-row:last-child { border-bottom: none; }
@@ -19994,7 +20182,7 @@ function buildKitHtml(s, research, brand) {
 
 /* Outgoings table */
 .stk-outgoings-table { width: 100%; font-size: 15px; }
-.stk-outgoings-table tr td { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--grey-pale); }
+.stk-outgoings-table tr td { padding: 10px 0; border-bottom: 1px solid var(--divider); color: var(--grey-pale); }
 .stk-outgoings-table tr:last-child td { border-bottom: none; font-weight: 600; color: var(--white); padding-top: 14px; }
 .stk-outgoings-table td:last-child { text-align: right; color: var(--white); }
 
@@ -20039,12 +20227,16 @@ function buildKitHtml(s, research, brand) {
 .stk-doc-link:hover { background: var(--gold-dim); }
 
 .nav-deals-badge {
+  /* Dark ink on bright gold in dark mode; on the light-mode bronze that
+     drops to 3.50:1, so light flips to cream ink instead (5.76:1). */
   margin-left: auto; background: var(--gold); color: #000;
   font-size: 9px; font-weight: 700; min-width: 16px; height: 16px;
   border-radius: 8px; padding: 0 4px;
   display: inline-flex; align-items: center; justify-content: center;
   letter-spacing: 0;
 }
+
+:root[data-theme="light"] .nav-deals-badge { color: var(--on-dark); }
 
 /* ── My Deals page ──────────────────────────────────────────── */
 .dlp-top-bar {
@@ -20073,7 +20265,7 @@ function buildKitHtml(s, research, brand) {
   color: var(--text-muted); font-weight: 600; white-space: nowrap;
 }
 .dlp-table tbody tr {
-  border-bottom: 1px solid rgba(201,168,76,0.08);
+  border-bottom: 1px solid var(--divider);
   transition: background 0.1s;
 }
 .dlp-table tbody tr:hover { background: var(--black-hover); }
@@ -20105,6 +20297,27 @@ function buildKitHtml(s, research, brand) {
   text-transform: uppercase; padding: 4px 12px; white-space: nowrap;
   border-width: 1px; border-style: solid;
 }
+/* Stage colours, keyed off data-stage (see dealStageMeta). The tint is shared;
+   only the ink changes per theme. Dark uses bright pastels that glow on navy;
+   light darkens each to the same hue until it clears 4.5:1 against that
+   badge's own composited background. */
+.dlp-stage-badge[data-stage="none"]         { background: rgba(90,90,82,0.2);   color: #9A9A8A; border-color: rgba(90,90,82,0.3); }
+.dlp-stage-badge[data-stage="settled-paid"] { background: rgba(30,100,60,0.2);  color: #60C080; border-color: rgba(30,100,60,0.35); }
+.dlp-stage-badge[data-stage="settled"]      { background: rgba(60,130,80,0.15); color: #70D090; border-color: rgba(60,130,80,0.3); }
+.dlp-stage-badge[data-stage="approval"]     { background: rgba(100,50,180,0.15);color: #B080E8; border-color: rgba(100,50,180,0.3); }
+.dlp-stage-badge[data-stage="contracted"]   { background: rgba(30,90,180,0.15); color: #70B0F0; border-color: rgba(30,90,180,0.3); }
+.dlp-stage-badge[data-stage="cos-issued"]   { background: rgba(180,140,30,0.15);color: #E8C060; border-color: rgba(180,140,30,0.3); }
+.dlp-stage-badge[data-stage="lost"]         { background: rgba(180,40,40,0.15); color: #E06060; border-color: rgba(180,40,40,0.3); }
+.dlp-stage-badge[data-stage="default"]      { background: rgba(60,100,140,0.15);color: #80B8D8; border-color: rgba(60,100,140,0.3); }
+
+:root[data-theme="light"] .dlp-stage-badge[data-stage="none"]         { color: #54544A; }  /* 5.68:1 */
+:root[data-theme="light"] .dlp-stage-badge[data-stage="settled-paid"] { color: #1B6B3A; }  /* 4.79:1 */
+:root[data-theme="light"] .dlp-stage-badge[data-stage="settled"]      { color: #1F6B45; }  /* 5.35:1 */
+:root[data-theme="light"] .dlp-stage-badge[data-stage="approval"]     { color: #5B2E9E; }  /* 7.04:1 */
+:root[data-theme="light"] .dlp-stage-badge[data-stage="contracted"]   { color: #1F58A8; }  /* 5.53:1 */
+:root[data-theme="light"] .dlp-stage-badge[data-stage="cos-issued"]   { color: #7A5E10; }  /* 5.27:1 */
+:root[data-theme="light"] .dlp-stage-badge[data-stage="lost"]         { color: #A32020; }  /* 5.91:1 */
+:root[data-theme="light"] .dlp-stage-badge[data-stage="default"]      { color: #2E5877; }  /* 6.12:1 */
 
 .dlp-empty {
   padding: 64px 24px; text-align: center;
@@ -20197,7 +20410,7 @@ function buildKitHtml(s, research, brand) {
 }
 
 .notif-item {
-  padding: 16px 22px; border-bottom: 1px solid rgba(201,168,76,0.1);
+  padding: 16px 22px; border-bottom: 1px solid var(--divider);
   cursor: pointer; transition: background 0.1s; position: relative;
 }
 .notif-item:hover { background: var(--black-hover); }
@@ -20330,7 +20543,7 @@ function buildKitHtml(s, research, brand) {
 .lst-items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 .lst-item-card {
   background: var(--black-soft);
-  border: 1px solid rgba(201,168,76,0.15);
+  border: 1px solid var(--divider);
   padding: 12px 14px;
 }
 .lst-item-name { font-size: 14px; font-weight: 600; color: var(--white); margin-bottom: 2px; }
@@ -20653,7 +20866,9 @@ function buildKitHtml(s, research, brand) {
 .rsc-cluster {
   display: flex; align-items: center; justify-content: center;
   background: var(--map-ink);
-  color: var(--gold-light);
+  /* Fixed navy bubble on the light basemap: the numeral uses the
+     always-on-dark gold, or it inverts to bronze-on-navy in light mode. */
+  color: var(--on-dark-gold);
   font-family: 'DM Mono', monospace; font-weight: 700;
   font-size: 14px;
   border: 2px solid var(--gold);
@@ -20767,7 +20982,7 @@ function buildKitHtml(s, research, brand) {
   display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
   padding: 14px 22px;
   min-height: 96px;
-  border-bottom: 1px solid rgba(201,168,76,0.10);
+  border-bottom: 1px solid var(--divider);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
   position: relative;
@@ -20826,7 +21041,7 @@ function buildKitHtml(s, research, brand) {
 }
 .rsc-card {
   background: var(--black-soft);
-  border: 1px solid rgba(201,168,76,0.12);
+  border: 1px solid var(--divider);
   cursor: pointer;
   transition: all 0.15s;
   display: flex; flex-direction: column;
@@ -20841,7 +21056,7 @@ function buildKitHtml(s, research, brand) {
   height: 160px;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--black-hover) 0%, #1E1E18 100%);
+  background: linear-gradient(135deg, var(--black-hover) 0%, var(--black-soft) 100%);
 }
 .rsc-card-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .rsc-card-hero-placeholder {
@@ -20877,7 +21092,7 @@ function buildKitHtml(s, research, brand) {
   margin-top: auto;
   display: flex; align-items: center; justify-content: space-between;
   padding-top: 12px;
-  border-top: 1px solid rgba(201,168,76,0.10);
+  border-top: 1px solid var(--divider);
 }
 .rsc-card-date { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
 .rsc-card-cta {
@@ -21629,7 +21844,7 @@ function buildKitHtml(s, research, brand) {
      logos (most are white-on-transparent or coloured-on-dark) stay visible. */
   #screen-research .fly-header {
     background: var(--f-accent);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 1px solid var(--divider);
   }
   #screen-research .fly-logo-fallback        { color: #FFF; }
   #screen-research .fly-header-website       { color: rgba(255, 255, 255, 0.78); }
