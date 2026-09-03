@@ -8817,11 +8817,11 @@
         <div class="tm-detail-header">
           <div>
             <div class="tm-detail-name">New Team Member</div>
-            <div class="tm-detail-joined">Fill in details below</div>
+            <div class="tm-detail-joined">They receive an email invite to set their own password</div>
           </div>
           <div class="tm-action-col">
             <div class="tm-action-row">
-              <button class="tm-btn tm-btn-save" onclick="addTeamMember()">✓ Add Member</button>
+              <button class="tm-btn tm-btn-save" id="tm-add-btn" onclick="addTeamMember()">✓ Send Invite</button>
               <button class="tm-btn tm-btn-cancel" onclick="showTmEmpty()">Cancel</button>
             </div>
           </div>
@@ -8831,7 +8831,6 @@
         <div class="tm-fields-grid">
           <div><div class="tm-field-label">Full Name</div><input class="tm-edit-input" id="tm-new-full_name" placeholder="e.g. Jane Smith"></div>
           <div><div class="tm-field-label">Email</div><input class="tm-edit-input" id="tm-new-email" placeholder="e.g. jane@tpch.com.au"></div>
-          <div><div class="tm-field-label">Password</div><input class="tm-edit-input" id="tm-new-password" type="password" placeholder="Set a login password"></div>
           <div style="grid-column:1/-1"><div class="tm-field-label">Role</div>
             <select class="tm-edit-select" id="tm-new-role">
               <option value="admin">Admin</option>
@@ -8853,31 +8852,52 @@
       </div>`;
   }
 
+  // Admins sign in through Supabase Auth, so adding a team member has to create
+  // an auth account as well as the tpch_team row. Both happen server-side in the
+  // invite-team edge function; the member sets their own password from the
+  // emailed invite link.
   async function addTeamMember() {
     const full_name = document.getElementById('tm-new-full_name')?.value.trim();
     const email     = document.getElementById('tm-new-email')?.value.trim().toLowerCase();
-    const password  = document.getElementById('tm-new-password')?.value || null;
     const role      = document.getElementById('tm-new-role')?.value || 'admin';
     const errEl     = document.getElementById('tm-add-error');
+    const btn       = document.getElementById('tm-add-btn');
+    errEl.style.color = '';
     if (!full_name || !email) { errEl.textContent = 'Name and email are required.'; return; }
-    if (!password) { errEl.textContent = 'A password is required.'; return; }
-    const res = await fetch(SUPABASE_URL + '/rest/v1/tpch_team', {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
-        'Content-Type': 'application/json', 'Prefer': 'return=representation'
-      },
-      body: JSON.stringify({ full_name, email, password, role, status: 'active' })
-    });
-    if (res.status === 409) { errEl.textContent = 'A team member with that email already exists.'; return; }
-    if (!res.ok) { errEl.textContent = 'Could not add member. Please try again.'; return; }
-    const [newMember] = await res.json();
-    allTeam.unshift(newMember);
-    adminEmails.push(email);
-    updateTmStats();
-    currentTmId = newMember.id;
-    renderTmList();
-    showTmDetail(newMember.id);
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    try {
+      const res = await fetchWithAuthRetry(SUPABASE_URL + '/functions/v1/invite-team', () => ({
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ full_name, email, role })
+      }));
+      if (!res) throw new Error('Network error. Please try again.');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) throw new Error(data.error || 'Could not add member. Please try again.');
+
+      const newMember = data.member;
+      const existingIdx = allTeam.findIndex(m => m.id === newMember.id);
+      if (existingIdx >= 0) allTeam[existingIdx] = newMember;
+      else allTeam.unshift(newMember);
+      adminEmails = allTeam.filter(x => x.status === 'active').map(x => x.email.toLowerCase());
+      updateTmStats();
+      currentTmId = newMember.id;
+      renderTmList();
+      showTmDetail(newMember.id);
+
+      if (!data.email_sent) {
+        alert('Member added, but the invite email did not send (' + (data.email_error || 'unknown error') +
+              '). Ask them to use "Forgot password" on the login screen to set a password.');
+      }
+    } catch (e) {
+      errEl.textContent = e.message;
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '✓ Send Invite'; }
+    }
   }
 
   function showAdminChangePwModal() {

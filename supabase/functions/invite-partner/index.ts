@@ -472,6 +472,13 @@ Deno.serve(async (req) => {
         })
       }
 
+      // Persist the send outcome so the team list shows real status, not a guess.
+      await supabase.from('partner_staff').update({
+        invite_email_status: emailResult.sent ? 'sent' : 'failed',
+        invite_last_sent_at: new Date().toISOString(),
+        invite_email_error:  emailResult.error,
+      }).eq('id', staff.id)
+
       return json({ success: true, staff_id: staff.id, email_sent: emailResult.sent, email_error: emailResult.error })
     }
 
