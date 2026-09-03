@@ -115,9 +115,12 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   )
 
-  // Plain URL, no hash fragment: Supabase appends #access_token=... on
-  // redirect and the portal's hash parser cannot decode a doubled hash.
-  const redirectTo = Deno.env.get('PORTAL_URL') || 'https://tpch.com.au'
+  // Where the invite link lands. MUST be the portal origin: tpch.com.au is the
+  // marketing site and has no set-password screen, so landing there spends the
+  // one-time token and leaves the person confirmed with no password set.
+  // Plain URL, no hash fragment: Supabase appends #access_token=... itself and
+  // the portal's hash parser cannot decode a doubled hash.
+  const redirectTo = Deno.env.get('PORTAL_URL') || 'https://portal.tpch.com.au'
 
   function json(body: object, status = 200) {
     return new Response(JSON.stringify(body), {
@@ -213,7 +216,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    return json({ success: true, member, email_sent: emailResult.sent, email_error: emailResult.error })
+    // redirect_to is echoed back so a misconfigured PORTAL_URL / Supabase
+    // "Site URL" is visible instead of silently swallowing the invite.
+    return json({ success: true, member, redirect_to: redirectTo, email_sent: emailResult.sent, email_error: emailResult.error })
 
   } catch (err: any) {
     console.error('invite-team error:', err)
