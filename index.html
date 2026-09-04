@@ -9096,6 +9096,30 @@
 
   function checkAuthRedirect() {
     const hash = window.location.hash;
+
+    // A dead invite / reset link comes back as an ERROR hash, not a token:
+    //   #error=access_denied&error_code=otp_expired&error_description=...
+    // Supabase spends the one-time token on the FIRST fetch of the link, and
+    // corporate mail scanners (Defender SafeLinks and friends) routinely
+    // prefetch links before the recipient ever clicks. The person then arrives
+    // here with a spent token. Without this branch the portal ignored the hash
+    // entirely and showed a bare login form, so they'd sit there staring at
+    // autofilled credentials with no idea the link had already been burned.
+    if (hash && hash.includes('error')) {
+      const errParams = new URLSearchParams(hash.replace(/^#/, ''));
+      const code = errParams.get('error_code') || errParams.get('error');
+      if (code) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        showScreen('screen-login');
+        showLoginError(
+          code === 'otp_expired'
+            ? 'That link has expired or was already used. Use "Forgot password?" below to send yourself a fresh one.'
+            : 'That link could not be used. Use "Forgot password?" below to send yourself a fresh one.'
+        );
+        return true;
+      }
+    }
+
     if (!hash || !hash.includes('access_token')) return false;
     const params = new URLSearchParams(hash.replace(/^#/, ''));
     const type   = params.get('type');
