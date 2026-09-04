@@ -9203,15 +9203,13 @@
     btn.disabled = true;
     btn.textContent = 'Sending…';
     try {
-      // Tell Supabase explicitly where to land the user after it verifies the
-      // recovery link. Without this, GoTrue falls back to the project's global
-      // "Site URL" setting — if that's a stale dev value (e.g. localhost:3000)
-      // the one-time token gets spent but the person never reaches the
-      // set-password screen, leaving them confirmed with no password. We send
-      // them back to the portal's own origin (no hash — Supabase appends
-      // #access_token=… itself, which checkAuthRedirect() then decodes).
-      const redirectTo = encodeURIComponent(window.location.origin);
-      await fetch(SUPABASE_URL + '/auth/v1/recover?redirect_to=' + redirectTo, {
+      // Goes through our own edge function, not Supabase's /auth/v1/recover.
+      // That endpoint sends Supabase's default template from Supabase's mailer,
+      // which was the only unbranded email the portal produced. The function
+      // mints the same recovery link server-side and sends the TPCH template
+      // via Resend, and sets the redirect to the portal itself (never the
+      // marketing site, which has no set-password screen).
+      await fetch(SUPABASE_URL + '/functions/v1/request-password-reset', {
         method: 'POST',
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
