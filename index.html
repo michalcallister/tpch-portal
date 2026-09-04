@@ -6242,6 +6242,31 @@
 </div>
 
 <!-- Admin Change Password Modal -->
+<!-- Admin override: set another team member's password directly. The emailed
+     invite / reset link is the normal route, but corporate mail filters
+     prefetch links and burn the one-time token before the person clicks, so
+     admins need a way to get someone in without depending on email. -->
+<div id="tm-setpw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1200;align-items:center;justify-content:center;" onclick="closeTmSetPwModal()">
+  <div style="background:var(--black-card);border:1px solid var(--gold-border);padding:36px;width:380px;max-width:90vw;" onclick="event.stopPropagation()">
+    <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:4px;">Set Password</div>
+    <div id="tm-setpw-who" style="font-size:12px;color:var(--grey-mid);margin-bottom:24px;"></div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">New Password</div>
+      <input id="tm-setpw-new" type="password" placeholder="At least 8 characters" style="width:100%;background:var(--black);border:1px solid var(--gold-border);color:var(--white);padding:10px 12px;font-size:13px;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Confirm Password</div>
+      <input id="tm-setpw-confirm" type="password" placeholder="Confirm new password" style="width:100%;background:var(--black);border:1px solid var(--gold-border);color:var(--white);padding:10px 12px;font-size:13px;box-sizing:border-box;">
+    </div>
+    <div style="font-size:11px;color:var(--grey-mid);line-height:1.6;margin-bottom:16px;">Send it to them over a channel they already trust, and ask them to change it once they are in.</div>
+    <div id="tm-setpw-error" style="font-size:12px;color:var(--red);margin-bottom:12px;min-height:16px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button id="tm-setpw-btn" onclick="submitTmSetPassword()" style="flex:1;background:var(--gold);color:#0A0A08;border:none;padding:11px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Set Password</button>
+      <button onclick="closeTmSetPwModal()" style="flex:1;background:transparent;color:var(--gold);border:1px solid var(--gold-border);padding:11px;font-size:12px;cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="admin-pw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1200;align-items:center;justify-content:center;" onclick="closeAdminChangePwModal()">
   <div style="background:var(--black-card);border:1px solid var(--gold-border);padding:36px;width:380px;max-width:90vw;" onclick="event.stopPropagation()">
     <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:4px;">Change Password</div>
@@ -8697,6 +8722,12 @@
       : `<button class="tm-btn tm-btn-activate" onclick="setTmStatus('${t.id}','active')">✓ Activate</button>`;
     const myRecord = allTeam.find(x => x.email === currentAdminEmail);
     const isSuperAdmin = currentUserRole === 'super_admin' || myRecord?.role === 'super_admin';
+    // Setting someone else's password is an override, so it's hidden for your
+    // own row (use Change Password) and for a super admin unless you are one.
+    const canSetPw = t.email !== currentAdminEmail && (isSuperAdmin || t.role !== 'super_admin');
+    const setPwBtn = canSetPw
+      ? `<button class="tm-btn tm-btn-edit" data-tid="${escapeHtml(t.id)}" data-tname="${escapeHtml(t.full_name || '')}" data-temail="${escapeHtml(t.email || '')}" onclick="showTmSetPwModal(this.dataset.tid, this.dataset.tname, this.dataset.temail)">⚿ Set Password</button>`
+      : '';
     const deleteBtn = (isSuperAdmin && t.role !== 'super_admin')
       ? `<button class="tm-btn tm-btn-deactivate" style="margin-top:12px;width:100%;background:rgba(180,40,40,0.15);border-color:rgba(180,40,40,0.4);color:#c94c4c;" data-tid="${escapeHtml(t.id)}" data-tname="${escapeHtml(t.full_name || '')}" onclick="deleteTmMember(this.dataset.tid, this.dataset.tname)">✕ Delete Member</button>`
       : '';
@@ -8713,6 +8744,7 @@
             <div class="tm-status-badge ${t.status}">${statusLabel}</div>
             <div class="tm-action-row">
               <button class="tm-btn tm-btn-edit" onclick="editTmDetail('${t.id}')">✎ Edit</button>
+              ${setPwBtn}
               ${actionBtns}
             </div>
           </div>
@@ -8897,6 +8929,62 @@
       errEl.textContent = e.message;
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = '✓ Send Invite'; }
+    }
+  }
+
+  let _tmSetPwId = null;
+
+  function showTmSetPwModal(id, name, email) {
+    _tmSetPwId = id;
+    document.getElementById('tm-setpw-who').textContent = 'For ' + (name || email) + ' (' + email + ')';
+    document.getElementById('tm-setpw-new').value = '';
+    document.getElementById('tm-setpw-confirm').value = '';
+    document.getElementById('tm-setpw-error').textContent = '';
+    document.getElementById('tm-setpw-modal').style.display = 'flex';
+    setTimeout(() => document.getElementById('tm-setpw-new').focus(), 50);
+  }
+
+  function closeTmSetPwModal() {
+    document.getElementById('tm-setpw-modal').style.display = 'none';
+    // Don't leave the typed password sitting in the DOM after the modal closes.
+    document.getElementById('tm-setpw-new').value = '';
+    document.getElementById('tm-setpw-confirm').value = '';
+    _tmSetPwId = null;
+  }
+
+  // Admin override — the password is set server-side with the service role and
+  // is never written to tpch_team (that column is long gone) or logged.
+  async function submitTmSetPassword() {
+    const newPw   = document.getElementById('tm-setpw-new').value;
+    const confirm = document.getElementById('tm-setpw-confirm').value;
+    const errEl   = document.getElementById('tm-setpw-error');
+    const btn     = document.getElementById('tm-setpw-btn');
+    errEl.style.color = 'var(--red)';
+    if (newPw.length < 8)   { errEl.textContent = 'Password must be at least 8 characters.'; return; }
+    if (newPw !== confirm)  { errEl.textContent = 'Passwords do not match.'; return; }
+    if (!_tmSetPwId)        { errEl.textContent = 'No member selected.'; return; }
+
+    btn.disabled = true; btn.textContent = 'Setting…';
+    try {
+      const res = await fetchWithAuthRetry(SUPABASE_URL + '/functions/v1/set-team-password', () => ({
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (currentAuthToken || SUPABASE_ANON_KEY),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ member_id: _tmSetPwId, password: newPw })
+      }));
+      if (!res) throw new Error('Network error. Please try again.');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) throw new Error(data.error || 'Could not set the password. Please try again.');
+
+      errEl.style.color = 'var(--gold)';
+      errEl.textContent = 'Password set. They can sign in with it now.';
+      btn.textContent = 'Done';
+      setTimeout(closeTmSetPwModal, 1600);
+    } catch (e) {
+      errEl.textContent = e.message;
+      btn.disabled = false; btn.textContent = 'Set Password';
     }
   }
 
