@@ -151,6 +151,14 @@ classification, he'll say so and you can amend.
 
 - Single-file SPA at [index.html](index.html) — no build step.
 - Static site is hosted on GitHub Pages; pushing to `main` auto-deploys.
+- **Bump `APP_VERSION` in [index.html](index.html) on every deploy that changes
+  it.** It is the cache-bust key: on load, a browser whose stored version
+  differs reloads once with `?v=` to get past the CDN. Leave it alone and
+  returning browsers keep running old JS against the live backend — the change
+  works for anyone who hard-refreshes and silently fails for everyone else.
+  Four deploys shipped under `5.1` in Sep 2026 and left a new password-reset
+  path unreachable for three days because clients kept calling the old
+  endpoint. It is independent of git tags and the partner changelog.
 - The page is gated by partner/admin login — `currentAuthToken` /
   `currentRefreshToken` drive every authenticated REST call. Use
   `fetchWithAuthRetry()` for new fetches that need to survive a 401.
