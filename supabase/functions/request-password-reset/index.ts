@@ -86,7 +86,7 @@ function resetHtml(opts: { firstName: string; resetLink: string; adminEmail: str
     </div>
     <div style="height:3px;background:linear-gradient(90deg,#C8A951,#E8D48B,#C8A951);"></div>
     <div style="background:#ffffff;padding:44px 44px 36px;">
-      <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#080F1A;line-height:1.3;">Reset your password, ${firstName}.</p>
+      <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#080F1A;line-height:1.3;">Reset your password${firstName ? ', ' + firstName : ''}.</p>
       <p style="margin:0 0 28px;font-size:14px;color:#C8A951;letter-spacing:1px;text-transform:uppercase;">Partner Portal access</p>
       <p style="margin:0 0 20px;font-size:15px;color:#2A3A50;line-height:1.7;">We received a request to reset the password on your TPCH Partner Portal account. Use the button below to choose a new one.</p>
       <p style="margin:0 0 32px;font-size:15px;color:#2A3A50;line-height:1.7;">This link is valid for <strong style="color:#080F1A;">24 hours</strong> and can only be used once.</p>
@@ -132,6 +132,47 @@ Deno.serve(async (req) => {
   // set-password screen. Plain URL, no hash — Supabase appends its own.
   const redirectTo = Deno.env.get('PORTAL_URL') || 'https://portal.tpch.com.au'
 
+  // Record what happened, whatever happened. The caller still gets the same
+  // generic body; this is the only place an admin can later find out that a
+  // reset "didn't work" because the address matched no account, or because
+  // Resend rejected it. Best-effort: a logging failure never fails the request.
+  async function record(email: string, outcome: string, error: string | null, sent: boolean) {
+    try {
+      const now = new Date().toISOString()
+      const { data: prev } = await supabase
+        .from('password_reset_requests')
+        .select('send_count, last_sent_at')
+        .eq('email', email)
+        .maybeSingle()
+      await supabase.from('password_reset_requests').upsert({
+        email,
+        last_attempt_at: now,
+        last_outcome:    outcome,
+        last_error:      error,
+        last_sent_at:    sent ? now : (prev?.last_sent_at ?? now),
+        send_count:      (prev?.send_count ?? 0) + (sent ? 1 : 0),
+      }, { onConflict: 'email' })
+    } catch (e) {
+      console.error('could not record reset attempt:', e)
+    }
+  }
+
+  // The greeting used to read "Reset your password, there." because it only
+  // looked at auth user_metadata.full_name, which is empty for anyone created
+  // before we started setting it. The real name lives in our own tables.
+  async function lookupName(email: string): Promise<string> {
+    for (const table of ['tpch_team', 'channel_partners', 'partner_staff']) {
+      const { data } = await supabase
+        .from(table)
+        .select('full_name')
+        .ilike('email', email)
+        .maybeSingle()
+      const name = String(data?.full_name || '').trim()
+      if (name) return name
+    }
+    return ''
+  }
+
   try {
     const body  = await req.json().catch(() => ({}))
     const email = String(body.email || '').trim().toLowerCase()
@@ -149,6 +190,7 @@ Deno.serve(async (req) => {
       const since = (Date.now() - new Date(throttle.last_sent_at).getTime()) / 1000
       if (since < COOLDOWN_SECONDS) {
         console.log(`reset throttled for ${email} (${Math.round(since)}s since last)`)
+        await record(email, 'throttled', `${Math.round(since)}s since last send`, false)
         return json(GENERIC)
       }
     }
@@ -161,20 +203,25 @@ Deno.serve(async (req) => {
     })
 
     if (linkErr) {
-      // Unknown address is the normal case here, not an incident: log it and
-      // return the same body as a success so the form stays non-enumerable.
+      // Usually just a mistyped or unregistered address. Not an incident, but
+      // it IS the thing you need to see when someone says reset doesn't work.
       console.log(`no recovery link for ${email}: ${linkErr.message}`)
+      await record(email, 'no_such_user', linkErr.message, false)
       return json(GENERIC)
     }
 
     const resetLink = linkData?.properties?.action_link
-    if (!resetLink) return json(GENERIC)
+    if (!resetLink) {
+      await record(email, 'no_link', 'generateLink returned no action_link', false)
+      return json(GENERIC)
+    }
 
     // ── Send it branded ─────────────────────────────────────────────────
     const resendKey  = Deno.env.get('RESEND_API_KEY') || ''
     const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'admin@tpch.com.au'
-    const fullName   = String(linkData?.user?.user_metadata?.full_name || '').trim()
-    const firstName  = fullName.split(' ')[0] || 'there'
+    const fullName   = (await lookupName(email)) ||
+                       String(linkData?.user?.user_metadata?.full_name || '').trim()
+    const firstName  = fullName.split(' ')[0] || ''
 
     const emailResult = await sendResendEmail(resendKey, {
       from: 'TPCH <noreply@tpch.com.au>',
@@ -185,16 +232,12 @@ Deno.serve(async (req) => {
 
     if (!emailResult.sent) console.error(`reset email failed for ${email}: ${emailResult.error}`)
 
-    await supabase
-      .from('password_reset_requests')
-      .upsert(
-        {
-          email,
-          last_sent_at: new Date().toISOString(),
-          send_count: (throttle?.send_count ?? 0) + 1,
-        },
-        { onConflict: 'email' }
-      )
+    await record(
+      email,
+      emailResult.sent ? 'sent' : 'email_failed',
+      emailResult.error,
+      emailResult.sent,
+    )
 
     return json(GENERIC)
 

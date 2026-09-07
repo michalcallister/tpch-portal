@@ -31,3 +31,24 @@ ALTER TABLE public.password_reset_requests ENABLE ROW LEVEL SECURITY;
 
 COMMENT ON TABLE public.password_reset_requests IS
   'Per-email cooldown for request-password-reset. Service-role only; never exposed to the Data API.';
+
+-- ── Added 2026-09-07 ────────────────────────────────────────────────────────
+-- Record the OUTCOME of every attempt, not just successful sends.
+--
+-- Originally a row only appeared once a link had been generated AND the email
+-- attempted. An address matching no auth user returned early and wrote nothing,
+-- so when a new admin reported "the reset doesn't work" there was no evidence
+-- of what they'd typed or how far it got: the table was simply empty for them,
+-- which is indistinguishable from never having tried. That cost us three days.
+--
+-- The caller still gets one identical generic response either way. This is
+-- internal visibility only (service-role table, no grants, RLS on).
+ALTER TABLE public.password_reset_requests
+  ADD COLUMN IF NOT EXISTS last_outcome    text,
+  ADD COLUMN IF NOT EXISTS last_error      text,
+  ADD COLUMN IF NOT EXISTS last_attempt_at timestamptz;
+
+COMMENT ON COLUMN public.password_reset_requests.last_outcome IS
+  'sent | email_failed | no_such_user | throttled — what happened on the most recent attempt.';
+COMMENT ON COLUMN public.password_reset_requests.last_attempt_at IS
+  'Every attempt, including ones that sent nothing. last_sent_at only moves on an actual send.';
