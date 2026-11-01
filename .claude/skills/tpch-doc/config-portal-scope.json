@@ -1,0 +1,81 @@
+{
+  "outputFile": "c:/tmp/TPCH_Portal_AMLCTF_Compliance_Scope.docx",
+  "docTitle": "Portal AML/CTF Compliance — Build Scope",
+  "title": "Portal AML/CTF Compliance",
+  "subtitle": "Build Scope.",
+  "docType": "Build Specification",
+  "date": "29 May 2026",
+  "recipientName": "Internal",
+  "recipientCompany": "The Property Clearing House",
+  "preparedBy": "The Property Clearing House",
+  "sections": [
+    { "type": "overline", "text": "Context" },
+    { "type": "heading", "text": "Why this scope exists" },
+    { "type": "body", "paragraphs": [
+      "The Tranche 2 AML/CTF reforms bring real estate into scope from 1 July 2026. A legal determination is being sought on whether TPCH is itself a reporting entity. This scope readies the portal for the obligations that follow, under either outcome.",
+      "The portal is already the system of record for end-buyer personal information and the deal trail (reservations, EOIs, expected settlement, commission status). That makes it the natural place to evidence customer due diligence and record-keeping — whether the reporting entity turns out to be TPCH, our channel partners, or both."
+    ]},
+    { "type": "callout", "text": "Build trigger: do not start Phase 2 until the legal threshold question is answered. Phase 1 items are low-regret and can proceed once approved." },
+
+    { "type": "divider" },
+    { "type": "overline", "text": "Two scenarios" },
+    { "type": "heading", "text": "What changes depending on the legal answer" },
+    { "type": "table", "headers": ["Scenario", "Implication for the portal"], "rows": [
+      ["TPCH is a reporting entity", "Portal must capture and evidence CDD, source-of-funds and beneficial ownership, support record-keeping and reporting, and gate the EOI/contract-order step on CDD completion."],
+      ["Only partners are reporting entities", "Portal should help partners discharge their CDD and record-keeping (status fields, evidence storage, export) and must not impede it. TPCH-level gating is optional."],
+      ["Neither (TPCH advised outside scope)", "Phase 1 record-keeping and privacy items still recommended as good practice; Phase 2 controls deferred."]
+    ]},
+
+    { "type": "divider" },
+    { "type": "overline", "text": "Phase 1 — low-regret" },
+    { "type": "heading", "text": "Build regardless of the legal answer" },
+    { "type": "table", "headers": ["Item", "What to build", "Where"], "rows": [
+      ["1. 7-year retention", "Confirm no flow hard-deletes buyer records. The 48-hour expiry should only flip status, not delete the row. Document a 7-year retention policy for reservations, EOIs and deals.", "reservations, partner_deals tables; retention note in docs/"],
+      ["2. Consent timestamp", "Make buyer-consent an explicit recorded checkbox with a timestamp at reservation, not just an agreement clause. Store who confirmed it.", "reservation modal in index.html; reservations table"],
+      ["3. Audit trail", "Log every create/change to buyer PII and CDD status — actor, field, before/after, timestamp. Extend the existing activity log rather than build new.", "partner_activity_log"],
+      ["4. Record export", "Admin-only export of reservations / deals with their CDD evidence to CSV, for an auditor or AUSTRAC request.", "new admin export; service-role edge function"]
+    ]},
+
+    { "type": "divider" },
+    { "type": "overline", "text": "Phase 2 — if a reporting entity" },
+    { "type": "heading", "text": "Build if TPCH (or partners, via the portal) is captured" },
+    { "type": "table", "headers": ["Item", "What to build", "Where"], "rows": [
+      ["5. CDD status on the deal", "Add fields: cdd_status (not started / in progress / verified), cdd_completed_by, cdd_completed_at, id_doc_type, verification_method. Surface a CDD badge on the deal and reservation cards.", "reservations / partner_deals tables; deal + reservation UI"],
+      ["6. EOI / contract-order gate", "Optionally block conversion to EOI (and the contract order) until CDD is marked verified. Make the gate a configurable setting so it can be switched on if TPCH is the reporting entity.", "EOI conversion flow"],
+      ["7. Source of funds / wealth", "Structured fields to record source-of-funds and source-of-wealth evidence against the buyer on the reservation/EOI.", "new columns on reservations or a related table"],
+      ["8. Beneficial ownership", "Capture underlying ownership/control where the buyer is a company, trust or SMSF (the portal already flags smsf_eligible stock).", "reservation/EOI data model"],
+      ["9. Partner enrolment tracking", "Fields on the partner record: austrac_enrolled (bool), austrac_re_number, enrolment_date, aml_program_in_place. Show an admin warning badge for partners transacting without enrolment.", "channel_partners table; admin partner view"],
+      ["10. Suspicious-matter flag", "Let staff or a partner flag a transaction for internal review and route it to TPCH admin. This is an internal trigger only — it does NOT lodge an SMR; that is done in AUSTRAC Online.", "new flag on reservation/deal; admin queue"]
+    ]},
+
+    { "type": "divider" },
+    { "type": "overline", "text": "Engineering notes" },
+    { "type": "heading", "text": "Constraints to respect" },
+    { "type": "bullets", "items": [
+      "New columns on existing tables (reservations, partner_deals, channel_partners) are grandfathered for Data API access. Any brand-new table must include explicit GRANTs — from 30 Oct 2026 a new public table is invisible to PostgREST without them (see CLAUDE.md).",
+      "Buyer PII and CDD evidence are sensitive. Keep RLS tight: partners see only their own clients’ records; CDD evidence files (if stored) should sit in a private Storage bucket with signed-URL access, not a public bucket.",
+      "All migrations land in db/migrations/ and are pasted into the Supabase SQL editor (no CLI runner).",
+      "Several Phase 2 items (5, 9) are partner-noticeable and would warrant a CHANGELOG entry when shipped; Phase 1 items are largely internal."
+    ]},
+
+    { "type": "divider" },
+    { "type": "overline", "text": "Boundaries" },
+    { "type": "heading", "text": "Explicitly out of scope" },
+    { "type": "bullets", "items": [
+      "The AML/CTF program document itself — that is drafted with the lawyer / AML consultant, not built in the portal.",
+      "Actual SMR / threshold-transaction lodgement — done in AUSTRAC Online, not the portal.",
+      "Selecting and integrating a KYC/identity-verification vendor — a separate decision once the obligation owner is confirmed.",
+      "Any handling of buyer funds or payments — TPCH does not, and this scope does not introduce it."
+    ]},
+
+    { "type": "divider" },
+    { "type": "overline", "text": "Sequencing" },
+    { "type": "heading", "text": "Suggested order" },
+    { "type": "bullets", "items": [
+      "Now: get the legal determination (separate brief). Approve Phase 1.",
+      "On legal answer: confirm the obligation owner, then scope Phase 2 items that apply and choose a KYC vendor if needed.",
+      "Before 1 July 2026: if TPCH is captured, enrol with AUSTRAC, stand up the AML/CTF program, and switch on the EOI/CDD gate."
+    ]},
+    { "type": "callout", "text": "This is a build scope, not legal advice. The obligation set is provisional until the legal determination lands; treat field lists as a starting point to refine with the adviser." }
+  ]
+}

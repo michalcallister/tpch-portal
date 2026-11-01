@@ -1,6 +1,6 @@
 # TPCH Portal — Security Hardening Deploy Guide
 
-Companion document to [`supabase-security-hardening.sql`](supabase-security-hardening.sql).
+Companion document to [`supabase-security-hardening.sql`](../db/migrations/supabase-security-hardening.sql).
 
 **Audience.** Mick + any developer running the deploy.
 **Goal.** Apply the audit fixes without breaking the portal.
@@ -46,7 +46,7 @@ Then check the URLs return 404 after GitHub Pages redeploys (~1 min):
 
 ### 0.3 Wire the public landing form to a real backend
 
-[landing.html:934](landing.html#L934) — `submitForm()` only fakes a success panel. Either:
+[landing.html:934](../landing.html#L934) — `submitForm()` only fakes a success panel. Either:
 
 - **Quick fix:** POST to the existing `/functions/v1/<TBD>` enquiry endpoint, or
 - **Quicker fix:** insert directly into `pending_enquiries` (anon INSERT remains allowed — see Part 6 of the migration).
@@ -74,7 +74,7 @@ These changes are **non-breaking**. They close the worst privacy hole (cross-ten
 
 ### 1.1 Apply SQL Parts 1, 2, 5
 
-In Supabase Dashboard → SQL Editor → New Query, paste **only** the section of [`supabase-security-hardening.sql`](supabase-security-hardening.sql) from the start of `PART 1` through the end of `PART 5`. Run.
+In Supabase Dashboard → SQL Editor → New Query, paste **only** the section of [`supabase-security-hardening.sql`](../db/migrations/supabase-security-hardening.sql) from the start of `PART 1` through the end of `PART 5`. Run.
 
 Verify:
 
@@ -92,7 +92,7 @@ If `reservations_one_active_per_stock` fails to create, run the cleanup query in
 
 ### 1.2 Harden `reserve-stock`
 
-Replace [reserve-stock/index.ts](reserve-stock/index.ts) with the version below. Key changes: requires JWT, derives `partner_id` and `partner_name` / `partner_email` from `channel_partners` (not the body), catches `23505` conflict from Part 5's unique index and returns 200 with the existing reservation.
+Replace [reserve-stock/index.ts](../supabase/functions/reserve-stock/index.ts) with the version below. Key changes: requires JWT, derives `partner_id` and `partner_name` / `partner_email` from `channel_partners` (not the body), catches `23505` conflict from Part 5's unique index and returns 200 with the existing reservation.
 
 After saving the file:
 
@@ -341,7 +341,7 @@ Deno.serve(async (req) => {
 
 ### 1.4 Client tweak — drop `partner_id` from reserve-stock body
 
-[index.html:10315](index.html#L10315) and [10479](index.html#L10479) currently send `partner_id` in the body. The new edge function ignores it (deriving from JWT) but you can clean up the client too. Non-blocking.
+[index.html:10315](../index.html#L10315) and [10479](../index.html#L10479) currently send `partner_id` in the body. The new edge function ignores it (deriving from JWT) but you can clean up the client too. Non-blocking.
 
 ### 1.5 Smoke test
 
@@ -393,7 +393,7 @@ You — Mick — log in as one admin via the **new** flow. Phase 3 is the client
 
 ## Phase 3 — Update `index.html` admin login (Day 3)
 
-The current admin login does this (around [index.html:4651](index.html#L4651)):
+The current admin login does this (around [index.html:4651](../index.html#L4651)):
 
 ```js
 // OLD — reads plaintext password
@@ -487,7 +487,7 @@ Lines 5669 and 5711 currently `PATCH tpch_team` to set a new plaintext password.
 
 ### 3.3 Restore-session also changes
 
-[index.html:4537](index.html#L4537) currently restores admin from `tpch_team` by email. New flow: at restore, if `currentAuthToken` exists call `get_my_session` and route on `role`.
+[index.html:4537](../index.html#L4537) currently restores admin from `tpch_team` by email. New flow: at restore, if `currentAuthToken` exists call `get_my_session` and route on `role`.
 
 ### 3.4 Smoke test
 
@@ -505,14 +505,14 @@ If anything fails, the rollback is to revert the index.html change. The SQL Part
 
 ## Phase 4 — Admin RPC gating (Day 4)
 
-Apply `PART 4` from [`supabase-security-hardening.sql`](supabase-security-hardening.sql).
+Apply `PART 4` from [`supabase-security-hardening.sql`](../db/migrations/supabase-security-hardening.sql).
 
 After this lands, `get_partners_admin()` and `get_agreement_acceptances()` raise 42501 unless `is_admin()` returns true. Verify by:
 
 - Logged-in admin → Partners panel still loads.
 - Logged-in partner → opens devtools, manually calls the RPC → gets `access denied`.
 
-Rollback: re-apply the original RPC bodies from [`supabase-partners-admin-rpc.sql`](supabase-partners-admin-rpc.sql) and [`supabase-agreement-migration.sql`](supabase-agreement-migration.sql).
+Rollback: re-apply the original RPC bodies from [`supabase-partners-admin-rpc.sql`](../db/migrations/supabase-partners-admin-rpc.sql) and [`supabase-agreement-migration.sql`](../db/migrations/supabase-agreement-migration.sql).
 
 ### 4.1 Harden `invite-partner`
 
@@ -578,13 +578,13 @@ Confirm there are no `roles = '{anon}'` rows on `tpch_team`, `channel_partners`,
 If anything 401/403's that shouldn't, the cause is almost always a REST call still hardcoded to `Bearer ${SUPABASE_ANON_KEY}`. Find it (grep), wrap with `authHeaders()`, redeploy `index.html`. Don't roll back the SQL.
 
 If you absolutely must roll back: re-apply the original "Anon can …" policies from each per-table migration file. The exact policy SQL is in:
-- [supabase-team-migration.sql:62](supabase-team-migration.sql#L62)
-- [supabase-partners-migration.sql:99](supabase-partners-migration.sql#L99)
-- [supabase-enquiry-rls-patch.sql:9](supabase-enquiry-rls-patch.sql#L9)
-- [supabase-stock-migration.sql:257](supabase-stock-migration.sql#L257)
-- [supabase-migration.sql:122](supabase-migration.sql#L122)
-- [supabase-lists-migration.sql:37](supabase-lists-migration.sql#L37)
-- [supabase-reservations-rls-patch.sql:14](supabase-reservations-rls-patch.sql#L14)
+- [supabase-team-migration.sql:62](../db/migrations/supabase-team-migration.sql#L62)
+- [supabase-partners-migration.sql:99](../db/migrations/supabase-partners-migration.sql#L99)
+- [supabase-enquiry-rls-patch.sql:9](../db/migrations/supabase-enquiry-rls-patch.sql#L9)
+- [supabase-stock-migration.sql:257](../db/migrations/supabase-stock-migration.sql#L257)
+- [supabase-migration.sql:122](../db/migrations/supabase-migration.sql#L122)
+- [supabase-lists-migration.sql:37](../db/migrations/supabase-lists-migration.sql#L37)
+- [supabase-reservations-rls-patch.sql:14](../db/migrations/supabase-reservations-rls-patch.sql#L14)
 
 ---
 

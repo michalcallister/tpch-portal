@@ -220,7 +220,7 @@ The portal's `upload-analysis` edge function accepts a validated JSON payload an
 **Required headers:**
 - `apikey: <SUPABASE_ANON_KEY>` — the publishable key from the portal.
 - `Authorization: Bearer <SUPABASE_ANON_KEY>` — same key.
-- `x-tpch-upload-secret: <UPLOAD_SECRET>` — shared secret stored at `C:\Users\micha\Claude\tpch\tpch-portal\.claude\.upload-secret` (gitignored).
+- `x-tpch-upload-secret: <UPLOAD_SECRET>` — shared secret stored at `C:\Users\micha\Claude\tpch\projects\tpch-portal\.claude\.upload-secret` (gitignored).
 - `Content-Type: application/json`.
 
 **Body:**
@@ -263,7 +263,7 @@ The portal's `upload-analysis` edge function accepts a validated JSON payload an
 **One-liner the skill can run to upload** (PowerShell on Mick's Windows box):
 
 ```powershell
-$secret = Get-Content "C:\Users\micha\Claude\tpch\tpch-portal\.claude\.upload-secret" -Raw
+$secret = Get-Content "C:\Users\micha\Claude\tpch\projects\tpch-portal\.claude\.upload-secret" -Raw
 $secret = $secret.Trim()
 $anon = "<SUPABASE_ANON_KEY>"
 $body = @{ project_id = "<id>"; model_used = "claude-opus-4-7"; triggered_by = "mick@local-skill"; analysis = $analysisObject } | ConvertTo-Json -Depth 20

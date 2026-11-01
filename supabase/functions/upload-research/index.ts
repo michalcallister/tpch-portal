@@ -104,6 +104,10 @@ function isIsoDate(s: any): boolean {
   return !isNaN(t)
 }
 
+function isFiniteNumber(v: any): boolean {
+  return typeof v === 'number' && Number.isFinite(v)
+}
+
 function withinTwelveMonths(s: string): boolean {
   const t = Date.parse(s)
   if (isNaN(t)) return false
@@ -251,6 +255,59 @@ function validateResearch(r: any): string | null {
       return `sources[${i}].url must be a full https:// URL`
     }
     sourceTags.add(s.tag)
+  }
+
+  // Hero metrics: the denormalised strip the portal's Location Highlights
+  // block reads. Nothing used to check these, so nine reports published with
+  // every value null and rendered four dashes on partner-facing flyers (see
+  // the April 2026 backfill). median_price and weekly_rent are the backbone
+  // and are mandatory. vacancy_rate is genuinely unavailable for some
+  // suburbs (REIV publishes suburb data members-only), so it stays optional
+  // rather than forcing a metro figure into a suburb-labelled tile.
+  if (!r.hero_metrics || typeof r.hero_metrics !== 'object' || Array.isArray(r.hero_metrics)) {
+    return 'hero_metrics object is required (drives the portal Location Highlights strip)'
+  }
+  const hm = r.hero_metrics
+  for (const k of ['median_price', 'weekly_rent']) {
+    if (!isFiniteNumber(hm[k]) || hm[k] <= 0) {
+      return `hero_metrics.${k} must be a number greater than 0. A report without it renders an empty Location Highlights tile on every partner flyer. Got ${JSON.stringify(hm[k])}.`
+    }
+  }
+  for (const k of ['avg_yield', 'vacancy_rate', 'capital_growth_10yr', 'pop_growth_pct']) {
+    if (hm[k] !== null && hm[k] !== undefined && !isFiniteNumber(hm[k])) {
+      return `hero_metrics.${k} must be a number or null, got ${JSON.stringify(hm[k])}`
+    }
+  }
+  if (hm.population !== null && hm.population !== undefined && typeof hm.population !== 'string') {
+    return `hero_metrics.population must be a display string or null, got ${JSON.stringify(hm.population)}`
+  }
+
+  // Comparable sales: must be an ARRAY. The portal renders it with
+  // Array.isArray(), so an object silently hides the whole comps table
+  // instead of failing loudly. Several reports shipped the pillar-style
+  // { status, narrative, recent_sales } object and lost their comps.
+  if (r.comparable_sales !== undefined && r.comparable_sales !== null) {
+    if (!Array.isArray(r.comparable_sales)) {
+      return `comparable_sales must be an array (got ${typeof r.comparable_sales === 'object' ? 'an object' : typeof r.comparable_sales}). Use [] when no named transactions are available. The portal reads this with Array.isArray, so a non-array hides the comparable-sales table entirely.`
+    }
+    for (let i = 0; i < r.comparable_sales.length; i++) {
+      const c = r.comparable_sales[i]
+      if (!c || typeof c !== 'object' || Array.isArray(c)) {
+        return `comparable_sales[${i}] must be an object`
+      }
+      if (typeof c.address !== 'string' || c.address.trim().length < 5) {
+        return `comparable_sales[${i}].address is required (a real street address, not a suburb median)`
+      }
+      if (!isIsoDate(c.date)) {
+        return `comparable_sales[${i}].date must be ISO YYYY-MM-DD, got '${c.date}'`
+      }
+      if (!isFiniteNumber(c.price) || c.price <= 0) {
+        return `comparable_sales[${i}].price must be a number greater than 0, got ${JSON.stringify(c.price)}`
+      }
+      if (!isHttpsUrl(c.source_url)) {
+        return `comparable_sales[${i}].source_url must be a full https:// URL`
+      }
+    }
   }
 
   // Brand-violation scan over the entire payload

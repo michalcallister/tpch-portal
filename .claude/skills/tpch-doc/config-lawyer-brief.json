@@ -1,0 +1,106 @@
+{
+  "outputFile": "c:/tmp/TPCH_AMLCTF_Lawyer_Scoping_Brief.docx",
+  "docTitle": "AML/CTF Tranche 2 — Reporting Entity Scoping Brief",
+  "title": "AML/CTF Tranche 2",
+  "subtitle": "Reporting Entity Scoping Brief.",
+  "docType": "Legal Scoping Brief",
+  "date": "29 May 2026",
+  "recipientName": "Bizcom Legal",
+  "recipientCompany": "",
+  "preparedBy": "The Property Clearing House",
+  "sections": [
+    { "type": "overline", "text": "Purpose of this brief" },
+    { "type": "heading", "text": "What we are asking you to determine" },
+    { "type": "body", "paragraphs": [
+      "The Property Clearing House (TPCH) operates a business-to-business intelligence and stock-distribution platform for residential property investment. We are seeking a determination on whether TPCH is a “reporting entity” under the Anti-Money Laundering and Counter-Terrorism Financing Act 2006 (Cth) as amended by the Tranche 2 reforms, which extend designated services to the real estate sector from 1 July 2026.",
+      "Our own preliminary view is that there is material risk TPCH is captured under the “brokering the sale, purchase or transfer of real estate” designated service, because our model resembles a project-marketer / master-distributor arrangement in which we are remunerated by the seller on settlement. We are not certain of this and want your view on the threshold question before we build any compliance infrastructure or enrol.",
+      "This is time-sensitive: commencement is 1 July 2026 and AUSTRAC enrolment is already open."
+    ]},
+    { "type": "callout", "text": "The single most important answer we need: is TPCH itself a reporting entity, and if so under which designated service and from when. Everything else follows from that." },
+
+    { "type": "divider" },
+    { "type": "overline", "text": "About the business" },
+    { "type": "heading", "text": "The Property Clearing House" },
+    { "type": "body", "paragraphs": [
+      "TPCH is a channel-partner intelligence platform. It does not run a conventional real estate agency shopfront and does not sell property to the public. Its customers are channel partners — typically buyer’s agents, financial planners and property advisers — who access a gated online portal.",
+      "TPCH delivers three things to those partners: (1) research intelligence (suburb and project analysis); (2) a live stock portal of new-build residential lots sourced from developers; and (3) white-label reporting. Partners use this to advise and transact with their own end-buyer clients."
+    ]},
+
+    { "type": "divider" },
+    { "type": "overline", "text": "The transaction model" },
+    { "type": "heading", "text": "Who the parties are" },
+    { "type": "table", "headers": ["Party", "Role in the chain"], "rows": [
+      ["Developer", "Vendor / seller of the new-build lot. Holds title until settlement and is the counterparty to the contract of sale."],
+      ["TPCH", "Aggregates developer stock, lists it in the portal, takes reservations against named buyers, orders the contract from the developer, and is paid commission by the developer on settlement."],
+      ["Channel partner", "A buyer’s agent / adviser who introduces the lot to their own client and manages the client relationship. Receives a share of the commission from TPCH."],
+      ["End buyer", "The investor who contracts directly with the developer and pays the developer directly. TPCH never communicates with the end buyer."]
+    ]},
+    { "type": "subheading", "text": "The flow, step by step" },
+    { "type": "bullets", "items": [
+      "Developers list available lots to TPCH; TPCH publishes them in the gated portal.",
+      "A channel partner reserves a specific lot against a named end-buyer client. The portal records the buyer’s name, email and (optionally) phone, and places a 48-hour hold.",
+      "The reservation converts to an Expression of Interest (EOI) when the partner submits a signed form from the buyer.",
+      "On EOI, TPCH orders the contract of sale from the developer.",
+      "The end buyer contracts and pays the developer directly. TPCH does not handle the consideration.",
+      "On settlement, the developer pays commission to TPCH. TPCH retains its share and pays the channel partner’s share by EFT."
+    ]},
+
+    { "type": "divider" },
+    { "type": "overline", "text": "Scope of activity" },
+    { "type": "heading", "text": "What TPCH does and does not do" },
+    { "type": "table", "headers": ["TPCH does", "TPCH does not"], "rows": [
+      ["Aggregate and list developer stock to partners", "Communicate with, or advise, end buyers"],
+      ["Provide research and intelligence", "Receive, hold or control buyer funds"],
+      ["Take reservations tied to a named buyer", "Operate a trust account"],
+      ["Order the contract of sale from the developer", "Hold or transfer title"],
+      ["Receive settlement-linked commission from the developer", "Sign or counter-sign the contract of sale"],
+      ["Pay channel partners their commission share", "Provide personal financial or legal advice"]
+    ]},
+
+    { "type": "divider" },
+    { "type": "overline", "text": "Information we hold" },
+    { "type": "heading", "text": "Data captured in the portal" },
+    { "type": "bullets", "items": [
+      "End-buyer personal information: name, email and (optionally) phone, captured at reservation and carried through to the deal record.",
+      "Channel-partner business details: company name, ABN, AFSL/ACL, contact details and licence type.",
+      "Transaction milestones: reservation, EOI, expected settlement date, and commission status against each lot."
+    ]},
+    { "type": "body", "paragraphs": [
+      "We note this data holding raises Privacy Act / OAIC considerations independently of the AML/CTF question, and would welcome your view on the interaction."
+    ]},
+
+    { "type": "pagebreak" },
+    { "type": "overline", "text": "Questions for determination" },
+    { "type": "heading", "text": "What we need you to answer" },
+    { "type": "bullets", "items": [
+      "1. Is TPCH a reporting entity under any real estate designated service — in particular “brokering the sale, purchase or transfer of real estate on behalf of a buyer, seller, transferee or transferor in the course of carrying on a business”? Please consider the two-tier distribution / project-marketer characterisation specifically.",
+      "2. If yes, which designated service(s) apply, and from what date (we understand commencement is 1 July 2026)?",
+      "3. If TPCH is captured, what is the full obligation set, and on whom must customer due diligence be performed given TPCH never deals with the end buyer directly — the developer, the partner, the buyer, or some combination?",
+      "4. Are our channel partners (buyer’s agents and advisers) separately reporting entities in their own right, and if so does that change TPCH’s position or allow reliance arrangements?",
+      "5. Could the model be restructured — contractually or operationally — to sit outside scope, and would you recommend that over simply enrolling and complying?",
+      "6. How do the AML/CTF obligations interact with our Privacy Act obligations for the buyer personal information we hold?",
+      "7. What is our penalty and director-liability exposure if we misjudge the threshold question?"
+    ]},
+
+    { "type": "divider" },
+    { "type": "overline", "text": "Why this is urgent" },
+    { "type": "heading", "text": "Key dates" },
+    { "type": "stats", "stats": [
+      { "number": "31 Mar 2026", "label": "Enrolment opened" },
+      { "number": "1 Jul 2026", "label": "Obligations commence" },
+      { "number": "29 Jul 2026", "label": "Enrol by" }
+    ]},
+    { "type": "body", "paragraphs": [
+      "We would value an initial scoping call and a short written view on the threshold question (item 1) ahead of commencement, with a fuller obligations memo to follow if TPCH is captured."
+    ]},
+
+    { "type": "divider" },
+    { "type": "overline", "text": "Contact" },
+    { "type": "heading", "text": "How to reach us" },
+    { "type": "body", "paragraphs": [
+      "Mick Callister — The Property Clearing House",
+      "michal@tpch.com.au  ·  0409 029 273  ·  ABN 50 658 406 903"
+    ]},
+    { "type": "disclaimer", "text": "This brief is provided by The Property Clearing House to obtain independent legal advice. It describes our business model in good faith for that purpose and is not itself legal advice. The descriptions of the AML/CTF reforms are our lay understanding and should be verified against the Act and current AUSTRAC guidance." }
+  ]
+}

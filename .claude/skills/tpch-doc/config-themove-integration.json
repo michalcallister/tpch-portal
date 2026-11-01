@@ -1,0 +1,131 @@
+{
+  "outputFile": "C:/Users/micha/Claude/tpch/operations/systems/2026-06-22_the-move-mulesoft-integration_discovery-brief_v01.docx",
+  "docTitle": "The Move × TPCH — Stock Integration",
+  "title": "The Move × TPCH",
+  "subtitle": "Stock Integration — Technical Discovery Brief.",
+  "docType": "Discovery Brief",
+  "date": "22 June 2026",
+  "recipientName": "Jon Ellis",
+  "recipientCompany": "The Move",
+  "preparedBy": "The Property Clearing House",
+  "sections": [
+    { "type": "overline", "text": "Purpose" },
+    { "type": "heading", "text": "What We Are Trying to Build" },
+    { "type": "body", "paragraphs": [
+      "The Move and TPCH already work together informally — a handful of The Move's listings have been brought onto the TPCH portal by hand. The aim of this conversation is to replace that manual effort with a live, two-way connection between The Move's system and the TPCH portal.",
+      "In plain terms, the integration should do three things."
+    ]},
+    { "type": "bullets", "items": [
+      "Inbound — Jon (or The Move's team) selects which properties flow into the TPCH portal, and at what price, and they appear automatically.",
+      "Outbound — when a property is reserved or sold inside the TPCH portal, The Move is told, so their view stays accurate.",
+      "Live — both sides stay in sync, so a property shown as available on the TPCH portal is genuinely still available in The Move's system."
+    ]},
+    { "type": "divider" },
+
+    { "type": "overline", "text": "The Shape of It" },
+    { "type": "heading", "text": "How This Likely Fits Together" },
+    { "type": "body", "paragraphs": [
+      "Because The Move already runs MuleSoft and has a working stock-management API, the cleanest model is an API-led one: The Move exposes its stock — and accepts status updates back — through its existing MuleSoft layer, and TPCH connects to that. A useful point for the meeting is that TPCH does not need its own MuleSoft licence to make this work; MuleSoft sits on The Move's side, and TPCH consumes it.",
+      "This is well-trodden ground for TPCH. The portal already runs a two-way sync of exactly this kind with its project-management system — pulling stock in on a schedule and writing status changes back when a property is reserved. Connecting The Move is the same pattern pointed at a new source. The plumbing is not the risk; the value of this meeting is agreeing what The Move's API can actually do, and what happens when the two systems disagree about whether a property is still available."
+    ]},
+    { "type": "callout", "text": "Bottom line for the meeting: the technology is straightforward on both sides. The two things worth getting right are what The Move's API exposes, and the rules for who wins when both systems show a different status for the same property." },
+    { "type": "divider" },
+
+    { "type": "overline", "text": "What TPCH Brings" },
+    { "type": "heading", "text": "The TPCH Side" },
+    { "type": "body", "paragraphs": [
+      "So The Move's technical contact knows what they are connecting to, the TPCH portal:"
+    ]},
+    { "type": "bullets", "items": [
+      "Runs on a modern cloud backend (Supabase / PostgreSQL) with the ability to consume an external API over standard secure authentication, or to expose a secure endpoint for The Move to push updates to.",
+      "Already operates a scheduled two-way stock sync, so adding The Move as a second source is an extension of an existing, proven mechanism.",
+      "Tracks each property's status as Available, Reserved, Under Offer, Settled or Developer.",
+      "Holds a reservation for 48 hours and then releases it automatically if it is not converted — relevant to how quickly status needs to flow back to The Move."
+    ]},
+    { "type": "pagebreak" },
+
+    { "type": "overline", "text": "Discovery — Section A" },
+    { "type": "heading", "text": "Their System and API" },
+    { "type": "bullets", "items": [
+      "What is the underlying system that holds the stock — the source MuleSoft connects to?",
+      "What does the API expose for each property — full detail (address, price, bedrooms, land and build sizes, images, status), or a subset?",
+      "Is it read and write — can TPCH both pull stock in and send a reserved or sold status back? Or is it read-only?",
+      "How does authentication work — OAuth, client credentials, API keys, something else?",
+      "What format is the data — modern REST and JSON, or older SOAP and XML?",
+      "Are there rate limits or quotas on how often TPCH can call the API?",
+      "Is there a test or sandbox environment to build against before going anywhere near live stock?"
+    ]},
+    { "type": "divider" },
+
+    { "type": "overline", "text": "Discovery — Section B" },
+    { "type": "heading", "text": "How the Connection Runs" },
+    { "type": "bullets", "items": [
+      "Does The Move already publish partner APIs through MuleSoft, or would they build a connection specifically to a TPCH endpoint?",
+      "Push or pull — does The Move send TPCH an update when something changes (a webhook or event), or does TPCH poll the API on a schedule to check?",
+      "Can The Move fire a real-time event the moment a property sells on their side? This is the key to keeping the portal honest.",
+      "Who builds and maintains the MuleSoft flows on The Move's side, and is there a cost or timeline attached?"
+    ]},
+    { "type": "divider" },
+
+    { "type": "overline", "text": "Discovery — Section C" },
+    { "type": "heading", "text": "Choosing Stock and Setting Price" },
+    { "type": "bullets", "items": [
+      "How does Jon flag that a property should go to TPCH — a tick-box, a tag, a dedicated list or segment in their system?",
+      "Is the price that flows through a TPCH-specific price, or The Move's standard list price — and where is that controlled?",
+      "Do commission terms come through the feed as well, or are they handled separately?"
+    ]},
+    { "type": "divider" },
+
+    { "type": "overline", "text": "Discovery — Section D" },
+    { "type": "heading", "text": "Staying Live and Who Holds the Truth" },
+    { "type": "body", "paragraphs": [
+      "This is the part most worth getting right. Two live systems will occasionally disagree, and the rules need to be agreed up front."
+    ]},
+    { "type": "bullets", "items": [
+      "How quickly does TPCH learn when a property sells or changes status on The Move's side — seconds, minutes, or the next scheduled check?",
+      "What does The Move want back from TPCH when a property is reserved or sold here, and in what form?",
+      "The conflict rule: if TPCH has a property reserved for a partner and The Move sells it elsewhere at the same time, who wins, and how is the loser told?",
+      "What is the single, stable identifier both sides use to match a property? Everything depends on a reliable shared ID rather than matching on address."
+    ]},
+    { "type": "divider" },
+
+    { "type": "overline", "text": "Discovery — Section E" },
+    { "type": "heading", "text": "Matching the Data" },
+    { "type": "bullets", "items": [
+      "Mapping their fields to ours — price, address, bedrooms, bathrooms, car parks, land and build sizes, status. Which fields can The Move guarantee on every property?",
+      "How do The Move's availability states line up with the TPCH set (Available, Reserved, Under Offer, Settled, Developer)?",
+      "Images and documents — does the feed give links TPCH can display directly, or files that need to be copied across?"
+    ]},
+    { "type": "divider" },
+
+    { "type": "overline", "text": "Discovery — Section F" },
+    { "type": "heading", "text": "Commercial and Governance" },
+    { "type": "bullets", "items": [
+      "Who pays for what — The Move's MuleSoft development versus TPCH's connection work?",
+      "Who owns the data, and what happens to The Move's listings on the portal if the arrangement ends?",
+      "The Move has previously asked for comms and contracts on their stock to run formally through them. Does that change how enquiries or buyer details flow once a property is on the portal?",
+      "Who is the technical point of contact on The Move's side? Jon may not be hands-on with the system, so identifying the right person early keeps things moving."
+    ]},
+    { "type": "pagebreak" },
+
+    { "type": "overline", "text": "Walk In Knowing" },
+    { "type": "heading", "text": "Three Things to Flag Early" },
+    { "type": "bullets", "items": [
+      "Liveness and conflict — agreeing the who-wins rule and how fast status flows matters more than the connection itself.",
+      "A shared, stable property ID — without one, the two systems cannot be reliably kept in step.",
+      "The formal-comms preference — worth confirming it does not quietly undercut the point of an automated feed."
+    ]},
+    { "type": "divider" },
+
+    { "type": "overline", "text": "Next Steps" },
+    { "type": "heading", "text": "What to Walk Away With" },
+    { "type": "bullets", "items": [
+      "A copy of The Move's API documentation and access to a test environment.",
+      "Agreement on the single shared property identifier.",
+      "A decision on the first direction to build — most likely pulling stock in first, status feedback second.",
+      "A decision on push versus scheduled polling, and the name of The Move's technical contact."
+    ]},
+    { "type": "callout", "text": "Suggested framing for John: TPCH can do the heavy lifting on its own side and connect to whatever The Move's API offers. The fastest path is getting TPCH's developer in front of The Move's API documentation and a test environment." },
+    { "type": "disclaimer" }
+  ]
+}

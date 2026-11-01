@@ -1,0 +1,71 @@
+{
+  "outputFile": "C:/Users/micha/Claude/tpch/operations/meetings/2026-06-22_weekly-agenda_v01.docx",
+  "docTitle": "Weekly Meeting Agenda",
+  "title": "Weekly Meeting",
+  "subtitle": "Agenda.",
+  "docType": "Meeting Agenda",
+  "date": "Monday, 22 June 2026",
+  "preparedBy": "The Property Clearing House",
+  "sections": [
+    { "type": "overline", "text": "Operating Rhythm" },
+    { "type": "heading", "text": "How this meeting runs" },
+    { "type": "body", "paragraphs": [
+      "Mondays, 11:00 AWST. Two blocks of 45 minutes — same structure every week so the rhythm becomes second nature; only the contents change.",
+      "Block A — Channel & Stock, with Chris. Block B — Sales, Compliance & Ops, with Mick, Sam and Bec.",
+      "Recorded by Fathom; we do not take live notes. Afterwards, decisions are logged and Mick's actions captured to the task queue."
+    ]},
+    { "type": "divider" },
+    { "type": "overline", "text": "Block A — With Chris · 45 min" },
+    { "type": "heading", "text": "Channel & Stock" },
+    { "type": "subheading", "text": "1 · Channel integrity — confirm & close (~2 min)" },
+    { "type": "bullets", "items": [
+      "Settled (logged 22 Jun): First Home Owner and NDIS stock are exempt — Chris keeps these outside the portal; everything else stays in-channel.",
+      "Any other grey area on what must go through TPCH? If none, this item retires."
+    ]},
+    { "type": "subheading", "text": "2 · Stock — the main event (~30 min)" },
+    { "type": "bullets", "items": [
+      "Builders to land — keep on top of these: Ozbuild, Melbourne Square, Melbourne Builder, Amit, Emmett. Each: meeting booked? next step? who's chasing?",
+      "In-progress portal adds: Marcos 2505 (Hendon), Marcos 3605E.",
+      "New channels: where is the next tranche of stock coming from — Chris's leads and targets.",
+      "Lock it in: the 2–3 builders we get in front of this week, and the owner for each."
+    ]},
+    { "type": "subheading", "text": "3 · Live deals — quick check (~10 min)" },
+    { "type": "bullets", "items": [
+      "Fast pass over current deals; surface blockers and Chris's read before he drops off.",
+      "Evers / Marco — agent-stamp via Becky ($2k fee, commission $11k to $8k): go or no-go?"
+    ]},
+    { "type": "subheading", "text": "4 · Actions + owners (~3 min)" },
+    { "type": "pagebreak" },
+    { "type": "overline", "text": "Block B — Mick · Sam · Bec · 45 min" },
+    { "type": "heading", "text": "Sales, Compliance & Ops" },
+    { "type": "subheading", "text": "1 · Scoreboard (~5 min)" },
+    { "type": "bullets", "items": [
+      "Settlements this week and month; live pipeline value; deals at risk.",
+      "Board current? (Cornell settled, Wallace added.)"
+    ]},
+    { "type": "subheading", "text": "2 · Deals in flight & blockers (~15 min)" },
+    { "type": "bullets", "items": [
+      "Marco 2201 EGLE (top priority) — valuation was blocked (Bo Residential, no entry notice); finance deadline was 20 Jun, now passed. Did it clear?",
+      "Peel Street — $155k land held under the First Home Owner Grant threshold. Go/no-go from Rach, Rhys, Stacey?",
+      "Onboarding calls — Dan Peterson, Shane Robson: done / outcome?"
+    ]},
+    { "type": "subheading", "text": "3 · Licensing & compliance (~15 min)" },
+    { "type": "bullets", "items": [
+      "Real estate licence: Becky stopgap ($2k per contract) versus Sam getting his own licence ASAP — timeline and decision.",
+      "AML/CTF (AUSTRAC): TPCH enrolling as a brokered designated service, live 1 Jul. AUSTRAC registration (Mick + Chris); Teams call with Lynn; Part A/B program build; InfoTrack + 7-year storage."
+    ]},
+    { "type": "subheading", "text": "4 · Marketing & content (~5 min)" },
+    { "type": "bullets", "items": [
+      "Area profiles — Port Hedland draft; branding/logo files.",
+      "Minyip write-up out to Greg Morris, Elmayne, Craig Settle."
+    ]},
+    { "type": "subheading", "text": "5 · Actions, owners, due dates (~5 min)" },
+    { "type": "divider" },
+    { "type": "overline", "text": "Carry Forward" },
+    { "type": "subheading", "text": "Standing parking lot" },
+    { "type": "bullets", "items": [
+      "Portal promoter research — LinkedIn/databases for people to promote the portal (Minnip 5.5★ as the hook).",
+      "Lock recurring Monday meetings to the 11:00 AWST slot."
+    ]}
+  ]
+}
